@@ -1,0 +1,3 @@
+Hitler 1,10,5,8,3,4,7,2,hitler
+Jezis 2,8,6,5,5,5,5,5,jezis
+Karta 3,12,4,7,2,6,9,3,brando

@@ -672,7 +672,7 @@ public class Attack : MonoBehaviour
     public IEnumerator TeslaCoil(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
         dialogText.text = attacker.cardName + " shocks enemy";
-        receiver.TakeDamage(2 * attacker.attack);
+        receiver.TakeDamage(attacker.attack);
         yield return new WaitForSeconds(2);
         if (Random.value <= 0.7f)
         {
