@@ -159,20 +159,40 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
     }
     
 
-    public IEnumerator AddEffect(int id,int param)
-	{
+    public IEnumerator AddEffect(int id, int param)
+    {
         yield return new WaitForSeconds(1f);
-        Debug.Log(cardName + " pridava efekt " + id + ", " + param);
-		effects.Add(new List<int>());
-        effects[effects.Count - 1].Add(id);
-        effects[effects.Count - 1].Add(param);
-        StartCoroutine(ShakeCard(0.2f));
-        yield return new WaitForSeconds(1f);
-	}
+        Debug.Log(Time.time + "  " + cardName + " pridava efekt " + id + ", " + param);
 
+        bool idExists = false;
+
+        // Kontrola, či efekt s daným ID existuje a toto ID nie je 1 alebo 4
+        for (int i = 0; i < effects.Count; i++)
+        {
+            int effectId = effects[i][0];
+            if (effectId == id && id != 1 && id != 4)
+            {
+                idExists = true;
+                Debug.Log(Time.time + "  " + cardName + " má již efekt s ID " + id + ".");
+                break;
+            }
+        }
+
+        if (!idExists)
+        {
+            // ID sa v zozname nevyskytuje alebo ide o ID 1 alebo 4, efekt pridáme
+            effects.Add(new List<int>());
+            effects[effects.Count - 1].Add(id);
+            effects[effects.Count - 1].Add(param);
+            attackCount[id] = param;
+            StartCoroutine(ShakeCard(0.2f));
+            Debug.Log(Time.time + "  " + cardName + " pridal efekt " + id + ", " + param);
+            yield return new WaitForSeconds(1f);
+        }
+    }
     public void RemoveEffect(int index)
     {
-        Debug.Log(cardName + " odobera efekt " + index);
+        Debug.Log(Time.time + "  " + cardName + " odobera efekt " + index);
         if (index < effects.Count)
         {
             effects.RemoveAt(index); 
@@ -186,12 +206,12 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
 		health -= dmg;
         StartCoroutine(ShakeCard((float)dmg));
         StartCoroutine(EffectAnimations(dmg, "HP", color_red));
-        Debug.Log(cardName+" dostal za "+dmg);
+        Debug.Log(Time.time + "  " + cardName+" dostal za "+dmg);
 	}
 
     public void Heal(int amount)
 	{
-        Debug.Log(cardName+" sa healuje za "+amount);
+        Debug.Log(Time.time + "  " + cardName+" sa healuje za "+amount);
 		health += amount;
         StartCoroutine(EffectAnimations(amount, "HP", color_green));
 		if (health > maxHP)
@@ -200,7 +220,7 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
 
     public void HandleStrength(int amount)
 	{
-        Debug.Log(cardName+" nemi silu o "+amount);
+        Debug.Log(Time.time + "  " + cardName+" nemi silu o "+amount);
         if (amount < 0)
         {
             StartCoroutine(EffectAnimations(amount, "STR", color_red));
@@ -216,7 +236,7 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
 
     public void HandleSpeed(int amount)
 	{
-        Debug.Log(cardName+" meni rychlost o "+amount);
+        Debug.Log(Time.time + "  " + cardName+" meni rychlost o "+amount);
         if (amount < 0)
         {
             StartCoroutine(EffectAnimations(amount, "SPD", color_red));
@@ -232,7 +252,7 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
 
     public void HandleAttack(int amount)
 	{
-        Debug.Log(cardName+" meni utok o "+amount);
+        Debug.Log(Time.time + "  " + cardName+" meni utok o "+amount);
 		attack += amount;
         if (amount < 0)
         {
@@ -248,7 +268,7 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
 
     public void HandleDefense(int amount)
 	{
-        Debug.Log(cardName+" meni obranu o "+amount);
+        Debug.Log(Time.time + "  " + cardName+" meni obranu o "+amount);
 		defense += amount;
         if (amount < 0)
         {
@@ -264,7 +284,7 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
 
     public void HandleKnowledge(int amount)
 	{
-        Debug.Log(cardName+" meni vedomosti o "+amount);
+        Debug.Log(Time.time + "  " + cardName+" meni vedomosti o "+amount);
 		knowledge += amount;
         if (amount < 0)
         {
@@ -280,7 +300,7 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
 
     public void HandleCharisma(int amount)
 	{
-        Debug.Log(cardName+" meni charizmu o "+amount);
+        Debug.Log(Time.time + "  " + cardName+" meni charizmu o "+amount);
 		charisma += amount;
         if (amount < 0)
         {

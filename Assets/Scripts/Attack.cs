@@ -176,6 +176,33 @@ public class Attack : MonoBehaviour
             case 45:
                 yield return StartCoroutine(Colt1911(attacker, receiver, dialogText));
                 break;
+            case 46:
+                yield return StartCoroutine(Mortar(attacker, receiver, dialogText));
+                break;
+            case 47:
+                yield return StartCoroutine(GreatArmy(attacker, receiver, dialogText));
+                break;
+            case 48:
+                yield return StartCoroutine(ScorchedEarth(attacker, receiver, dialogText));
+                break;
+            case 49:
+                yield return StartCoroutine(DoubleEnvelopment(attacker, receiver, dialogText));
+                break;
+            case 50:
+                yield return StartCoroutine(ContinentalBlockade(attacker, receiver, dialogText));
+                break;
+            case 51:
+                yield return StartCoroutine(Depression(attacker, receiver, dialogText));
+                break;
+            case 52:
+                yield return StartCoroutine(SelfIsolation(attacker, receiver, dialogText));
+                break;
+            case 53:
+                yield return StartCoroutine(Knife(attacker, receiver, dialogText));
+                break;
+            case 54:
+                yield return StartCoroutine(Autoportrait(attacker, receiver, dialogText));
+                break;
             case 101:
                 yield return StartCoroutine(Yperit(attacker, receiver, dialogText));
                 break;
@@ -289,13 +316,11 @@ public class Attack : MonoBehaviour
         {
             dialogText.text = receiver.cardName + " is hit by radiation";
             yield return StartCoroutine(receiver.AddEffect(4,0));//exposure
-            //yield return new WaitForSeconds(2);
         }
         if (Random.value <= 0.1f)
         {
             dialogText.text = attacker.cardName + " is hit by radiation";
             yield return StartCoroutine(attacker.AddEffect(4,0));//exposure
-            //yield return new WaitForSeconds(2);
         }
         Debug.Log(attacker.cardName+" -> Radiation => "+receiver.cardName);
 	}
@@ -558,7 +583,7 @@ public class Attack : MonoBehaviour
     public IEnumerator Siege(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
         dialogText.text = attacker.cardName + " is building siege equipment";
-        StartCoroutine(attacker.AddEffect(5,3));
+        StartCoroutine(attacker.AddEffect(5,3));//siege
         attacker.state = CardState.STAY;
         attacker.HandleDefense(10);
         Debug.Log(attacker.cardName+" -> Siege => "+receiver.cardName);
@@ -653,7 +678,7 @@ public class Attack : MonoBehaviour
     public IEnumerator Famine(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
         dialogText.text = attacker.cardName + " caused a famine";
-        int r = Random.Range(5, 15);
+        int r = Random.Range(5, 10);
 		receiver.TakeDamage(2 * r);
         receiver.HandleDefense(-2 * r);
         StartCoroutine(receiver.AddEffect(7, r));
@@ -721,7 +746,7 @@ public class Attack : MonoBehaviour
         yield return new WaitForSeconds(2);
         if (attacker.attack > receiver.speed) 
         {
-            StartCoroutine(receiver.AddEffect(9,2));
+            StartCoroutine(receiver.AddEffect(9,2));//Tether
             dialogText.text = receiver.cardName + " was captured";
             yield return new WaitForSeconds(2);
         }
@@ -753,6 +778,121 @@ public class Attack : MonoBehaviour
         }
         Debug.Log(attacker.cardName+" -> Colt1911 => "+receiver.cardName);
         yield return new WaitForSeconds(2);
+	}
+    //46
+    public IEnumerator Mortar(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        if (Random.value <= 0.9f) 
+        {
+            dialogText.text = "Mortar fires";
+            receiver.TakeDamage(Random.Range(5, 10));
+        }
+        else
+        {
+            dialogText.text = "Mortar exploded";
+            attacker.TakeDamage(Random.Range(3, 7));
+        }
+        Debug.Log(attacker.cardName+" -> Mortar => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
+	}
+    //47
+    public IEnumerator GreatArmy(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " is assembling an army";
+        attacker.HandleStrength((int)System.Math.Ceiling((double)receiver.charisma / 10));
+        attacker.HandleAttack((int)System.Math.Ceiling((double)receiver.charisma / 10));
+        attacker.HandleDefense((int)System.Math.Ceiling((double)receiver.charisma / 10));
+        attacker.HandleCharisma(1);
+        Debug.Log(attacker.cardName+" -> GrandArmee => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
+	}
+    //48
+    public IEnumerator ScorchedEarth(Kard attacker, Kard receiver, TMP_Text dialogText)                     //nepouzite
+	{
+
+        dialogText.text = attacker.cardName + " is Burning all in his wake";
+        yield return new WaitForSeconds(2);
+        yield return StartCoroutine(receiver.AddEffect(10,Random.Range(1, attacker.defense)));//Starving
+        Debug.Log(attacker.cardName+" -> ScorchedEarth => "+receiver.cardName);
+	}
+    //49
+    public IEnumerator DoubleEnvelopment(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " Launching the maneuver!";
+        StartCoroutine(attacker.AddEffect(11,1));//Envelopment
+        attacker.state = CardState.STAY;
+        attacker.HandleDefense(-3);
+        Debug.Log(attacker.cardName+" -> DoubleEnvelopment => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
+	}
+    //50
+    public IEnumerator ContinentalBlockade(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+
+        dialogText.text = attacker.cardName + " Enforcing the blockade";
+        yield return new WaitForSeconds(2);
+        yield return StartCoroutine(receiver.AddEffect(12,1));//Blockade
+        Debug.Log(attacker.cardName+" -> ContinentalBlockade => "+receiver.cardName);
+	}
+    //51
+    public IEnumerator Depression(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+
+        dialogText.text = attacker.cardName + " is depressed";
+        yield return new WaitForSeconds(2);
+        receiver.HandleStrength(Random.Range(-3,0));
+        receiver.HandleSpeed(Random.Range(-3,0));
+        receiver.HandleAttack(Random.Range(-3,0));
+        receiver.HandleDefense(Random.Range(-3,0));
+        receiver.HandleCharisma(Random.Range(-3,0));
+        yield return StartCoroutine(receiver.AddEffect(13,1));//Depression
+        dialogText.text = attacker.cardName + " feels bad for enemy";
+        yield return new WaitForSeconds(2);
+        if (Random.value <= 0.3f) 
+        {
+            dialogText.text = receiver.cardName + "is empowered by muse";
+            yield return StartCoroutine(attacker.AddEffect(1,Random.Range(14, 3)));//ArtInspiration
+        }
+        Debug.Log(attacker.cardName+" -> Depression => "+receiver.cardName);
+	}
+    //52
+    public IEnumerator SelfIsolation(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " feels happy alone";
+        attacker.HandleDefense(3);
+        if (Random.value <= 0.3f) 
+        {
+            dialogText.text = receiver.cardName + "is empowered by muse";
+            yield return StartCoroutine(attacker.AddEffect(1,Random.Range(14, 3)));//ArtInspiration
+        }
+        Debug.Log(attacker.cardName+" -> SelfIsolation => "+attacker.cardName);
+        yield return new WaitForSeconds(2);
+	}
+    //53
+    public IEnumerator Knife(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " cuts enemy with knife";
+		receiver.TakeDamage(1 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
+        yield return new WaitForSeconds(2);
+        if (Random.value <= 0.3f) 
+        {
+            dialogText.text = receiver.cardName + " is wounded";
+            yield return StartCoroutine(receiver.AddEffect(1,Random.Range(1, 3)));//bleed
+        }
+        Debug.Log(attacker.cardName+" -> Knife => "+receiver.cardName);
+	}
+    //54
+    public IEnumerator Autoportrait(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+
+        dialogText.text = attacker.cardName + " discovers himself through art";
+        yield return new WaitForSeconds(2);
+        attacker.HandleKnowledge(1);
+        attacker.HandleStrength(1);
+        attacker.HandleDefense(1);
+        attacker.state = CardState.STAY;
+        yield return StartCoroutine(attacker.AddEffect(15,Random.Range(1, 3)));//Autoportrait
+        Debug.Log(attacker.cardName+" -> Autoportrait => "+receiver.cardName);
 	}
     //101
     public IEnumerator Yperit(Kard attacker, Kard receiver, TMP_Text dialogText)

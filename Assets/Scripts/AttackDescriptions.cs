@@ -154,14 +154,41 @@ public class AttackDescriptions : MonoBehaviour
             case 42://TommyGun
                 count = new int[] {2, 3, 5, 10}[Random.Range(0, 4)];
                 break;
-            case 43://Corruption
+            case 43://TieUp
+                count = 10;
+                break;
+            case 44://Corruption
                 count = attacker.charisma;
                 break;
-            case 44://Colt1911
+            case 45://Colt1911
                 count = 7;
                 break;
-            case 45://nic tu neni
+            case 46://Mortar
+                count = 7;
+                break;
+            case 47://GreatArmy
+                count = 3;
+                break;
+            case 48://ScorchedEarth
+                count = attacker.attack;
+                break;
+            case 49://DoubleEnvelopment
+                count = attacker.knowledge * 2;
+                break;
+            case 50://ContinentalBlockade
                 count = attacker.strength * 10;
+                break;
+            case 51://Depression
+                count = attacker.knowledge + 10;
+                break;
+            case 52://SelfIsolation
+                count = attacker.knowledge + 10;
+                break;
+            case 53://Knife
+                count = attacker.strength * 10;
+                break;
+            case 54://Autoportrait
+                count = 10;
                 break;
             case 101://Yperit
                 count = 3;
@@ -172,7 +199,7 @@ public class AttackDescriptions : MonoBehaviour
             case 103://Propaganda
                 count = attacker.knowledge * 2;
                 break;
-            case 104://nic tu neni
+            case 104://nictuneni
                 count = attacker.strength * 10;
                 break;
             default:
@@ -342,6 +369,33 @@ public class AttackDescriptions : MonoBehaviour
             case 45:
                 dialogText.text = "Colt 1911 chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
+            case 46:
+                dialogText.text = "Mortar chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 47:
+                dialogText.text = "Great Army chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 48:
+                dialogText.text = "Scorched Earth chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 49:
+                dialogText.text = "Double Envelopment chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 50:
+                dialogText.text = "Continental Blockade chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 51:
+                dialogText.text = "Depression chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 52:
+                dialogText.text = "Self-Isolation chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 53:
+                dialogText.text = "Knife chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 54:
+                dialogText.text = "Autoportrait chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
             case 101:
                 dialogText.text = "Yperit chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
@@ -507,6 +561,33 @@ public class AttackDescriptions : MonoBehaviour
                 break;
             case 45:
                 Colt1911(buttonText);
+                break;
+            case 46:
+                Mortar(buttonText);
+                break;
+            case 47:
+                GreatArmy(buttonText);
+                break;
+            case 48:
+                ScorchedEarth(buttonText);
+                break;
+            case 49:
+                DoubleEnvelopment(buttonText);
+                break;
+            case 50:
+                ContinentalBlockade(buttonText);
+                break;
+            case 51:
+                Depression(buttonText);
+                break;
+            case 52:
+                SelfIsolation(buttonText);
+                break;
+            case 53:
+                Knife(buttonText);
+                break;
+            case 54:
+                Autoportrait(buttonText);
                 break;
             case 101:
                 Yperit(buttonText);
@@ -793,6 +874,60 @@ public class AttackDescriptions : MonoBehaviour
     public void Colt1911(TMP_Text buttonText)
 	{
         buttonText.text = "Colt 1911";
+	}
+
+    //46
+    public void Mortar(TMP_Text buttonText)
+	{
+        buttonText.text = "Mortar";
+	}
+
+    //47
+    public void GreatArmy(TMP_Text buttonText)
+	{
+        buttonText.text = "Great Army";
+	}
+
+    //48
+    public void ScorchedEarth(TMP_Text buttonText)
+	{
+        buttonText.text = "Scorched Earth";
+	}
+
+    //49
+    public void DoubleEnvelopment(TMP_Text buttonText)
+	{
+        buttonText.text = "Double Envelopment";
+	}
+
+    //50
+    public void ContinentalBlockade(TMP_Text buttonText)
+	{
+        buttonText.text = "Continental Blockade";
+	}
+
+    //51
+    public void Depression(TMP_Text buttonText)
+	{
+        buttonText.text = "Depression";
+	}
+
+    //52
+    public void SelfIsolation(TMP_Text buttonText)
+	{
+        buttonText.text = "Self-Isolation";
+	}
+
+    //53
+    public void Knife(TMP_Text buttonText)
+	{
+        buttonText.text = "Knife";
+	}
+
+    //54
+    public void Autoportrait(TMP_Text buttonText)
+	{
+        buttonText.text = "Autoportrait";
 	}
 
     //101

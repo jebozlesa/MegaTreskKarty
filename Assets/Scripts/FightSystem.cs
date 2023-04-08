@@ -17,6 +17,7 @@ public class FightSystem : MonoBehaviour
     public GameObject enemyBoard;
 
     public TMP_Text dialogText;
+    public Image dialogButtonBorder;
 
     public TMP_Text button1Text;
     public TMP_Text button2Text;
