@@ -15,8 +15,8 @@ Nikola Tesla,28,3,3,2,1,10,5,tesla,252;248;247,1,11,39,40,41
 Lucky Luciano,24,4,6,7,5,4,6,luciano,0;0;0,1,42,43,44,45
 Napoleon Bonaparte,28,5,5,7,6,6,7,napoleon,248;231;143,1,46,47,49,50
 Vincent van Gogh,24,2,3,4,4,7,2,vangogh,161;156;152,1,51,52,53,54
-Stephen Hawking,1,1,1,1,1,1,1,hawkins,252;61;42,1,1,1,1,1
-The Wright Brothers,1,1,1,1,1,1,1,wright,0;0;0,1,1,1,1,1
+Stephen Hawking,27,2,5,2,3,10,6,hawkins,252;61;42,1,55,11,9,40
+The Wright Brothers,24,4,7,6,6,9,7,wright,0;0;0,1,56,57,58,41
 Eleanor Roosvelt,1,1,1,1,1,1,1,eleanor,214;203;173,1,1,1,1,1
 Francis Drake,1,1,1,1,1,1,1,drake,255;255;160,1,1,1,1,1
 Harry Houdini,1,1,1,1,1,1,1,houdini,179;223;234,1,1,1,1,1
@@ -51,49 +51,49 @@ Cleopatra,1,1,1,1,1,1,1,cleopatra,177;196;194,1,1,1,1,1
 Mansa Musa,1,1,1,1,1,1,1,mansa,9;94;39,1,1,1,1,1
 Pancho Villa,1,1,1,1,1,1,1,pancho,255;255;255,1,1,1,1,1
 Aristotle,1,1,1,1,1,1,1,aristotle,119;125;111,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
-Saladin,1,1,1,1,1,1,1,saladin,100;100;100,1,1,1,1,1
+Alexander the great,1,1,1,1,1,1,1,alexander,75;143;130,1,1,1,1,1
+Martin Luther King,1,1,1,1,1,1,1,king,255;255;255,1,1,1,1,1
+Che Guevara,1,1,1,1,1,1,1,che,185;0;0,1,1,1,1,1
+Pythagoras of samos,1,1,1,1,1,1,1,pythagoras,135;133;134,1,1,1,1,1
+Pocahontas,1,1,1,1,1,1,1,pocahontas,255;89;21,1,1,1,1,1
+Narmer,1,1,1,1,1,1,1,narmer,230;229;123,1,1,1,1,1
+Hammurabi,1,1,1,1,1,1,1,hammurabi,210;54;41,1,1,1,1,1
+King David I.,1,1,1,1,1,1,1,david,65;66;71,1,1,1,1,1
+Pope Leo I.,1,1,1,1,1,1,1,leo,0;0;0,1,1,1,1,1
+Adam Smith,1,1,1,1,1,1,1,smith,199;213;222,1,1,1,1,1
+Manfred von Richthofen,1,1,1,1,1,1,1,baron,176;207;176,1,1,1,1,1
+Ada Lovelace,1,1,1,1,1,1,1,lovelace,54;253;230,1,1,1,1,1
+Mary Seacole,1,1,1,1,1,1,1,seacole,208;213;190,1,1,1,1,1
+Suzanne Lenglen,1,1,1,1,1,1,1,lenglet,244;244;244,1,1,1,1,1
+Sir Henry Morgan,1,1,1,1,1,1,1,morgan,248;153;0,1,1,1,1,1
+Percy Julian,1,1,1,1,1,1,1,percy,74;44;56,1,1,1,1,1
+Sun Tzu,1,1,1,1,1,1,1,suntzu,148;4;13,1,1,1,1,1
+White death,1,1,1,1,1,1,1,whitedeath,19;6;148,1,1,1,1,1
+Lyudmila Pavlichenko,1,1,1,1,1,1,1,pavlichenko,0;0;0,1,1,1,1,1
+Jesse James,1,1,1,1,1,1,1,jessejames,253;235;211,1,1,1,1,1
+Leonardo Da Vinci,1,1,1,1,1,1,1,leonardo,23;24;10,1,1,1,1,1
+Chinggis Khan,1,1,1,1,1,1,1,dzingischan,200;2;19,1,1,1,1,1
+Milo of Croton,1,1,1,1,1,1,1,milo,0;0;0,1,1,1,1,1
+Zopyrus,1,1,1,1,1,1,1,zopyrus,225;198;111,1,1,1,1,1
+Atotoztli II.,1,1,1,1,1,1,1,atotoztli,26;203;223,1,1,1,1,1
+Alexander Dubcek,1,1,1,1,1,1,1,dubcek,255;255;255,1,1,1,1,1
+Wu Zetian,1,1,1,1,1,1,1,wuzetian,185;15;18,1,1,1,1,1
+Grigorij Jefimovic Rasputin,1,1,1,1,1,1,1,rasputin,173;127;156,1,1,1,1,1
+Moses,1,1,1,1,1,1,1,moses,189;197;186,1,1,1,1,1
+Black Elk,1,1,1,1,1,1,1,blackelk,0;169;172,1,1,1,1,1
+John Dee,1,1,1,1,1,1,1,johndee,27;217;189,1,1,1,1,1
+Diviciacus,1,1,1,1,1,1,1,diviciacus,92;118;47,1,1,1,1,1
+Bodhidharma,1,1,1,1,1,1,1,bodhidharma,0;0;0,1,1,1,1,1
+James Figg,1,1,1,1,1,1,1,figg,184;34;29,1,1,1,1,1
+Tomoe Gozen,1,1,1,1,1,1,1,tomoe,176;6;6,1,1,1,1,1
+Robert Oppenheimer,1,1,1,1,1,1,1,oppenheimer,255;189;30,1,1,1,1,1
+Isaac Newton,1,1,1,1,1,1,1,newton,190;6;32,1,1,1,1,1
+Teuta,1,1,1,1,1,1,1,teuta,35;38;53,1,1,1,1,1
+Jurij Alexejevic Gagarin,1,1,1,1,1,1,1,gagarin,236;28;26,1,1,1,1,1
+Robin Hood,1,1,1,1,1,1,1,hood,168;223;166,1,1,1,1,1
+Imhotep,1,1,1,1,1,1,1,imhotep,220;144;6,1,1,1,1,1
+Wang Zongyue,1,1,1,1,1,1,1,wang,23;10;2,1,1,1,1,1
+Joseph Grimaldi,1,1,1,1,1,1,1,grimaldi,139;17;204,1,1,1,1,1
+Nzinga Mbande,1,1,1,1,1,1,1,nzinga,177;1;3,1,1,1,1,1
+WIld Bill Hickok,1,1,1,1,1,1,1,wildbill,0;0;0,1,1,1,1,1
+Ibn al-Haytham,1,1,1,1,1,1,1,ibn,249;250;252,1,1,1,1,1

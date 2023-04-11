@@ -11,6 +11,7 @@ public class HealthBar : MonoBehaviour
     public static float staticHp;
     public float hp;
     public Image health;
+    public Image healthBorder;
     //public TMP_Text hpText;
 
 
@@ -24,6 +25,7 @@ public class HealthBar : MonoBehaviour
     public void SetHP(float hp) 
     {
         health.fillAmount = hp/maxHp;
+        healthBorder.fillAmount = hp/maxHp;
 
         if(hp >= maxHp)
         {

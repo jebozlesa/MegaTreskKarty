@@ -157,6 +157,24 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
         transform.position = originalPosition;
         transform.rotation = originalRotation;
     }
+
+    public bool CheckEffect(int id)
+    {
+        bool idExists = false;
+
+        for (int i = 0; i < effects.Count; i++)
+        {
+            int effectId = effects[i][0];
+            if (effectId == id)
+            {
+                idExists = true;
+                Debug.Log(Time.time + "  " + cardName + " má efekt s ID " + id + ".");
+                break;
+            }
+        }
+
+        return idExists;
+    }
     
 
     public IEnumerator AddEffect(int id, int param)
@@ -196,6 +214,19 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
         if (index < effects.Count)
         {
             effects.RemoveAt(index); 
+        }
+    }
+
+    public void RemoveEffectsById(int id)
+    {
+        Debug.Log(Time.time + "  " + cardName + " odobera vsetky efekty s ID " + id);
+        for (int i = effects.Count - 1; i >= 0; i--)
+        {
+            int effectId = effects[i][0];
+            if (effectId == id)
+            {
+                effects.RemoveAt(i);
+            }
         }
     }
 

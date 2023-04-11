@@ -190,6 +190,18 @@ public class AttackDescriptions : MonoBehaviour
             case 54://Autoportrait
                 count = 10;
                 break;
+            case 55://GravityPull
+                count = attacker.knowledge + 5;
+                break;
+            case 56://Kamikaze
+                count = 1;
+                break;
+            case 57://TookOff
+                count = attacker.knowledge * 2;
+                break;
+            case 58://AirStrike
+                count = attacker.attack * 3;
+                break;
             case 101://Yperit
                 count = 3;
                 break;
@@ -396,6 +408,18 @@ public class AttackDescriptions : MonoBehaviour
             case 54:
                 dialogText.text = "Autoportrait chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
+            case 55:
+                dialogText.text = "Gravity Pull chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 56:
+                dialogText.text = "Kamikaze chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 57:
+                dialogText.text = "Took Off chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 58:
+                dialogText.text = "Air Strike chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
             case 101:
                 dialogText.text = "Yperit chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
@@ -588,6 +612,18 @@ public class AttackDescriptions : MonoBehaviour
                 break;
             case 54:
                 Autoportrait(buttonText);
+                break;
+            case 55:
+                GravityPull(buttonText);
+                break;
+            case 56:
+                Kamikaze(buttonText);
+                break;
+            case 57:
+                TookOff(buttonText);
+                break;
+            case 58:
+                AirStrike(buttonText);
                 break;
             case 101:
                 Yperit(buttonText);
@@ -789,7 +825,7 @@ public class AttackDescriptions : MonoBehaviour
     //31
     public void TreeStratagem(TMP_Text buttonText)
 	{
-        buttonText.text = "TreeStratagem";
+        buttonText.text = "Tree Stratagem";
 	}
 
     //32
@@ -930,10 +966,34 @@ public class AttackDescriptions : MonoBehaviour
         buttonText.text = "Autoportrait";
 	}
 
-    //101
+    //55
+    public void GravityPull(TMP_Text buttonText)
+	{
+        buttonText.text = "Gravity Pull";
+	}
+
+    //56
     public void Yperit(TMP_Text buttonText)
 	{
         buttonText.text = "Yperit";
+	}
+
+    //57
+    public void Kamikaze(TMP_Text buttonText)
+	{
+        buttonText.text = "Kamikaze";
+	}
+
+    //58
+    public void TookOff(TMP_Text buttonText)
+	{
+        buttonText.text = "Took Off";
+	}
+
+    //101
+    public void AirStrike(TMP_Text buttonText)
+	{
+        buttonText.text = "Air Strike";
 	}
 
     //102

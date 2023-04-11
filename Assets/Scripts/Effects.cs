@@ -96,15 +96,13 @@ public class Effects : MonoBehaviour
         if (card.effects[iteration][1] == 0)
         {
             card.RemoveEffect(iteration);
-            dialogText.text = card.cardName + " Bleeds no more";
-            yield return new WaitForSeconds(2);
             yield break;
         }
         else
         {
             card.effects[iteration][1] -= 1;
             card.TakeDamage(1);
-            dialogText.text = card.cardName + " Bleeds, este " + card.effects[iteration][1] + " kola";
+            dialogText.text = card.cardName + " Bleeds";
         }
         Debug.Log(card.cardName + " => Bleed");
         yield return new WaitForSeconds(2);
@@ -147,20 +145,30 @@ public class Effects : MonoBehaviour
         else
         {
             card.effects[iteration][1] -= 1;
-            card.state = CardState.STAY;
-            dialogText.text = card.cardName + " sleeps, este " + card.effects[iteration][1] + " kola";
+            card.state = CardState.MAYBE;
+            dialogText.text = card.cardName + " sleeps";
+            yield return new WaitForSeconds(2);
         }
         Debug.Log(card.cardName + " => Sleep");
-        yield return new WaitForSeconds(2);
 	}
     //4
     public IEnumerator Exposure(Kard card, TMP_Text dialogText, int iteration)
 	{
-        dialogText.text = card.cardName + " is exposured, uz " + card.effects[iteration][1] + " kola";
-        card.effects[iteration][1] -= 1;
-        card.TakeDamage(card.effects[iteration][1]);
+        if (Random.value <= 0.2f)
+        {
+            card.RemoveEffect(iteration);
+            dialogText.text = card.cardName + "'s exposure is gone";
+            yield return new WaitForSeconds(2);
+            yield break;
+        }
+        else
+        {
+            dialogText.text = card.cardName + " is exposured";
+            card.effects[iteration][1] -= 1;
+            card.TakeDamage(System.Math.Abs(card.effects[iteration][1]));
+            yield return new WaitForSeconds(2);
+        }
         Debug.Log(card.cardName + " => Exposure");
-        yield return new WaitForSeconds(2);
 	}
     //5
     public IEnumerator Siege(Kard card, TMP_Text dialogText, int iteration, Kard target)
@@ -248,7 +256,7 @@ public class Effects : MonoBehaviour
     //9
     public IEnumerator Tether(Kard card, TMP_Text dialogText, int iteration)
 	{
-        card.state = CardState.STAY;
+        card.state = CardState.MAYBE;
         //StartCoroutine(textBubble.ShowForSeconds("ZZZZZ!", Resources.Load<Sprite>("oblacik"), 2.5f));
         if (card.effects[iteration][1] == 0)
         {
@@ -307,12 +315,11 @@ public class Effects : MonoBehaviour
             card.effects[iteration][1] -= 1;
         }
         Debug.Log(card.cardName + " => Envelop");
-        yield return new WaitForSeconds(2);
 	}
     //12
     public IEnumerator Blockade(Kard card, TMP_Text dialogText, int iteration)
 	{
-        if (card.effects[iteration][1] == 0 || (Random.value <= 0.1f))
+        if (card.effects[iteration][1] == 0 || (Random.value <= 0.5f))
         {
             card.state = CardState.ATTACK;
             card.RemoveEffect(iteration);
@@ -322,13 +329,13 @@ public class Effects : MonoBehaviour
         }
         else
         {
-        card.state = CardState.MAYBE;
-        dialogText.text = "The blockade holds strong";
-        card.TakeDamage(1);
-        card.HandleDefense(-1);
-        card.HandleStrength(-1);
-        card.effects[iteration][1] -= 1;
-        yield return new WaitForSeconds(2);
+            card.state = CardState.MAYBE;
+            dialogText.text = "The blockade holds strong";
+            card.TakeDamage(1);
+            card.HandleDefense(-1);
+            card.HandleStrength(-1);
+            card.effects[iteration][1] -= 1;
+            yield return new WaitForSeconds(2);
         }
         Debug.Log(card.cardName + " => Blockade");
 	}
@@ -353,7 +360,6 @@ public class Effects : MonoBehaviour
             card.effects[iteration][1] -= 1;
         }
         Debug.Log(card.cardName + " => Depression");
-        yield return new WaitForSeconds(2);
 	}
     //14
     public IEnumerator ArtInspiration(Kard card, TMP_Text dialogText, int iteration, Kard target)
@@ -372,6 +378,7 @@ public class Effects : MonoBehaviour
             yield return new WaitForSeconds(2);
             target.TakeDamage(Random.Range(1, target.defense * 2));
             dialogText.text = card.cardName + " attacks from behind";
+            yield return new WaitForSeconds(2);
             yield break;
         }
         else

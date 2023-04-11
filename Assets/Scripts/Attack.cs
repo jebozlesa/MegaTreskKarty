@@ -203,6 +203,18 @@ public class Attack : MonoBehaviour
             case 54:
                 yield return StartCoroutine(Autoportrait(attacker, receiver, dialogText));
                 break;
+            case 55:
+                yield return StartCoroutine(GravityPull(attacker, receiver, dialogText));
+                break;
+            case 56:
+                yield return StartCoroutine(Kamikaze(attacker, receiver, dialogText));
+                break;
+            case 57:
+                yield return StartCoroutine(TookOff(attacker, receiver, dialogText));
+                break;
+            case 58:
+                yield return StartCoroutine(AirStrike(attacker, receiver, dialogText));
+                break;
             case 101:
                 yield return StartCoroutine(Yperit(attacker, receiver, dialogText));
                 break;
@@ -228,7 +240,7 @@ public class Attack : MonoBehaviour
         dialogText.text = "Puf! punch from " + attacker.cardName;
 		receiver.TakeDamage(((attacker.strength + attacker.attack)/2) - ((receiver.defense + receiver.strength)/2));
         yield return new WaitForSeconds(2);
-        if (Random.value <= 0.1f)
+        if (Random.value <= 0.3f)
         {
             dialogText.text = receiver.cardName + " falls asleep";
             yield return StartCoroutine(receiver.AddEffect(3,Random.Range(1, 3)));//sleep
@@ -242,7 +254,7 @@ public class Attack : MonoBehaviour
         dialogText.text = "Plesk! kick from " + attacker.cardName;
 		receiver.TakeDamage(((attacker.speed + attacker.attack)/2) - ((receiver.defense + receiver.strength)/2));
         yield return new WaitForSeconds(2);
-        if (Random.value <= 0.2f) receiver.TakeDamage(2);//extra dmg
+        if (Random.value <= 0.2f) receiver.TakeDamage(4);//extra dmg
         Debug.Log(attacker.cardName + " -> Kick => " + receiver.cardName);
 	}
 
@@ -283,9 +295,9 @@ public class Attack : MonoBehaviour
     public IEnumerator WaterToWine(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
         dialogText.text = attacker.cardName + " changes his water to wine";
-		attacker.HandleAttack(attacker.knowledge/2);
-        attacker.HandleStrength(attacker.knowledge/3);
-        attacker.HandleDefense(-(attacker.knowledge/4));
+		attacker.HandleAttack(2);
+        attacker.HandleStrength(2);
+        attacker.HandleDefense(-1);
         Debug.Log(attacker.cardName+" -> WaterToWine => "+attacker.cardName);
         yield return new WaitForSeconds(2);
 	}
@@ -312,12 +324,12 @@ public class Attack : MonoBehaviour
     //9
     public IEnumerator Radiation(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
-		if (Random.value <= 0.9f) 
+		if (Random.value <= 0.8f) 
         {
             dialogText.text = receiver.cardName + " is hit by radiation";
             yield return StartCoroutine(receiver.AddEffect(4,0));//exposure
         }
-        if (Random.value <= 0.1f)
+        if (Random.value <= 0.3f)
         {
             dialogText.text = attacker.cardName + " is hit by radiation";
             yield return StartCoroutine(attacker.AddEffect(4,0));//exposure
@@ -382,7 +394,7 @@ public class Attack : MonoBehaviour
         if (Random.value <= 0.1f) 
         {
             dialogText.text = receiver.cardName + " falls asleep";
-            yield return StartCoroutine(receiver.AddEffect(3,Random.Range(1, 3)));//sleep
+            yield return StartCoroutine(attacker.AddEffect(3,Random.Range(1, 3)));//sleep
         }
         Debug.Log(attacker.cardName+" -> UpInSmoke => "+receiver.cardName);
 	}
@@ -540,6 +552,7 @@ public class Attack : MonoBehaviour
         attacker.HandleDefense(2);
         attacker.HandleCharisma(-1);
         attacker.HandleKnowledge(-2);
+        attacker.RemoveEffectsById(3);
         Debug.Log(attacker.cardName+" -> Boost => "+attacker.cardName);
         yield return new WaitForSeconds(2);
 
@@ -573,9 +586,8 @@ public class Attack : MonoBehaviour
     public IEnumerator Diplomacy(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
         dialogText.text = attacker.cardName + " made diplomatic gesture";
-        receiver.HandleAttack(-(int)System.Math.Ceiling((double)attacker.charisma / 5));
-        receiver.HandleDefense(-(int)System.Math.Ceiling((double)attacker.charisma / 5));
-        receiver.HandleKnowledge(-(int)System.Math.Ceiling((double)attacker.charisma / 5));
+        receiver.HandleDefense(-(int)System.Math.Ceiling((double)attacker.charisma / 10));
+        receiver.HandleKnowledge(-(int)System.Math.Ceiling((double)attacker.charisma / 10));
         Debug.Log(attacker.cardName+" -> Diplomacy => "+receiver.cardName);
         yield return new WaitForSeconds(2);
     }
@@ -677,12 +689,20 @@ public class Attack : MonoBehaviour
     //37
     public IEnumerator Famine(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
-        dialogText.text = attacker.cardName + " caused a famine";
-        int r = Random.Range(5, 10);
-		receiver.TakeDamage(2 * r);
-        receiver.HandleDefense(-2 * r);
-        StartCoroutine(receiver.AddEffect(7, r));
-        yield return new WaitForSeconds(2);
+        if (receiver.CheckEffect(7))
+        {
+            dialogText.text = "Be a human, " + attacker.cardName + "!";
+            yield return new WaitForSeconds(2);
+        }
+        else
+        {
+            dialogText.text = attacker.cardName + " caused a famine";
+            int r = Random.Range(5, 10);
+            receiver.TakeDamage(2 * r);
+            receiver.HandleDefense(-2 * r);
+            StartCoroutine(receiver.AddEffect(7, r));
+            yield return new WaitForSeconds(2);
+        }
         Debug.Log(attacker.cardName+" -> Famine => "+receiver.cardName);
     }
     //38
@@ -701,8 +721,8 @@ public class Attack : MonoBehaviour
         yield return new WaitForSeconds(2);
         if (Random.value <= 0.7f)
         {
-            StartCoroutine(receiver.AddEffect(8, 5));
             dialogText.text = receiver.cardName + " is shocked";
+            StartCoroutine(receiver.AddEffect(8, 5));
             yield return new WaitForSeconds(2);
         }
         Debug.Log(attacker.cardName+" -> TeslaCoil => "+receiver.cardName);
@@ -744,9 +764,9 @@ public class Attack : MonoBehaviour
 	{
         dialogText.text = attacker.cardName + " tries catch enemy";
         yield return new WaitForSeconds(2);
-        if (attacker.attack > receiver.speed) 
+        if (attacker.attack > receiver.speed && Random.value <= 0.9f) 
         {
-            StartCoroutine(receiver.AddEffect(9,2));//Tether
+            StartCoroutine(receiver.AddEffect(9,1));//Tether
             dialogText.text = receiver.cardName + " was captured";
             yield return new WaitForSeconds(2);
         }
@@ -846,12 +866,13 @@ public class Attack : MonoBehaviour
         receiver.HandleDefense(Random.Range(-3,0));
         receiver.HandleCharisma(Random.Range(-3,0));
         yield return StartCoroutine(receiver.AddEffect(13,1));//Depression
-        dialogText.text = attacker.cardName + " feels bad for enemy";
+        dialogText.text = receiver.cardName + " feels bad for enemy";
         yield return new WaitForSeconds(2);
         if (Random.value <= 0.3f) 
         {
-            dialogText.text = receiver.cardName + "is empowered by muse";
-            yield return StartCoroutine(attacker.AddEffect(1,Random.Range(14, 3)));//ArtInspiration
+            dialogText.text = attacker.cardName + " is empowered by muse";
+            attacker.state = CardState.STAY;
+            yield return StartCoroutine(attacker.AddEffect(14, 3));//ArtInspiration
         }
         Debug.Log(attacker.cardName+" -> Depression => "+receiver.cardName);
 	}
@@ -862,8 +883,9 @@ public class Attack : MonoBehaviour
         attacker.HandleDefense(3);
         if (Random.value <= 0.3f) 
         {
-            dialogText.text = receiver.cardName + "is empowered by muse";
-            yield return StartCoroutine(attacker.AddEffect(1,Random.Range(14, 3)));//ArtInspiration
+            dialogText.text = attacker.cardName + " is empowered by muse";
+            attacker.state = CardState.STAY;
+            yield return StartCoroutine(attacker.AddEffect(14, 3));//ArtInspiration
         }
         Debug.Log(attacker.cardName+" -> SelfIsolation => "+attacker.cardName);
         yield return new WaitForSeconds(2);
@@ -893,6 +915,72 @@ public class Attack : MonoBehaviour
         attacker.state = CardState.STAY;
         yield return StartCoroutine(attacker.AddEffect(15,Random.Range(1, 3)));//Autoportrait
         Debug.Log(attacker.cardName+" -> Autoportrait => "+receiver.cardName);
+	}
+    //55
+    public IEnumerator GravityPull(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        int r = Random.Range(0,3);
+        string[] objects = {"piano", "boiler", "anvil", "gases"};
+        int[] weight = {6,5,4,0};
+        dialogText.text = "Gravity pulled " + objects[r] + " to " + receiver.cardName;
+		receiver.TakeDamage(weight[r]);
+        yield return new WaitForSeconds(2);
+        if (Random.value <= 0.1f) 
+        {
+            dialogText.text = receiver.cardName + " falls asleep";
+            yield return StartCoroutine(receiver.AddEffect(3,Random.Range(1, 3)));//sleep
+        }
+        Debug.Log(attacker.cardName+" -> GravityPull => "+receiver.cardName);
+	}
+    //56
+    public IEnumerator Kamikaze(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        int dmg = attacker.health;
+        if (Random.value <= 0.9f) 
+        {
+            dialogText.text = "Kamikaze strikes";
+            attacker.TakeDamage(dmg);
+            receiver.TakeDamage(Random.Range(1, (attacker.knowledge + attacker.speed + attacker.attack)));
+        }
+        else
+        {
+            dialogText.text = "Ou! Nasty miss";
+            attacker.TakeDamage(dmg);
+        }
+        Debug.Log(attacker.cardName+" -> Kamikaze => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
+	}
+    //57
+    public IEnumerator TookOff(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        if (Random.value <= 0.75f) 
+        {
+            dialogText.text = attacker.cardName + " took off";
+            attacker.HandleSpeed(3);
+        }
+        else
+        {
+            dialogText.text = attacker.cardName + " crashes";
+            attacker.TakeDamage(Random.Range(1, attacker.speed));
+        }
+        Debug.Log(attacker.cardName+" -> TookOff => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
+	}
+    //56
+    public IEnumerator AirStrike(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        int dmg = attacker.health;
+
+        dialogText.text = attacker.cardName + " strikes from air";
+        receiver.TakeDamage(Random.Range(attacker.attack, attacker.speed + attacker.attack) - receiver.defense);
+
+        if (Random.value <= (attacker.attack / 30f)) 
+        {
+            receiver.TakeDamage(attacker.speed);
+        }
+
+        Debug.Log(attacker.cardName+" -> AirStrike => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
 	}
     //101
     public IEnumerator Yperit(Kard attacker, Kard receiver, TMP_Text dialogText)
@@ -932,8 +1020,8 @@ public class Attack : MonoBehaviour
     public IEnumerator Propaganda(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
         dialogText.text = attacker.cardName + " uses propaganda";
-		receiver.HandleAttack(-((attacker.knowledge + attacker.charisma) / 10));
-        receiver.HandleKnowledge(-((attacker.knowledge + attacker.charisma) / 10));
+		receiver.HandleAttack(-((attacker.knowledge + attacker.charisma) / 8));
+        receiver.HandleKnowledge(-((attacker.knowledge + attacker.charisma) / 8));
         Debug.Log(attacker.cardName+" -> Propaganda => "+receiver.cardName);
         yield return new WaitForSeconds(2);
 	}

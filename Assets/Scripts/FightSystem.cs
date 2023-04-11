@@ -65,12 +65,12 @@ public class FightSystem : MonoBehaviour
     IEnumerator SetupBattle()
     {
 
-        dialogText.text = "lets go everybody";
+        dialogText.text = "lets get ready for rumbbllllll";
 
-        StartCoroutine(VytvorKarty(5,hrac,player));
+        yield return StartCoroutine(VytvorJedinecneKarty(5,hrac,player));
         yield return new WaitForSeconds(0.5f);
 
-        StartCoroutine(VytvorKarty(5,nepriatel,enemy));
+        yield return StartCoroutine(VytvorKartyAI(nepriatel,enemy));
         yield return new WaitForSeconds(1);
 
         player.PlayCard(player.hand[0],playerBoard);
@@ -86,9 +86,6 @@ public class FightSystem : MonoBehaviour
 
         yield return new WaitForSeconds(2f);
         Turn();
-
-
-
     }
 
     void Turn()
@@ -141,20 +138,17 @@ public class FightSystem : MonoBehaviour
     IEnumerator Fight()
     {
 
-        //yield return new WaitForSeconds(1);
         if (player.cardInGame.speed > enemy.cardInGame.speed || (player.cardInGame.speed == enemy.cardInGame.speed && UnityEngine.Random.Range(0, 2) == 0))
         {
             dialogText.color = Color.blue;
             yield return StartCoroutine(effects.ExecuteEffects(player.cardInGame, dialogText, enemy.cardInGame));
             playerLifeBar.SetHP(player.cardInGame.health);
-            //yield return new WaitForSeconds(1);
 
             if (player.cardInGame.state == CardState.ATTACK && player.cardInGame.health > 0 && enemy.cardInGame.health > 0) 
             {
                 yield return StartCoroutine(attack.ExecuteAttack(player.cardInGame, enemy.cardInGame, playerAttack, dialogText));
                 playerLifeBar.SetHP(player.cardInGame.health);
                 enemyLifeBar.SetHP(enemy.cardInGame.health);
-                //yield return new WaitForSeconds(2);
             }
 
             if (player.cardInGame.health > 0 && enemy.cardInGame.health > 0) 
@@ -162,14 +156,12 @@ public class FightSystem : MonoBehaviour
                 dialogText.color = Color.red;
                 yield return StartCoroutine(effects.ExecuteEffects(enemy.cardInGame, dialogText, player.cardInGame));
                 enemyLifeBar.SetHP(enemy.cardInGame.health);
-                //yield return new WaitForSeconds(1);
 
                 if (enemy.cardInGame.state == CardState.ATTACK && player.cardInGame.health > 0 && enemy.cardInGame.health > 0) 
                 {
                     yield return StartCoroutine(attack.ExecuteAttack(enemy.cardInGame, player.cardInGame, enemyAttack, dialogText));
                     playerLifeBar.SetHP(player.cardInGame.health);
                     enemyLifeBar.SetHP(enemy.cardInGame.health);
-                    //yield return new WaitForSeconds(2);
                 }
             }
     
@@ -179,14 +171,12 @@ public class FightSystem : MonoBehaviour
             dialogText.color = Color.red;
             yield return StartCoroutine(effects.ExecuteEffects(enemy.cardInGame, dialogText, player.cardInGame));
             enemyLifeBar.SetHP(enemy.cardInGame.health);
-           // yield return new WaitForSeconds(1);
 
             if (enemy.cardInGame.state == CardState.ATTACK && player.cardInGame.health > 0 && enemy.cardInGame.health > 0) 
             {
                 yield return StartCoroutine(attack.ExecuteAttack(enemy.cardInGame, player.cardInGame, enemyAttack, dialogText));
                 playerLifeBar.SetHP(player.cardInGame.health);
                 enemyLifeBar.SetHP(enemy.cardInGame.health);
-                //yield return new WaitForSeconds(2);
             }
 
             if (player.cardInGame.health > 0 && enemy.cardInGame.health > 0)
@@ -194,14 +184,12 @@ public class FightSystem : MonoBehaviour
                 dialogText.color = Color.blue;
                 yield return StartCoroutine(effects.ExecuteEffects(player.cardInGame, dialogText, enemy.cardInGame));
                 playerLifeBar.SetHP(player.cardInGame.health);
-                //yield return new WaitForSeconds(1);
 
                 if (player.cardInGame.state == CardState.ATTACK && player.cardInGame.health > 0 && enemy.cardInGame.health > 0) 
                 {
                     yield return StartCoroutine(attack.ExecuteAttack(player.cardInGame, enemy.cardInGame, playerAttack, dialogText));
                     playerLifeBar.SetHP(player.cardInGame.health);
                     enemyLifeBar.SetHP(enemy.cardInGame.health);
-                    //yield return new WaitForSeconds(2);
                 }
             }
             
@@ -236,21 +224,29 @@ public class FightSystem : MonoBehaviour
                 enemy.PlayCard(enemy.hand[0],enemyBoard);
                 enemyLifeBar.SetBar(enemy.cardInGame);
             }
-        
 
-       // yield return new WaitForSeconds(2);
         Turn();
 
     }
     
 
-    private IEnumerator VytvorKarty(int pocet, GameObject playerGO,Player player)
+    private IEnumerator VytvorJedinecneKarty(int pocet, GameObject playerGO,Player player)
     {
     
+        List<int> usedIndexes = new List<int>(); // List to keep track of used indexes
+        int maxIndex = kartyData.Count; // Maximum index value to generate random numbers within range
+
         for (int i = 0; i < pocet; i++)
         {
-            
-            int index = Random.Range(0, kartyData.Count);
+            int index;
+            do
+            {
+                index = Random.Range(0, maxIndex);
+            } while (usedIndexes.Contains(index)); // Keep generating random numbers until a unique index is found
+
+            usedIndexes.Add(index); // Add the index to the list of used indexes
+
+            // Rest of your code to get the card data using the unique index...
             string kartaString = kartyData[index];
             string[] kartaHodnoty = kartaString.Split(',');
 
@@ -280,8 +276,87 @@ public class FightSystem : MonoBehaviour
 
             player.AddCardToHand(novaKarta.GetComponent<Kard>());
 
-            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSeconds(0.1f);
         }
     }
-    
+
+    private IEnumerator VytvorKartyAI(GameObject playerGO, Player player)
+    {
+        int iter = 0;
+        int[] boost = new int[6];
+
+        // Shuffle the list of cards
+        for (int i = kartyData.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            string temp = kartyData[i];
+            kartyData[i] = kartyData[j];
+            kartyData[j] = temp;
+        }
+
+        // Create all cards in the shuffled order
+        foreach (string kartaString in kartyData)
+        {
+            boost = DistributeRandomly(iter);
+
+            string[] kartaHodnoty = kartaString.Split(',');
+
+            string[] farbaKarty = kartaHodnoty[9].Split(';');
+            Color32 cardColor = new Color32(byte.Parse(farbaKarty[0]), byte.Parse(farbaKarty[1]), byte.Parse(farbaKarty[2]), 255);
+
+            GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
+            novaKarta.GetComponent<Kard>().cardName = kartaHodnoty[0];
+            novaKarta.GetComponent<Kard>().health = int.Parse(kartaHodnoty[1]) + iter;
+            novaKarta.GetComponent<Kard>().strength = int.Parse(kartaHodnoty[2]) + boost[0];
+            novaKarta.GetComponent<Kard>().speed = int.Parse(kartaHodnoty[3]) + boost[1];
+            novaKarta.GetComponent<Kard>().attack = int.Parse(kartaHodnoty[4]) + boost[2];
+            novaKarta.GetComponent<Kard>().defense = int.Parse(kartaHodnoty[5]) + boost[3];
+            novaKarta.GetComponent<Kard>().knowledge = int.Parse(kartaHodnoty[6]) + boost[4];
+            novaKarta.GetComponent<Kard>().charisma = int.Parse(kartaHodnoty[7]) + boost[5];
+            novaKarta.GetComponent<Kard>().image = kartaHodnoty[8];
+            novaKarta.GetComponent<Kard>().color = cardColor;
+            novaKarta.GetComponent<Kard>().level = int.Parse(kartaHodnoty[10]) + iter;
+            novaKarta.GetComponent<Kard>().attack1 = int.Parse(kartaHodnoty[11]);
+            novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[11]));
+            novaKarta.GetComponent<Kard>().attack2 = int.Parse(kartaHodnoty[12]);
+            novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[12]));
+            novaKarta.GetComponent<Kard>().attack3 = int.Parse(kartaHodnoty[13]);
+            novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[13]));
+            novaKarta.GetComponent<Kard>().attack4 = int.Parse(kartaHodnoty[14]);
+            novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[14]));
+
+            player.AddCardToHand(novaKarta.GetComponent<Kard>());
+
+            iter += 1;
+            yield return new WaitForSeconds(0.1f);
+        }
+    }
+
+    public int[] DistributeRandomly(int value)
+    {
+        int[] result = new int[6];
+
+        // Nastaviť všetky prvky poľa na hodnotu 0
+        for (int i = 0; i < result.Length; i++)
+        {
+            result[i] = 0;
+        }
+
+        // Pridať zvyšok hodnoty do pola náhodne
+        int remainingValue = value;
+
+        while (remainingValue > 0)
+        {
+            for (int j = 0; j < result.Length && remainingValue > 0; j++)
+            {
+                if (UnityEngine.Random.Range(0f, 1f) < 0.2f)
+                {
+                    result[j] += 1;
+                    remainingValue--;
+                }
+            }
+        }
+
+        return result;
+    }
 }
