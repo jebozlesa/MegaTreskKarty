@@ -215,6 +215,21 @@ public class Attack : MonoBehaviour
             case 58:
                 yield return StartCoroutine(AirStrike(attacker, receiver, dialogText));
                 break;
+            case 59:
+                yield return StartCoroutine(JusticeCrusade(attacker, receiver, dialogText));
+                break;
+            case 60:
+                yield return StartCoroutine(Rapier(attacker, receiver, dialogText));
+                break;
+            case 61:
+                yield return StartCoroutine(ExpeditionaryAssault(attacker, receiver, dialogText));
+                break;
+            case 62:
+                yield return StartCoroutine(Culverin(attacker, receiver, dialogText));
+                break;
+            case 63:
+                yield return StartCoroutine(FireShip(attacker, receiver, dialogText));
+                break;
             case 101:
                 yield return StartCoroutine(Yperit(attacker, receiver, dialogText));
                 break;
@@ -514,8 +529,14 @@ public class Attack : MonoBehaviour
 	{
         dialogText.text = receiver.cardName + " is being caramelized";
 		receiver.TakeDamage(4);
-        Debug.Log(attacker.cardName+" -> flaming gun => "+receiver.cardName);
         yield return new WaitForSeconds(2);
+        if (Random.value <= 0.1f) 
+        {
+            dialogText.text = receiver.cardName + " is burning";
+            yield return StartCoroutine(receiver.AddEffect(16,1));//burn
+            yield return new WaitForSeconds(2);
+        }
+        Debug.Log(attacker.cardName+" -> flaming gun => "+receiver.cardName);
 	}
     //24
     public IEnumerator Cleaver(Kard attacker, Kard receiver, TMP_Text dialogText)
@@ -966,7 +987,7 @@ public class Attack : MonoBehaviour
         Debug.Log(attacker.cardName+" -> TookOff => "+receiver.cardName);
         yield return new WaitForSeconds(2);
 	}
-    //56
+    //58
     public IEnumerator AirStrike(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
         int dmg = attacker.health;
@@ -981,6 +1002,87 @@ public class Attack : MonoBehaviour
 
         Debug.Log(attacker.cardName+" -> AirStrike => "+receiver.cardName);
         yield return new WaitForSeconds(2);
+	}
+    //59
+    public IEnumerator JusticeCrusade(Kard attacker, Kard receiver, TMP_Text dialogText)     //nepouzite
+	{
+        dialogText.text = attacker.cardName + " fights enemy for justice";
+		receiver.TakeDamage(((2 + attacker.knowledge + attacker.charisma)/2) - receiver.defense);
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName + " -> JusticeCrusade => " + receiver.cardName);
+	}
+    //60
+    public IEnumerator Rapier(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " cuts wit Rapier";
+		receiver.TakeDamage(2 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
+        if (Random.value <= 0.2f) receiver.TakeDamage(3);//critical hit
+        yield return new WaitForSeconds(2);
+        if (Random.value <= 0.6f) 
+        {
+            dialogText.text = receiver.cardName + " is wounded";
+            yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 7)));//bleed
+        }
+        Debug.Log(attacker.cardName+" -> Rapier => "+receiver.cardName);
+    }
+    //61
+    public IEnumerator ExpeditionaryAssault(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        if (Random.value <= (20f + attacker.knowledge) / 50f) 
+        {
+            int[] boost = DistributeRandomly(Random.Range(3, 6));
+            dialogText.text = attacker.cardName + " gets useful staff";
+            attacker.HandleStrength(boost[0]);
+            attacker.HandleAttack(boost[1]);
+            attacker.HandleDefense(boost[2]);
+            attacker.HandleCharisma(boost[3]);
+            attacker.HandleKnowledge(boost[4]);
+        }
+        else
+        {
+            dialogText.text = attacker.cardName + " almost died on sea";
+            attacker.TakeDamage(Random.Range(3, 7));
+        }
+        Debug.Log(attacker.cardName+" -> ExpeditionaryAssault => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
+	}
+    //62
+    public IEnumerator Culverin(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+		if (Random.value <= 0.8f)
+        {
+        dialogText.text = attacker.cardName + "'s cannon fires";
+		receiver.TakeDamage(Random.Range(1, 15));
+        }
+        else
+        {
+            dialogText.text = "Bang! aaaand miss";
+        }
+        Debug.Log(attacker.cardName+" -> Culverin => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
+	}
+    //63
+    public IEnumerator FireShip(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+		if (Random.value <= 0.5f)
+        {
+        dialogText.text = "Fire ship impacts";
+		receiver.TakeDamage(3);
+        yield return new WaitForSeconds(2);
+        if (Random.value <= 0.5f) 
+        {
+            dialogText.text = receiver.cardName + " is burning";
+            yield return StartCoroutine(receiver.AddEffect(16,1));//burn
+            yield return new WaitForSeconds(2);
+        }
+        }
+        else
+        {
+            dialogText.text = receiver.cardName + " compelled to reposition";
+            receiver.HandleDefense(-2);
+            yield return new WaitForSeconds(2);
+        }
+        Debug.Log(attacker.cardName+" -> Culverin => "+receiver.cardName);
 	}
     //101
     public IEnumerator Yperit(Kard attacker, Kard receiver, TMP_Text dialogText)
@@ -1025,6 +1127,35 @@ public class Attack : MonoBehaviour
         Debug.Log(attacker.cardName+" -> Propaganda => "+receiver.cardName);
         yield return new WaitForSeconds(2);
 	}
+
+
+    public int[] DistributeRandomly(int value)
+    {
+        int[] result = new int[6];
+
+        // Nastaviť všetky prvky poľa na hodnotu 0
+        for (int i = 0; i < result.Length; i++)
+        {
+            result[i] = 0;
+        }
+
+        // Pridať zvyšok hodnoty do pola náhodne
+        int remainingValue = value;
+
+        while (remainingValue > 0)
+        {
+            for (int j = 0; j < result.Length && remainingValue > 0; j++)
+            {
+                if (UnityEngine.Random.Range(0f, 1f) < 0.2f)
+                {
+                    result[j] += 1;
+                    remainingValue--;
+                }
+            }
+        }
+
+        return result;
+    }
 
 }
 

@@ -85,6 +85,9 @@ public class Effects : MonoBehaviour
             case 15:
                 yield return StartCoroutine(Autoportrait(card, dialogText, iteration));
                 break;
+            case 16:
+                yield return StartCoroutine(Burn(card, dialogText, iteration));
+                break;
             default:
                 Debug.LogError("Invalid effect type.");
                 break;
@@ -412,6 +415,16 @@ public class Effects : MonoBehaviour
             dialogText.text = card.cardName + " is making art, este " + card.effects[iteration][1] + " kola";
         }
         Debug.Log(card.cardName + " => Starving");
+        yield return new WaitForSeconds(2);
+	}
+    //16
+    public IEnumerator Burn(Kard card, TMP_Text dialogText, int iteration)
+	{
+
+        card.TakeDamage(1);
+        dialogText.text = card.cardName + " is on fire";
+
+        Debug.Log(card.cardName + " => Burn");
         yield return new WaitForSeconds(2);
 	}
 }

@@ -202,6 +202,21 @@ public class AttackDescriptions : MonoBehaviour
             case 58://AirStrike
                 count = attacker.attack * 3;
                 break;
+            case 59://JusticeCrusade
+                count = attacker.strength * 5;
+                break;
+            case 60://Rapier
+                count = attacker.strength * 5;
+                break;
+            case 61://ExpeditionaryAssault
+                count = attacker.charisma;
+                break;
+            case 62://Culverin
+                count = attacker.strength;
+                break;
+            case 63://FireShip
+                count = attacker.knowledge / 2;
+                break;
             case 101://Yperit
                 count = 3;
                 break;
@@ -420,6 +435,21 @@ public class AttackDescriptions : MonoBehaviour
             case 58:
                 dialogText.text = "Air Strike chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
+            case 59:
+                dialogText.text = "Justice Crusade chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 60:
+                dialogText.text = "Rapier chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 61:
+                dialogText.text = "Expeditionary Assault chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 62:
+                dialogText.text = "Culverin chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 63:
+                dialogText.text = "Fire Ship chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
             case 101:
                 dialogText.text = "Yperit chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
@@ -624,6 +654,21 @@ public class AttackDescriptions : MonoBehaviour
                 break;
             case 58:
                 AirStrike(buttonText);
+                break;
+            case 59:
+                JusticeCrusade(buttonText);
+                break;
+            case 60:
+                Rapier(buttonText);
+                break;
+            case 61:
+                ExpeditionaryAssault(buttonText);
+                break;
+            case 62:
+                Culverin(buttonText);
+                break;
+            case 63:
+                FireShip(buttonText);
                 break;
             case 101:
                 Yperit(buttonText);
@@ -973,27 +1018,57 @@ public class AttackDescriptions : MonoBehaviour
 	}
 
     //56
-    public void Yperit(TMP_Text buttonText)
-	{
-        buttonText.text = "Yperit";
-	}
-
-    //57
     public void Kamikaze(TMP_Text buttonText)
 	{
         buttonText.text = "Kamikaze";
 	}
 
-    //58
+    //57
     public void TookOff(TMP_Text buttonText)
 	{
         buttonText.text = "Took Off";
 	}
 
-    //101
+    //58
     public void AirStrike(TMP_Text buttonText)
 	{
         buttonText.text = "Air Strike";
+	}
+
+    //59
+    public void JusticeCrusade(TMP_Text buttonText)
+	{
+        buttonText.text = "Justice Crusade";
+	}
+
+    //60
+    public void Rapier(TMP_Text buttonText)
+	{
+        buttonText.text = "Rapier";
+	}
+
+    //61
+    public void ExpeditionaryAssault(TMP_Text buttonText)
+	{
+        buttonText.text = "Expeditionary Assault";
+	}
+
+    //62
+    public void Culverin(TMP_Text buttonText)
+	{
+        buttonText.text = "Culverin";
+	}
+
+    //63
+    public void FireShip(TMP_Text buttonText)
+	{
+        buttonText.text = "Fire Ship";
+	}
+
+    //101
+    public void Yperit(TMP_Text buttonText)
+	{
+        buttonText.text = "Yperit";
 	}
 
     //102

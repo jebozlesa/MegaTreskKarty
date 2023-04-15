@@ -17,4 +17,4 @@ Napoleon Bonaparte,28,5,5,7,6,6,7,napoleon,248;231;143,1,46,47,49,50
 Vincent van Gogh,24,2,3,4,4,7,2,vangogh,161;156;152,1,51,52,53,54
 Stephen Hawking,27,2,5,2,3,10,6,hawkins,252;61;42,1,55,11,9,40
 The Wright Brothers,24,4,7,6,6,9,7,wright,0;0;0,1,56,57,58,41
-Eleanor Roosvelt,1,1,1,1,1,1,1,eleanor,214;203;173,1,1,1,1,1
+Francis Drake,27,6,6,7,6,6,5,drake,255;255;160,1,60,61,62,63
