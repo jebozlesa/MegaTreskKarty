@@ -88,6 +88,9 @@ public class Effects : MonoBehaviour
             case 16:
                 yield return StartCoroutine(Burn(card, dialogText, iteration));
                 break;
+            case 17:
+                yield return StartCoroutine(Confusion(card, dialogText, iteration));
+                break;
             default:
                 Debug.LogError("Invalid effect type.");
                 break;
@@ -334,7 +337,7 @@ public class Effects : MonoBehaviour
         {
             card.state = CardState.MAYBE;
             dialogText.text = "The blockade holds strong";
-            card.TakeDamage(1);
+            card.TakeDamage(2);
             card.HandleDefense(-1);
             card.HandleStrength(-1);
             card.effects[iteration][1] -= 1;
@@ -426,5 +429,35 @@ public class Effects : MonoBehaviour
 
         Debug.Log(card.cardName + " => Burn");
         yield return new WaitForSeconds(2);
+	}
+    //17
+    public IEnumerator Confusion(Kard card, TMP_Text dialogText, int iteration)
+	{
+        if (card.effects[iteration][1] == 0)
+        {
+            card.state = CardState.ATTACK;
+            card.RemoveEffect(iteration);
+            dialogText.text = card.cardName + " is out of confussion";
+            yield return new WaitForSeconds(2);
+            yield break;
+        }
+        else
+        {
+            if (Random.value <= 0.33f)
+            {
+                dialogText.text = card.cardName + " hurt itself in confusion";
+                yield return new WaitForSeconds(2);
+                card.state = CardState.MAYBE;
+                card.TakeDamage(Random.Range(1, 3));
+            }
+            else if (Random.value <= 0.33f)
+            {
+                dialogText.text = card.cardName + " forget to attack in confusion";
+                yield return new WaitForSeconds(2);
+                card.state = CardState.MAYBE;
+            }
+            card.effects[iteration][1] -= 1;
+        }
+        Debug.Log(card.cardName + " => Confusion");
 	}
 }

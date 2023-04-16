@@ -217,7 +217,7 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
         }
     }
 
-    public void RemoveEffectsById(int id)
+    public void RemoveEffectById(int id)
     {
         Debug.Log(Time.time + "  " + cardName + " odobera vsetky efekty s ID " + id);
         for (int i = effects.Count - 1; i >= 0; i--)
@@ -226,6 +226,22 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
             if (effectId == id)
             {
                 effects.RemoveAt(i);
+            }
+        }
+    }
+
+    public void RemoveEffectsById(int[] id)
+    {        
+        for (int j = 0; j < id.Length - 1; j++)
+        {
+            for (int i = effects.Count - 1; i >= 0; i--)
+            {
+                int effectId = effects[i][0];
+                if (effectId == id[j])
+                {
+                    Debug.Log(Time.time + "  " + cardName + " odobera vsetky efekty s ID " + id);
+                    effects[i][0] = 0;
+                }
             }
         }
     }

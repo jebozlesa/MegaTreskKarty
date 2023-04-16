@@ -65,7 +65,7 @@ public class FightSystem : MonoBehaviour
     IEnumerator SetupBattle()
     {
 
-        dialogText.text = "lets get ready for rumbbllllll";
+        dialogText.text = "lets get ready for rumble!";
 
         yield return StartCoroutine(VytvorJedinecneKarty(5,hrac,player));
         yield return new WaitForSeconds(0.5f);
@@ -144,7 +144,8 @@ public class FightSystem : MonoBehaviour
             yield return StartCoroutine(effects.ExecuteEffects(player.cardInGame, dialogText, enemy.cardInGame));
             playerLifeBar.SetHP(player.cardInGame.health);
 
-            if (player.cardInGame.state == CardState.ATTACK && player.cardInGame.health > 0 && enemy.cardInGame.health > 0) 
+            if ((player.cardInGame.state == CardState.ATTACK || (player.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(playerAttack))) 
+                && player.cardInGame.health > 0 && enemy.cardInGame.health > 0)  
             {
                 yield return StartCoroutine(attack.ExecuteAttack(player.cardInGame, enemy.cardInGame, playerAttack, dialogText));
                 playerLifeBar.SetHP(player.cardInGame.health);
@@ -157,7 +158,8 @@ public class FightSystem : MonoBehaviour
                 yield return StartCoroutine(effects.ExecuteEffects(enemy.cardInGame, dialogText, player.cardInGame));
                 enemyLifeBar.SetHP(enemy.cardInGame.health);
 
-                if (enemy.cardInGame.state == CardState.ATTACK && player.cardInGame.health > 0 && enemy.cardInGame.health > 0) 
+                if ((enemy.cardInGame.state == CardState.ATTACK || (enemy.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(enemyAttack))) 
+                    && player.cardInGame.health > 0 && enemy.cardInGame.health > 0) 
                 {
                     yield return StartCoroutine(attack.ExecuteAttack(enemy.cardInGame, player.cardInGame, enemyAttack, dialogText));
                     playerLifeBar.SetHP(player.cardInGame.health);
@@ -172,7 +174,8 @@ public class FightSystem : MonoBehaviour
             yield return StartCoroutine(effects.ExecuteEffects(enemy.cardInGame, dialogText, player.cardInGame));
             enemyLifeBar.SetHP(enemy.cardInGame.health);
 
-            if (enemy.cardInGame.state == CardState.ATTACK && player.cardInGame.health > 0 && enemy.cardInGame.health > 0) 
+            if ((enemy.cardInGame.state == CardState.ATTACK || (enemy.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(enemyAttack))) 
+                && player.cardInGame.health > 0 && enemy.cardInGame.health > 0) 
             {
                 yield return StartCoroutine(attack.ExecuteAttack(enemy.cardInGame, player.cardInGame, enemyAttack, dialogText));
                 playerLifeBar.SetHP(player.cardInGame.health);
@@ -185,7 +188,8 @@ public class FightSystem : MonoBehaviour
                 yield return StartCoroutine(effects.ExecuteEffects(player.cardInGame, dialogText, enemy.cardInGame));
                 playerLifeBar.SetHP(player.cardInGame.health);
 
-                if (player.cardInGame.state == CardState.ATTACK && player.cardInGame.health > 0 && enemy.cardInGame.health > 0) 
+                if ((player.cardInGame.state == CardState.ATTACK || (player.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(playerAttack))) 
+                    && player.cardInGame.health > 0 && enemy.cardInGame.health > 0) 
                 {
                     yield return StartCoroutine(attack.ExecuteAttack(player.cardInGame, enemy.cardInGame, playerAttack, dialogText));
                     playerLifeBar.SetHP(player.cardInGame.health);

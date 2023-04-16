@@ -217,6 +217,15 @@ public class AttackDescriptions : MonoBehaviour
             case 63://FireShip
                 count = attacker.knowledge / 2;
                 break;
+            case 64://HandcuffEscape
+                count = attacker.knowledge * 2;
+                break;
+            case 65://Illusion
+                count = attacker.knowledge * 2;
+                break;
+            case 66://CarcanoM91
+                count = 6;
+                break;
             case 101://Yperit
                 count = 3;
                 break;
@@ -450,6 +459,15 @@ public class AttackDescriptions : MonoBehaviour
             case 63:
                 dialogText.text = "Fire Ship chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
+            case 64:
+                dialogText.text = "Handcuff Escape chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 65:
+                dialogText.text = "Illusion chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 66:
+                dialogText.text = "Carcano M91 chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
             case 101:
                 dialogText.text = "Yperit chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
@@ -669,6 +687,15 @@ public class AttackDescriptions : MonoBehaviour
                 break;
             case 63:
                 FireShip(buttonText);
+                break;
+            case 64:
+                HandcuffEscape(buttonText);
+                break;
+            case 65:
+                Illusion(buttonText);
+                break;
+            case 66:
+                CarcanoM91(buttonText);
                 break;
             case 101:
                 Yperit(buttonText);
@@ -1063,6 +1090,24 @@ public class AttackDescriptions : MonoBehaviour
     public void FireShip(TMP_Text buttonText)
 	{
         buttonText.text = "Fire Ship";
+	}
+
+    //64
+    public void HandcuffEscape(TMP_Text buttonText)
+	{
+        buttonText.text = "Handcuff Escape";
+	}
+
+    //65
+    public void Illusion(TMP_Text buttonText)
+	{
+        buttonText.text = "Illusion";
+	}
+
+    //66
+    public void CarcanoM91(TMP_Text buttonText)
+	{
+        buttonText.text = "Carcano M91";
 	}
 
     //101

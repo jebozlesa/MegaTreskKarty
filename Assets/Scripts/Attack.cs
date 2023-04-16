@@ -6,6 +6,7 @@ using TMPro;
 public class Attack : MonoBehaviour
 {
 
+    public List<int> exceptionAttacks = new List<int> { 64 };
     public IEnumerator ExecuteAttack(Kard attacker, Kard receiver, int attackType, TMP_Text dialogText)
     {
         if (attackType == 0) yield break;
@@ -230,6 +231,15 @@ public class Attack : MonoBehaviour
             case 63:
                 yield return StartCoroutine(FireShip(attacker, receiver, dialogText));
                 break;
+            case 64:
+                yield return StartCoroutine(HandcuffEscape(attacker, receiver, dialogText));
+                break;
+            case 65:
+                yield return StartCoroutine(Illusion(attacker, receiver, dialogText));
+                break;
+            case 66:
+                yield return StartCoroutine(CarcanoM91(attacker, receiver, dialogText));
+                break;
             case 101:
                 yield return StartCoroutine(Yperit(attacker, receiver, dialogText));
                 break;
@@ -255,7 +265,7 @@ public class Attack : MonoBehaviour
         dialogText.text = "Puf! punch from " + attacker.cardName;
 		receiver.TakeDamage(((attacker.strength + attacker.attack)/2) - ((receiver.defense + receiver.strength)/2));
         yield return new WaitForSeconds(2);
-        if (Random.value <= 0.3f)
+        if (Random.value <= 0.1f)
         {
             dialogText.text = receiver.cardName + " falls asleep";
             yield return StartCoroutine(receiver.AddEffect(3,Random.Range(1, 3)));//sleep
@@ -573,7 +583,7 @@ public class Attack : MonoBehaviour
         attacker.HandleDefense(2);
         attacker.HandleCharisma(-1);
         attacker.HandleKnowledge(-2);
-        attacker.RemoveEffectsById(3);
+        attacker.RemoveEffectById(3);
         Debug.Log(attacker.cardName+" -> Boost => "+attacker.cardName);
         yield return new WaitForSeconds(2);
 
@@ -1084,6 +1094,47 @@ public class Attack : MonoBehaviour
         }
         Debug.Log(attacker.cardName+" -> Culverin => "+receiver.cardName);
 	}
+    //64
+    public IEnumerator HandcuffEscape(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        int[] idsToRemove = { 3, 8, 9, 12, 16 };
+        attacker.RemoveEffectsById(idsToRemove);
+        dialogText.text = attacker.cardName + " slips outta trouble";
+        yield return new WaitForSeconds(2);
+		if (Random.value <= 0.5f)
+        {
+            yield return StartCoroutine(receiver.AddEffect(17,2));//confusion
+            dialogText.text = receiver.cardName + " is confused";
+            attacker.HandleCharisma(1);
+            yield return new WaitForSeconds(2);
+        }
+
+        Debug.Log(attacker.cardName+" -> HandcuffEscape => "+receiver.cardName);
+	}
+    //65
+    public IEnumerator Illusion(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + "'s illusion confuses the enemy";
+        yield return StartCoroutine(receiver.AddEffect(17,Random.Range(2, 5)));//confusion
+        attacker.HandleCharisma(1);
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName+" -> Illusion => "+receiver.cardName);
+	}
+    //66
+    public IEnumerator CarcanoM91(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        if (Random.value <= ((20 + attacker.attack) / 37f))
+        {
+        dialogText.text = "Bang! " + attacker.cardName + " shoots";
+		receiver.TakeDamage(Random.Range(6, 9));
+        }
+        else
+        {
+            dialogText.text = "Bang! aaaand miss";
+        }
+        Debug.Log(attacker.cardName+" -> CarcanoM91 => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
+	}
     //101
     public IEnumerator Yperit(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -1097,8 +1148,8 @@ public class Attack : MonoBehaviour
             dialogText.text = "A breeze blows";
             attacker.TakeDamage(Random.Range(3, 7));
         }
-        Debug.Log(attacker.cardName+" -> Yperit => "+receiver.cardName);
         yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName+" -> Yperit => "+receiver.cardName);
 	}
 
     //102
@@ -1127,6 +1178,9 @@ public class Attack : MonoBehaviour
         Debug.Log(attacker.cardName+" -> Propaganda => "+receiver.cardName);
         yield return new WaitForSeconds(2);
 	}
+
+
+
 
 
     public int[] DistributeRandomly(int value)
