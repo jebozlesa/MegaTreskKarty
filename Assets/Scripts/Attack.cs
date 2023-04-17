@@ -269,6 +269,7 @@ public class Attack : MonoBehaviour
         {
             dialogText.text = receiver.cardName + " falls asleep";
             yield return StartCoroutine(receiver.AddEffect(3,Random.Range(1, 3)));//sleep
+            yield return new WaitForSeconds(2);
         }
         Debug.Log(attacker.cardName + " -> Punch => " + receiver.cardName);
 	}
