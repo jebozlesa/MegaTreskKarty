@@ -99,7 +99,7 @@ public class CardDatabase : MonoBehaviour
 
         
 
-        cardList.Add(new Card(0,"",1,Resources.Load<Sprite>(""),color_black,2,10));
+     /*   cardList.Add(new Card(0,"",1,Resources.Load<Sprite>(""),color_black,2,10));
         cardList.Add(new Card(1,"Adolf Hilter",1,Resources.Load<Sprite>("hitler"),color_black,2,10));
         cardList.Add(new Card(2,"Jesus of Nazareth",1,Resources.Load<Sprite>("jezis"),card2,2,10));
         cardList.Add(new Card(3,"Henry Ford",1,Resources.Load<Sprite>("ford"),card3,2,10));
@@ -198,7 +198,7 @@ public class CardDatabase : MonoBehaviour
         cardList.Add(new Card(96,"Joseph Grimaldi",1,Resources.Load<Sprite>("grimaldi"),card96,2,10));
         cardList.Add(new Card(97,"Nzinga Mbande",1,Resources.Load<Sprite>("nzinga"),card97,2,10));
         cardList.Add(new Card(98,"WIld Bill Hickok",1,Resources.Load<Sprite>("wildbill"),color_black,2,10));
-        cardList.Add(new Card(99,"Ibn al-Haytham",1,Resources.Load<Sprite>("ibn"),card99,2,10));
+        cardList.Add(new Card(99,"Ibn al-Haytham",1,Resources.Load<Sprite>("ibn"),card99,2,10));*/
 
 
 

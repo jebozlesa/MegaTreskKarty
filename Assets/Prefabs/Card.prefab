@@ -402,22 +402,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   displayCard:
-  - displayCard: []
-    displayID: 1
-    id: 0
-    cardName: 
-    level: 0
-    spriteImage: {fileID: 0}
-    background: {fileID: 0}
-    damage: 0
-    maxHP: 0
-    currentHP: 0
-    nameText: {fileID: 0}
-    levelText: {fileID: 0}
-    artImage: {fileID: 0}
-    color:
-      serializedVersion: 2
-      rgba: 0
+  - {fileID: 0}
   displayID: 55
   id: 1
   cardName: 
@@ -733,7 +718,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7341383018226265499, guid: 97393fafa53b88241afb245b42969407, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7341383018226265500, guid: 97393fafa53b88241afb245b42969407, type: 3}
       propertyPath: m_Pivot.x

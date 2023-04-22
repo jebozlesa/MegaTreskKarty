@@ -9,6 +9,7 @@ public class Album : MonoBehaviour
     private List<string> kartyData;
     public GameObject kartaPrefab;
     public GameObject album;
+    public GameObject zoomedCardHolder;
     public AttackDescriptions attackDescriptions;
     public GameObject content;
 
@@ -42,28 +43,30 @@ public class Album : MonoBehaviour
 
             GameObject novaKarta = Instantiate(kartaPrefab, transform);
 
-            novaKarta.GetComponent<Kard>().cardName = kartaHodnoty[0];
-            novaKarta.GetComponent<Kard>().health = int.Parse(kartaHodnoty[1]);
-            novaKarta.GetComponent<Kard>().strength = int.Parse(kartaHodnoty[2]);
-            novaKarta.GetComponent<Kard>().speed = int.Parse(kartaHodnoty[3]);
-            novaKarta.GetComponent<Kard>().attack = int.Parse(kartaHodnoty[4]);
-            novaKarta.GetComponent<Kard>().defense = int.Parse(kartaHodnoty[5]);
-            novaKarta.GetComponent<Kard>().knowledge = int.Parse(kartaHodnoty[6]);
-            novaKarta.GetComponent<Kard>().charisma = int.Parse(kartaHodnoty[7]);
-            novaKarta.GetComponent<Kard>().image = kartaHodnoty[8];
-            novaKarta.GetComponent<Kard>().color = cardColor;
-            novaKarta.GetComponent<Kard>().level = int.Parse(kartaHodnoty[10]);
-            novaKarta.GetComponent<Kard>().attack1 = int.Parse(kartaHodnoty[11]);
-            novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[11]));
-            novaKarta.GetComponent<Kard>().attack2 = int.Parse(kartaHodnoty[12]);
-            novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[12]));
-            novaKarta.GetComponent<Kard>().attack3 = int.Parse(kartaHodnoty[13]);
-            novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[13]));
-            novaKarta.GetComponent<Kard>().attack4 = int.Parse(kartaHodnoty[14]);
-            novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[14]));
+            novaKarta.GetComponent<Card>().cardName = kartaHodnoty[0];
+            novaKarta.GetComponent<Card>().health = int.Parse(kartaHodnoty[1]);
+            novaKarta.GetComponent<Card>().strength = int.Parse(kartaHodnoty[2]);
+            novaKarta.GetComponent<Card>().speed = int.Parse(kartaHodnoty[3]);
+            novaKarta.GetComponent<Card>().attack = int.Parse(kartaHodnoty[4]);
+            novaKarta.GetComponent<Card>().defense = int.Parse(kartaHodnoty[5]);
+            novaKarta.GetComponent<Card>().knowledge = int.Parse(kartaHodnoty[6]);
+            novaKarta.GetComponent<Card>().charisma = int.Parse(kartaHodnoty[7]);
+            novaKarta.GetComponent<Card>().image = kartaHodnoty[8];
+            novaKarta.GetComponent<Card>().color = cardColor;
+            novaKarta.GetComponent<Card>().level = int.Parse(kartaHodnoty[10]);
+            novaKarta.GetComponent<Card>().attack1 = int.Parse(kartaHodnoty[11]);
+           // novaKarta.GetComponent<Card>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[11]));
+            novaKarta.GetComponent<Card>().attack2 = int.Parse(kartaHodnoty[12]);
+           // novaKarta.GetComponent<Card>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[12]));
+            novaKarta.GetComponent<Card>().attack3 = int.Parse(kartaHodnoty[13]);
+           // novaKarta.GetComponent<Card>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[13]));
+            novaKarta.GetComponent<Card>().attack4 = int.Parse(kartaHodnoty[14]);
+          //  novaKarta.GetComponent<Card>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[14]));
 
-            novaKarta.GetComponent<Kard>().transform.SetParent(content.transform); 
-            novaKarta.GetComponent<Kard>().transform.localScale = Vector3.one;
+            novaKarta.GetComponent<Card>().zoomedCardHolder = zoomedCardHolder;
+
+            novaKarta.GetComponent<Card>().transform.SetParent(content.transform); 
+            novaKarta.GetComponent<Card>().transform.localScale = Vector3.one;
 
             yield return new WaitForSeconds(0.05f);
         }
