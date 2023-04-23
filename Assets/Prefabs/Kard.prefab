@@ -458,6 +458,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f191d87f18d84ae45893ebe1fe07c087, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cardId: 0
   cardName: 
   health: 0
   strength: 0
@@ -471,10 +472,16 @@ MonoBehaviour:
     serializedVersion: 2
     rgba: 0
   level: 0
+  attacks: 0000000000000000000000000000000000000000
+  countAttacks: 0000000000000000000000000000000000000000
   attack1: 0
   attack2: 0
   attack3: 0
   attack4: 0
+  countAttack1: 0
+  countAttack2: 0
+  countAttack3: 0
+  countAttack4: 0
   nameText: {fileID: 8916743873699524373}
   levelText: {fileID: 2842419827229571689}
   cardImage: {fileID: 7734858601719308554}
@@ -482,9 +489,11 @@ MonoBehaviour:
   background: {fileID: 7734858601904223144}
   cardPrefab: {fileID: 7734858602410694466}
   board: {fileID: 0}
-  canAttack: 1
+  state: 0
   notsureGO: {fileID: 5958543020059574058, guid: 46a7cd63ac0893b4d9deaaa1cd5fa3ad, type: 3}
   notsureText: {fileID: 5958543020059574068, guid: 46a7cd63ac0893b4d9deaaa1cd5fa3ad, type: 3}
+  experience: 0
+  playerCardDatabase: {fileID: 4900000, guid: f3d0b3a1afe75654895bb25c7314fed0, type: 3}
 --- !u!1 &8507923506733043817
 GameObject:
   m_ObjectHideFlags: 0

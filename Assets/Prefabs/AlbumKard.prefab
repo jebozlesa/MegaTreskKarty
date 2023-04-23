@@ -282,7 +282,7 @@ GameObject:
   - component: {fileID: 8832127093103201522}
   - component: {fileID: 8196031965723377961}
   m_Layer: 5
-  m_Name: NameText
+  m_Name: StoryText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -568,7 +568,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1477193695115225891
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1701,6 +1701,7 @@ MonoBehaviour:
     serializedVersion: 2
     rgba: 0
   level: 0
+  story: 
   attacks: 0000000000000000000000000000000000000000
   countAttacks: 0000000000000000000000000000000000000000
   attack1: 0
@@ -1732,6 +1733,7 @@ MonoBehaviour:
   defText: {fileID: 1943703530271086469}
   knoText: {fileID: 7409525991599208888}
   chaText: {fileID: 7479170591145795054}
+  storyText: {fileID: 8196031965723377961}
   notsureGO: {fileID: 0}
   notsureText: {fileID: 0}
 --- !u!114 &7714274170560113377

@@ -7,6 +7,8 @@ public class Album : MonoBehaviour
 
     public TextAsset cardDatabase;
     private List<string> kartyData;
+    public TextAsset cardStories;
+    private List<string> kartyStories;
     public GameObject kartaPrefab;
     public GameObject album;
     public GameObject zoomedCardHolder;
@@ -19,13 +21,29 @@ public class Album : MonoBehaviour
     void Start()
     {
         kartyData = new List<string>(cardDatabase.text.TrimEnd().Split('\n'));
+        kartyStories = new List<string>(cardStories.text.TrimEnd().Split('$'));
         StartCoroutine(VytvorKarty());
+
+        
     }
 
     // Update is called once per frame
-    void Update()
+    string LoadStory(int cardID)
     {
-        
+        string cardStory = "";
+        for (int j = 1; j < kartyStories.Count; j++)
+        {
+            string[] storyParts = kartyStories[j].Split('#');
+            Debug.Log("KRISTABNOHA   '" + storyParts[1] + "'");
+            int storyCardID = int.Parse(storyParts[0]);
+
+            if (cardID == storyCardID)
+            {
+                cardStory = storyParts[2];
+                break;
+            }
+        }
+        return cardStory;
     }
 
     private IEnumerator VytvorKarty()
@@ -62,6 +80,8 @@ public class Album : MonoBehaviour
            // novaKarta.GetComponent<Card>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[14]));
             novaKarta.GetComponent<Card>().attack4 = int.Parse(kartaHodnoty[15]);
           //  novaKarta.GetComponent<Card>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[15]));
+
+            novaKarta.GetComponent<Card>().story = LoadStory(int.Parse(kartaHodnoty[0]));
 
             novaKarta.GetComponent<Card>().zoomedCardHolder = zoomedCardHolder;
 

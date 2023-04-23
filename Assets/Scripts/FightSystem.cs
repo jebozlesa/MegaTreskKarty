@@ -40,6 +40,8 @@ public class FightSystem : MonoBehaviour
 
     public TextAsset cardDatabase;
     private List<string> kartyData;
+    public TextAsset playerCardDatabase;
+    private List<string> kartyHrac;
 
     public Attack attack;
     public AttackDescriptions attackDescriptions;
@@ -52,6 +54,7 @@ public class FightSystem : MonoBehaviour
     void Start()
     {
         kartyData = new List<string>(cardDatabase.text.TrimEnd().Split('\n'));
+        kartyHrac = new List<string>(playerCardDatabase.text.TrimEnd().Split('\n'));
 
         state = FightState.START;
         StartCoroutine(SetupBattle());
@@ -199,6 +202,8 @@ public class FightSystem : MonoBehaviour
             
         }
 
+        player.cardInGame.UpdateStat(16,100);//exp
+
         dialogText.color = Color.black;
 
         if (player.cardInGame.health <= 0)
@@ -217,7 +222,9 @@ public class FightSystem : MonoBehaviour
         
 		if (enemy.cardInGame.health <= 0)
 			{
-                player.RemoveCardFromBoard(enemy.cardInGame);
+                player.cardInGame.AddExperience(enemy.cardInGame.level);//exp
+
+                enemy.RemoveCardFromBoard(enemy.cardInGame);//tu som robil daco, vymazat ak nic zle
                 yield return new WaitForSeconds(2.5f);
                 if (enemy.hand.Count == 0)
                 {
@@ -238,7 +245,7 @@ public class FightSystem : MonoBehaviour
     {
     
         List<int> usedIndexes = new List<int>(); // List to keep track of used indexes
-        int maxIndex = kartyData.Count; // Maximum index value to generate random numbers within range
+        int maxIndex = kartyHrac.Count; // Maximum index value to generate random numbers within range
 
         for (int i = 0; i < pocet; i++)
         {
@@ -250,14 +257,14 @@ public class FightSystem : MonoBehaviour
 
             usedIndexes.Add(index); // Add the index to the list of used indexes
 
-            // Rest of your code to get the card data using the unique index...
-            string kartaString = kartyData[index];
+            string kartaString = kartyHrac[index];
             string[] kartaHodnoty = kartaString.Split(',');
 
             string[] farbaKarty = kartaHodnoty[10].Split(';');
             Color32 cardColor = new Color32(byte.Parse(farbaKarty[0]), byte.Parse(farbaKarty[1]), byte.Parse(farbaKarty[2]), 255);
 
             GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
+            novaKarta.GetComponent<Kard>().cardId = int.Parse(kartaHodnoty[0]);
             novaKarta.GetComponent<Kard>().cardName = kartaHodnoty[1];
             novaKarta.GetComponent<Kard>().health = int.Parse(kartaHodnoty[2]);
             novaKarta.GetComponent<Kard>().strength = int.Parse(kartaHodnoty[3]);
@@ -277,6 +284,7 @@ public class FightSystem : MonoBehaviour
             novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[14]));
             novaKarta.GetComponent<Kard>().attack4 = int.Parse(kartaHodnoty[15]);
             novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[15]));
+            novaKarta.GetComponent<Kard>().experience = int.Parse(kartaHodnoty[16]);
 
             player.AddCardToHand(novaKarta.GetComponent<Kard>());
 

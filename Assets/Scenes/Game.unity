@@ -1252,6 +1252,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8cd0316fd64e26b4f85f285b4fa0dd7b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  exceptionAttacks: 40000000
 --- !u!1001 &1052798398
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1682,6 +1683,7 @@ MonoBehaviour:
   hrac: {fileID: 1437369625}
   nepriatel: {fileID: 1603169474}
   cardDatabase: {fileID: 4900000, guid: 4288f3fb0e3c4e94cb530538ae047559, type: 3}
+  playerCardDatabase: {fileID: 4900000, guid: f3d0b3a1afe75654895bb25c7314fed0, type: 3}
   attack: {fileID: 979303243}
   attackDescriptions: {fileID: 1619011059}
   effects: {fileID: 1902416957}
@@ -2649,7 +2651,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 4976f7b0ca60b93458c7e6091249f1a5, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 236549d13d954704ba0d67b690c0ee3f, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

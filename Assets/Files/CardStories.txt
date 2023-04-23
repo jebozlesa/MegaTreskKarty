@@ -1,0 +1,94 @@
+$1
+#Hitler
+#"...in the early 1930s, at a rally in a small German town, a man from the crowd threw a tomato at Adolf Hitler. Instead of losing his temper, Hitler calmly picked up the tomato and said, "This is a symbol of the rotting system we will replace with a stronger, more prosperous Germany." His response turned a potentially embarrassing situation into a powerful message, further solidifying his influence on the German people.
+Within a few years, Hitler would become the Chancellor of Germany, leading the nation into the dark and tragic events of World War II and the Holocaust..."
+$2
+#Jezis-OK
+#"...in the year 30 AD, in the small village of Cana in present-day Israel, a wedding took place to which Jesus Christ and his disciples were invited. During the celebrations, the guests began to worry that there was a serious shortage of wine in their supplies.
+Understanding their concerns and not wanting to spoil the festive atmosphere, Jesus decided to help. He approached the containers filled with water and prayed for their transformation. When the guests tasted the water, they found that it had miraculously turned into excellent wine, and the wedding feast could continue..."
+$3
+#Ford-OK
+#"...One sunny afternoon in 1908, in a bustling workshop in Detroit, Henry Ford was on the verge of revolutionizing the automotive industry. With his dedicated team of engineers and workers, they were putting the final touches on the first Model T, an affordable car that would change the world.
+As the workshop buzzed with excitement and anticipation, Ford oversaw the assembly line, ensuring that each part was meticulously crafted and installed. The moment the engine roared to life for the first time, the team knew they had achieved something extraordinary..."
+$4
+#Curie-OK
+#"...One stormy night in 1898, in a small, dimly lit laboratory in Paris, Marie Curie was on the brink of a groundbreaking discovery. Amidst the sound of thunder and the flickering candlelight, she carefully extracted a mysterious substance from a uranium ore. Racing against time, she meticulously analyzed the samples, knowing that her work could change the course of science. As she finally isolated the elements, she discovered something extraordinary: two new radioactive elements, polonium and radium.
+This thrilling breakthrough would redefine the world's understanding of radioactivity, making her a legend in the scientific community..."
+$5
+#Bruce Lee
+#"...During a heated martial arts tournament in the late 1960s, Bruce Lee, was about to demonstrate his extraordinary skills.
+His lightning-fast reflexes and powerful strikes overwhelmed his opponents one by one. His movements were fluid and precise, each blow landing with devastating impact.
+In the climactic final match, Bruce Lee faced his toughest opponent yet. Undeterred, he drew upon his inner strength and focus, delivering a series of rapid-fire blows that left his adversary reeling. With a final, resounding strike, Bruce Lee emerged victorious, solidifying his status as a martial arts legend..."
+$6
+#Bob Marley
+#"...in the 1970s, at an unforgettable concert, Bob Marley's powerful performance captivated the audience. As his soulful voice and hypnotic rhythms filled the air, the crowd became united, transcending boundaries and coming together as one.
+During the climactic moment, Marley performed his iconic anthem, "One Love." The audience passionately sang along, creating an electric atmosphere. With every verse, his message of peace, unity, and love left an indelible mark on all present, forever imprinting the memory of that remarkable event..."
+$7
+#Lincoln
+#"...In the early 1830s, during the Black Hawk War, a young Abraham Lincoln joined a volunteer militia. While he had no military experience, Lincoln's natural leadership abilities quickly became apparent.
+As they patrolled the frontier, they suddenly encountered a group of Native American warriors. The atmosphere was charged with tension and fear, as the possibility of a violent confrontation loomed.
+With the risk of violence escalating, Lincoln courageously stepped forward. Using his diplomacy skills and calm demeanor, he defused the situation, preventing bloodshed..."
+$8
+#Dracula
+#"...In the 1460s, during a fierce battle in the heart of Wallachia, Vlad Dracula, led his troops against the invading Ottoman Empire. Vlad was determined to protect his homeland at all costs.
+As the two armies clashed, the air was filled with the sounds of clashing steel, cries of pain, and the thundering hooves of warhorses. Vlad, mounted on his powerful steed, led a daring charge straight into the heart of the enemy's forces. His ferocity and relentless determination struck fear into the hearts of his adversaries.
+The tide of the battle turned as Vlad's forces began to push back the invaders..."
+$9
+#Auguste Escoffier
+#"...In the early 1900s, at London's Savoy Hotel, Auguste Escoffier faced a challenge: create an exceptional dish for a visiting dignitary in mere hours. Under Escoffier's guidance, the kitchen staff crafted a culinary masterpiece. The exquisite dish not only met but exceeded expectations, further cementing Escoffier's reputation as a pioneer of haute cuisine..."
+$10
+#Marilyn
+#"...In 1961, amidst personal struggles, Marilyn Monroe received a threatening anonymous letter. Filled with tension and uncertainty, she bravely faced the situation, contacting authorities and taking precautions to ensure her safety. Though the letter's author was never found, Marilyn's resilience showcased her strength to overcome adversity..."
+$11
+#Saladin-OK
+#"...In the year 1187, during the Battle of Hattin, Saladin led his Muslim forces against the Crusader army. The scorching July sun beat down on the battlefield as Saladin executed a cunning plan to cut off the Crusaders' access to water sources.
+Weakened and desperate, the Crusader forces faced Saladin's relentless onslaught. As the tide of battle turned, Saladin captured the enemy's True Cross, a symbol of their faith. His decisive victory at Hattin paved the way for the recapture of Jerusalem, forever changing the course of history..."
+$12
+#Bull-OK
+#"...In June 1876, during the Battle of the Little Bighorn, Sitting Bull and his fellow Lakota warriors faced General George Armstrong Custer's U.S. Army 7th Cavalry. The air was thick with gunfire, war cries, and the pounding of hooves. Outnumbered and outgunned, the Native American forces relied on their knowledge of the land and exceptional horsemanship to outmaneuver the enemy.
+Sitting Bull's strategic prowess led to the surrounding of the cavalry, cutting off escape routes and forcing them to fight to the last man..."
+$13
+#Jezis
+#"...in the year 30 AD, in the small village of Cana in present-day Israel, a wedding took place to which Jesus Christ and his disciples were invited. During the celebrations, the guests began to worry that there was a serious shortage of wine in their supplies.
+Understanding their concerns and not wanting to spoil the festive atmosphere, Jesus decided to help. He approached the containers filled with water and prayed for their transformation. When the guests tasted the water, they found that it had miraculously turned into excellent wine, and the wedding feast could continue..."
+$14
+#Hitler
+#"...in the early 1930s, in a small town in Germany, Adolf Hitler was gaining popularity with his powerful speeches and promises of a brighter future for the German people. As the leader of the National Socialist German Workers' Party (NSDAP), he was determined to rebuild the country's economy and military power after the humiliating defeat in World War I.
+One day, during a rally, a man in the crowd threw a tomato at Hitler, causing a commotion among the spectators. Instead of losing his temper, Hitler calmly picked up the tomato and said, "This is a symbol of the rotting system we will replace with a stronger, more prosperous Germany."
+Within a few years, Hitler would become the Chancellor of Germany, leading the nation into the dark and tragic events of World War II and the Holocaust."
+$15
+#Jezis
+#"...in the year 30 AD, in the small village of Cana in present-day Israel, a wedding took place to which Jesus Christ and his disciples were invited. During the celebrations, the guests began to worry that there was a serious shortage of wine in their supplies.
+Understanding their concerns and not wanting to spoil the festive atmosphere, Jesus decided to help. He approached the containers filled with water and prayed for their transformation. When the guests tasted the water, they found that it had miraculously turned into excellent wine, and the wedding feast could continue..."
+$16
+#Hitler
+#"...in the early 1930s, in a small town in Germany, Adolf Hitler was gaining popularity with his powerful speeches and promises of a brighter future for the German people. As the leader of the National Socialist German Workers' Party (NSDAP), he was determined to rebuild the country's economy and military power after the humiliating defeat in World War I.
+One day, during a rally, a man in the crowd threw a tomato at Hitler, causing a commotion among the spectators. Instead of losing his temper, Hitler calmly picked up the tomato and said, "This is a symbol of the rotting system we will replace with a stronger, more prosperous Germany."
+Within a few years, Hitler would become the Chancellor of Germany, leading the nation into the dark and tragic events of World War II and the Holocaust."
+$17
+#Jezis
+#"...in the year 30 AD, in the small village of Cana in present-day Israel, a wedding took place to which Jesus Christ and his disciples were invited. During the celebrations, the guests began to worry that there was a serious shortage of wine in their supplies.
+Understanding their concerns and not wanting to spoil the festive atmosphere, Jesus decided to help. He approached the containers filled with water and prayed for their transformation. When the guests tasted the water, they found that it had miraculously turned into excellent wine, and the wedding feast could continue..."
+$18
+#Hitler
+#"...in the early 1930s, in a small town in Germany, Adolf Hitler was gaining popularity with his powerful speeches and promises of a brighter future for the German people. As the leader of the National Socialist German Workers' Party (NSDAP), he was determined to rebuild the country's economy and military power after the humiliating defeat in World War I.
+One day, during a rally, a man in the crowd threw a tomato at Hitler, causing a commotion among the spectators. Instead of losing his temper, Hitler calmly picked up the tomato and said, "This is a symbol of the rotting system we will replace with a stronger, more prosperous Germany."
+Within a few years, Hitler would become the Chancellor of Germany, leading the nation into the dark and tragic events of World War II and the Holocaust."
+$19
+#Jezis
+#"...in the year 30 AD, in the small village of Cana in present-day Israel, a wedding took place to which Jesus Christ and his disciples were invited. During the celebrations, the guests began to worry that there was a serious shortage of wine in their supplies.
+Understanding their concerns and not wanting to spoil the festive atmosphere, Jesus decided to help. He approached the containers filled with water and prayed for their transformation. When the guests tasted the water, they found that it had miraculously turned into excellent wine, and the wedding feast could continue..."
+$20
+#Hitler
+#"...in the early 1930s, in a small town in Germany, Adolf Hitler was gaining popularity with his powerful speeches and promises of a brighter future for the German people. As the leader of the National Socialist German Workers' Party (NSDAP), he was determined to rebuild the country's economy and military power after the humiliating defeat in World War I.
+One day, during a rally, a man in the crowd threw a tomato at Hitler, causing a commotion among the spectators. Instead of losing his temper, Hitler calmly picked up the tomato and said, "This is a symbol of the rotting system we will replace with a stronger, more prosperous Germany."
+Within a few years, Hitler would become the Chancellor of Germany, leading the nation into the dark and tragic events of World War II and the Holocaust."
+$21
+#Jezis
+#"...in the year 30 AD, in the small village of Cana in present-day Israel, a wedding took place to which Jesus Christ and his disciples were invited. During the celebrations, the guests began to worry that there was a serious shortage of wine in their supplies.
+Understanding their concerns and not wanting to spoil the festive atmosphere, Jesus decided to help. He approached the containers filled with water and prayed for their transformation. When the guests tasted the water, they found that it had miraculously turned into excellent wine, and the wedding feast could continue..."
+$22
+#Hitler
+#"...in the early 1930s, in a small town in Germany, Adolf Hitler was gaining popularity with his powerful speeches and promises of a brighter future for the German people. As the leader of the National Socialist German Workers' Party (NSDAP), he was determined to rebuild the country's economy and military power after the humiliating defeat in World War I.
+One day, during a rally, a man in the crowd threw a tomato at Hitler, causing a commotion among the spectators. Instead of losing his temper, Hitler calmly picked up the tomato and said, "This is a symbol of the rotting system we will replace with a stronger, more prosperous Germany."
+Within a few years, Hitler would become the Chancellor of Germany, leading the nation into the dark and tragic events of World War II and the Holocaust."

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,6 +10,7 @@ public enum CardState {ATTACK,MAYBE,STAY}
 
 public class Kard : MonoBehaviour//, IPointerClickHandler 
 {
+    public int cardId;
     public string cardName;
     public int health;
     public int strength;
@@ -59,20 +61,92 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
     Color32 color_green = new Color32(0, 255, 0, 255);
     Color32 color_red = new Color32(255, 0, 0, 255);
 
+    public int experience;
+    public TextAsset playerCardDatabase;
+    private List<string> kartyHrac;
+
     private void Start()
     {
         nameText.text = cardName;
         levelText.text = "lvl " + level;
-
         maxHP = health; 
-
         cardImage.sprite = Resources.Load<Sprite>(image);
-
         background.GetComponent<Image>().color = color;
         nameText.color = color;
         levelText.color = color;
         
         InitializeAttackCount();
+
+        LoadPlayerCardData();
+    }
+
+    private void LoadPlayerCardData()
+    {
+        kartyHrac = new List<string>(playerCardDatabase.text.TrimEnd().Split('\n'));
+    }
+
+    private string UpdateCardExperience(int increase)
+    {
+        LoadPlayerCardData(); // Načítajte najnovšiu verziu súboru
+
+        // Find the card and update its experience value
+        for (int i = 0; i < kartyHrac.Count; i++)
+        {
+            string[] kartaHodnoty = kartyHrac[i].Split(',');
+            if (int.Parse(kartaHodnoty[0]) == cardId)
+            {
+                int currentExperience = int.Parse(kartaHodnoty[16]);
+                int newExperience = currentExperience + increase;
+                kartaHodnoty[16] = newExperience.ToString();
+                kartyHrac[i] = string.Join(",", kartaHodnoty);
+                break;
+            }
+        }
+
+        // Combine the updated card data back into a single string
+        return string.Join("\n", kartyHrac);
+    }
+
+
+    public void AddExperience(int newExperience)
+    {
+        string updatedCardData = UpdateCardExperience(newExperience);
+
+        // Save the updated card data back to the .txt file
+        string path = Application.dataPath + "/Files/PlayerCards.txt";
+        File.WriteAllText(path, updatedCardData);
+    }
+
+    private string UpdateCardStat(int index, int increase)
+    {
+        LoadPlayerCardData(); // Načítajte najnovšiu verziu súboru
+
+        // Find the card and update its experience value
+        for (int i = 0; i < kartyHrac.Count; i++)
+        {
+            string[] kartaHodnoty = kartyHrac[i].Split(',');
+            if (int.Parse(kartaHodnoty[0]) == cardId)
+            {
+                int currentExperience = int.Parse(kartaHodnoty[index]);
+                int newExperience = currentExperience + increase;
+                kartaHodnoty[index] = newExperience.ToString();
+                kartyHrac[i] = string.Join(",", kartaHodnoty);
+                break;
+            }
+        }
+
+        // Combine the updated card data back into a single string
+        return string.Join("\n", kartyHrac);
+    }
+
+
+    public void UpdateStat(int index,int increase)
+    {
+        string updatedCardData = UpdateCardStat(index, increase);
+
+        // Save the updated card data back to the .txt file
+        string path = Application.dataPath + "/Files/PlayerCards.txt";
+        File.WriteAllText(path, updatedCardData);
     }
 
     private void InitializeAttackCount()

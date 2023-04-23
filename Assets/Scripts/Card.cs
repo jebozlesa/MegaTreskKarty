@@ -22,6 +22,8 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
 
     int maxHP;
 
+    public string story;
+
     public Dictionary<int, int> attackCount;
 
     public int[] attacks = new int[5];
@@ -80,6 +82,8 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
     public TMP_Text defText;
     public TMP_Text knoText;
     public TMP_Text chaText;
+    
+    public TMP_Text storyText;
 
     public GameObject notsureGO;//tie kokotiny co vyskakuju ked dostane damage
     public TMP_Text notsureText;
@@ -107,10 +111,10 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
         nameText.color = color;
         levelText.color = color;
 
-        LoadAttributes();
+        LoadDetails();
     }
 
-    public void LoadAttributes()
+    public void LoadDetails()
     {
         nameTextAttr.text = cardName;
         expText.text = "Exp: 1000/450000";
@@ -122,6 +126,8 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
         knoText.text = "Knowledge: " + knowledge;
         chaText.text = "Charisma: " + charisma;
 
+        storyText.text = story;
+
         nameTextAttr.color = color;
         expText.color = color;
         hpText.color = color;
@@ -131,6 +137,9 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
         defText.color = color;
         knoText.color = color;
         chaText.color = color;
+
+        storyText.color = color;
+
     }
 
     public void OnBeginDrag(PointerEventData eventData)
