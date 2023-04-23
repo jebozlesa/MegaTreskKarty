@@ -41,6 +41,8 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
     public TMP_Text levelText;
 
     public Image cardImage;
+    public Image cardImageAttr;
+    public Image cardImageDesc;
     public Sprite cardSprite;
 
     public Image background;
@@ -60,8 +62,6 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
     private Vector2 pointerUpPosition;
     private float swipeDistanceThreshold = 50f;
 
-   // private CardInputBlocker cardInputBlocker;
-
     private ScrollRect parentScrollRect;
     private bool isDragging;
     private bool dragInProgress;
@@ -70,6 +70,16 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
     public GameObject frontSide;
     public GameObject backSideAttributes;
     public GameObject backSideDescription;
+
+    public TMP_Text nameTextAttr;
+    public TMP_Text expText;
+    public TMP_Text hpText;
+    public TMP_Text strText;
+    public TMP_Text speText;
+    public TMP_Text attText;
+    public TMP_Text defText;
+    public TMP_Text knoText;
+    public TMP_Text chaText;
 
     public GameObject notsureGO;//tie kokotiny co vyskakuju ked dostane damage
     public TMP_Text notsureText;
@@ -90,10 +100,37 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
         maxHP = health; 
 
         cardImage.sprite = Resources.Load<Sprite>(image);
+        cardImageAttr.sprite = Resources.Load<Sprite>(image + "_back");
+        cardImageDesc.sprite = Resources.Load<Sprite>(image + "_back");
 
         background.GetComponent<Image>().color = color;
         nameText.color = color;
         levelText.color = color;
+
+        LoadAttributes();
+    }
+
+    public void LoadAttributes()
+    {
+        nameTextAttr.text = cardName;
+        expText.text = "Exp: 1000/450000";
+        hpText.text = "Health: " + health;
+        strText.text = "Strength: " + strength;
+        speText.text = "Speed: " + speed;
+        attText.text = "Attack: " + attack;
+        defText.text = "Defense: " + defense;
+        knoText.text = "Knowledge: " + knowledge;
+        chaText.text = "Charisma: " + charisma;
+
+        nameTextAttr.color = color;
+        expText.color = color;
+        hpText.color = color;
+        strText.color = color;
+        speText.color = color;
+        attText.color = color;
+        defText.color = color;
+        knoText.color = color;
+        chaText.color = color;
     }
 
     public void OnBeginDrag(PointerEventData eventData)

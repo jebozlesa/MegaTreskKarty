@@ -145,10 +145,10 @@ Library: lib_burst_generated
 --root-assembly=C:\Users\mSkuci\MegaTreskKarty\Temp\StagingArea\Data\Managed\Unity.TextMeshPro.dll
 --root-assembly=C:\Users\mSkuci\MegaTreskKarty\Temp\StagingArea\Data\Managed\UnityEngine.Purchasing.Stores.dll
 --root-assembly=C:\Users\mSkuci\MegaTreskKarty\Temp\StagingArea\Data\Managed\Unity.Timeline.dll
+--root-assembly=C:\Users\mSkuci\MegaTreskKarty\Temp\StagingArea\Data\Managed\Assembly-CSharp.dll
 --root-assembly=C:\Users\mSkuci\MegaTreskKarty\Temp\StagingArea\Data\Managed\UnityEngine.Purchasing.Security.dll
 --root-assembly=C:\Users\mSkuci\MegaTreskKarty\Temp\StagingArea\Data\Managed\Unity.Notifications.Android.dll
 --root-assembly=C:\Users\mSkuci\MegaTreskKarty\Temp\StagingArea\Data\Managed\UnityEngine.Purchasing.dll
---root-assembly=C:\Users\mSkuci\MegaTreskKarty\Temp\StagingArea\Data\Managed\Assembly-CSharp.dll
 --root-assembly=C:\Users\mSkuci\MegaTreskKarty\Temp\StagingArea\Data\Managed\Unity.Services.Core.Environments.dll
 --root-assembly=C:\Users\mSkuci\MegaTreskKarty\Temp\StagingArea\Data\Managed\Unity.Services.Core.Internal.dll
 --root-assembly=C:\Users\mSkuci\MegaTreskKarty\Temp\StagingArea\Data\Managed\Unity.Services.Core.Analytics.dll
