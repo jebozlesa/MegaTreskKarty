@@ -610,7 +610,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f423a55f24b98c34ea3e78b5e4657507, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cardDatabase: {fileID: 4900000, guid: 4288f3fb0e3c4e94cb530538ae047559, type: 3}
+  cardDatabase: {fileID: 4900000, guid: f3d0b3a1afe75654895bb25c7314fed0, type: 3}
   cardStories: {fileID: 4900000, guid: 4d6b386563b80f94a865549aa925efce, type: 3}
   kartaPrefab: {fileID: 8019556691665993109, guid: 84a595f12eb3c4443a86890161eb6533, type: 3}
   album: {fileID: 87397809}

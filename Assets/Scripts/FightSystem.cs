@@ -79,15 +79,12 @@ public class FightSystem : MonoBehaviour
         player.PlayCard(player.hand[0],playerBoard);
         playerLifeBar.SetBar(player.cardInGame);
 
-        dialogText.text = "Kill de bastard ";
-        yield return new WaitForSeconds(2f);
-
         enemy.PlayCard(enemy.hand[0],enemyBoard);
         enemyLifeBar.SetBar(enemy.cardInGame);
 
         dialogText.text = "Ohhh s@!t " + enemy.cardInGame.cardName + " !!!";
 
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(1f);
         Turn();
     }
 
@@ -201,8 +198,6 @@ public class FightSystem : MonoBehaviour
             }
             
         }
-
-        player.cardInGame.UpdateStat(16,100);//exp
 
         dialogText.color = Color.black;
 

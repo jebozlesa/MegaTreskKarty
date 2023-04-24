@@ -60,6 +60,9 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
 
     Color32 color_green = new Color32(0, 255, 0, 255);
     Color32 color_red = new Color32(255, 0, 0, 255);
+    Color32 color_blue = new Color32(0, 0, 255, 255);
+    Color32 color_purple = new Color32(139, 17, 204, 255);
+    Color32 color_yellow = new Color32(255, 181, 24, 255);
 
     public int experience;
     public TextAsset playerCardDatabase;
@@ -85,8 +88,23 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
         kartyHrac = new List<string>(playerCardDatabase.text.TrimEnd().Split('\n'));
     }
 
-    private string UpdateCardExperience(int increase)
+    private void LoadCardData()
     {
+        levelText.text = "lvl " + level;
+    }
+
+    public void AddExperienceOld(int newExperience)
+    {
+        // string updatedCardData = UpdateCardExperience(newExperience);
+
+        // // Save the updated card data back to the .txt file
+        // string path = Application.dataPath + "/Files/PlayerCards.txt";
+        // File.WriteAllText(path, updatedCardData);
+    }
+
+    public void AddExperience(int increase)
+    {
+        bool lvlUp = false;
         LoadPlayerCardData(); // Načítajte najnovšiu verziu súboru
 
         // Find the card and update its experience value
@@ -98,21 +116,82 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
                 int currentExperience = int.Parse(kartaHodnoty[16]);
                 int newExperience = currentExperience + increase;
                 kartaHodnoty[16] = newExperience.ToString();
+
+                StartCoroutine(EffectAnimations(increase, "XP", color_purple));
+
+                if ((int.Parse(kartaHodnoty[11])*10) <= newExperience)
+                {
+                    kartaHodnoty[11] = (int.Parse(kartaHodnoty[11]) + 1).ToString();
+                    level = int.Parse(kartaHodnoty[11]);
+
+                    StartCoroutine(EffectAnimations(int.Parse(kartaHodnoty[11]), "LVL", color_yellow));
+                    lvlUp = true;
+                    //UpdateRandomStat();
+                }
                 kartyHrac[i] = string.Join(",", kartaHodnoty);
+                LoadCardData();
                 break;
             }
         }
+        //return string.Join("\n", kartyHrac);
 
-        // Combine the updated card data back into a single string
-        return string.Join("\n", kartyHrac);
+        string path = Application.dataPath + "/Files/PlayerCards.txt";
+        File.WriteAllText(path, string.Join("\n", kartyHrac));
+
+        if (lvlUp) UpdateRandomStat();
+    }
+
+    public void UpdateRandomStat()
+    {
+
+        switch ((int)Random.Range(2, 9))
+        {
+            case 2:
+                Heal(2);
+                UpdateStat(2, 2);
+                StartCoroutine(EffectAnimations(2, "HP", color_blue));
+                break;
+            case 3:
+                HandleStrength(1);
+                UpdateStat(3, 1);
+                StartCoroutine(EffectAnimations(1, "STR", color_blue));
+                break;
+            case 4:
+                HandleSpeed(1);
+                UpdateStat(4, 1);
+                StartCoroutine(EffectAnimations(1, "SPE", color_blue));
+                break;
+            case 5:
+                HandleAttack(1);
+                UpdateStat(5, 1);
+                StartCoroutine(EffectAnimations(1, "ATT", color_blue));
+                break;
+            case 6:
+                HandleDefense(1);
+                UpdateStat(6, 1);
+                StartCoroutine(EffectAnimations(1, "DEF", color_blue));
+                break;
+            case 7:
+                HandleKnowledge(1);
+                UpdateStat(7, 1);
+                StartCoroutine(EffectAnimations(1, "KNO", color_blue));
+                break;
+            case 8:
+                HandleCharisma(1);
+                UpdateStat(8, 1);
+                StartCoroutine(EffectAnimations(1, "CHA", color_blue));
+                break;
+            default:
+                Debug.LogError("Invalid shit fak UpdateRandomStat(int index,int increase)");
+                break;
+        }
     }
 
 
-    public void AddExperience(int newExperience)
+    public void UpdateStat(int index,int increase)
     {
-        string updatedCardData = UpdateCardExperience(newExperience);
+        string updatedCardData = UpdateCardStat(index, increase);
 
-        // Save the updated card data back to the .txt file
         string path = Application.dataPath + "/Files/PlayerCards.txt";
         File.WriteAllText(path, updatedCardData);
     }
@@ -139,15 +218,6 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
         return string.Join("\n", kartyHrac);
     }
 
-
-    public void UpdateStat(int index,int increase)
-    {
-        string updatedCardData = UpdateCardStat(index, increase);
-
-        // Save the updated card data back to the .txt file
-        string path = Application.dataPath + "/Files/PlayerCards.txt";
-        File.WriteAllText(path, updatedCardData);
-    }
 
     private void InitializeAttackCount()
     {   
