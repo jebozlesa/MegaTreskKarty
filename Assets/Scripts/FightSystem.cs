@@ -4,6 +4,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.SceneManagement;
+using System.Data;
+using Mono.Data.Sqlite;
+using System.IO;
+
 
 public enum FightState {START,TURN,ENDTURN,PLAYERDEATH,ENEMYDEATH,WON,LOST}
 
@@ -51,8 +55,11 @@ public class FightSystem : MonoBehaviour
     int playerAttack;
     int enemyAttack;
 
+    private string connectionString;
+
     void Start()
     {
+        connectionString = "URI=file:" + Application.dataPath + "/SQLiteDatabase/MyDatabase.db";
         kartyData = new List<string>(cardDatabase.text.TrimEnd().Split('\n'));
         kartyHrac = new List<string>(playerCardDatabase.text.TrimEnd().Split('\n'));
 
@@ -236,11 +243,32 @@ public class FightSystem : MonoBehaviour
     }
     
 
-    private IEnumerator VytvorJedinecneKarty(int pocet, GameObject playerGO,Player player)
+    private IEnumerator VytvorJedinecneKarty(int pocet, GameObject playerGO, Player player)
     {
-    
-        List<int> usedIndexes = new List<int>(); // List to keep track of used indexes
-        int maxIndex = kartyHrac.Count; // Maximum index value to generate random numbers within range
+        List<int> usedIndexes = new List<int>();
+        IDbConnection dbConnection = new SqliteConnection(connectionString);
+        dbConnection.Open();
+
+        IDbCommand dbCommand = dbConnection.CreateCommand();
+        dbCommand.CommandText = "SELECT * FROM PlayerCards";
+        IDataReader reader = dbCommand.ExecuteReader();
+
+        List<string[]> kartyHrac = new List<string[]>();
+        while (reader.Read())
+        {
+            string[] rowValues = new string[reader.FieldCount];
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                rowValues[i] = reader[i].ToString();
+            }
+            kartyHrac.Add(rowValues);
+        }
+
+        reader.Close();
+        dbCommand.Dispose();
+        dbConnection.Close();
+
+        int maxIndex = kartyHrac.Count;
 
         for (int i = 0; i < pocet; i++)
         {
@@ -248,38 +276,37 @@ public class FightSystem : MonoBehaviour
             do
             {
                 index = Random.Range(0, maxIndex);
-            } while (usedIndexes.Contains(index)); // Keep generating random numbers until a unique index is found
+            } while (usedIndexes.Contains(index));
 
-            usedIndexes.Add(index); // Add the index to the list of used indexes
+            usedIndexes.Add(index);
 
-            string kartaString = kartyHrac[index];
-            string[] kartaHodnoty = kartaString.Split(',');
+            string[] kartaHodnoty = kartyHrac[index];
 
-            string[] farbaKarty = kartaHodnoty[10].Split(';');
+            string[] farbaKarty = kartaHodnoty[13].Split(';');
             Color32 cardColor = new Color32(byte.Parse(farbaKarty[0]), byte.Parse(farbaKarty[1]), byte.Parse(farbaKarty[2]), 255);
 
             GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
             novaKarta.GetComponent<Kard>().cardId = int.Parse(kartaHodnoty[0]);
-            novaKarta.GetComponent<Kard>().cardName = kartaHodnoty[1];
-            novaKarta.GetComponent<Kard>().health = int.Parse(kartaHodnoty[2]);
-            novaKarta.GetComponent<Kard>().strength = int.Parse(kartaHodnoty[3]);
-            novaKarta.GetComponent<Kard>().speed = int.Parse(kartaHodnoty[4]);
-            novaKarta.GetComponent<Kard>().attack = int.Parse(kartaHodnoty[5]);
-            novaKarta.GetComponent<Kard>().defense = int.Parse(kartaHodnoty[6]);
-            novaKarta.GetComponent<Kard>().knowledge = int.Parse(kartaHodnoty[7]);
-            novaKarta.GetComponent<Kard>().charisma = int.Parse(kartaHodnoty[8]);
-            novaKarta.GetComponent<Kard>().image = kartaHodnoty[9];
+            novaKarta.GetComponent<Kard>().cardName = kartaHodnoty[2];
+            novaKarta.GetComponent<Kard>().level = int.Parse(kartaHodnoty[3]);
+            novaKarta.GetComponent<Kard>().experience = int.Parse(kartaHodnoty[4]);
+            novaKarta.GetComponent<Kard>().health = int.Parse(kartaHodnoty[5]);
+            novaKarta.GetComponent<Kard>().strength = int.Parse(kartaHodnoty[6]);
+            novaKarta.GetComponent<Kard>().speed = int.Parse(kartaHodnoty[7]);
+            novaKarta.GetComponent<Kard>().attack = int.Parse(kartaHodnoty[8]);
+            novaKarta.GetComponent<Kard>().defense = int.Parse(kartaHodnoty[9]);
+            novaKarta.GetComponent<Kard>().knowledge = int.Parse(kartaHodnoty[10]);
+            novaKarta.GetComponent<Kard>().charisma = int.Parse(kartaHodnoty[11]);
             novaKarta.GetComponent<Kard>().color = cardColor;
-            novaKarta.GetComponent<Kard>().level = int.Parse(kartaHodnoty[11]);
-            novaKarta.GetComponent<Kard>().attack1 = int.Parse(kartaHodnoty[12]);
-            novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[12]));
-            novaKarta.GetComponent<Kard>().attack2 = int.Parse(kartaHodnoty[13]);
-            novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[13]));
-            novaKarta.GetComponent<Kard>().attack3 = int.Parse(kartaHodnoty[14]);
-            novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[14]));
-            novaKarta.GetComponent<Kard>().attack4 = int.Parse(kartaHodnoty[15]);
-            novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[15]));
-            novaKarta.GetComponent<Kard>().experience = int.Parse(kartaHodnoty[16]);
+            novaKarta.GetComponent<Kard>().attack1 = int.Parse(kartaHodnoty[14]);
+            novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[14]));
+            novaKarta.GetComponent<Kard>().attack2 = int.Parse(kartaHodnoty[15]);
+            novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[15]));
+            novaKarta.GetComponent<Kard>().attack3 = int.Parse(kartaHodnoty[16]);
+            novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[16]));
+            novaKarta.GetComponent<Kard>().attack4 = int.Parse(kartaHodnoty[17]);
+            novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[17]));
+            novaKarta.GetComponent<Kard>().image = kartaHodnoty[18];
 
             player.AddCardToHand(novaKarta.GetComponent<Kard>());
 
@@ -291,6 +318,9 @@ public class FightSystem : MonoBehaviour
     {
         int iter = 0;
         int[] boost = new int[6];
+
+        // Load cards from the database
+        List<string> kartyData = LoadCardsFromDatabase();
 
         // Shuffle the list of cards
         for (int i = kartyData.Count - 1; i > 0; i--)
@@ -320,17 +350,17 @@ public class FightSystem : MonoBehaviour
             novaKarta.GetComponent<Kard>().defense = int.Parse(kartaHodnoty[6]) + boost[3];
             novaKarta.GetComponent<Kard>().knowledge = int.Parse(kartaHodnoty[7]) + boost[4];
             novaKarta.GetComponent<Kard>().charisma = int.Parse(kartaHodnoty[8]) + boost[5];
-            novaKarta.GetComponent<Kard>().image = kartaHodnoty[9];
+            novaKarta.GetComponent<Kard>().image = kartaHodnoty[15];
             novaKarta.GetComponent<Kard>().color = cardColor;
-            novaKarta.GetComponent<Kard>().level = int.Parse(kartaHodnoty[11]) + iter;
-            novaKarta.GetComponent<Kard>().attack1 = int.Parse(kartaHodnoty[12]);
-            novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[12]));
-            novaKarta.GetComponent<Kard>().attack2 = int.Parse(kartaHodnoty[13]);
-            novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[13]));
-            novaKarta.GetComponent<Kard>().attack3 = int.Parse(kartaHodnoty[14]);
-            novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[14]));
-            novaKarta.GetComponent<Kard>().attack4 = int.Parse(kartaHodnoty[15]);
-            novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[15]));
+            novaKarta.GetComponent<Kard>().level = 1 + iter;
+            novaKarta.GetComponent<Kard>().attack1 = int.Parse(kartaHodnoty[11]);
+            novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[11]));
+            novaKarta.GetComponent<Kard>().attack2 = int.Parse(kartaHodnoty[12]);
+            novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[12]));
+            novaKarta.GetComponent<Kard>().attack3 = int.Parse(kartaHodnoty[13]);
+            novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[13]));
+            novaKarta.GetComponent<Kard>().attack4 = int.Parse(kartaHodnoty[14]);
+            novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[14]));
 
             player.AddCardToHand(novaKarta.GetComponent<Kard>());
 
@@ -338,6 +368,87 @@ public class FightSystem : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
         }
     }
+
+    private List<string> LoadCardsFromDatabase()
+    {
+        List<string> kartyData = new List<string>();
+
+        IDbConnection dbConnection = new SqliteConnection(connectionString);
+        dbConnection.Open();
+
+        IDbCommand dbCommand = dbConnection.CreateCommand();
+        dbCommand.CommandText = "SELECT * FROM CardDatabase";
+        IDataReader reader = dbCommand.ExecuteReader();
+
+        while (reader.Read())
+        {
+            string cardDataString = "";
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                cardDataString += reader.GetValue(i).ToString();
+                if (i < reader.FieldCount - 1) cardDataString += ",";
+            }
+            kartyData.Add(cardDataString);
+        }
+
+        reader.Close();
+        dbCommand.Dispose();
+        dbConnection.Close();
+
+        return kartyData;
+    }
+
+    // private IEnumerator VytvorKartyAI(GameObject playerGO, Player player)
+    // {
+    //     int iter = 0;
+    //     int[] boost = new int[6];
+
+    //     // Shuffle the list of cards
+    //     for (int i = kartyData.Count - 1; i > 0; i--)
+    //     {
+    //         int j = Random.Range(0, i + 1);
+    //         string temp = kartyData[i];
+    //         kartyData[i] = kartyData[j];
+    //         kartyData[j] = temp;
+    //     }
+
+    //     // Create all cards in the shuffled order
+    //     foreach (string kartaString in kartyData)
+    //     {
+    //         boost = DistributeRandomly(iter);
+
+    //         string[] kartaHodnoty = kartaString.Split(',');
+
+    //         string[] farbaKarty = kartaHodnoty[10].Split(';');
+    //         Color32 cardColor = new Color32(byte.Parse(farbaKarty[0]), byte.Parse(farbaKarty[1]), byte.Parse(farbaKarty[2]), 255);
+
+    //         GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
+    //         novaKarta.GetComponent<Kard>().cardName = kartaHodnoty[1];
+    //         novaKarta.GetComponent<Kard>().health = int.Parse(kartaHodnoty[2]) + iter;
+    //         novaKarta.GetComponent<Kard>().strength = int.Parse(kartaHodnoty[3]) + boost[0];
+    //         novaKarta.GetComponent<Kard>().speed = int.Parse(kartaHodnoty[4]) + boost[1];
+    //         novaKarta.GetComponent<Kard>().attack = int.Parse(kartaHodnoty[5]) + boost[2];
+    //         novaKarta.GetComponent<Kard>().defense = int.Parse(kartaHodnoty[6]) + boost[3];
+    //         novaKarta.GetComponent<Kard>().knowledge = int.Parse(kartaHodnoty[7]) + boost[4];
+    //         novaKarta.GetComponent<Kard>().charisma = int.Parse(kartaHodnoty[8]) + boost[5];
+    //         novaKarta.GetComponent<Kard>().image = kartaHodnoty[9];
+    //         novaKarta.GetComponent<Kard>().color = cardColor;
+    //         novaKarta.GetComponent<Kard>().level = int.Parse(kartaHodnoty[11]) + iter;
+    //         novaKarta.GetComponent<Kard>().attack1 = int.Parse(kartaHodnoty[12]);
+    //         novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[12]));
+    //         novaKarta.GetComponent<Kard>().attack2 = int.Parse(kartaHodnoty[13]);
+    //         novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[13]));
+    //         novaKarta.GetComponent<Kard>().attack3 = int.Parse(kartaHodnoty[14]);
+    //         novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[14]));
+    //         novaKarta.GetComponent<Kard>().attack4 = int.Parse(kartaHodnoty[15]);
+    //         novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[15]));
+
+    //         player.AddCardToHand(novaKarta.GetComponent<Kard>());
+
+    //         iter += 1;
+    //         yield return new WaitForSeconds(0.1f);
+    //     }
+    // }
 
     public int[] DistributeRandomly(int value)
     {

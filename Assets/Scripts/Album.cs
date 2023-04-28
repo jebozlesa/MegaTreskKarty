@@ -1,94 +1,99 @@
+using UnityEngine;
+using UnityEngine.UI;
+using System.Data;
+using Mono.Data.Sqlite;
+using System.IO;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
 public class Album : MonoBehaviour
 {
 
-    public TextAsset cardDatabase;
-    private List<string> kartyData;
-    public TextAsset cardStories;
-    private List<string> kartyStories;
     public GameObject kartaPrefab;
     public GameObject album;
     public GameObject zoomedCardHolder;
     public AttackDescriptions attackDescriptions;
     public GameObject content;
 
+    private string connectionString;
 
-
-    // Start is called before the first frame update
     void Start()
     {
-        kartyData = new List<string>(cardDatabase.text.TrimEnd().Split('\n'));
-        kartyStories = new List<string>(cardStories.text.TrimEnd().Split('$'));
-        StartCoroutine(VytvorKarty());
+        connectionString = "URI=file:" + Application.dataPath + "/SQLiteDatabase/MyDatabase.db";
 
-        
+        StartCoroutine(VytvorKarty());
     }
 
-    // Update is called once per frame
     string LoadStory(int cardID)
     {
         string cardStory = "";
-        for (int j = 1; j < kartyStories.Count; j++)
-        {
-            string[] storyParts = kartyStories[j].Split('#');
-            Debug.Log("KRISTABNOHA   '" + storyParts[1] + "'");
-            int storyCardID = int.Parse(storyParts[0]);
+        IDbConnection dbConnection = new SqliteConnection(connectionString);
+        dbConnection.Open();
 
-            if (cardID == storyCardID)
-            {
-                cardStory = storyParts[2];
-                break;
-            }
+        IDbCommand dbCommand = dbConnection.CreateCommand();
+        dbCommand.CommandText = "SELECT * FROM CardStories WHERE StyleID = " + cardID;
+        IDataReader reader = dbCommand.ExecuteReader();
+
+        if (reader.Read())
+        {
+            cardStory = reader.GetString(2);
         }
+
+        reader.Close();
+        dbCommand.Dispose();
+        dbConnection.Close();
+
         return cardStory;
     }
 
     private IEnumerator VytvorKarty()
     {
-    
-        for (int i = 0; i < kartyData.Count; i++)
+        IDbConnection dbConnection = new SqliteConnection(connectionString);
+        dbConnection.Open();
+
+        IDbCommand dbCommand = dbConnection.CreateCommand();
+        dbCommand.CommandText = "SELECT * FROM PlayerCards";
+        IDataReader reader = dbCommand.ExecuteReader();
+
+        while (reader.Read())
         {
-
-            Debug.Log("vytvaram kartu " + i);
-            string kartaString = kartyData[i];
-            string[] kartaHodnoty = kartaString.Split(',');
-
-            string[] farbaKarty = kartaHodnoty[10].Split(';');
-            Color32 cardColor = new Color32(byte.Parse(farbaKarty[0]), byte.Parse(farbaKarty[1]), byte.Parse(farbaKarty[2]), 255);
-
             GameObject novaKarta = Instantiate(kartaPrefab, transform);
 
-            novaKarta.GetComponent<Card>().cardName = kartaHodnoty[1];
-            novaKarta.GetComponent<Card>().health = int.Parse(kartaHodnoty[2]);
-            novaKarta.GetComponent<Card>().strength = int.Parse(kartaHodnoty[3]);
-            novaKarta.GetComponent<Card>().speed = int.Parse(kartaHodnoty[4]);
-            novaKarta.GetComponent<Card>().attack = int.Parse(kartaHodnoty[5]);
-            novaKarta.GetComponent<Card>().defense = int.Parse(kartaHodnoty[6]);
-            novaKarta.GetComponent<Card>().knowledge = int.Parse(kartaHodnoty[7]);
-            novaKarta.GetComponent<Card>().charisma = int.Parse(kartaHodnoty[8]);
-            novaKarta.GetComponent<Card>().image = kartaHodnoty[9];
-            novaKarta.GetComponent<Card>().color = cardColor;
-            novaKarta.GetComponent<Card>().level = int.Parse(kartaHodnoty[11]);
-            novaKarta.GetComponent<Card>().attack1 = int.Parse(kartaHodnoty[12]);
-           // novaKarta.GetComponent<Card>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[12]));
-            novaKarta.GetComponent<Card>().attack2 = int.Parse(kartaHodnoty[13]);
-           // novaKarta.GetComponent<Card>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[13]));
-            novaKarta.GetComponent<Card>().attack3 = int.Parse(kartaHodnoty[14]);
-           // novaKarta.GetComponent<Card>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[14]));
-            novaKarta.GetComponent<Card>().attack4 = int.Parse(kartaHodnoty[15]);
-          //  novaKarta.GetComponent<Card>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[15]));
+            novaKarta.GetComponent<Card>().cardName = reader.GetString(2);
+            novaKarta.GetComponent<Card>().health = reader.GetInt32(4);
+            novaKarta.GetComponent<Card>().strength = reader.GetInt32(5);
+            novaKarta.GetComponent<Card>().speed = reader.GetInt32(6);
+            novaKarta.GetComponent<Card>().attack = reader.GetInt32(7);
+            novaKarta.GetComponent<Card>().defense = reader.GetInt32(8);
+            novaKarta.GetComponent<Card>().knowledge = reader.GetInt32(9);
+            novaKarta.GetComponent<Card>().charisma = reader.GetInt32(10);
+            
+            novaKarta.GetComponent<Card>().image = reader.GetString(18);
 
-            novaKarta.GetComponent<Card>().story = LoadStory(int.Parse(kartaHodnoty[0]));
+            string[] farbaKarty = reader.GetString(13).Split(';');
+            Color32 cardColor = new Color32(byte.Parse(farbaKarty[0]), byte.Parse(farbaKarty[1]), byte.Parse(farbaKarty[2]), 255);
+            novaKarta.GetComponent<Card>().color = cardColor;
+
+            novaKarta.GetComponent<Card>().level = reader.GetInt32(3);
+            novaKarta.GetComponent<Card>().attack1 = reader.GetInt32(14);
+            novaKarta.GetComponent<Card>().attack2 = reader.GetInt32(15);
+            novaKarta.GetComponent<Card>().attack3 = reader.GetInt32(16);
+            novaKarta.GetComponent<Card>().attack4 = reader.GetInt32(17);
+
+
+            novaKarta.GetComponent<Card>().story = LoadStory(reader.GetInt32(1));
 
             novaKarta.GetComponent<Card>().zoomedCardHolder = zoomedCardHolder;
 
-            novaKarta.GetComponent<Card>().transform.SetParent(content.transform); 
+            novaKarta.GetComponent<Card>().transform.SetParent(content.transform);
             novaKarta.GetComponent<Card>().transform.localScale = Vector3.one;
 
             yield return new WaitForSeconds(0.05f);
         }
+
+        reader.Close();
+        dbCommand.Dispose();
+        dbConnection.Close();
     }
+
 }

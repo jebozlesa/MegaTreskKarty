@@ -5,6 +5,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.EventSystems;
+using System.Data;
+using Mono.Data.Sqlite;
+using System;
 
 public enum CardState {ATTACK,MAYBE,STAY}
 
@@ -68,8 +71,14 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
     public TextAsset playerCardDatabase;
     private List<string> kartyHrac;
 
+    private string connectionString;
+
+
     private void Start()
     {
+
+        connectionString = "URI=file:" + Application.dataPath + "/SQLiteDatabase/MyDatabase.db";
+
         nameText.text = cardName;
         levelText.text = "lvl " + level;
         maxHP = health; 
@@ -85,138 +94,341 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
 
     private void LoadPlayerCardData()
     {
-        kartyHrac = new List<string>(playerCardDatabase.text.TrimEnd().Split('\n'));
+        kartyHrac = LoadPlayerCardFromDatabase(cardId);
     }
+
+    private List<string> LoadPlayerCardFromDatabase(int cardId)
+    {
+        List<string> kartaData = new List<string>();
+
+        IDbConnection dbConnection = new SqliteConnection(connectionString);
+        dbConnection.Open();
+
+        IDbCommand dbCommand = dbConnection.CreateCommand();
+        dbCommand.CommandText = $"SELECT * FROM PlayerCards WHERE CardID = {cardId}";
+        IDataReader reader = dbCommand.ExecuteReader();
+
+        while (reader.Read())
+        {
+            string cardDataString = "";
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                cardDataString += reader.GetValue(i).ToString();
+                if (i < reader.FieldCount - 1) cardDataString += ",";
+            }
+            kartaData.Add(cardDataString);
+        }
+
+        reader.Close();
+        dbCommand.Dispose();
+        dbConnection.Close();
+
+        return kartaData;
+    }
+
+    public void AddExperience(int increase)
+{
+    bool lvlUp = false;
+    LoadPlayerCardData(); // Načítajte najnovšiu verziu z databázy
+
+    // Find the card and update its experience value
+    for (int i = 0; i < kartyHrac.Count; i++)
+    {
+        string[] kartaHodnoty = kartyHrac[i].Split(',');
+        if (int.Parse(kartaHodnoty[0]) == cardId)
+        {
+            int currentExperience = int.Parse(kartaHodnoty[16]);
+            int newExperience = currentExperience + increase;
+            kartaHodnoty[16] = newExperience.ToString();
+
+            StartCoroutine(EffectAnimations(increase, "XP", color_purple));
+
+            if ((int.Parse(kartaHodnoty[11]) * 10) <= newExperience)
+            {
+                kartaHodnoty[11] = (int.Parse(kartaHodnoty[11]) + 1).ToString();
+                level = int.Parse(kartaHodnoty[11]);
+
+                StartCoroutine(EffectAnimations(int.Parse(kartaHodnoty[11]), "LVL", color_yellow));
+                lvlUp = true;
+                // UpdateRandomStat();
+            }
+            kartyHrac[i] = string.Join(",", kartaHodnoty);
+            UpdateCardDataInDatabase(cardId, kartyHrac[i]); // Aktualizujte záznam v databáze
+            LoadCardData();
+            break;
+        }
+    }
+
+    if (lvlUp) UpdateRandomStat();
+}
+
+public void UpdateRandomStat()
+{
+    int statIndex = 0;
+
+    int r = (int)UnityEngine.Random.Range(2, 9);
+    Debug.Log("KRISTA PANA  " + r);
+
+    switch (r)
+    {
+        case 2:
+            Heal(2);
+            UpdateStat(2, 2);
+            StartCoroutine(EffectAnimations(2, "HP", color_blue));
+            statIndex = 2;
+            break;
+        case 3:
+            HandleStrength(1);
+            UpdateStat(3, 1);
+            StartCoroutine(EffectAnimations(1, "STR", color_blue));
+            statIndex = 3;
+            break;
+        case 4:
+            HandleSpeed(1);
+            UpdateStat(4, 1);
+            StartCoroutine(EffectAnimations(1, "SPE", color_blue));
+            statIndex = 4;
+            break;
+        case 5:
+            HandleAttack(1);
+            UpdateStat(5, 1);
+            StartCoroutine(EffectAnimations(1, "ATT", color_blue));
+            statIndex = 5;
+            break;
+        case 6:
+            HandleDefense(1);
+            UpdateStat(6, 1);
+            StartCoroutine(EffectAnimations(1, "DEF", color_blue));
+            statIndex = 6;
+            break;
+        case 7:
+            HandleKnowledge(1);
+            UpdateStat(7, 1);
+            StartCoroutine(EffectAnimations(1, "KNO", color_blue));
+            statIndex = 7;
+            break;
+        case 8:
+            HandleCharisma(1);
+            UpdateStat(8, 1);
+            StartCoroutine(EffectAnimations(1, "CHA", color_blue));
+            statIndex = 8;
+            break;
+        default:
+                        Debug.LogError("Invalid shit fak UpdateRandomStat(int index,int increase)");
+            break;
+    }
+
+    // Update the card data in the database
+    UpdateCardDataInDatabase(cardId, kartyHrac[0], statIndex);
+}
+
+public void UpdateStat(int index, int increase)
+{
+    string updatedCardData = UpdateCardStat(index, increase);
+
+    // Update the card data in the database
+    UpdateCardDataInDatabase(cardId, updatedCardData);
+}
+
+private string UpdateCardStat(int index, int increase)
+{
+    LoadPlayerCardData(); // Načítajte najnovšiu verziu z databázy
+
+    // Find the card and update its experience value
+    for (int i = 0; i < kartyHrac.Count; i++)
+    {
+        string[] kartaHodnoty = kartyHrac[i].Split(',');
+        if (int.Parse(kartaHodnoty[0]) == cardId)
+        {
+            int currentExperience = int.Parse(kartaHodnoty[index]);
+            int newExperience = currentExperience + increase;
+            kartaHodnoty[index] = newExperience.ToString();
+            kartyHrac[i] = string.Join(",", kartaHodnoty);
+            break;
+        }
+    }
+
+    // Combine the updated card data back into a single string
+    return kartyHrac[0];
+}
+
+private void UpdateCardDataInDatabase(int cardId, string cardData, int statIndex = 0)
+{
+    string[] kartaHodnoty = cardData.Split(',');
+
+    using (IDbConnection dbConnection = new SqliteConnection(connectionString))
+    {
+        dbConnection.Open();
+
+        using (IDbCommand dbCommand = dbConnection.CreateCommand())
+        {
+            string query = "UPDATE PlayerCards SET " +
+                "Experience = @Experience, " +
+                "Level = @Level";
+
+            if (statIndex > 0)
+            {
+                query += $", Column{statIndex} = @Column{statIndex}";
+            }
+
+            query += " WHERE CardID = @CardID";
+
+            dbCommand.CommandText = query;
+
+            IDbDataParameter experienceParam = dbCommand.CreateParameter();
+            experienceParam.ParameterName = "@Experience";
+            experienceParam.Value = kartaHodnoty[16];
+            dbCommand.Parameters.Add(experienceParam);
+
+            IDbDataParameter levelParam = dbCommand.CreateParameter();
+            levelParam.ParameterName = "@Level";
+            levelParam.Value = kartaHodnoty[11];
+            dbCommand.Parameters.Add(levelParam);
+
+            if (statIndex > 0)
+            {
+                IDbDataParameter statParam = dbCommand.CreateParameter();
+                statParam.ParameterName = $"@Column{statIndex}";
+                statParam.Value = kartaHodnoty[statIndex];
+                dbCommand.Parameters.Add(statParam);
+            }
+
+            IDbDataParameter cardIdParam = dbCommand.CreateParameter();
+            cardIdParam.ParameterName = "@CardID";
+            cardIdParam.Value = cardId;
+            dbCommand.Parameters.Add(cardIdParam);
+
+            dbCommand.ExecuteNonQuery();
+        }
+    }
+}
+
+
+    // private void LoadPlayerCardData()
+    // {
+    //     kartyHrac = new List<string>(playerCardDatabase.text.TrimEnd().Split('\n'));
+    // }
 
     private void LoadCardData()
     {
         levelText.text = "lvl " + level;
     }
 
-    public void AddExperienceOld(int newExperience)
-    {
-        // string updatedCardData = UpdateCardExperience(newExperience);
+    // public void AddExperience(int increase)
+    // {
+    //     bool lvlUp = false;
+    //     LoadPlayerCardData(); // Načítajte najnovšiu verziu súboru
 
-        // // Save the updated card data back to the .txt file
-        // string path = Application.dataPath + "/Files/PlayerCards.txt";
-        // File.WriteAllText(path, updatedCardData);
-    }
+    //     // Find the card and update its experience value
+    //     for (int i = 0; i < kartyHrac.Count; i++)
+    //     {
+    //         string[] kartaHodnoty = kartyHrac[i].Split(',');
+    //         if (int.Parse(kartaHodnoty[0]) == cardId)
+    //         {
+    //             int currentExperience = int.Parse(kartaHodnoty[16]);
+    //             int newExperience = currentExperience + increase;
+    //             kartaHodnoty[16] = newExperience.ToString();
 
-    public void AddExperience(int increase)
-    {
-        bool lvlUp = false;
-        LoadPlayerCardData(); // Načítajte najnovšiu verziu súboru
+    //             StartCoroutine(EffectAnimations(increase, "XP", color_purple));
 
-        // Find the card and update its experience value
-        for (int i = 0; i < kartyHrac.Count; i++)
-        {
-            string[] kartaHodnoty = kartyHrac[i].Split(',');
-            if (int.Parse(kartaHodnoty[0]) == cardId)
-            {
-                int currentExperience = int.Parse(kartaHodnoty[16]);
-                int newExperience = currentExperience + increase;
-                kartaHodnoty[16] = newExperience.ToString();
+    //             if ((int.Parse(kartaHodnoty[11])*10) <= newExperience)
+    //             {
+    //                 kartaHodnoty[11] = (int.Parse(kartaHodnoty[11]) + 1).ToString();
+    //                 level = int.Parse(kartaHodnoty[11]);
 
-                StartCoroutine(EffectAnimations(increase, "XP", color_purple));
+    //                 StartCoroutine(EffectAnimations(int.Parse(kartaHodnoty[11]), "LVL", color_yellow));
+    //                 lvlUp = true;
+    //                 //UpdateRandomStat();
+    //             }
+    //             kartyHrac[i] = string.Join(",", kartaHodnoty);
+    //             LoadCardData();
+    //             break;
+    //         }
+    //     }
+    //     //return string.Join("\n", kartyHrac);
 
-                if ((int.Parse(kartaHodnoty[11])*10) <= newExperience)
-                {
-                    kartaHodnoty[11] = (int.Parse(kartaHodnoty[11]) + 1).ToString();
-                    level = int.Parse(kartaHodnoty[11]);
+    //     string path = Application.dataPath + "/Files/PlayerCards.txt";
+    //     File.WriteAllText(path, string.Join("\n", kartyHrac));
 
-                    StartCoroutine(EffectAnimations(int.Parse(kartaHodnoty[11]), "LVL", color_yellow));
-                    lvlUp = true;
-                    //UpdateRandomStat();
-                }
-                kartyHrac[i] = string.Join(",", kartaHodnoty);
-                LoadCardData();
-                break;
-            }
-        }
-        //return string.Join("\n", kartyHrac);
+    //     if (lvlUp) UpdateRandomStat();
+    // }
 
-        string path = Application.dataPath + "/Files/PlayerCards.txt";
-        File.WriteAllText(path, string.Join("\n", kartyHrac));
+    // public void UpdateRandomStat()
+    // {
 
-        if (lvlUp) UpdateRandomStat();
-    }
-
-    public void UpdateRandomStat()
-    {
-
-        switch ((int)Random.Range(2, 9))
-        {
-            case 2:
-                Heal(2);
-                UpdateStat(2, 2);
-                StartCoroutine(EffectAnimations(2, "HP", color_blue));
-                break;
-            case 3:
-                HandleStrength(1);
-                UpdateStat(3, 1);
-                StartCoroutine(EffectAnimations(1, "STR", color_blue));
-                break;
-            case 4:
-                HandleSpeed(1);
-                UpdateStat(4, 1);
-                StartCoroutine(EffectAnimations(1, "SPE", color_blue));
-                break;
-            case 5:
-                HandleAttack(1);
-                UpdateStat(5, 1);
-                StartCoroutine(EffectAnimations(1, "ATT", color_blue));
-                break;
-            case 6:
-                HandleDefense(1);
-                UpdateStat(6, 1);
-                StartCoroutine(EffectAnimations(1, "DEF", color_blue));
-                break;
-            case 7:
-                HandleKnowledge(1);
-                UpdateStat(7, 1);
-                StartCoroutine(EffectAnimations(1, "KNO", color_blue));
-                break;
-            case 8:
-                HandleCharisma(1);
-                UpdateStat(8, 1);
-                StartCoroutine(EffectAnimations(1, "CHA", color_blue));
-                break;
-            default:
-                Debug.LogError("Invalid shit fak UpdateRandomStat(int index,int increase)");
-                break;
-        }
-    }
+    //     switch ((int)Random.Range(2, 9))
+    //     {
+    //         case 2:
+    //             Heal(2);
+    //             UpdateStat(2, 2);
+    //             StartCoroutine(EffectAnimations(2, "HP", color_blue));
+    //             break;
+    //         case 3:
+    //             HandleStrength(1);
+    //             UpdateStat(3, 1);
+    //             StartCoroutine(EffectAnimations(1, "STR", color_blue));
+    //             break;
+    //         case 4:
+    //             HandleSpeed(1);
+    //             UpdateStat(4, 1);
+    //             StartCoroutine(EffectAnimations(1, "SPE", color_blue));
+    //             break;
+    //         case 5:
+    //             HandleAttack(1);
+    //             UpdateStat(5, 1);
+    //             StartCoroutine(EffectAnimations(1, "ATT", color_blue));
+    //             break;
+    //         case 6:
+    //             HandleDefense(1);
+    //             UpdateStat(6, 1);
+    //             StartCoroutine(EffectAnimations(1, "DEF", color_blue));
+    //             break;
+    //         case 7:
+    //             HandleKnowledge(1);
+    //             UpdateStat(7, 1);
+    //             StartCoroutine(EffectAnimations(1, "KNO", color_blue));
+    //             break;
+    //         case 8:
+    //             HandleCharisma(1);
+    //             UpdateStat(8, 1);
+    //             StartCoroutine(EffectAnimations(1, "CHA", color_blue));
+    //             break;
+    //         default:
+    //             Debug.LogError("Invalid shit fak UpdateRandomStat(int index,int increase)");
+    //             break;
+    //     }
+    // }
 
 
-    public void UpdateStat(int index,int increase)
-    {
-        string updatedCardData = UpdateCardStat(index, increase);
+    // public void UpdateStat(int index,int increase)
+    // {
+    //     string updatedCardData = UpdateCardStat(index, increase);
 
-        string path = Application.dataPath + "/Files/PlayerCards.txt";
-        File.WriteAllText(path, updatedCardData);
-    }
+    //     string path = Application.dataPath + "/Files/PlayerCards.txt";
+    //     File.WriteAllText(path, updatedCardData);
+    // }
 
-    private string UpdateCardStat(int index, int increase)
-    {
-        LoadPlayerCardData(); // Načítajte najnovšiu verziu súboru
+    // private string UpdateCardStat(int index, int increase)
+    // {
+    //     LoadPlayerCardData(); // Načítajte najnovšiu verziu súboru
 
-        // Find the card and update its experience value
-        for (int i = 0; i < kartyHrac.Count; i++)
-        {
-            string[] kartaHodnoty = kartyHrac[i].Split(',');
-            if (int.Parse(kartaHodnoty[0]) == cardId)
-            {
-                int currentExperience = int.Parse(kartaHodnoty[index]);
-                int newExperience = currentExperience + increase;
-                kartaHodnoty[index] = newExperience.ToString();
-                kartyHrac[i] = string.Join(",", kartaHodnoty);
-                break;
-            }
-        }
+    //     // Find the card and update its experience value
+    //     for (int i = 0; i < kartyHrac.Count; i++)
+    //     {
+    //         string[] kartaHodnoty = kartyHrac[i].Split(',');
+    //         if (int.Parse(kartaHodnoty[0]) == cardId)
+    //         {
+    //             int currentExperience = int.Parse(kartaHodnoty[index]);
+    //             int newExperience = currentExperience + increase;
+    //             kartaHodnoty[index] = newExperience.ToString();
+    //             kartyHrac[i] = string.Join(",", kartaHodnoty);
+    //             break;
+    //         }
+    //     }
 
-        // Combine the updated card data back into a single string
-        return string.Join("\n", kartyHrac);
-    }
+    //     // Combine the updated card data back into a single string
+    //     return string.Join("\n", kartyHrac);
+    // }
 
 
     private void InitializeAttackCount()
@@ -244,7 +456,7 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
         notsureText.text = animationText;
         notsureText.color = color;
         GameObject notsure = Instantiate(notsureGO, transform);
-        float angle = Random.Range(0f, Mathf.PI * 2f); // náhodný úhel v radiánech
+        float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f); // náhodný úhel v radiánech
         float radius = 50f; // poloměr kruhu
         Vector2 randomPosition = new Vector2(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius); // výpočet náhodné pozice
         notsure.transform.position = (Vector2)transform.position + randomPosition; // nastavení pozice objektu
@@ -280,7 +492,7 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
             float y = radius * Mathf.Sin(angle * Mathf.Deg2Rad);
             Vector3 newPosition = originalPosition + new Vector3(x, y, 0f);
             transform.position = newPosition;
-            transform.rotation = Quaternion.Euler(0f, 0f, Random.Range(-maxAngle, maxAngle));
+            transform.rotation = Quaternion.Euler(0f, 0f, UnityEngine.Random.Range(-maxAngle, maxAngle));
             angle += increment;
             currentTime += increment;
             yield return new WaitForSeconds(increment);
