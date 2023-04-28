@@ -77,7 +77,7 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
     private void Start()
     {
 
-        connectionString = "URI=file:" + Application.dataPath + "/SQLiteDatabase/MyDatabase.db";
+        connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
 
         nameText.text = cardName;
         levelText.text = "lvl " + level;
@@ -126,309 +126,134 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
         return kartaData;
     }
 
-    public void AddExperience(int increase)
-{
-    bool lvlUp = false;
-    LoadPlayerCardData(); // Načítajte najnovšiu verziu z databázy
-
-    // Find the card and update its experience value
-    for (int i = 0; i < kartyHrac.Count; i++)
-    {
-        string[] kartaHodnoty = kartyHrac[i].Split(',');
-        if (int.Parse(kartaHodnoty[0]) == cardId)
-        {
-            int currentExperience = int.Parse(kartaHodnoty[16]);
-            int newExperience = currentExperience + increase;
-            kartaHodnoty[16] = newExperience.ToString();
-
-            StartCoroutine(EffectAnimations(increase, "XP", color_purple));
-
-            if ((int.Parse(kartaHodnoty[11]) * 10) <= newExperience)
-            {
-                kartaHodnoty[11] = (int.Parse(kartaHodnoty[11]) + 1).ToString();
-                level = int.Parse(kartaHodnoty[11]);
-
-                StartCoroutine(EffectAnimations(int.Parse(kartaHodnoty[11]), "LVL", color_yellow));
-                lvlUp = true;
-                // UpdateRandomStat();
-            }
-            kartyHrac[i] = string.Join(",", kartaHodnoty);
-            UpdateCardDataInDatabase(cardId, kartyHrac[i]); // Aktualizujte záznam v databáze
-            LoadCardData();
-            break;
-        }
-    }
-
-    if (lvlUp) UpdateRandomStat();
-}
-
-public void UpdateRandomStat()
-{
-    int statIndex = 0;
-
-    int r = (int)UnityEngine.Random.Range(2, 9);
-    Debug.Log("KRISTA PANA  " + r);
-
-    switch (r)
-    {
-        case 2:
-            Heal(2);
-            UpdateStat(2, 2);
-            StartCoroutine(EffectAnimations(2, "HP", color_blue));
-            statIndex = 2;
-            break;
-        case 3:
-            HandleStrength(1);
-            UpdateStat(3, 1);
-            StartCoroutine(EffectAnimations(1, "STR", color_blue));
-            statIndex = 3;
-            break;
-        case 4:
-            HandleSpeed(1);
-            UpdateStat(4, 1);
-            StartCoroutine(EffectAnimations(1, "SPE", color_blue));
-            statIndex = 4;
-            break;
-        case 5:
-            HandleAttack(1);
-            UpdateStat(5, 1);
-            StartCoroutine(EffectAnimations(1, "ATT", color_blue));
-            statIndex = 5;
-            break;
-        case 6:
-            HandleDefense(1);
-            UpdateStat(6, 1);
-            StartCoroutine(EffectAnimations(1, "DEF", color_blue));
-            statIndex = 6;
-            break;
-        case 7:
-            HandleKnowledge(1);
-            UpdateStat(7, 1);
-            StartCoroutine(EffectAnimations(1, "KNO", color_blue));
-            statIndex = 7;
-            break;
-        case 8:
-            HandleCharisma(1);
-            UpdateStat(8, 1);
-            StartCoroutine(EffectAnimations(1, "CHA", color_blue));
-            statIndex = 8;
-            break;
-        default:
-                        Debug.LogError("Invalid shit fak UpdateRandomStat(int index,int increase)");
-            break;
-    }
-
-    // Update the card data in the database
-    UpdateCardDataInDatabase(cardId, kartyHrac[0], statIndex);
-}
-
-public void UpdateStat(int index, int increase)
-{
-    string updatedCardData = UpdateCardStat(index, increase);
-
-    // Update the card data in the database
-    UpdateCardDataInDatabase(cardId, updatedCardData);
-}
-
-private string UpdateCardStat(int index, int increase)
-{
-    LoadPlayerCardData(); // Načítajte najnovšiu verziu z databázy
-
-    // Find the card and update its experience value
-    for (int i = 0; i < kartyHrac.Count; i++)
-    {
-        string[] kartaHodnoty = kartyHrac[i].Split(',');
-        if (int.Parse(kartaHodnoty[0]) == cardId)
-        {
-            int currentExperience = int.Parse(kartaHodnoty[index]);
-            int newExperience = currentExperience + increase;
-            kartaHodnoty[index] = newExperience.ToString();
-            kartyHrac[i] = string.Join(",", kartaHodnoty);
-            break;
-        }
-    }
-
-    // Combine the updated card data back into a single string
-    return kartyHrac[0];
-}
-
-private void UpdateCardDataInDatabase(int cardId, string cardData, int statIndex = 0)
-{
-    string[] kartaHodnoty = cardData.Split(',');
-
-    using (IDbConnection dbConnection = new SqliteConnection(connectionString))
-    {
-        dbConnection.Open();
-
-        using (IDbCommand dbCommand = dbConnection.CreateCommand())
-        {
-            string query = "UPDATE PlayerCards SET " +
-                "Experience = @Experience, " +
-                "Level = @Level";
-
-            if (statIndex > 0)
-            {
-                query += $", Column{statIndex} = @Column{statIndex}";
-            }
-
-            query += " WHERE CardID = @CardID";
-
-            dbCommand.CommandText = query;
-
-            IDbDataParameter experienceParam = dbCommand.CreateParameter();
-            experienceParam.ParameterName = "@Experience";
-            experienceParam.Value = kartaHodnoty[16];
-            dbCommand.Parameters.Add(experienceParam);
-
-            IDbDataParameter levelParam = dbCommand.CreateParameter();
-            levelParam.ParameterName = "@Level";
-            levelParam.Value = kartaHodnoty[11];
-            dbCommand.Parameters.Add(levelParam);
-
-            if (statIndex > 0)
-            {
-                IDbDataParameter statParam = dbCommand.CreateParameter();
-                statParam.ParameterName = $"@Column{statIndex}";
-                statParam.Value = kartaHodnoty[statIndex];
-                dbCommand.Parameters.Add(statParam);
-            }
-
-            IDbDataParameter cardIdParam = dbCommand.CreateParameter();
-            cardIdParam.ParameterName = "@CardID";
-            cardIdParam.Value = cardId;
-            dbCommand.Parameters.Add(cardIdParam);
-
-            dbCommand.ExecuteNonQuery();
-        }
-    }
-}
-
-
-    // private void LoadPlayerCardData()
-    // {
-    //     kartyHrac = new List<string>(playerCardDatabase.text.TrimEnd().Split('\n'));
-    // }
 
     private void LoadCardData()
     {
         levelText.text = "lvl " + level;
     }
 
-    // public void AddExperience(int increase)
-    // {
-    //     bool lvlUp = false;
-    //     LoadPlayerCardData(); // Načítajte najnovšiu verziu súboru
+    public void AddExperience(int increase)
+    {
+        //bool lvlUp = false;
+        Debug.Log("LoadCardData()");
 
-    //     // Find the card and update its experience value
-    //     for (int i = 0; i < kartyHrac.Count; i++)
-    //     {
-    //         string[] kartaHodnoty = kartyHrac[i].Split(',');
-    //         if (int.Parse(kartaHodnoty[0]) == cardId)
-    //         {
-    //             int currentExperience = int.Parse(kartaHodnoty[16]);
-    //             int newExperience = currentExperience + increase;
-    //             kartaHodnoty[16] = newExperience.ToString();
+        // Connect to the database
+        using (IDbConnection dbConnection = new SqliteConnection(connectionString))
+        {
+            dbConnection.Open();
+            Debug.Log("DATABAZA PRIPOJENA");
 
-    //             StartCoroutine(EffectAnimations(increase, "XP", color_purple));
+            // Get the current experience and level
+            using (IDbCommand dbCommand = dbConnection.CreateCommand())
+            {
+                dbCommand.CommandText = $"SELECT Level, Experience FROM PlayerCards WHERE CardID = {cardId}";
+                using (IDataReader reader = dbCommand.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        int currentExperience = reader.GetInt32(1);
+                        int currentLevel = reader.GetInt32(0);
+                        int newExperience = currentExperience + increase;
 
-    //             if ((int.Parse(kartaHodnoty[11])*10) <= newExperience)
-    //             {
-    //                 kartaHodnoty[11] = (int.Parse(kartaHodnoty[11]) + 1).ToString();
-    //                 level = int.Parse(kartaHodnoty[11]);
+                        // Update the experience
+                        UpdateStat("Experience", increase, dbConnection);
+                        StartCoroutine(EffectAnimations(increase, "XP", color_purple));
+                        experience = newExperience;
 
-    //                 StartCoroutine(EffectAnimations(int.Parse(kartaHodnoty[11]), "LVL", color_yellow));
-    //                 lvlUp = true;
-    //                 //UpdateRandomStat();
-    //             }
-    //             kartyHrac[i] = string.Join(",", kartaHodnoty);
-    //             LoadCardData();
-    //             break;
-    //         }
-    //     }
-    //     //return string.Join("\n", kartyHrac);
+                        // Check if player leveled up
+                        if (currentLevel * 10 <= newExperience)
+                        {
+                            //lvlUp = true;
+                            UpdateStat("Level", 1, dbConnection);
+                            UpdateRandomStat(dbConnection);
+                            level = currentLevel + 1;
+                            StartCoroutine(EffectAnimations(level, "LVL", color_yellow));
+                        }
 
-    //     string path = Application.dataPath + "/Files/PlayerCards.txt";
-    //     File.WriteAllText(path, string.Join("\n", kartyHrac));
+                    }
+                }
+                dbCommand.Dispose();
+                dbConnection.Close();
+            }
+        }
 
-    //     if (lvlUp) UpdateRandomStat();
-    // }
+        LoadCardData();
+    }
 
-    // public void UpdateRandomStat()
-    // {
+    public void UpdateRandomStat(IDbConnection dbConnection)
+    {
 
-    //     switch ((int)Random.Range(2, 9))
-    //     {
-    //         case 2:
-    //             Heal(2);
-    //             UpdateStat(2, 2);
-    //             StartCoroutine(EffectAnimations(2, "HP", color_blue));
-    //             break;
-    //         case 3:
-    //             HandleStrength(1);
-    //             UpdateStat(3, 1);
-    //             StartCoroutine(EffectAnimations(1, "STR", color_blue));
-    //             break;
-    //         case 4:
-    //             HandleSpeed(1);
-    //             UpdateStat(4, 1);
-    //             StartCoroutine(EffectAnimations(1, "SPE", color_blue));
-    //             break;
-    //         case 5:
-    //             HandleAttack(1);
-    //             UpdateStat(5, 1);
-    //             StartCoroutine(EffectAnimations(1, "ATT", color_blue));
-    //             break;
-    //         case 6:
-    //             HandleDefense(1);
-    //             UpdateStat(6, 1);
-    //             StartCoroutine(EffectAnimations(1, "DEF", color_blue));
-    //             break;
-    //         case 7:
-    //             HandleKnowledge(1);
-    //             UpdateStat(7, 1);
-    //             StartCoroutine(EffectAnimations(1, "KNO", color_blue));
-    //             break;
-    //         case 8:
-    //             HandleCharisma(1);
-    //             UpdateStat(8, 1);
-    //             StartCoroutine(EffectAnimations(1, "CHA", color_blue));
-    //             break;
-    //         default:
-    //             Debug.LogError("Invalid shit fak UpdateRandomStat(int index,int increase)");
-    //             break;
-    //     }
-    // }
+        switch ((int)UnityEngine.Random.Range(2, 9))
+        {
+            case 2:
+                Heal(2);
+                UpdateStat("Health", 2, dbConnection);
+                StartCoroutine(EffectAnimations(2, "HP", color_blue));
+                break;
+            case 3:
+                HandleStrength(1);
+                UpdateStat("Strength", 1, dbConnection);
+                StartCoroutine(EffectAnimations(1, "STR", color_blue));
+                break;
+            case 4:
+                HandleSpeed(1);
+                UpdateStat("Speed", 1, dbConnection);
+                StartCoroutine(EffectAnimations(1, "SPE", color_blue));
+                break;
+            case 5:
+                HandleAttack(1);
+                UpdateStat("Attack", 1, dbConnection);
+                StartCoroutine(EffectAnimations(1, "ATT", color_blue));
+                break;
+            case 6:
+                HandleDefense(1);
+                UpdateStat("Defense", 1, dbConnection);
+                StartCoroutine(EffectAnimations(1, "DEF", color_blue));
+                break;
+            case 7:
+                HandleKnowledge(1);
+                UpdateStat("Knowledge", 1, dbConnection);
+                StartCoroutine(EffectAnimations(1, "KNO", color_blue));
+                break;
+            case 8:
+                HandleCharisma(1);
+                UpdateStat("Charisma", 1, dbConnection);
+                StartCoroutine(EffectAnimations(1, "CHA", color_blue));
+                break;
+            default:
+                Debug.LogError("Invalid shit fak UpdateRandomStat(int index,int increase)");
+                break;
+        }
+    }
 
+    public void UpdateStat(string parameterName, int difference, IDbConnection dbConnection)
+    {
+        if (string.IsNullOrEmpty(parameterName)) return;
 
-    // public void UpdateStat(int index,int increase)
-    // {
-    //     string updatedCardData = UpdateCardStat(index, increase);
+        // Aktualizácia hodnôt karty s rozdielmi
+        using (IDbCommand dbCommand = dbConnection.CreateCommand())
+        {
+            string query = $"UPDATE PlayerCards SET {parameterName} = {parameterName} + @{parameterName} WHERE CardID = @CardID";
+            Debug.Log("TU JE TO   " + query);
 
-    //     string path = Application.dataPath + "/Files/PlayerCards.txt";
-    //     File.WriteAllText(path, updatedCardData);
-    // }
+            dbCommand.CommandText = query;
 
-    // private string UpdateCardStat(int index, int increase)
-    // {
-    //     LoadPlayerCardData(); // Načítajte najnovšiu verziu súboru
+            // Pridajte hodnoty parametrov pre aktualizáciu do SQL dotazu
+            IDbDataParameter parameter = dbCommand.CreateParameter();
+            parameter.ParameterName = $"@{parameterName}";
+            parameter.Value = difference;
+            dbCommand.Parameters.Add(parameter);
 
-    //     // Find the card and update its experience value
-    //     for (int i = 0; i < kartyHrac.Count; i++)
-    //     {
-    //         string[] kartaHodnoty = kartyHrac[i].Split(',');
-    //         if (int.Parse(kartaHodnoty[0]) == cardId)
-    //         {
-    //             int currentExperience = int.Parse(kartaHodnoty[index]);
-    //             int newExperience = currentExperience + increase;
-    //             kartaHodnoty[index] = newExperience.ToString();
-    //             kartyHrac[i] = string.Join(",", kartaHodnoty);
-    //             break;
-    //         }
-    //     }
+            IDbDataParameter cardIdParameter = dbCommand.CreateParameter();
+            cardIdParameter.ParameterName = "@CardID";
+            cardIdParameter.Value = cardId;
+            dbCommand.Parameters.Add(cardIdParameter);
 
-    //     // Combine the updated card data back into a single string
-    //     return string.Join("\n", kartyHrac);
-    // }
+            dbCommand.ExecuteNonQuery();
+        }
+
+    }
+
 
 
     private void InitializeAttackCount()

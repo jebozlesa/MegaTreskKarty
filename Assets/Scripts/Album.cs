@@ -19,7 +19,7 @@ public class Album : MonoBehaviour
 
     void Start()
     {
-        connectionString = "URI=file:" + Application.dataPath + "/SQLiteDatabase/MyDatabase.db";
+        connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
 
         StartCoroutine(VytvorKarty());
     }
@@ -60,13 +60,13 @@ public class Album : MonoBehaviour
             GameObject novaKarta = Instantiate(kartaPrefab, transform);
 
             novaKarta.GetComponent<Card>().cardName = reader.GetString(2);
-            novaKarta.GetComponent<Card>().health = reader.GetInt32(4);
-            novaKarta.GetComponent<Card>().strength = reader.GetInt32(5);
-            novaKarta.GetComponent<Card>().speed = reader.GetInt32(6);
-            novaKarta.GetComponent<Card>().attack = reader.GetInt32(7);
-            novaKarta.GetComponent<Card>().defense = reader.GetInt32(8);
-            novaKarta.GetComponent<Card>().knowledge = reader.GetInt32(9);
-            novaKarta.GetComponent<Card>().charisma = reader.GetInt32(10);
+            novaKarta.GetComponent<Card>().health = reader.GetInt32(5);
+            novaKarta.GetComponent<Card>().strength = reader.GetInt32(6);
+            novaKarta.GetComponent<Card>().speed = reader.GetInt32(7);
+            novaKarta.GetComponent<Card>().attack = reader.GetInt32(8);
+            novaKarta.GetComponent<Card>().defense = reader.GetInt32(9);
+            novaKarta.GetComponent<Card>().knowledge = reader.GetInt32(10);
+            novaKarta.GetComponent<Card>().charisma = reader.GetInt32(11);
             
             novaKarta.GetComponent<Card>().image = reader.GetString(18);
 

@@ -59,7 +59,7 @@ public class FightSystem : MonoBehaviour
 
     void Start()
     {
-        connectionString = "URI=file:" + Application.dataPath + "/SQLiteDatabase/MyDatabase.db";
+        connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
         kartyData = new List<string>(cardDatabase.text.TrimEnd().Split('\n'));
         kartyHrac = new List<string>(playerCardDatabase.text.TrimEnd().Split('\n'));
 
