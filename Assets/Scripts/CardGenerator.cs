@@ -2,15 +2,52 @@ using UnityEngine;
 using System.Data;
 using Mono.Data.Sqlite;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 public class CardGenerator : MonoBehaviour
 {
     private string connectionString;
 
-    private void Awake()
+    public Canvas canvas;
+    public GameObject cardPrefab;
+
+    private void Start()
     {
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
+    }
+
+    private IEnumerator ShowCardOnScreen(int id, string cardName, string image, Color32 color, int level)
+    {
+        Debug.Log("ShowCardOnScreen("+id+","+cardName+","+level+")");
+        // Vytvorte inštanciu karty
+        GameObject cardInstance = Instantiate(cardPrefab);
+        cardInstance.transform.SetParent(canvas.transform, false);
+
+        // Nastavte hodnoty karty
+        ShowCard showCard = cardInstance.GetComponent<ShowCard>();
+        showCard.cardId = id;
+        showCard.cardName = cardName;
+        showCard.image = image;
+        showCard.color = color;
+        showCard.level = level;
+
+        // Zväčšte kartu
+        cardInstance.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f); // Nastavte menšiu veľkosť karty
+        RectTransform cardRectTransform = cardInstance.GetComponent<RectTransform>();
+        cardRectTransform.anchoredPosition = Vector2.zero; // Vycentrujte kartu
+
+        // Zobrazte kartu
+        cardInstance.SetActive(true);
+
+        // Počkajte na sekundu
+        yield return new WaitForSeconds(1.5f);
+
+        // Skryte kartu
+        cardInstance.SetActive(false);
+
+        // Zničte inštanciu karty
+        Destroy(cardInstance);
     }
 
     public List<int>[] themedPacks = new List<int>[]
@@ -19,12 +56,17 @@ public class CardGenerator : MonoBehaviour
         new List<int> { 2, 3, 4, 9, 10, 13, 14, 17, 18, 19 }, // Balíček 2
     };
 
-    public void GenerateCardPack(int packIndex)
+    public void StartGenerateCardPack(int packIndex)
+    {
+        StartCoroutine(GenerateCardPack(packIndex));
+    }
+
+    public IEnumerator GenerateCardPack(int packIndex)
     {
         if (packIndex < 0 || packIndex >= themedPacks.Length)
         {
             Debug.LogError("Invalid pack index");
-            return;
+            yield break;
         }
 
         List<int> pack = new List<int>(themedPacks[packIndex]);
@@ -39,31 +81,38 @@ public class CardGenerator : MonoBehaviour
 
             int randomIndex = UnityEngine.Random.Range(0, pack.Count);
             int randomCardID = pack[randomIndex];
-            AddCardById(randomCardID);
+            yield return StartCoroutine(AddCardById(randomCardID)); // Zmenené na korutinu
 
             pack.RemoveAt(randomIndex);
+
+            if (i < 4) // Ak ešte nie je koniec, počkajte pol sekundy medzi kartami
+            {
+                yield return new WaitForSeconds(0.5f);
+            }
         }
     }
 
-    public void AddRandomCard()
+
+    public IEnumerator AddRandomCard()
+{
+    IDbConnection dbConnection = new SqliteConnection(connectionString);
+    dbConnection.Open();
+
+    IDbCommand dbCommand = dbConnection.CreateCommand();
+    dbCommand.CommandText = "SELECT COUNT(*) FROM CardDatabase";
+    int cardCount = int.Parse(dbCommand.ExecuteScalar().ToString());
+
+    int randomIndex = UnityEngine.Random.Range(1, cardCount + 1);
+    dbCommand.Dispose();
+
+    yield return StartCoroutine(AddCardById(randomIndex)); // Zmenené na korutinu
+
+    dbConnection.Close();
+}
+
+    public IEnumerator AddCardById(int id)
     {
-        IDbConnection dbConnection = new SqliteConnection(connectionString);
-        dbConnection.Open();
-
-        IDbCommand dbCommand = dbConnection.CreateCommand();
-        dbCommand.CommandText = "SELECT COUNT(*) FROM CardDatabase";
-        int cardCount = int.Parse(dbCommand.ExecuteScalar().ToString());
-
-        int randomIndex = UnityEngine.Random.Range(1, cardCount + 1);
-        dbCommand.Dispose();
-
-        AddCardById(randomIndex);
-
-        dbConnection.Close();
-    }
-
-    public void AddCardById(int id)
-    {
+        Debug.Log("AddCardById("+id+")");
         IDbConnection dbConnection = new SqliteConnection(connectionString);
         dbConnection.Open();
 
@@ -97,6 +146,12 @@ public class CardGenerator : MonoBehaviour
             insertCommand.ExecuteNonQuery();
 
             insertCommand.Dispose();
+
+            string[] colorComponents = reader.GetString(10).Split(';');
+            Color32 color = new Color32(byte.Parse(colorComponents[0]), byte.Parse(colorComponents[1]), byte.Parse(colorComponents[2]), 255);
+
+            // Pridajte volanie ShowCardOnScreen po vložení karty do databázy
+            yield return StartCoroutine(ShowCardOnScreen(id, reader.GetString(1), reader.GetString(15), color, 1));
         }
         else
         {

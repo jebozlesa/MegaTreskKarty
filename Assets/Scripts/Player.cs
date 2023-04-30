@@ -24,12 +24,24 @@ public class Player : MonoBehaviour
         
     }
 
+    public void ReturnCardToHand(Kard card, Vector3 originalHandPosition)
+    {
+        // Presuňte kartu z bojového priestoru do ruky
+        cardInGame = null;
+        hand.Add(card);
+
+        // Zmena rodičovského objektu a pozície karty
+        card.transform.SetParent(transform);
+        card.transform.localScale = Vector3.one;
+        card.transform.localPosition = originalHandPosition;
+    }
+
     public void RemoveCardFromBoard(Kard card)
     {
         dialogText.text = card.cardName + " failed";
 
         cardsInGame.Remove(card);
-       // Destroy(card.gameObject);
+        Destroy(card.gameObject);
     }
 
 

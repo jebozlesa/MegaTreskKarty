@@ -73,6 +73,10 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
 
     private string connectionString;
 
+    public bool isDragable = true;
+
+    public GameObject battleArea;
+
 
     private void Start()
     {

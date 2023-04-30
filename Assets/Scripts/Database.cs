@@ -19,11 +19,12 @@ public class Database : MonoBehaviour
         {
             Destroy(gameObject);
         }
+        InitializeDatabase();
     }
 
     void Start()
     {
-        InitializeDatabase();
+        
     }
 
     private void InitializeDatabase()

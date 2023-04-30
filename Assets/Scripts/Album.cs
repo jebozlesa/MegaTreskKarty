@@ -17,9 +17,13 @@ public class Album : MonoBehaviour
 
     private string connectionString;
 
+    public GameObject deckPanel;
+
     void Start()
     {
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
+
+        deckPanel.SetActive(false);
 
         StartCoroutine(VytvorKarty());
     }
@@ -87,6 +91,8 @@ public class Album : MonoBehaviour
 
             novaKarta.GetComponent<Card>().transform.SetParent(content.transform);
             novaKarta.GetComponent<Card>().transform.localScale = Vector3.one;
+
+            novaKarta.GetComponent<Card>().Initialize(deckPanel);
 
             yield return new WaitForSeconds(0.05f);
         }

@@ -91,6 +91,10 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
     Color32 color_green = new Color32(0, 255, 0, 255);
     Color32 color_red = new Color32(255, 0, 0, 255);
 
+    public GameObject deckPanel;
+    public bool deckCard;
+    public DeckManager deckManager;
+
     private void Start()
     {
         backSideAttributes.SetActive(false);
@@ -112,6 +116,11 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
         levelText.color = color;
 
         LoadDetails();
+    }
+
+    public void Initialize(GameObject deckPanelReference)
+    {
+        deckPanel = deckPanelReference;
     }
 
     public void LoadDetails()
@@ -141,6 +150,26 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
         storyText.color = color;
 
     }
+
+    public void OnClick()
+    {
+        if (deckCard)
+        {
+            if (!isZoomed && currentZoomedCard != null)
+            {
+                //deckManager.SwapCards(this, currentZoomedCard);
+                currentZoomedCard.ZoomOut();
+                ZoomIn();
+            }
+            else if (isZoomed)
+            {
+                Destroy(this.gameObject);
+                deckPanel.SetActive(false);
+            }
+        }
+    }
+
+
 
     public void OnBeginDrag(PointerEventData eventData)
     {
@@ -245,7 +274,8 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
         }
         else if (!dragInProgress)
         {
-            ToggleZoom();
+            if (deckCard) OnClick();
+            else ToggleZoom();
         }
 
         dragInProgress = false;
@@ -275,6 +305,9 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
             transform.SetSiblingIndex(transform.parent.childCount - 1);
             currentZoomedCard = this;
             isZoomed = true;
+
+            // Show the deck panel
+            deckPanel.SetActive(true);
         }
     }
 
@@ -290,6 +323,9 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
             frontSide.SetActive(true);
             backSideAttributes.SetActive(false);
             backSideDescription.SetActive(false);
+
+            // Hide the deck panel
+            deckPanel.SetActive(false);
         }
     }
 

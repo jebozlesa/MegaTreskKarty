@@ -1,7 +1,10 @@
 using UnityEngine;
 using System.Data;
 using System;
+using System.IO;
 using Mono.Data.Sqlite;
+using System.Collections;
+using System.Collections.Generic;
 
 public class PlayerDataHandler : MonoBehaviour
 {
@@ -62,7 +65,7 @@ public class PlayerDataHandler : MonoBehaviour
         return result;
     }
 
-    public void UpdatePlayerData(string columnName, object value)
+    public IEnumerator UpdatePlayerData(string columnName, object value)
     {
         IDbConnection dbConnection = new SqliteConnection(connectionString);
         dbConnection.Open();
@@ -75,5 +78,8 @@ public class PlayerDataHandler : MonoBehaviour
 
         updateCommand.Dispose();
         dbConnection.Close();
+
+        yield return null;
     }
+
 }
