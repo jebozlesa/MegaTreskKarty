@@ -226,6 +226,66 @@ public class AttackDescriptions : MonoBehaviour
             case 66://CarcanoM91
                 count = 6;
                 break;
+            case 67://Winchester
+                count = 11;
+                break;
+            case 68://Ambush
+                count = attacker.speed;
+                break;
+            case 69://JupiterC
+                count = 20;
+                break;
+            case 70://V2
+                count = 3;
+                break;
+            case 71://BattleCry
+                count = attacker.charisma;
+                break;
+            case 72://Revelation
+                count = 10;
+                break;
+            case 73://Standard
+                count = attacker.strength * 10;
+                break;
+            case 74://Pen
+                count = (attacker.knowledge * 5) + 10;
+                break;
+            case 75://IambicPentameter
+                count = 3;
+                break;
+            case 76://Ghost
+                count = 4;
+                break;
+            case 77://BuffaloHorns
+                count = 10;
+                break;
+            case 78://Iklwa
+                count = attacker.strength * 5;
+                break;
+            case 79://Iwisa
+                count = 5;
+                break;
+            case 80://NitenIchiRyu
+                count = attacker.attack;
+                break;
+            case 81://Tessenjutsu
+                count = attacker.defense;
+                break;
+            case 82://Iaijutsu
+                count = attacker.speed;
+                break;
+            case 83://Katana
+                count = attacker.strength * 5;
+                break;
+            case 84://Nodachi
+                count = attacker.strength * 5;
+                break;
+            case 85://Yumi
+                count = 20;
+                break;
+            case 86://Jujutsu
+                count = attacker.attack;
+                break;
             case 101://Yperit
                 count = 3;
                 break;
@@ -468,6 +528,66 @@ public class AttackDescriptions : MonoBehaviour
             case 66:
                 dialogText.text = "Carcano M91 chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
+            case 67:
+                dialogText.text = "Winchester chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 68:
+                dialogText.text = "Ambush heist chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 69:
+                dialogText.text = "Jupiter C chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 70:
+                dialogText.text = "Vergeltungswaffe 2 chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 71:
+                dialogText.text = "Battle Cry chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 72:
+                dialogText.text = "Celestial Revelation chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 73:
+                dialogText.text = "Standard chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 74:
+                dialogText.text = "Pen chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 75:
+                dialogText.text = "Iambic Pentameter chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 76:
+                dialogText.text = "Ghost chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 77:
+                dialogText.text = "Buffalo Horns chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 78:
+                dialogText.text = "Iklwa chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 79:
+                dialogText.text = "Iwisa chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 80:
+                dialogText.text = "Niten Ichi-Ryu chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 81:
+                dialogText.text = "Tessenjutsu Horns chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 82:
+                dialogText.text = "Iaijutsu chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 83:
+                dialogText.text = "Katana chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 84:
+                dialogText.text = "Nodachi Horns chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 85:
+                dialogText.text = "Yumi chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 86:
+                dialogText.text = "Jujutsu chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
             case 101:
                 dialogText.text = "Yperit chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
@@ -696,6 +816,66 @@ public class AttackDescriptions : MonoBehaviour
                 break;
             case 66:
                 CarcanoM91(buttonText);
+                break;
+            case 67:
+                Winchester(buttonText);
+                break;
+            case 68:
+                Ambush(buttonText);
+                break;
+            case 69:
+                JupiterC(buttonText);
+                break;
+            case 70:
+                V2(buttonText);
+                break;
+            case 71:
+                BattleCry(buttonText);
+                break;
+            case 72:
+                Revelation(buttonText);
+                break;
+            case 73:
+                Standard(buttonText);
+                break;
+            case 74:
+                Pen(buttonText);
+                break;
+            case 75:
+                IambicPentameter(buttonText);
+                break;
+            case 76:
+                Ghost(buttonText);
+                break;
+            case 77:
+                BuffaloHorns(buttonText);
+                break;
+            case 78:
+                Iklwa(buttonText);
+                break;
+            case 79:
+                Iwisa(buttonText);
+                break;
+            case 80:
+                NitenIchiRyu(buttonText);
+                break;
+            case 81:
+                Tessenjutsu(buttonText);
+                break;
+            case 82:
+                Iaijutsu(buttonText);
+                break;
+            case 83:
+                Katana(buttonText);
+                break;
+            case 84:
+                Nodachi(buttonText);
+                break;
+            case 85:
+                Yumi(buttonText);
+                break;
+            case 86:
+                Jujutsu(buttonText);
                 break;
             case 101:
                 Yperit(buttonText);
@@ -1108,6 +1288,108 @@ public class AttackDescriptions : MonoBehaviour
     public void CarcanoM91(TMP_Text buttonText)
 	{
         buttonText.text = "Carcano M91";
+	}
+
+    //67
+    public void Winchester(TMP_Text buttonText)
+	{
+        buttonText.text = "Winchester";
+	}
+
+    //68
+    public void Ambush(TMP_Text buttonText)
+	{
+        buttonText.text = "Ambush";
+	}
+    //69
+    public void JupiterC(TMP_Text buttonText)
+	{
+        buttonText.text = "Jupiter C";
+	}
+    //70
+    public void V2(TMP_Text buttonText)
+	{
+        buttonText.text = "V2";
+	}
+    //71
+    public void BattleCry(TMP_Text buttonText)
+	{
+        buttonText.text = "Battle Cry";
+	}
+    //72
+    public void Revelation(TMP_Text buttonText)
+	{
+        buttonText.text = "Revelation";
+	}
+    //73
+    public void Standard(TMP_Text buttonText)
+	{
+        buttonText.text = "Standard";
+	}
+    //74
+    public void Pen(TMP_Text buttonText)
+	{
+        buttonText.text = "Pen";
+	}
+    //75
+    public void IambicPentameter(TMP_Text buttonText)
+	{
+        buttonText.text = "Iambic Pentameter";
+	}
+    //76
+    public void Ghost(TMP_Text buttonText)
+	{
+        buttonText.text = "Ghost";
+	}
+    //77
+    public void BuffaloHorns(TMP_Text buttonText)
+	{
+        buttonText.text = "Buffalo Horns";
+	}
+    //78
+    public void Iklwa(TMP_Text buttonText)
+	{
+        buttonText.text = "Iklwa";
+	}
+    //79
+    public void Iwisa(TMP_Text buttonText)
+	{
+        buttonText.text = "Iwisa";
+	}
+    //80
+    public void NitenIchiRyu(TMP_Text buttonText)
+	{
+        buttonText.text = "Niten Ichi-Ryu";
+	}
+    //81
+    public void Tessenjutsu(TMP_Text buttonText)
+	{
+        buttonText.text = "Tessenjutsu";
+	}
+    //82
+    public void Iaijutsu(TMP_Text buttonText)
+	{
+        buttonText.text = "Iaijutsu";
+	}
+    //83
+    public void Katana(TMP_Text buttonText)
+	{
+        buttonText.text = "Katana";
+	}
+    //84
+    public void Nodachi(TMP_Text buttonText)
+	{
+        buttonText.text = "Nodachi";
+	}
+    //85
+    public void Yumi(TMP_Text buttonText)
+	{
+        buttonText.text = "Yumi";
+	}
+    //86
+    public void Jujutsu(TMP_Text buttonText)
+	{
+        buttonText.text = "Jujutsu";
 	}
 
     //101

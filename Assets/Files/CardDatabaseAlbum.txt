@@ -21,7 +21,7 @@ Eleanor Roosvelt,1,1,1,1,1,1,1,eleanor,214;203;173,1,1,1,1,1,        //nuda, sla
 Francis Drake,1,1,1,1,1,1,1,drake,255;255;160,1,1,1,1,1
 Harry Houdini,1,1,1,1,1,1,1,houdini,179;223;234,1,1,1,1,1
 Enzo Ferrari,1,1,1,1,1,1,1,ferrari,238;11;30,1,1,1,1,1
-Mata Hari,1,1,1,1,1,1,1,matahari,254;233;166,1,1,1,1,1
+Mata Hari,1,1,1,1,1,1,1,matahari,254;233;166,1,1,1,1,1			//neviem vymysliet utoky
 Billy the Kid,1,1,1,1,1,1,1,kid,0;0;0,1,1,1,1,1
 Wernher Von Braun,1,1,1,1,1,1,1,vonbraun,252;255;255,1,1,1,1,1
 Joan of Arc,1,1,1,1,1,1,1,johanka,226;229;234,1,1,1,1,1

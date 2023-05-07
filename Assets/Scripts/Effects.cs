@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -91,6 +92,15 @@ public class Effects : MonoBehaviour
             case 17:
                 yield return StartCoroutine(Confusion(card, dialogText, iteration));
                 break;
+            case 18:
+                yield return StartCoroutine(Satellite(card, dialogText, iteration));
+                break;
+            case 19:
+                yield return StartCoroutine(Fear(card, dialogText, iteration));
+                break;
+            case 20:
+                yield return StartCoroutine(Horns(card, dialogText, iteration, target));
+                break;
             default:
                 Debug.LogError("Invalid effect type.");
                 break;
@@ -160,7 +170,7 @@ public class Effects : MonoBehaviour
     //4
     public IEnumerator Exposure(Kard card, TMP_Text dialogText, int iteration)
 	{
-        if (Random.value <= 0.2f)
+        if (UnityEngine.Random.value <= 0.2f)
         {
             card.RemoveEffect(iteration);
             dialogText.text = card.cardName + "'s exposure is gone";
@@ -186,7 +196,7 @@ public class Effects : MonoBehaviour
             card.RemoveEffect(iteration);
             card.state = CardState.ATTACK;
             card.HandleDefense(-10);
-            target.TakeDamage(Random.Range(18, 22));
+            target.TakeDamage(UnityEngine.Random.Range(18, 22));
             dialogText.text = card.cardName + "'s armies attacks!!";
             yield return new WaitForSeconds(2);
             yield break;
@@ -206,6 +216,9 @@ public class Effects : MonoBehaviour
         {
             card.RemoveEffect(iteration);
             dialogText.text = card.cardName + " has calmed down";
+            card.HandleStrength(-5);
+            card.HandleAttack(-5);
+            card.HandleDefense(3);
             yield return new WaitForSeconds(2);
             yield break;
         }
@@ -245,7 +258,7 @@ public class Effects : MonoBehaviour
         }
         else
         {
-            if (Random.value <= (card.effects[iteration][1] / 5f))//sanca sa zmensuje od poctu tahov
+            if (UnityEngine.Random.value <= (card.effects[iteration][1] / 5f))//sanca sa zmensuje od poctu tahov
             {
                 card.state = CardState.MAYBE;
                 dialogText.text = card.cardName + " cannot move";
@@ -311,7 +324,7 @@ public class Effects : MonoBehaviour
             card.RemoveEffect(iteration);
             card.state = CardState.ATTACK;
             card.HandleDefense(3);
-            target.TakeDamage(Random.Range(1, (card.speed + card.attack + card.strength + card.knowledge - target.defense - target.speed)));
+            target.TakeDamage(UnityEngine.Random.Range(3, Math.Max(4, 3 + card.speed + card.attack + card.strength + card.knowledge - target.defense - target.speed)));
             dialogText.text = card.cardName + " attacks from all sides";
             yield return new WaitForSeconds(2);
             yield break;
@@ -325,7 +338,7 @@ public class Effects : MonoBehaviour
     //12
     public IEnumerator Blockade(Kard card, TMP_Text dialogText, int iteration)
 	{
-        if (card.effects[iteration][1] == 0 || (Random.value <= 0.5f))
+        if (card.effects[iteration][1] == 0 || (UnityEngine.Random.value <= 0.5f))
         {
             card.state = CardState.ATTACK;
             card.RemoveEffect(iteration);
@@ -352,11 +365,11 @@ public class Effects : MonoBehaviour
         if (card.effects[iteration][1] == 0)
         {
             card.RemoveEffect(iteration);
-            card.HandleStrength(Random.Range(0,3));
-            card.HandleSpeed(Random.Range(0,3));
-            card.HandleAttack(Random.Range(0,3));
-            card.HandleDefense(Random.Range(0,3));
-            card.HandleCharisma(Random.Range(0,3));
+            card.HandleStrength(UnityEngine.Random.Range(0,3));
+            card.HandleSpeed(UnityEngine.Random.Range(0,3));
+            card.HandleAttack(UnityEngine.Random.Range(0,3));
+            card.HandleDefense(UnityEngine.Random.Range(0,3));
+            card.HandleCharisma(UnityEngine.Random.Range(0,3));
             dialogText.text = card.cardName + " feels better";
             yield return new WaitForSeconds(2);
             yield break;
@@ -375,14 +388,14 @@ public class Effects : MonoBehaviour
         {
             card.state = CardState.ATTACK;
             card.RemoveEffect(iteration);
-            target.HandleStrength(Random.Range(-3,0));
-            target.HandleSpeed(Random.Range(-3,0));
-            target.HandleAttack(Random.Range(-3,0));
-            target.HandleDefense(Random.Range(-3,0));
-            target.HandleKnowledge(Random.Range(0,3));
+            target.HandleStrength(UnityEngine.Random.Range(-3,0));
+            target.HandleSpeed(UnityEngine.Random.Range(-3,0));
+            target.HandleAttack(UnityEngine.Random.Range(-3,0));
+            target.HandleDefense(UnityEngine.Random.Range(-3,0));
+            target.HandleKnowledge(UnityEngine.Random.Range(0,3));
             dialogText.text = target.cardName + " is impressed by masterpiece";
             yield return new WaitForSeconds(2);
-            target.TakeDamage(Random.Range(1, target.defense * 2));
+            target.TakeDamage(UnityEngine.Random.Range(1, target.defense * 2));
             dialogText.text = card.cardName + " attacks from behind";
             yield return new WaitForSeconds(2);
             yield break;
@@ -443,14 +456,14 @@ public class Effects : MonoBehaviour
         }
         else
         {
-            if (Random.value <= 0.33f)
+            if (UnityEngine.Random.value <= 0.33f)
             {
                 dialogText.text = card.cardName + " hurt itself in confusion";
                 yield return new WaitForSeconds(2);
                 card.state = CardState.MAYBE;
-                card.TakeDamage(Random.Range(1, 3));
+                card.TakeDamage(UnityEngine.Random.Range(1, 3));
             }
-            else if (Random.value <= 0.33f)
+            else if (UnityEngine.Random.value <= 0.33f)
             {
                 dialogText.text = card.cardName + " forget to attack in confusion";
                 yield return new WaitForSeconds(2);
@@ -459,5 +472,57 @@ public class Effects : MonoBehaviour
             card.effects[iteration][1] -= 1;
         }
         Debug.Log(card.cardName + " => Confusion");
+	}
+    //18
+    public IEnumerator Satellite(Kard card, TMP_Text dialogText, int iteration)
+	{
+        card.HandleKnowledge(1);
+        Debug.Log(card.cardName + " => Satellite");
+        yield return new WaitForSeconds(0.5f);
+	}
+    //19
+    public IEnumerator Fear(Kard card, TMP_Text dialogText, int iteration)
+	{
+        if (card.effects[iteration][1] == 0)
+        {
+            card.RemoveEffect(iteration);
+            dialogText.text = card.cardName + " fears no men no more";
+            card.HandleStrength(5);
+            card.HandleAttack(5);
+            card.HandleDefense(-3);
+            yield return new WaitForSeconds(2);
+            yield break;
+        }
+        else
+        {
+            card.effects[iteration][1] -= 1;
+        }
+        Debug.Log(card.cardName + " => Fury");
+	}
+    //20
+    public IEnumerator Horns(Kard card, TMP_Text dialogText, int iteration, Kard target)
+	{
+        card.state = CardState.STAY;
+        //StartCoroutine(textBubble.ShowForSeconds("surrender!", Resources.Load<Sprite>("oblacik"), 2.5f));
+        if (card.effects[iteration][1] == 0)
+        {
+            card.RemoveEffect(iteration);
+            card.state = CardState.ATTACK;
+            card.HandleDefense(1);
+            card.HandleAttack(-2);
+            target.TakeDamage(UnityEngine.Random.Range(1, Math.Max(4, 3 + card.speed + card.attack + card.strength + card.knowledge - target.defense - target.speed)));
+            dialogText.text = card.cardName + "'s Horns strike";
+            yield return new WaitForSeconds(2);
+            yield break;
+        }
+        else
+        {
+            card.TakeDamage(1);
+            target.TakeDamage(1);
+            card.effects[iteration][1] -= 1;
+            dialogText.text = "buffalo's head keeps strong";
+            yield return new WaitForSeconds(2);
+        }
+        Debug.Log(card.cardName + " => Horns");
 	}
 }

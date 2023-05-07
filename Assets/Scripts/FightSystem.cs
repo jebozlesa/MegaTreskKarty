@@ -79,22 +79,27 @@ public class FightSystem : MonoBehaviour
 
         dialogText.text = "lets get ready for rumble!";
 
-        yield return StartCoroutine(VytvorJedinecneKarty(5,hrac,player));
+        yield return StartCoroutine(VytvorKartyZBalicka(hrac,player));
         yield return new WaitForSeconds(0.5f);
 
         yield return StartCoroutine(VytvorKartyAI(nepriatel,enemy));
         yield return new WaitForSeconds(1);
 
-        player.PlayCard(player.hand[0],playerBoard);
-        playerLifeBar.SetBar(player.cardInGame);
-        player.cardInGame.isDragable = false;
+        // player.PlayCard(player.hand[0],playerBoard);
+        // playerLifeBar.SetBar(player.cardInGame);
+        // player.cardInGame.isDragable = false;
 
         enemy.PlayCard(enemy.hand[0],enemyBoard);
         enemyLifeBar.SetBar(enemy.cardInGame);
 
         dialogText.text = "Ohhh s@!t " + enemy.cardInGame.cardName + " !!!";
 
-        yield return new WaitForSeconds(1f);
+        dialogText.text = "Choose fighter";
+        yield return new WaitUntil(() => state == FightState.TURN);
+        playerLifeBar.SetBar(player.cardInGame);
+        player.cardInGame.isDragable = false;
+
+       // yield return new WaitForSeconds(1f);
         Turn();
     }
 
@@ -145,10 +150,60 @@ public class FightSystem : MonoBehaviour
         StartCoroutine(Fight());
     }
 
+    public Kard ChooseAttacker(Kard player, Kard enemy, int playerAttack, int enemyAttack)
+    {
+        bool playerPriority = attack.priorityAttacks.Contains(playerAttack);
+        bool enemyPriority = attack.priorityAttacks.Contains(enemyAttack);
+
+        if (playerPriority && !enemyPriority)
+        {
+            return player;
+        }
+        else if (!playerPriority && enemyPriority)
+        {
+            return enemy;
+        }
+        else if (player.speed > enemy.speed)
+        {
+            return player;
+        }
+        else if (enemy.speed > player.speed)
+        {
+            return enemy;
+        }
+        else // Rovnaká rýchlosť
+        {
+            if (Random.value < 0.5f) // 50% šanca pre každú kartu
+            {
+                return player;
+            }
+            else
+            {
+                return enemy;
+            }
+        }
+    }
+
+
+
     IEnumerator Fight()
     {
 
-        if (player.cardInGame.speed > enemy.cardInGame.speed || (player.cardInGame.speed == enemy.cardInGame.speed && UnityEngine.Random.Range(0, 2) == 0))
+        int playerAttackNumber = attack.GetAttackNumber(player.cardInGame, playerAttack);
+        int enemyAttackNumber = attack.GetAttackNumber(enemy.cardInGame, enemyAttack);
+
+        Debug.Log("PLAYER "+playerAttackNumber+" ENEMY "+enemyAttackNumber);
+
+        bool playerPriority = attack.IsPriorityAttack(playerAttackNumber);
+        bool enemyPriority = attack.IsPriorityAttack(enemyAttackNumber);
+
+        Debug.Log("PLAYER "+playerPriority+" ENEMY "+enemyPriority);
+
+        bool playerGoesFirst = (playerPriority && !enemyPriority) ||
+                            (!enemyPriority && player.cardInGame.speed > enemy.cardInGame.speed) ||
+                            (player.cardInGame.speed == enemy.cardInGame.speed && UnityEngine.Random.Range(0, 2) == 0);
+
+        if (playerGoesFirst)
         {
             dialogText.color = Color.blue;
             yield return StartCoroutine(effects.ExecuteEffects(player.cardInGame, dialogText, enemy.cardInGame));
@@ -262,7 +317,7 @@ public class FightSystem : MonoBehaviour
         DragKard dragKard = cardObject.GetComponent<DragKard>();
 
         // Vykonajte akciu pre premiestnenie karty do bojového priestoru
-        if (state == FightState.PLAYERDEATH)
+        if (state == FightState.PLAYERDEATH || state == FightState.START)
         {
             player.PlayCard(kard, playerBoard);
             player.cardInGame.isDragable = false;
@@ -276,7 +331,73 @@ public class FightSystem : MonoBehaviour
         }
     }
 
-    
+    private IEnumerator VytvorKartyZBalicka(GameObject playerGO, Player player)
+    {
+        IDbConnection dbConnection = new SqliteConnection(connectionString);
+        dbConnection.Open();
+
+        IDbCommand dbCommand = dbConnection.CreateCommand();
+        dbCommand.CommandText = "SELECT * FROM PlayerDecks WHERE DeckID = 1";
+        IDataReader reader = dbCommand.ExecuteReader();
+
+        List<int> cardIDs = new List<int>();
+        if (reader.Read())
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                cardIDs.Add(reader.GetInt32(i + 2));
+            }
+        }
+        reader.Close();
+        dbCommand.Dispose();
+
+        foreach (int cardID in cardIDs)
+        {
+            dbCommand = dbConnection.CreateCommand();
+            dbCommand.CommandText = $"SELECT * FROM PlayerCards WHERE CardID = {cardID}";
+            reader = dbCommand.ExecuteReader();
+
+            if (reader.Read())
+            {
+                string[] farbaKarty = reader.GetString(13).Split(';');
+                Color32 cardColor = new Color32(byte.Parse(farbaKarty[0]), byte.Parse(farbaKarty[1]), byte.Parse(farbaKarty[2]), 255);
+
+                GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
+                novaKarta.GetComponent<Kard>().cardId = reader.GetInt32(0);
+                novaKarta.GetComponent<Kard>().cardName = reader.GetString(2);
+                novaKarta.GetComponent<Kard>().level = reader.GetInt32(3);
+                novaKarta.GetComponent<Kard>().experience = reader.GetInt32(4);
+                novaKarta.GetComponent<Kard>().health = reader.GetInt32(5);
+                novaKarta.GetComponent<Kard>().strength = reader.GetInt32(6);
+                novaKarta.GetComponent<Kard>().speed = reader.GetInt32(7);
+                novaKarta.GetComponent<Kard>().attack = reader.GetInt32(8);
+                novaKarta.GetComponent<Kard>().defense = reader.GetInt32(9);
+                novaKarta.GetComponent<Kard>().knowledge = reader.GetInt32(10);
+                novaKarta.GetComponent<Kard>().charisma = reader.GetInt32(11);
+                novaKarta.GetComponent<Kard>().color = cardColor;
+                novaKarta.GetComponent<Kard>().attack1 = reader.GetInt32(14);
+                novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), reader.GetInt32(14));
+                novaKarta.GetComponent<Kard>().attack2 = reader.GetInt32(15);
+                novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), reader.GetInt32(15));
+                novaKarta.GetComponent<Kard>().attack3 = reader.GetInt32(16);
+                novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), reader.GetInt32(16));
+                novaKarta.GetComponent<Kard>().attack4 = reader.GetInt32(17);
+                novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), reader.GetInt32(17));
+                novaKarta.GetComponent<Kard>().image = reader.GetString(18);
+
+                novaKarta.GetComponent<Kard>().battleArea = playerBoard;
+
+                player.AddCardToHand(novaKarta.GetComponent<Kard>());
+
+                yield return new WaitForSeconds(0.1f);
+            }
+            reader.Close();
+            dbCommand.Dispose();
+        }
+
+        dbConnection.Close();
+    }
+
 
     private IEnumerator VytvorJedinecneKarty(int pocet, GameObject playerGO, Player player)
     {

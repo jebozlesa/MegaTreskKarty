@@ -30,8 +30,8 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
 
     public Dictionary<int, int> attackCount;
 
-    public int[] attacks = new int[5];
-    public int[] countAttacks = new int[5];
+    // public int[] attacks = new int[5];
+    // public int[] countAttacks = new int[5];
 
     public int attack1;
     public int attack2;
@@ -76,6 +76,8 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
     public bool isDragable = true;
 
     public GameObject battleArea;
+
+    public bool priorityAttack;
 
 
     private void Start()
@@ -165,7 +167,7 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
                         experience = newExperience;
 
                         // Check if player leveled up
-                        if (currentLevel * 10 <= newExperience)
+                        if (currentLevel * (10*(currentLevel)) <= newExperience)                                             //LEVEL   <========== dat potom nadruhu corentlevel
                         {
                             //lvlUp = true;
                             UpdateStat("Level", 1, dbConnection);

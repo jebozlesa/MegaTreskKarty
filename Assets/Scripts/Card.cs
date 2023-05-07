@@ -4,11 +4,14 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
-//[System.Serializable]
+using Mono.Data.Sqlite;
+using System.Data;
 
 public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
+    public int cardId;
     public string cardName;
+    public int experience;
     public int health;
     public int strength;
     public int speed;
@@ -95,8 +98,11 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
     public bool deckCard;
     public DeckManager deckManager;
 
-    private void Start()
+    public string connectionString;
+
+    void Start()
     {
+        connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
         backSideAttributes.SetActive(false);
         backSideDescription.SetActive(false);
 
@@ -126,7 +132,7 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
     public void LoadDetails()
     {
         nameTextAttr.text = cardName;
-        expText.text = "Exp: 1000/450000";
+        expText.text = "Experience: " + experience + " / " + level * (10 * level);    //LEVEL   <========== dat potom nadruhu level
         hpText.text = "Health: " + health;
         strText.text = "Strength: " + strength;
         speText.text = "Speed: " + speed;
@@ -157,8 +163,26 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
         {
             if (!isZoomed && currentZoomedCard != null)
             {
-                //deckManager.SwapCards(this, currentZoomedCard);
-                currentZoomedCard.ZoomOut();
+                if (cardId == currentZoomedCard.cardId)
+                {
+                    Debug.LogWarning("Card with the same name already exists in the deck.");
+                    return;
+                }
+                if (deckManager.IsCardNameInDeck(currentZoomedCard.cardName) && cardName != currentZoomedCard.cardName)
+                {
+                    Debug.LogWarning("Card with the same name already exists in the deck.");
+                    return;
+                }
+                UpdateCardInDatabase(currentZoomedCard.cardId, cardId);
+                deckManager.AddCardToHand(currentZoomedCard.cardId);
+                if (!currentZoomedCard.deckCard)
+                {
+                    currentZoomedCard.ZoomOut();
+                }
+                else
+                {
+                    Destroy(currentZoomedCard.gameObject);
+                }
                 ZoomIn();
             }
             else if (isZoomed)
@@ -169,11 +193,73 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
         }
     }
 
+    private void UpdateCardInDatabase(int newCardId, int oldCardId)
+    {
+        IDbConnection dbConnection = new SqliteConnection(deckManager.connectionString);
+        dbConnection.Open();
+
+        Debug.Log("UpdateCardInDatabase " + newCardId + " -> " + oldCardId);
+
+        // Find the column to update
+        string columnName = "";
+        for (int i = 1; i <= 5; i++)
+        {
+            IDbCommand dbCommand = dbConnection.CreateCommand();
+            dbCommand.CommandText = $"SELECT Card{i} FROM PlayerDecks WHERE DeckID = 1";
+            IDataReader reader = dbCommand.ExecuteReader();
+            if (reader.Read() && reader.GetInt32(0) == oldCardId)
+            {
+                columnName = $"Card{i}";
+                reader.Close();
+                dbCommand.Dispose();
+                break;
+            }
+            reader.Close();
+            dbCommand.Dispose();
+        }
+
+        // Update the column with the new card ID
+        if (!string.IsNullOrEmpty(columnName))
+        {
+            IDbCommand dbCommand = dbConnection.CreateCommand();
+            dbCommand.CommandText = $"UPDATE PlayerDecks SET {columnName} = {newCardId} WHERE DeckID = 1";
+            int rowsAffected = dbCommand.ExecuteNonQuery();
+            Debug.Log($"Rows affected: {rowsAffected}");
+            dbCommand.Dispose();
+        }
+        else
+        {
+            Debug.LogWarning("Could not find the column to update.");
+        }
+
+        dbConnection.Close();
+    }
+
+    private void SwapCardsInDatabase(int newCardId, int oldCardId)
+    {
+        IDbConnection dbConnection = new SqliteConnection(connectionString);
+        dbConnection.Open();
+
+        IDbCommand dbCommand = dbConnection.CreateCommand();
+        dbCommand.CommandText = $"UPDATE PlayerDecks SET Card1 = (CASE WHEN Card1 = {oldCardId} THEN {newCardId} ELSE Card1 END), " +
+                                            $"Card2 = (CASE WHEN Card2 = {oldCardId} THEN {newCardId} ELSE Card2 END), " +
+                                            $"Card3 = (CASE WHEN Card3 = {oldCardId} THEN {newCardId} ELSE Card3 END), " +
+                                            $"Card4 = (CASE WHEN Card4 = {oldCardId} THEN {newCardId} ELSE Card4 END), " +
+                                            $"Card5 = (CASE WHEN Card5 = {oldCardId} THEN {newCardId} ELSE Card5 END) " +
+                                $"WHERE DeckID = 1";
+        dbCommand.ExecuteNonQuery();
+
+        int rowsAffected = dbCommand.ExecuteNonQuery();
+        Debug.Log("Rows affected: " + rowsAffected);
+
+        dbCommand.Dispose();
+        dbConnection.Close();
+    }
 
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (!isZoomed)
+        if (!isZoomed && !deckCard)
         {
             pointerDragStartPosition = eventData.position;
             isDragging = true;
@@ -183,7 +269,7 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (!isZoomed && isDragging)
+        if (!isZoomed && isDragging && !deckCard)
         {
             dragInProgress = true;
             parentScrollRect.OnDrag(eventData);
@@ -192,7 +278,7 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        if (!isZoomed)
+        if (!isZoomed && !deckCard)
         {
             isDragging = false;
             parentScrollRect.OnEndDrag(eventData);

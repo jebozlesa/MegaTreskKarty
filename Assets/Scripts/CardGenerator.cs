@@ -17,6 +17,43 @@ public class CardGenerator : MonoBehaviour
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
     }
 
+    public void AddAllCardsFromDatabase()
+    {
+        StartCoroutine(GetAllCardIdsFromDatabaseCoroutine());
+    }
+
+    private IEnumerator GetAllCardIdsFromDatabaseCoroutine()
+    {
+        List<int> cardIds = new List<int>();
+
+        IDbConnection dbConnection = new SqliteConnection(connectionString);
+        dbConnection.Open();
+
+        IDbCommand dbCommand = dbConnection.CreateCommand();
+        dbCommand.CommandText = "SELECT StyleID FROM CardDatabase";
+        IDataReader reader = dbCommand.ExecuteReader();
+
+        while (reader.Read())
+        {
+            cardIds.Add(reader.GetInt32(0));
+        }
+
+        reader.Close();
+        dbCommand.Dispose();
+        dbConnection.Close();
+
+        yield return StartCoroutine(AddAllCardsFromDatabaseCoroutine(cardIds));
+    }
+
+    private IEnumerator AddAllCardsFromDatabaseCoroutine(List<int> cardIds)
+    {
+        foreach (int cardId in cardIds)
+        {
+            yield return StartCoroutine(AddCardById(cardId));
+           // yield return new WaitForSeconds(1.7f);
+        }
+    }
+
     private IEnumerator ShowCardOnScreen(int id, string cardName, string image, Color32 color, int level)
     {
         Debug.Log("ShowCardOnScreen("+id+","+cardName+","+level+")");
@@ -105,7 +142,8 @@ public class CardGenerator : MonoBehaviour
     int randomIndex = UnityEngine.Random.Range(1, cardCount + 1);
     dbCommand.Dispose();
 
-    yield return StartCoroutine(AddCardById(randomIndex)); // Zmenené na korutinu
+    randomIndex = 29;  // docasne - vymazat resp. zakomentovat ked netreeba
+    yield return StartCoroutine(AddCardById(randomIndex)); 
 
     dbConnection.Close();
 }

@@ -1162,8 +1162,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -1753.2157}
-  m_SizeDelta: {x: 1920, y: 773.5688}
+  m_AnchoredPosition: {x: 0, y: -1716.6154}
+  m_SizeDelta: {x: 1920, y: 846.7693}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &964759640
 MonoBehaviour:
@@ -1244,6 +1244,7 @@ MonoBehaviour:
   cardPrefab: {fileID: 8019556691665993109, guid: 84a595f12eb3c4443a86890161eb6533, type: 3}
   deckPanel: {fileID: 964759638}
   zoomedCardHolder: {fileID: 866114709}
+  connectionString: 
 --- !u!1 &1059182068
 GameObject:
   m_ObjectHideFlags: 0
@@ -1626,7 +1627,7 @@ MonoBehaviour:
   m_ChildAlignment: 1
   m_StartCorner: 0
   m_StartAxis: 0
-  m_CellSize: {x: 500, y: 750}
+  m_CellSize: {x: 528, y: 768}
   m_Spacing: {x: 70, y: 70}
   m_Constraint: 1
   m_ConstraintCount: 3
