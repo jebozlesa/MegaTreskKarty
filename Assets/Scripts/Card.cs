@@ -123,6 +123,10 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     public Button changeButton;
 
     public AttackListController attackListController;
+    private int displayedAttack;
+
+    private int selectedAttackId = -1;
+    private int selectedOriginalAttackId = -1;
 
 
     void Start()
@@ -194,11 +198,78 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     }
 
+    public void OnChangeAttackClick()
+    {
+        if (selectedAttackId != -1 && selectedOriginalAttackId != -1)
+        {
+            ChangeAttackInDatabase(selectedAttackId, selectedOriginalAttackId, cardId);
+            selectedAttackId = -1;
+            selectedOriginalAttackId = -1;
+        }
+    }
+
+    public void SelectAttack(int newAttackId, int originalAttackId)
+    {
+        selectedAttackId = newAttackId;
+        selectedOriginalAttackId = originalAttackId;
+    }
+
+    public static void ChangeAttackInDatabase(int newAttackId, int originalAttackId, int cardId)
+    {
+        string connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
+        IDbConnection dbConnection = new SqliteConnection(connectionString);
+        dbConnection.Open();
+
+        Debug.Log($"ChangeAttackInDatabase: {newAttackId} -> {originalAttackId}");
+
+        // Nájdite stĺpec, ktorý treba aktualizovať
+        string columnName = "";
+        for (int i = 1; i <= 4; i++)
+        {
+            IDbCommand dbCommand = dbConnection.CreateCommand();
+            dbCommand.CommandText = $"SELECT Attack{i} FROM PlayerCards WHERE CardID = {cardId}";
+            IDataReader reader = dbCommand.ExecuteReader();
+            if (reader.Read() && reader.GetInt32(0) == originalAttackId)
+            {
+                columnName = $"Attack{i}";
+                reader.Close();
+                dbCommand.Dispose();
+                break;
+            }
+            reader.Close();
+            dbCommand.Dispose();
+        }
+
+        // Aktualizujte stĺpec s novým ID útoku
+        if (!string.IsNullOrEmpty(columnName))
+        {
+            IDbCommand dbCommand = dbConnection.CreateCommand();
+            dbCommand.CommandText = $"UPDATE PlayerCards SET {columnName} = {newAttackId} WHERE CardID = {cardId}";
+            int rowsAffected = dbCommand.ExecuteNonQuery();
+            Debug.Log($"Rows affected: {rowsAffected}");
+            dbCommand.Dispose();
+        }
+        else
+        {
+            Debug.LogWarning("Could not find the column to update.");
+        }
+
+        dbConnection.Close();
+    }
+
+
+
     public void ShowAttackList()
     {
+        attackListController.ClearAttackList(); // Vymaže všetky predchádzajúce útoky
         Debug.Log("CHange kliknuty ");
-        attackListController.ShowAttackList(styleId);
+        attackListController.ShowAttackList(styleId,displayedAttack);
         attackListContainer.gameObject.SetActive(true);
+    }
+
+    public void HideAttackList()
+    {
+        attackListContainer.gameObject.SetActive(false);
     }
 
     public void ChangeAttack(int direction)
@@ -225,15 +296,19 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         {
             case 1:
                 LoadAttackData(attack1);
+                displayedAttack = attack1;
                 break;
             case 2:
                 LoadAttackData(attack2);
+                displayedAttack = attack2;
                 break;
             case 3:
                 LoadAttackData(attack3);
+                displayedAttack = attack3;
                 break;
             case 4:
                 LoadAttackData(attack4);
+                displayedAttack = attack4;
                 break;
         }
     }
@@ -456,6 +531,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         if (isZoomed)
         {
             LoadAttackData(attack1); // Načítajte údaje o prvom útoku hráča podľa ID útoku
+            displayedAttack = attack1;
             backSideAttack.SetActive(true);
             frontSide.SetActive(false);
             backSideAttributes.SetActive(false);

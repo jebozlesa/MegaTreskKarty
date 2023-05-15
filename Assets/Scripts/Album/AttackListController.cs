@@ -14,6 +14,8 @@ public class AttackListController : MonoBehaviour
         public string Special;
     }
 
+    public Card card;
+
     public GameObject attackPrefab;
     public Transform attackListContainer;
     public string connectionString;
@@ -21,6 +23,14 @@ public class AttackListController : MonoBehaviour
     private void Start()
     {
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
+    }
+
+    public void ClearAttackList()
+    {
+        foreach (Transform child in attackListContainer)
+        {
+            Destroy(child.gameObject);
+        }
     }
 
     public List<AttackData> LoadAttacksFromDatabase(int characterId)
@@ -62,36 +72,41 @@ public class AttackListController : MonoBehaviour
         return attacks;
     }
 
-    public void GenerateAttackList(List<AttackData> attackDataList)
-{
-    Debug.Log("GenerateAttackList called"); // Pridajte tento riadok
-
-    foreach (AttackData attackData in attackDataList)
+    public void GenerateAttackList(List<AttackData> attackDataList, int originalAttack)
     {
-        GameObject attackItem = Instantiate(attackPrefab, attackListContainer.transform);
-        Debug.Log("Parent of attack item2: " + attackItem.transform.parent.name);
+        Debug.Log("GenerateAttackList called"); // Pridajte tento riadok
 
-        AviableAttack aviableAttackScript = attackItem.GetComponent<AviableAttack>();
-        aviableAttackScript.attackName.text = attackData.AttackName;
-        aviableAttackScript.attackDescription.text = attackData.Description;
+        foreach (AttackData attackData in attackDataList)
+        {
+            GameObject attackItem = Instantiate(attackPrefab, attackListContainer.transform);
+            Debug.Log("Parent of attack item2: " + attackItem.transform.parent.name);
 
-        attackItem.transform.SetParent(attackListContainer.transform);
-        attackItem.transform.localPosition = Vector3.zero;
-        attackItem.transform.localRotation = Quaternion.identity;
-        attackItem.transform.localScale = Vector3.one;
+            AviableAttack aviableAttackScript = attackItem.GetComponent<AviableAttack>();
+            aviableAttackScript.card = card;
+            aviableAttackScript.attackId = attackData.AttackID;
+            aviableAttackScript.originalAttackId = originalAttack;
+            aviableAttackScript.attackName.text = attackData.AttackName;
+            aviableAttackScript.attackDescription.text = attackData.Description;
+            aviableAttackScript.attackAttributes.text = attackData.Attributes;
+            aviableAttackScript.attackSpecial.text = attackData.Special;
+
+            attackItem.transform.SetParent(attackListContainer.transform);
+            attackItem.transform.localPosition = Vector3.zero;
+            attackItem.transform.localRotation = Quaternion.identity;
+            attackItem.transform.localScale = Vector3.one;
 
 
-        Debug.Log("Attack item created: " + attackData.AttackName); // Pridajte tento riadok
+            Debug.Log("Attack item created: " + attackData.AttackName); // Pridajte tento riadok
+        }
     }
-}
 
 
 
-    public void ShowAttackList(int characterId)
-{
-    List<AttackData> attackDataList = LoadAttacksFromDatabase(characterId);
-    GenerateAttackList(attackDataList);
-    attackListContainer.gameObject.SetActive(true);
-}
+    public void ShowAttackList(int characterId, int originalAttack)
+    {
+        List<AttackData> attackDataList = LoadAttacksFromDatabase(characterId);
+        GenerateAttackList(attackDataList,originalAttack);
+        attackListContainer.gameObject.SetActive(true);
+    }
 
 }
