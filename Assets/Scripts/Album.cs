@@ -64,6 +64,7 @@ public class Album : MonoBehaviour
             GameObject novaKarta = Instantiate(kartaPrefab, transform);
 
             novaKarta.GetComponent<Card>().cardId = reader.GetInt32(0);
+            novaKarta.GetComponent<Card>().styleId = reader.GetInt32(1);
             novaKarta.GetComponent<Card>().level = reader.GetInt32(3);
             novaKarta.GetComponent<Card>().experience = reader.GetInt32(4);
             novaKarta.GetComponent<Card>().cardName = reader.GetString(2);
@@ -81,10 +82,19 @@ public class Album : MonoBehaviour
             Color32 cardColor = new Color32(byte.Parse(farbaKarty[0]), byte.Parse(farbaKarty[1]), byte.Parse(farbaKarty[2]), 255);
             novaKarta.GetComponent<Card>().color = cardColor;
 
+            // novaKarta.GetComponent<Card>().attack1 = reader.GetInt32(14);
+            // novaKarta.GetComponent<Card>().attack2 = reader.GetInt32(15);
+            // novaKarta.GetComponent<Card>().attack3 = reader.GetInt32(16);
+            // novaKarta.GetComponent<Card>().attack4 = reader.GetInt32(17);
+
             novaKarta.GetComponent<Card>().attack1 = reader.GetInt32(14);
+            novaKarta.GetComponent<Card>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Card>(), reader.GetInt32(14));
             novaKarta.GetComponent<Card>().attack2 = reader.GetInt32(15);
+            novaKarta.GetComponent<Card>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Card>(), reader.GetInt32(15));
             novaKarta.GetComponent<Card>().attack3 = reader.GetInt32(16);
+            novaKarta.GetComponent<Card>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Card>(), reader.GetInt32(16));
             novaKarta.GetComponent<Card>().attack4 = reader.GetInt32(17);
+            novaKarta.GetComponent<Card>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Card>(), reader.GetInt32(17));
 
 
             novaKarta.GetComponent<Card>().story = LoadStory(reader.GetInt32(1));

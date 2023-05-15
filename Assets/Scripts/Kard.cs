@@ -11,27 +11,31 @@ using System;
 
 public enum CardState {ATTACK,MAYBE,STAY}
 
-public class Kard : MonoBehaviour//, IPointerClickHandler 
+public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler 
 {
     public int cardId;
     public string cardName;
     public int health;
-    public int strength;
-    public int speed;
-    public int attack;
-    public int defense;
-    public int knowledge;
-    public int charisma;
+    // public int strength;
+    // public int speed;
+    // public int attack;
+    // public int defense;
+    // public int knowledge;
+    // public int charisma;
     public string image;
     public Color32 color;
     public int level;
 
+    public int strength { get; set; }
+    public int speed { get; set; }
+    public int attack { get; set; }
+    public int defense { get; set; }
+    public int knowledge { get; set; }
+    public int charisma { get; set; }
+
     int maxHP;
 
     public Dictionary<int, int> attackCount;
-
-    // public int[] attacks = new int[5];
-    // public int[] countAttacks = new int[5];
 
     public int attack1;
     public int attack2;
@@ -78,6 +82,7 @@ public class Kard : MonoBehaviour//, IPointerClickHandler
     public GameObject battleArea;
 
     public bool priorityAttack;
+    
 
 
     private void Start()

@@ -22,7 +22,7 @@ public class AttackDescriptions : MonoBehaviour
 
     int attack;
 
-    public int LoadAttackCount(Kard attacker, int attack)
+    public int LoadAttackCount(IAttackCount attacker, int attack)
     {
         int count = 0;
 

@@ -15,18 +15,9 @@ public class Effects : MonoBehaviour
         Debug.Log(card.cardName + " card.effects.Count = " + card.effects.Count);
         if (card.effects.Count == 0)
         {
-            dialogText.text = "no effects";
+//            dialogText.text = "no effects";
             yield break;
         }
-
-    /*    Dictionary<int, int> attackCount = new Dictionary<int, int>();
-        List<List<int>> orderedEffects = new List<List<int>>(card.effects);
-        orderedEffects.Sort((a, b) => attackCount[a[0]].CompareTo(attackCount[b[0]]));
-
-        foreach (List<int> effect in orderedEffects)
-        {
-            yield return StartCoroutine(ExecuteEffect(card, effect[1], dialogText, card.effects.IndexOf(effect), target));
-        }*/
 
         int dynamickyRozmer = card.effects.Count;
         for (int i = dynamickyRozmer; i > 0; i--)
@@ -140,7 +131,7 @@ public class Effects : MonoBehaviour
         {
             card.effects[iteration][1] -= 1;
             card.state = CardState.STAY;
-            dialogText.text = card.cardName + " hurts itself practizing asceticism, este " + card.effects[iteration][1] + " kola";
+            dialogText.text = card.cardName + " hurts itself practizing asceticism";
         }
         Debug.Log(card.cardName + " => Asceticism");
         yield return new WaitForSeconds(2);
@@ -204,7 +195,7 @@ public class Effects : MonoBehaviour
         else
         {
             card.effects[iteration][1] -= 1;
-            dialogText.text = card.cardName + " keeps a watch, este " + card.effects[iteration][1] + " kola";
+            dialogText.text = card.cardName + " keeps a watch";
         }
         Debug.Log(card.cardName + " => Siege");
         yield return new WaitForSeconds(2);
@@ -288,7 +279,7 @@ public class Effects : MonoBehaviour
         else
         {
             card.effects[iteration][1] -= 1;
-            dialogText.text = card.cardName + " is Tethered, este " + card.effects[iteration][1] + " kola";
+            dialogText.text = card.cardName + " is locked";
         }
         Debug.Log(card.cardName + " => Tether");
         yield return new WaitForSeconds(2);
@@ -309,7 +300,7 @@ public class Effects : MonoBehaviour
             card.effects[iteration][1] -= 1;
             card.TakeDamage(1);
             card.HandleDefense(1);
-            dialogText.text = card.cardName + " is Starving, este " + card.effects[iteration][1] + " kola";
+            dialogText.text = card.cardName + " is Starving";
         }
         Debug.Log(card.cardName + " => Starving");
         yield return new WaitForSeconds(2);
@@ -403,7 +394,7 @@ public class Effects : MonoBehaviour
         else
         {
             card.state = CardState.STAY;
-            dialogText.text = card.cardName + " is making art, este " + card.effects[iteration][1] + " kola";
+            dialogText.text = card.cardName + " is making art";
             card.effects[iteration][1] -= 1;
         }
         Debug.Log(card.cardName + " => Depression");
@@ -428,7 +419,7 @@ public class Effects : MonoBehaviour
             card.HandleKnowledge(1);
             card.HandleStrength(1);
             card.HandleDefense(1);
-            dialogText.text = card.cardName + " is making art, este " + card.effects[iteration][1] + " kola";
+            dialogText.text = card.cardName + " is making art";
         }
         Debug.Log(card.cardName + " => Starving");
         yield return new WaitForSeconds(2);
@@ -459,9 +450,9 @@ public class Effects : MonoBehaviour
             if (UnityEngine.Random.value <= 0.33f)
             {
                 dialogText.text = card.cardName + " hurt itself in confusion";
-                yield return new WaitForSeconds(2);
                 card.state = CardState.MAYBE;
                 card.TakeDamage(UnityEngine.Random.Range(1, 3));
+                yield return new WaitForSeconds(2);
             }
             else if (UnityEngine.Random.value <= 0.33f)
             {

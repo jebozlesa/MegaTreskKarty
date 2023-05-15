@@ -6,6 +6,8 @@ public class SwipeDetector : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
 {
     public UnityEvent OnSwipeLeft;
     public UnityEvent OnSwipeRight;
+    public UnityEvent OnSwipeUp;
+    public UnityEvent OnSwipeDown;
 
     private Vector2 startTouchPosition;
 
@@ -21,8 +23,10 @@ public class SwipeDetector : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     public void OnEndDrag(PointerEventData eventData)
     {
         Vector2 direction = eventData.position - startTouchPosition;
+
         if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
         {
+            // Horizontal swipe
             if (direction.x > 0)
             {
                 OnSwipeRight.Invoke();
@@ -30,6 +34,18 @@ public class SwipeDetector : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
             else
             {
                 OnSwipeLeft.Invoke();
+            }
+        }
+        else
+        {
+            // Vertical swipe
+            if (direction.y > 0)
+            {
+                OnSwipeUp.Invoke();
+            }
+            else
+            {
+                OnSwipeDown.Invoke();
             }
         }
     }

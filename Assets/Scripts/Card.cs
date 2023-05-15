@@ -7,30 +7,36 @@ using TMPro;
 using Mono.Data.Sqlite;
 using System.Data;
 
-public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     public int cardId;
+    public int styleId;
     public string cardName;
     public int experience;
     public int health;
-    public int strength;
-    public int speed;
-    public int attack;
-    public int defense;
-    public int knowledge;
-    public int charisma;
+    // public int strength;
+    // public int speed;
+    // public int attack;
+    // public int defense;
+    // public int knowledge;
+    // public int charisma;
     public string image;
     public Color32 color;
     public int level;
+
+
+    public int strength { get; set; }
+    public int speed { get; set; }
+    public int attack { get; set; }
+    public int defense { get; set; }
+    public int knowledge { get; set; }
+    public int charisma { get; set; }
 
     int maxHP;
 
     public string story;
 
     public Dictionary<int, int> attackCount;
-
-    public int[] attacks = new int[5];
-    public int[] countAttacks = new int[5];
 
     public int attack1;
     public int attack2;
@@ -48,6 +54,7 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
     public Image cardImage;
     public Image cardImageAttr;
     public Image cardImageDesc;
+    public Image cardImageAttack;
     public Sprite cardSprite;
 
     public Image background;
@@ -75,6 +82,7 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
     public GameObject frontSide;
     public GameObject backSideAttributes;
     public GameObject backSideDescription;
+    public GameObject backSideAttack;
 
     public TMP_Text nameTextAttr;
     public TMP_Text expText;
@@ -100,6 +108,23 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
 
     public string connectionString;
 
+    public TMP_Text attNameText;
+    public TMP_Text attDescriptionText;
+    public TMP_Text attAttributesText;
+    public TMP_Text attSpecialText;
+
+    public Image changeButtonImg;
+    public TMP_Text changeButtonText;
+
+    public int currentAttackIndex = 1;
+
+    public GameObject attackPrefab;
+    public Transform attackListContainer;
+    public Button changeButton;
+
+    public AttackListController attackListController;
+
+
     void Start()
     {
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
@@ -116,12 +141,16 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
         cardImage.sprite = Resources.Load<Sprite>(image);
         cardImageAttr.sprite = Resources.Load<Sprite>(image + "_back");
         cardImageDesc.sprite = Resources.Load<Sprite>(image + "_back");
+        cardImageAttack.sprite = Resources.Load<Sprite>(image + "_back");
 
         background.GetComponent<Image>().color = color;
         nameText.color = color;
         levelText.color = color;
 
         LoadDetails();
+
+        changeButton.onClick.AddListener(ShowAttackList);
+        //attackListContainer.gameObject.SetActive(false);
     }
 
     public void Initialize(GameObject deckPanelReference)
@@ -155,7 +184,87 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
 
         storyText.color = color;
 
+        attNameText.color = color;
+        attDescriptionText.color = color;
+        attAttributesText.color = color;
+        attSpecialText.color = color;
+
+        changeButtonImg.color = ChangeAlpha(color, 80);
+        changeButtonText.color = color;
+
     }
+
+    public void ShowAttackList()
+    {
+        Debug.Log("CHange kliknuty ");
+        attackListController.ShowAttackList(styleId);
+        attackListContainer.gameObject.SetActive(true);
+    }
+
+    public void ChangeAttack(int direction)
+    {
+        
+        if (direction == 1)
+        {
+            currentAttackIndex++;
+            if (currentAttackIndex > 4)
+            {
+                currentAttackIndex = 1;
+            }
+        }
+        else if (direction == -1)
+        {
+            currentAttackIndex--;
+            if (currentAttackIndex < 1)
+            {
+                currentAttackIndex = 4;
+            }
+        }
+
+        switch (currentAttackIndex)
+        {
+            case 1:
+                LoadAttackData(attack1);
+                break;
+            case 2:
+                LoadAttackData(attack2);
+                break;
+            case 3:
+                LoadAttackData(attack3);
+                break;
+            case 4:
+                LoadAttackData(attack4);
+                break;
+        }
+    }
+
+    public void LoadAttackData(int attackID)
+    {
+        using (IDbConnection dbConnection = new SqliteConnection(connectionString))
+        {
+            dbConnection.Open();
+
+            using (IDbCommand dbCommand = dbConnection.CreateCommand())
+            {
+                dbCommand.CommandText = $"SELECT * FROM Attacks WHERE AttackID = {attackID}";
+                using (IDataReader reader = dbCommand.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        attNameText.text = reader["AttackName"].ToString();
+                        attDescriptionText.text = "Description: " + reader["Description"].ToString();
+                        attAttributesText.text = "Attributes: " + reader["Attributes"].ToString();
+                        attSpecialText.text = "Special: " + reader["Special"].ToString();
+                    }
+                    else
+                    {
+                        Debug.LogError($"No attack data found for AttackID: {attackID}");
+                    }
+                }
+            }
+        }
+    }
+
 
     public void OnClick()
     {
@@ -289,6 +398,7 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
 
     public void OnSwipeLeft()
     {
+        Debug.Log("Swipe Left");
         if (isZoomed)
         {
             if (frontSide.activeSelf)
@@ -305,12 +415,17 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
             {
                 frontSide.SetActive(true);
                 backSideAttributes.SetActive(false);
+            }
+            if (backSideAttack.activeSelf)
+            {
+                ChangeAttack(-1); // Zmena útoku pri swipovaní doľava
             }
         }
     }
 
     public void OnSwipeRight()
     {
+        Debug.Log("Swipe Right");
         if (isZoomed)
         {
             if (frontSide.activeSelf)
@@ -328,6 +443,32 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
                 frontSide.SetActive(true);
                 backSideDescription.SetActive(false);
             }
+            if (backSideAttack.activeSelf)
+            {
+                ChangeAttack(1); // Zmena útoku pri swipovaní doprava
+            }
+        }
+    }
+
+
+    public void OnSwipeUp()
+    {
+        if (isZoomed)
+        {
+            LoadAttackData(attack1); // Načítajte údaje o prvom útoku hráča podľa ID útoku
+            backSideAttack.SetActive(true);
+            frontSide.SetActive(false);
+            backSideAttributes.SetActive(false);
+            backSideDescription.SetActive(false);
+        }
+    }
+
+    public void OnSwipeDown()
+    {
+        if (isZoomed)
+        {
+            backSideAttack.SetActive(false);
+            frontSide.SetActive(true);
         }
     }
 
@@ -358,7 +499,7 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
                 }
             }
         }
-        else if (!dragInProgress)
+        else if (!dragInProgress && !attackListContainer.gameObject.activeSelf)
         {
             if (deckCard) OnClick();
             else ToggleZoom();
@@ -409,10 +550,18 @@ public class Card:MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginD
             frontSide.SetActive(true);
             backSideAttributes.SetActive(false);
             backSideDescription.SetActive(false);
+            backSideAttack.SetActive(false);
+            attackListContainer.gameObject.SetActive(false);
 
             // Hide the deck panel
             deckPanel.SetActive(false);
         }
     }
+
+    public Color32 ChangeAlpha(Color32 inputColor, byte newAlpha)
+    {
+        return new Color32(inputColor.r, inputColor.g, inputColor.b, newAlpha);
+    }
+
 
 }

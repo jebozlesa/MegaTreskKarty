@@ -26,7 +26,7 @@ public class RecordHandler : MonoBehaviour
 
         if (enemyLevel > bestRecord)
         {
-            yield return StartCoroutine(cardGenerator.AddRandomCard());
+            //yield return StartCoroutine(cardGenerator.AddRandomCard());
             bestRecord += 1;
             // Počkajte, kým sa dokončí metóda UpdatePlayerData
             yield return StartCoroutine(playerDataHandler.UpdatePlayerData("RRrecord", bestRecord));

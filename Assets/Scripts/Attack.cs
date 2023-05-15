@@ -602,7 +602,6 @@ public class Attack : MonoBehaviour
         }
         Debug.Log(attacker.cardName+" -> Pike => "+receiver.cardName);
 	}
-
     //21
     public IEnumerator Terrify(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -1252,7 +1251,7 @@ public class Attack : MonoBehaviour
 	{
         dialogText.text = receiver.cardName + " ambushed with surprise";
         receiver.TakeDamage(2);
-        receiver.HandleCharisma(1);
+        receiver.HandleCharisma(-1);
         attacker.HandleCharisma(1);
         yield return new WaitForSeconds(2);
         Debug.Log(attacker.cardName+" -> Ambush => "+receiver.cardName);
@@ -1356,7 +1355,7 @@ public class Attack : MonoBehaviour
     public IEnumerator BuffaloHorns(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
         dialogText.text = attacker.cardName + " Launching the maneuver!";
-        StartCoroutine(attacker.AddEffect(20,2));//Envelopment
+        StartCoroutine(attacker.AddEffect(20,1));//Horns
         attacker.state = CardState.STAY;
         receiver.HandleAttack(2);
         attacker.HandleDefense(-1);
@@ -1387,6 +1386,7 @@ public class Attack : MonoBehaviour
             receiver.TakeDamage(5);
             if (Random.value <= 0.3f) 
             {
+                yield return new WaitForSeconds(1);
                 dialogText.text = receiver.cardName + " is wounded";
                 yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 5)));//bleed
             }
@@ -1479,6 +1479,29 @@ public class Attack : MonoBehaviour
         yield return new WaitForSeconds(2);
         Debug.Log(attacker.cardName+" -> Jujutsu => "+receiver.cardName);
 	}
+    //87
+    public IEnumerator Espionage(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " spies on enemy";
+		receiver.HandleDefense(-((attacker.knowledge + attacker.charisma) / 7));
+        receiver.HandleSpeed(-((attacker.knowledge + attacker.charisma) / 7));
+        Debug.Log(attacker.cardName+" -> Espionage => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
+	}
+    //88
+    public IEnumerator Sabre(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " cuts with Sabre ";
+		receiver.TakeDamage(3 + ((attacker.knowledge + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+        if (Random.value <= 0.2f) receiver.TakeDamage(3);//critical hit
+        yield return new WaitForSeconds(2);
+        if (Random.value <= 0.3f) 
+        {
+            dialogText.text = receiver.cardName + " is wounded";
+            yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 5)));//bleed
+        }
+        Debug.Log(attacker.cardName+" -> Nodachi => "+receiver.cardName);
+    }
     //101
     public IEnumerator Yperit(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -1517,8 +1540,8 @@ public class Attack : MonoBehaviour
     public IEnumerator Propaganda(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
         dialogText.text = attacker.cardName + " uses propaganda";
-		receiver.HandleAttack(-((attacker.knowledge + attacker.charisma) / 8));
-        receiver.HandleKnowledge(-((attacker.knowledge + attacker.charisma) / 8));
+		receiver.HandleAttack(-((attacker.knowledge + attacker.charisma) / 7));
+        receiver.HandleKnowledge(-((attacker.knowledge + attacker.charisma) / 7));
         Debug.Log(attacker.cardName+" -> Propaganda => "+receiver.cardName);
         yield return new WaitForSeconds(2);
 	}

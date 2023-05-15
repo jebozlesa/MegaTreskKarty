@@ -1034,7 +1034,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 755176110766225253, guid: c6ed0527a7e3ca24ba8a23cbce5c93e9, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1141800933215233331, guid: c6ed0527a7e3ca24ba8a23cbce5c93e9, type: 3}
       propertyPath: m_Pivot.x
@@ -3424,7 +3424,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 27e5c3586fa4dfb46892e812e072400c, type: 3}
+  m_Sprite: {fileID: 21300000, guid: d497cba2987b5a34f9e385433f4ef1f8, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
