@@ -347,11 +347,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cbaa86a481f2bbf4bb6b5dfdc7f13702, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  attackId: 0
+  originalAttackId: 0
   attackName: {fileID: 6713257933479065803}
   attackDetailsPanel: {fileID: 2381265283045889605}
   attackDescription: {fileID: 205500849704085604}
   attackAttributes: {fileID: 5796417197603102633}
   attackSpecial: {fileID: 3452350759113032685}
+  backgroundImage: {fileID: 2221175446837922427}
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
+  selectedColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  card: {fileID: 0}
 --- !u!114 &2050630380
 MonoBehaviour:
   m_ObjectHideFlags: 0

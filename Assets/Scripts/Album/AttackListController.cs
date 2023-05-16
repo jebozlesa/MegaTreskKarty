@@ -52,17 +52,21 @@ public class AttackListController : MonoBehaviour
 
         while (reader.Read())
         {
-            AttackData attackData = new AttackData
+            int currentAttackId = reader.GetInt32(0);
+            if (!card.ContainsAttack(currentAttackId))
             {
-                AttackID = reader.GetInt32(0),
-                AttackName = reader.GetString(1),
-                Description = reader.GetString(2),
-                Attributes = reader.GetString(3),
-                Special = reader.GetString(4)
-            };
-            Debug.Log("LoadAttacksFromDatabase - attack =======>  " + reader.GetString(1));
+                AttackData attackData = new AttackData
+                {
+                    AttackID = reader.GetInt32(0),
+                    AttackName = reader.GetString(1),
+                    Description = reader.GetString(2),
+                    Attributes = reader.GetString(3),
+                    Special = reader.GetString(4)
+                };
+                Debug.Log("LoadAttacksFromDatabase - attack =======>  " + reader.GetString(1));
 
-            attacks.Add(attackData);
+                attacks.Add(attackData);
+            }
         }
 
         reader.Close();

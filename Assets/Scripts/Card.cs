@@ -198,6 +198,19 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     }
 
+    public bool ContainsAttack(int attackId)
+    {
+        return attack1 == attackId || attack2 == attackId || attack3 == attackId || attack4 == attackId;
+    }
+
+    public void DeselectAllAttacks() 
+    {
+        foreach (AviableAttack attack in GetComponentsInChildren<AviableAttack>()) 
+        {
+            attack.SetSelected(false);
+        }
+    }
+
     public void OnChangeAttackClick()
     {
         if (selectedAttackId != -1 && selectedOriginalAttackId != -1)
@@ -205,6 +218,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             ChangeAttackInDatabase(selectedAttackId, selectedOriginalAttackId, cardId);
             selectedAttackId = -1;
             selectedOriginalAttackId = -1;
+            attackListContainer.gameObject.SetActive(false);
         }
     }
 
@@ -214,7 +228,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         selectedOriginalAttackId = originalAttackId;
     }
 
-    public static void ChangeAttackInDatabase(int newAttackId, int originalAttackId, int cardId)
+    public void ChangeAttackInDatabase(int newAttackId, int originalAttackId, int cardId)
     {
         string connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
         IDbConnection dbConnection = new SqliteConnection(connectionString);
@@ -248,6 +262,31 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             int rowsAffected = dbCommand.ExecuteNonQuery();
             Debug.Log($"Rows affected: {rowsAffected}");
             dbCommand.Dispose();
+
+            // Po úspešnej zmene útoku v databáze aktualizujte útok na karte
+            switch (columnName)
+            {
+                case "Attack1":
+                    attack1 = newAttackId;
+                    if (currentAttackIndex == 1)
+                        LoadAttackData(newAttackId);
+                    break;
+                case "Attack2":
+                    attack2 = newAttackId;
+                    if (currentAttackIndex == 2)
+                        LoadAttackData(newAttackId);
+                    break;
+                case "Attack3":
+                    attack3 = newAttackId;
+                    if (currentAttackIndex == 3)
+                        LoadAttackData(newAttackId);
+                    break;
+                case "Attack4":
+                    attack4 = newAttackId;
+                    if (currentAttackIndex == 4)
+                        LoadAttackData(newAttackId);
+                    break;
+            }
         }
         else
         {

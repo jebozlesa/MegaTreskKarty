@@ -15,6 +15,11 @@ public class AviableAttack : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
     public TMP_Text attackAttributes;
     public TMP_Text attackSpecial;
 
+    public Image backgroundImage;  // Komponent Image z prefabu
+    public Color normalColor = Color.white;  // Farba pri nevýbere
+    public Color selectedColor = Color.yellow;  // Farba pri výbere
+    private bool isSelected = false;
+
     public Card card;
 
     private void Start()
@@ -35,6 +40,30 @@ public class AviableAttack : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
         // Skry popis útoku
         attackDetailsPanel.SetActive(false);
         attackDescription.gameObject.SetActive(false);
-        card.SelectAttack(attackId, originalAttackId);
+
+        if (!isSelected) 
+        {
+            card.DeselectAllAttacks();  // Deselect all other attacks
+            card.SelectAttack(attackId, originalAttackId);
+            SetSelected(true);
+        } 
+        else 
+        {
+            card.SelectAttack(-1, -1);  // Deselect this attack
+            SetSelected(false);
+        }
+    }
+
+    public void SetSelected(bool selected) 
+    {
+        isSelected = selected;
+        if (selected) 
+        {
+            backgroundImage.color = selectedColor;
+        } 
+        else 
+        {
+            backgroundImage.color = normalColor;
+        }
     }
 }
