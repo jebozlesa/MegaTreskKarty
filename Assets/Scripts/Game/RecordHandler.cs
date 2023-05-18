@@ -31,7 +31,7 @@ public class RecordHandler : MonoBehaviour
             // Počkajte, kým sa dokončí metóda UpdatePlayerData
             yield return StartCoroutine(playerDataHandler.UpdatePlayerData("RRrecord", bestRecord));
             recordText.text = bestRecord.ToString();
-            if (enemyLevel > 5)
+            if (enemyLevel > 0)
             {
                 // Počkajte, kým sa dokončí druhá metóda AddRandomCard
                 yield return StartCoroutine(cardGenerator.AddRandomCard());

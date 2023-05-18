@@ -337,6 +337,24 @@ public class Attack : MonoBehaviour
             case 86:
                 yield return StartCoroutine(Jujutsu(attacker, receiver, dialogText));
                 break;
+            case 87:
+                yield return StartCoroutine(Espionage(attacker, receiver, dialogText));
+                break;
+            case 88:
+                yield return StartCoroutine(Sabre(attacker, receiver, dialogText));
+                break;
+            case 89:
+                yield return StartCoroutine(Gamble(attacker, receiver, dialogText));
+                break;
+            case 90:
+                yield return StartCoroutine(Philosophy(attacker, receiver, dialogText));
+                break;
+            case 91:
+                yield return StartCoroutine(Calm(attacker, receiver, dialogText));
+                break;
+            case 92:
+                yield return StartCoroutine(Honesty(attacker, receiver, dialogText));
+                break;
             case 101:
                 yield return StartCoroutine(Yperit(attacker, receiver, dialogText));
                 break;
@@ -370,7 +388,6 @@ public class Attack : MonoBehaviour
         }
         Debug.Log(attacker.cardName + " -> Punch => " + receiver.cardName);
 	}
-
     //2
     public IEnumerator Kick(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -380,7 +397,6 @@ public class Attack : MonoBehaviour
         if (Random.value <= 0.2f) receiver.TakeDamage(4);//extra dmg
         Debug.Log(attacker.cardName + " -> Kick => " + receiver.cardName);
 	}
-
     //3
     public IEnumerator Heal(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -389,7 +405,6 @@ public class Attack : MonoBehaviour
         Debug.Log(attacker.cardName + " -> Heal => " + attacker.cardName);
         yield return new WaitForSeconds(2);
 	}
-
     //4
     public IEnumerator Forgiveness(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -404,7 +419,6 @@ public class Attack : MonoBehaviour
         }
         Debug.Log(attacker.cardName+" -> Forgiveness => "+receiver.cardName);
 	}
-
     //5
     public IEnumerator Crusade(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -413,7 +427,6 @@ public class Attack : MonoBehaviour
         Debug.Log(attacker.cardName+" -> Crusade => "+receiver.cardName);
         yield return new WaitForSeconds(2);
 	}
-
     //6
     public IEnumerator WaterToWine(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -424,7 +437,6 @@ public class Attack : MonoBehaviour
         Debug.Log(attacker.cardName+" -> WaterToWine => "+attacker.cardName);
         yield return new WaitForSeconds(2);
 	}
-
     //7
     public IEnumerator CarHit(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -433,7 +445,6 @@ public class Attack : MonoBehaviour
         Debug.Log(attacker.cardName+" -> CarHit => "+receiver.cardName);
         yield return new WaitForSeconds(2);
 	}
-
     //8
     public IEnumerator SteamGun(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -443,7 +454,6 @@ public class Attack : MonoBehaviour
         yield return new WaitForSeconds(2);
         Debug.Log(attacker.cardName+" -> SteamGun => "+receiver.cardName);
 	}
-
     //9
     public IEnumerator Radiation(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -459,7 +469,6 @@ public class Attack : MonoBehaviour
         }
         Debug.Log(attacker.cardName+" -> Radiation => "+receiver.cardName);
 	}
-
     //10
     public IEnumerator Scratch(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -473,7 +482,6 @@ public class Attack : MonoBehaviour
         }
         Debug.Log(attacker.cardName+" -> Scratch => "+receiver.cardName);
 	}
-
     //11
     public IEnumerator ScientificLecture(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -487,7 +495,6 @@ public class Attack : MonoBehaviour
         }
         Debug.Log(attacker.cardName+" -> ScientificLecture => "+receiver.cardName);
 	}
-
     //12
     public IEnumerator ChiSau(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -496,7 +503,6 @@ public class Attack : MonoBehaviour
         Debug.Log(attacker.cardName+" -> ChiSau => "+receiver.cardName);
         yield return new WaitForSeconds(2);
 	}
-
     //13
     public IEnumerator OneInchPunch(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -506,7 +512,6 @@ public class Attack : MonoBehaviour
         Debug.Log(attacker.cardName+" -> OneInchPunch => "+receiver.cardName);
         yield return new WaitForSeconds(2);
 	}
-
     //14
     public IEnumerator UpInSmoke(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -521,7 +526,6 @@ public class Attack : MonoBehaviour
         }
         Debug.Log(attacker.cardName+" -> UpInSmoke => "+receiver.cardName);
 	}
-
     //15
     public IEnumerator Sing(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -797,7 +801,7 @@ public class Attack : MonoBehaviour
     public IEnumerator Fury(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
         dialogText.text = attacker.cardName + " is furious!";
-        StartCoroutine(attacker.AddEffect(6,3));
+        StartCoroutine(attacker.AddEffect(6,3));//fury
         attacker.HandleStrength(5);
         attacker.HandleAttack(5);
         attacker.HandleDefense(-3);
@@ -1502,6 +1506,89 @@ public class Attack : MonoBehaviour
         }
         Debug.Log(attacker.cardName+" -> Nodachi => "+receiver.cardName);
     }
+    //89
+    public IEnumerator Gamble(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " is raising bets";
+        yield return new WaitForSeconds(1);
+        int bet = Random.Range(1, 3);
+        if (Random.value <= 0.66f)
+        {
+            dialogText.text = "And wins";
+            attacker.HandleCharisma(bet);
+            receiver.HandleCharisma(-bet);
+        }
+        else
+        {
+            dialogText.text = "And loses";
+            attacker.HandleCharisma(-bet);
+            receiver.HandleCharisma(bet);
+        }
+        Debug.Log(attacker.cardName+" -> Gamble => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
+	}
+    //90
+    public IEnumerator Philosophy(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " philosophizes!!!";
+        yield return new WaitForSeconds(1);
+        if (attacker.knowledge <= receiver.knowledge) 
+        {
+            dialogText.text = receiver.cardName + " is intersted in philosophy";
+            receiver.HandleKnowledge(1);
+        }
+        else if (5 <= receiver.knowledge) 
+        {
+            dialogText.text = receiver.cardName + " is bored by Philosophy";
+            if (Random.value <= 0.3f) 
+            {
+                yield return new WaitForSeconds(1);
+                dialogText.text = receiver.cardName + " falls asleep";
+                yield return StartCoroutine(receiver.AddEffect(3,Random.Range(1, 3)));//sleep
+            }
+        }
+        else
+        {
+            dialogText.text = receiver.cardName + " doesn't understand that Philosophy";
+            if (Random.value <= 0.9f) 
+            {
+                yield return new WaitForSeconds(1);
+                dialogText.text = receiver.cardName + " is confused";
+                yield return StartCoroutine(receiver.AddEffect(17,Random.Range(2, 5)));//confusion
+            }
+        }
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName+" -> Philosophy => "+receiver.cardName);
+	}
+    //91
+    public IEnumerator Calm(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " calmed down his enemy";
+        StartCoroutine(attacker.AddEffect(21,3));//calm
+        attacker.HandleStrength(-3);
+        attacker.HandleAttack(-3);
+        Debug.Log(attacker.cardName+" -> Calm => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
+	}
+    //92
+    public IEnumerator Honesty(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + "is brutally honest";
+		receiver.TakeDamage(((attacker.knowledge + attacker.attack + attacker.charisma)/2) - (receiver.defense));
+        yield return new WaitForSeconds(2);
+        if (Random.value <= 0.1f)
+        {
+            attacker.HandleStrength(Random.Range(-3,0));
+            attacker.HandleSpeed(Random.Range(-3,0));
+            attacker.HandleAttack(Random.Range(-3,0));
+            attacker.HandleDefense(Random.Range(-3,0));
+            attacker.HandleCharisma(Random.Range(-3,0));
+            yield return StartCoroutine(attacker.AddEffect(13,1));//Depression
+            dialogText.text = attacker.cardName + " feels bad for enemy";
+            yield return new WaitForSeconds(2);
+        }
+        Debug.Log(attacker.cardName + " -> Punch => " + receiver.cardName);
+	}
     //101
     public IEnumerator Yperit(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{

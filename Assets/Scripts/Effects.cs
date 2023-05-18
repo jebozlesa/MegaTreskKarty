@@ -92,6 +92,9 @@ public class Effects : MonoBehaviour
             case 20:
                 yield return StartCoroutine(Horns(card, dialogText, iteration, target));
                 break;
+            case 21:
+                yield return StartCoroutine(Calm(card, dialogText, iteration));
+                break;
             default:
                 Debug.LogError("Invalid effect type.");
                 break;
@@ -515,5 +518,23 @@ public class Effects : MonoBehaviour
             yield return new WaitForSeconds(2);
         }
         Debug.Log(card.cardName + " => Horns");
+	}
+    //21
+    public IEnumerator Calm(Kard card, TMP_Text dialogText, int iteration)
+	{
+        if (card.effects[iteration][1] == 0)
+        {
+            card.RemoveEffect(iteration);
+            dialogText.text = card.cardName + " is sharp again";
+            card.HandleStrength(3);
+            card.HandleAttack(3);
+            yield return new WaitForSeconds(2);
+            yield break;
+        }
+        else
+        {
+            card.effects[iteration][1] -= 1;
+        }
+        Debug.Log(card.cardName + " => Fury");
 	}
 }

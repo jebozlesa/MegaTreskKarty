@@ -286,6 +286,24 @@ public class AttackDescriptions : MonoBehaviour
             case 86://Jujutsu
                 count = attacker.attack;
                 break;
+            case 87://Espionage
+                count = 10;
+                break;
+            case 88://Sabre
+                count = attacker.strength * 5;
+                break;
+            case 89://Gamble
+                count = attacker.charisma;
+                break;
+            case 90://Philosophy
+                count = 10;
+                break;
+            case 91://Calm
+                count = attacker.charisma;;
+                break;
+            case 92://Honesty
+                count = attacker.knowledge * 2;
+                break;
             case 101://Yperit
                 count = 3;
                 break;
@@ -588,6 +606,24 @@ public class AttackDescriptions : MonoBehaviour
             case 86:
                 dialogText.text = "Jujutsu chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
+            case 87:
+                dialogText.text = "Espionage chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 88:
+                dialogText.text = "Sabre chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 89:
+                dialogText.text = "Gamble chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 90:
+                dialogText.text = "Philosophy chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 91:
+                dialogText.text = "Calm chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 92:
+                dialogText.text = "Honesty chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
             case 101:
                 dialogText.text = "Yperit chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
@@ -876,6 +912,24 @@ public class AttackDescriptions : MonoBehaviour
                 break;
             case 86:
                 Jujutsu(buttonText);
+                break;
+            case 87:
+                Espionage(buttonText);
+                break;
+            case 88:
+                Sabre(buttonText);
+                break;
+            case 89:
+                Gamble(buttonText);
+                break;
+            case 90:
+                Philosophy(buttonText);
+                break;
+            case 91:
+                Calm(buttonText);
+                break;
+            case 92:
+                Honesty(buttonText);
                 break;
             case 101:
                 Yperit(buttonText);
@@ -1391,19 +1445,46 @@ public class AttackDescriptions : MonoBehaviour
 	{
         buttonText.text = "Jujutsu";
 	}
-
+    //87
+    public void Espionage(TMP_Text buttonText)
+	{
+        buttonText.text = "Espionage";
+	}
+    //88
+    public void Sabre(TMP_Text buttonText)
+	{
+        buttonText.text = "Sabre";
+	}
+    //89
+    public void Gamble(TMP_Text buttonText)
+	{
+        buttonText.text = "Gamble";
+	}
+    //90
+    public void Philosophy(TMP_Text buttonText)
+	{
+        buttonText.text = "Philosophy";
+	}
+    //91
+    public void Calm(TMP_Text buttonText)
+	{
+        buttonText.text = "Calm";
+	}
+    //92
+    public void Honesty(TMP_Text buttonText)
+	{
+        buttonText.text = "Honesty";
+	}
     //101
     public void Yperit(TMP_Text buttonText)
 	{
         buttonText.text = "Yperit";
 	}
-
     //102
     public void Blitzkrieg(TMP_Text buttonText)
 	{
         buttonText.text = "Blitzkrieg";
 	}
-
     //103
     public void Propaganda(TMP_Text buttonText)
 	{

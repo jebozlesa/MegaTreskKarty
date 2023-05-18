@@ -893,16 +893,18 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '"...in the year 30 AD, in the small village of Cana in present-day Israel,
-    a wedding took place to which Jesus Christ and his disciples were invited. During
-    the celebrations, the guests began to worry that there was a serious shortage
-    of wine in their supplies.
+  m_text: '"...In 525 BC, in the bustling state of Lu, the streets were hummed with
+    anticipation, an undercurrent of excitement pulsing through the populous city.
 
-    Understanding their concerns and not wanting
-    to spoil the festive atmosphere, Jesus decided to help. He approached the containers
-    filled with water and prayed for their transformation. When the guests tasted
-    the water, they found that it had miraculously turned into excellent wine, and
-    the wedding feast could continue..."
+    Confucius
+    took the radical step of establishing the first public school, open to all who
+    yearned for knowledge, irrespective of their social status. It was a place where
+    the sons of nobles sat next to the sons of commoners.
+
+    Amid the whispers
+    of naysayers and the looming shadow of tradition, Confucius stood firm, his school
+    quickly filling with eager minds. His teachings of morality, justice, and proper
+    social conduct resonated deeply within the halls of his groundbreaking institution..."
 
 '
   m_isRightToLeft: 0
@@ -1125,7 +1127,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1477193695115225891
 RectTransform:
   m_ObjectHideFlags: 0
