@@ -1564,9 +1564,9 @@ public class Attack : MonoBehaviour
     public IEnumerator Calm(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
         dialogText.text = attacker.cardName + " calmed down his enemy";
-        StartCoroutine(attacker.AddEffect(21,3));//calm
-        attacker.HandleStrength(-3);
-        attacker.HandleAttack(-3);
+        StartCoroutine(receiver.AddEffect(21,3));//calm
+        receiver.HandleStrength(-3);
+        receiver.HandleAttack(-3);
         Debug.Log(attacker.cardName+" -> Calm => "+receiver.cardName);
         yield return new WaitForSeconds(2);
 	}

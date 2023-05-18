@@ -30,7 +30,7 @@ Shaka Zulu,1,1,1,1,1,1,1,shaka,74;5;8,1,1,1,1,1
 Miyamoto Musashi,1,1,1,1,1,1,1,musashi,236;3;0,1,1,1,1,1
 Yasuke,1,1,1,1,1,1,1,yasuke,0;0;0,1,1,1,1,1
 Boudica,1,1,1,1,1,1,1,boudica,118;122;97,1,1,1,1,1
-Carl Marx,1,1,1,1,1,1,1,marx,248;254;250,1,1,1,1,1
+Carl Marx,1,1,1,1,1,1,1,marx,248;254;250,1,1,1,1,1              //neviem vymysliet utoky
 Giacomo Casanova,1,1,1,1,1,1,1,casanova,255;38;83,1,1,1,1,1
 Confucius,1,1,1,1,1,1,1,confucius,202;197;93,1,1,1,1,1
 Mahatma Gandhi,1,1,1,1,1,1,1,ghandi,234;211;19,1,1,1,1,1
