@@ -13,7 +13,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     public int styleId;
     public string cardName;
     public int experience;
-    public int health;
+    // public int health;
     // public int strength;
     // public int speed;
     // public int attack;
@@ -24,7 +24,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     public Color32 color;
     public int level;
 
-
+    public int health { get; set; }
     public int strength { get; set; }
     public int speed { get; set; }
     public int attack { get; set; }

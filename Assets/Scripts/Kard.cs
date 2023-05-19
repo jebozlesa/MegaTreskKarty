@@ -15,7 +15,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 {
     public int cardId;
     public string cardName;
-    public int health;
+    // public int health;
     // public int strength;
     // public int speed;
     // public int attack;
@@ -26,6 +26,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
     public Color32 color;
     public int level;
 
+    public int health { get; set; }
     public int strength { get; set; }
     public int speed { get; set; }
     public int attack { get; set; }

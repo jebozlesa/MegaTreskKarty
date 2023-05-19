@@ -4,6 +4,7 @@ using UnityEngine;
 
 public interface IAttackCount
 {
+    int health { get; }
     int strength { get; }
     int speed { get; }
     int attack { get; }

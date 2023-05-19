@@ -95,6 +95,9 @@ public class Effects : MonoBehaviour
             case 21:
                 yield return StartCoroutine(Calm(card, dialogText, iteration));
                 break;
+            case 22:
+                yield return StartCoroutine(Reloading(card, dialogText, iteration, target));
+                break;
             default:
                 Debug.LogError("Invalid effect type.");
                 break;
@@ -190,7 +193,7 @@ public class Effects : MonoBehaviour
             card.RemoveEffect(iteration);
             card.state = CardState.ATTACK;
             card.HandleDefense(-10);
-            target.TakeDamage(UnityEngine.Random.Range(18, 22));
+            target.TakeDamage(UnityEngine.Random.Range(10, 22));
             dialogText.text = card.cardName + "'s armies attacks!!";
             yield return new WaitForSeconds(2);
             yield break;
@@ -536,5 +539,35 @@ public class Effects : MonoBehaviour
             card.effects[iteration][1] -= 1;
         }
         Debug.Log(card.cardName + " => Fury");
+	}
+    //22
+    public IEnumerator Reloading(Kard card, TMP_Text dialogText, int iteration, Kard target)
+	{
+        card.state = CardState.STAY;
+        //StartCoroutine(textBubble.ShowForSeconds("surrender!", Resources.Load<Sprite>("oblacik"), 2.5f));
+        if (card.effects[iteration][1] == 0)
+        {
+            card.RemoveEffect(iteration);
+            card.state = CardState.ATTACK;
+            card.HandleDefense(1);
+            if (UnityEngine.Random.value <= ((20 + card.attack) / 40f))
+            {
+                dialogText.text = "Bang! " + card.cardName + " shoots";
+                target.TakeDamage(UnityEngine.Random.Range(10, 22));
+            }
+            else
+            {
+                dialogText.text = "Bang! aaaand miss";
+            }
+            yield return new WaitForSeconds(2);
+            yield break;
+        }
+        else
+        {
+            card.effects[iteration][1] -= 1;
+            dialogText.text = card.cardName + " is still reloading";
+        }
+        Debug.Log(card.cardName + " => Reloading");
+        yield return new WaitForSeconds(2);
 	}
 }

@@ -304,6 +304,24 @@ public class AttackDescriptions : MonoBehaviour
             case 92://Honesty
                 count = attacker.knowledge * 2;
                 break;
+            case 93://Valaska
+                count = attacker.strength * 5;
+                break;
+            case 94://Moonshine
+                count = attacker.strength;
+                break;
+            case 95://OutlawBand
+                count = attacker.charisma;
+                break;
+            case 96://FlintlockPistol
+                count = attacker.attack * 3;
+                break;
+            case 97://PassiveResistance
+                count = attacker.knowledge * 2;
+                break;
+            case 98://HungerStrike
+                count = attacker.health / 5;
+                break;
             case 101://Yperit
                 count = 3;
                 break;
@@ -624,6 +642,24 @@ public class AttackDescriptions : MonoBehaviour
             case 92:
                 dialogText.text = "Honesty chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
+            case 93:
+                dialogText.text = "Valaska chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 94:
+                dialogText.text = "Moonshine chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 95:
+                dialogText.text = "Outlaw Band chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 96:
+                dialogText.text = "Flintlock Pistol chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 97:
+                dialogText.text = "Passive Resistance chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 98:
+                dialogText.text = "Hunger Strike chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
             case 101:
                 dialogText.text = "Yperit chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
@@ -930,6 +966,24 @@ public class AttackDescriptions : MonoBehaviour
                 break;
             case 92:
                 Honesty(buttonText);
+                break;
+            case 93:
+                Valaska(buttonText);
+                break;
+            case 94:
+                Moonshine(buttonText);
+                break;
+            case 95:
+                OutlawBand(buttonText);
+                break;
+            case 96:
+                FlintlockPistol(buttonText);
+                break;
+            case 97:
+                PassiveResistance(buttonText);
+                break;
+            case 98:
+                HungerStrike(buttonText);
                 break;
             case 101:
                 Yperit(buttonText);
@@ -1474,6 +1528,36 @@ public class AttackDescriptions : MonoBehaviour
     public void Honesty(TMP_Text buttonText)
 	{
         buttonText.text = "Honesty";
+	}
+    //93
+    public void Valaska(TMP_Text buttonText)
+	{
+        buttonText.text = "Valaska";
+	}
+    //94
+    public void Moonshine(TMP_Text buttonText)
+	{
+        buttonText.text = "Moonshine";
+	}
+    //95
+    public void OutlawBand(TMP_Text buttonText)
+	{
+        buttonText.text = "Outlaw Band";
+	}
+    //96
+    public void FlintlockPistol(TMP_Text buttonText)
+	{
+        buttonText.text = "Flintlock Pistol";
+	}
+    //97
+    public void PassiveResistance(TMP_Text buttonText)
+	{
+        buttonText.text = "Passive Resistance";
+	}
+    //98
+    public void HungerStrike(TMP_Text buttonText)
+	{
+        buttonText.text = "Hunger Strike";
 	}
     //101
     public void Yperit(TMP_Text buttonText)

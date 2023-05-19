@@ -893,20 +893,14 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '"...In 525 BC, in the bustling state of Lu, the streets were hummed with
-    anticipation, an undercurrent of excitement pulsing through the populous city.
-
-    Confucius
-    took the radical step of establishing the first public school, open to all who
-    yearned for knowledge, irrespective of their social status. It was a place where
-    the sons of nobles sat next to the sons of commoners.
-
-    Amid the whispers
-    of naysayers and the looming shadow of tradition, Confucius stood firm, his school
-    quickly filling with eager minds. His teachings of morality, justice, and proper
-    social conduct resonated deeply within the halls of his groundbreaking institution..."
-
-'
+  m_text: "\"...In December 1948, in the grand halls of the United Nations in Paris,
+    the air buzzed with anticipation. Eleanor Roosevelt stood before the assembly,
+    presenting the Universal Declaration of Human Rights\u2014a labor of love that
+    had consumed her life for months. She had crossed oceans, battled bureaucracy,
+    and confronted prejudice to ensure its creation. As she read out the declaration,
+    the assembly fell silent. When the applause finally erupted, the world had changed
+    forever. Eleanor had lit the beacon of hope for human rights, a flame still burning
+    today...\"\n"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 125cb55b44b24c4393181402bc6200e6, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 125cb55b44b24c4393181402bc6200e6, type: 2}
@@ -1127,7 +1121,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1477193695115225891
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2740,7 +2734,6 @@ MonoBehaviour:
   styleId: 0
   cardName: 
   experience: 0
-  health: 0
   image: 
   color:
     serializedVersion: 2

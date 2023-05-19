@@ -355,6 +355,24 @@ public class Attack : MonoBehaviour
             case 92:
                 yield return StartCoroutine(Honesty(attacker, receiver, dialogText));
                 break;
+            case 93:
+                yield return StartCoroutine(Valaska(attacker, receiver, dialogText));
+                break;
+            case 94:
+                yield return StartCoroutine(Moonshine(attacker, receiver, dialogText));
+                break;
+            case 95:
+                yield return StartCoroutine(OutlawBand(attacker, receiver, dialogText));
+                break;
+            case 96:
+                yield return StartCoroutine(FlintlockPistol(attacker, receiver, dialogText));
+                break;
+            case 97:
+                yield return StartCoroutine(PassiveResistance(attacker, receiver, dialogText));
+                break;
+            case 98:
+                yield return StartCoroutine(HungerStrike(attacker, receiver, dialogText));
+                break;
             case 101:
                 yield return StartCoroutine(Yperit(attacker, receiver, dialogText));
                 break;
@@ -515,7 +533,7 @@ public class Attack : MonoBehaviour
     //14
     public IEnumerator UpInSmoke(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
-        dialogText.text = attacker.cardName + " smoke some shit and feels good";
+        dialogText.text = attacker.cardName + " smoke some s#!t and feels good";
         attacker.Heal((int)System.Math.Ceiling((double)attacker.strength / 4));
         attacker.HandleStrength(1);
         yield return new WaitForSeconds(2);
@@ -1496,7 +1514,7 @@ public class Attack : MonoBehaviour
     public IEnumerator Sabre(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
         dialogText.text = attacker.cardName + " cuts with Sabre ";
-		receiver.TakeDamage(3 + ((attacker.knowledge + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+		receiver.TakeDamage(3 + ((attacker.attack + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
         if (Random.value <= 0.2f) receiver.TakeDamage(3);//critical hit
         yield return new WaitForSeconds(2);
         if (Random.value <= 0.3f) 
@@ -1504,7 +1522,7 @@ public class Attack : MonoBehaviour
             dialogText.text = receiver.cardName + " is wounded";
             yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 5)));//bleed
         }
-        Debug.Log(attacker.cardName+" -> Nodachi => "+receiver.cardName);
+        Debug.Log(attacker.cardName+" -> Sabre => "+receiver.cardName);
     }
     //89
     public IEnumerator Gamble(Kard attacker, Kard receiver, TMP_Text dialogText)
@@ -1588,6 +1606,107 @@ public class Attack : MonoBehaviour
             yield return new WaitForSeconds(2);
         }
         Debug.Log(attacker.cardName + " -> Punch => " + receiver.cardName);
+	}
+    //93
+    public IEnumerator Valaska(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + "'s valaska strikes";
+		receiver.TakeDamage(3 + ((attacker.attack + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+        if (Random.value <= 0.5f) receiver.TakeDamage(2);//critical hit
+        yield return new WaitForSeconds(2);
+        if (Random.value <= 0.1f) 
+        {
+            dialogText.text = receiver.cardName + " is wounded";
+            yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 4)));//bleed
+        }
+        Debug.Log(attacker.cardName+" -> Valaska => "+receiver.cardName);
+    }
+    //94
+    public IEnumerator Moonshine(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " is getting pretty drunk";
+        attacker.Heal(1);
+        attacker.HandleStrength(2);
+        attacker.HandleAttack(2);
+        attacker.HandleDefense(-2);
+        yield return new WaitForSeconds(2);
+        if (Random.value <= 0.1f) 
+        {
+            dialogText.text = receiver.cardName + " falls asleep";
+            yield return StartCoroutine(attacker.AddEffect(3,Random.Range(1, 3)));//sleep
+        }
+        else if (Random.value <= 0.2f) 
+        {
+            dialogText.text = attacker.cardName + " is furious!";
+            StartCoroutine(attacker.AddEffect(6,3));//fury
+            attacker.HandleStrength(5);
+            attacker.HandleAttack(5);
+            attacker.HandleDefense(-3);
+        }
+        Debug.Log(attacker.cardName+" -> Moonshine => "+receiver.cardName);
+	}
+    //95
+    public IEnumerator OutlawBand(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + "'s Band Attacks";
+        yield return new WaitForSeconds(2);
+        int loot = Random.Range(1,3);
+        if (receiver.charisma > receiver.strength) 
+        {
+            receiver.TakeDamage(Random.Range(5, 10));
+            attacker.HandleCharisma(loot);
+            receiver.HandleCharisma(-loot);
+        }
+        else
+        {
+            dialogText.text = "The outlaw band stumbled";
+            attacker.TakeDamage(Random.Range(3, 7));
+            yield return new WaitForSeconds(2);
+        }
+
+        Debug.Log(attacker.cardName+" -> OutlawBand => "+receiver.cardName);
+	}
+    //96
+    public IEnumerator FlintlockPistol(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " is cleaning his flintlock";
+        StartCoroutine(attacker.AddEffect(22,Random.Range(1, 2)));//Reloading
+        attacker.state = CardState.STAY;
+        attacker.HandleDefense(-1);
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName+" -> FlintlockPistol => "+receiver.cardName);
+    }
+    //97
+    public IEnumerator PassiveResistance(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " is resisting passively!!!";
+        receiver.HandleAttack(-1);
+        attacker.HandleDefense(2);
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName+" -> PassiveResistance => "+receiver.cardName);
+	}
+    //98
+    public IEnumerator HungerStrike(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " refuses to eat";
+		attacker.TakeDamage(5);
+        yield return new WaitForSeconds(2);
+        if (Random.value <= ((40 - receiver.strength) / 30f))
+        {
+            receiver.HandleStrength(Random.Range(-3,0));
+            receiver.HandleSpeed(Random.Range(-3,0));
+            receiver.HandleAttack(Random.Range(-3,0));
+            receiver.HandleDefense(Random.Range(-3,0));
+            receiver.HandleCharisma(Random.Range(-3,0));
+            yield return StartCoroutine(receiver.AddEffect(13,1));//Depression
+            dialogText.text = receiver.cardName + " feels bad for enemy";
+        }
+        else
+        {
+            dialogText.text = receiver.cardName + " desn't care";
+        }
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName + " -> HungerStrike => " + receiver.cardName);
 	}
     //101
     public IEnumerator Yperit(Kard attacker, Kard receiver, TMP_Text dialogText)
