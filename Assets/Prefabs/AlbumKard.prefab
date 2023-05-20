@@ -893,14 +893,21 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\"...In December 1948, in the grand halls of the United Nations in Paris,
-    the air buzzed with anticipation. Eleanor Roosevelt stood before the assembly,
-    presenting the Universal Declaration of Human Rights\u2014a labor of love that
-    had consumed her life for months. She had crossed oceans, battled bureaucracy,
-    and confronted prejudice to ensure its creation. As she read out the declaration,
-    the assembly fell silent. When the applause finally erupted, the world had changed
-    forever. Eleanor had lit the beacon of hope for human rights, a flame still burning
-    today...\"\n"
+  m_text: '"...In the icy winter of 1843, Karl Marx, an exiled journalist from Germany,
+    found himself in Paris. He was a man on a mission, seeking to uncover societal
+    injustices.
+
+    Wandering through Parisian alleys, he encountered the grim
+    realities of the working class. Seeing their dreams crushed under the harsh demands
+    of the Industrial Revolution sparked his pursuit for social equality.
+
+    These
+    encounters fuelled his thoughts, leading him to formulate his revolutionary ideas.
+    Amidst the cold Paris nights, the seeds of "The Communist Manifesto" were sown,
+    under the dim glow of candlelight. His observations would give birth to one of
+    the most influential ideologies of modern times..."
+
+'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 125cb55b44b24c4393181402bc6200e6, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 125cb55b44b24c4393181402bc6200e6, type: 2}
