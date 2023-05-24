@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using System.Linq;
 
 public class Attack : MonoBehaviour
 {
@@ -373,6 +374,12 @@ public class Attack : MonoBehaviour
             case 98:
                 yield return StartCoroutine(HungerStrike(attacker, receiver, dialogText));
                 break;
+            case 99:
+                yield return StartCoroutine(Gladius(attacker, receiver, dialogText));
+                break;
+            case 100:
+                yield return StartCoroutine(ShieldBash(attacker, receiver, dialogText));
+                break;
             case 101:
                 yield return StartCoroutine(Yperit(attacker, receiver, dialogText));
                 break;
@@ -383,7 +390,16 @@ public class Attack : MonoBehaviour
                 yield return StartCoroutine(Propaganda(attacker, receiver, dialogText));
                 break;
             case 104:
-                yield return StartCoroutine(Propaganda(attacker, receiver, dialogText));
+                yield return StartCoroutine(Retiarius(attacker, receiver, dialogText));
+                break;
+            case 105:
+                yield return StartCoroutine(Shuriken(attacker, receiver, dialogText));
+                break;
+            case 106:
+                yield return StartCoroutine(Kusarigama(attacker, receiver, dialogText));
+                break;
+            case 107:
+                yield return StartCoroutine(Ninjutsu(attacker, receiver, dialogText));
                 break;
             default:
                 Debug.LogError("Invalid attack type.");
@@ -391,6 +407,7 @@ public class Attack : MonoBehaviour
         }
     }
 
+    public delegate IEnumerator AttackDelegate(Kard attacker, Kard receiver, TMP_Text dialogText);
     
     //1
     public IEnumerator Punch(Kard attacker, Kard receiver, TMP_Text dialogText)
@@ -1708,6 +1725,24 @@ public class Attack : MonoBehaviour
         yield return new WaitForSeconds(2);
         Debug.Log(attacker.cardName + " -> HungerStrike => " + receiver.cardName);
 	}
+    //99
+    public IEnumerator Gladius(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " attacks with gladius";
+		receiver.TakeDamage(2 + ((attacker.attack + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+        if (Random.value <= 0.5f) receiver.TakeDamage(4);//critical hit
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName+" -> Gladius => "+receiver.cardName);
+    }
+    //100
+    public IEnumerator ShieldBash(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " smashes with his shield";
+		receiver.TakeDamage(2);
+        if (Random.value <= 0.5f) attacker.HandleDefense(2);//critical hit
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName+" -> ShieldBash => "+receiver.cardName);
+    }
     //101
     public IEnumerator Yperit(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -1724,7 +1759,6 @@ public class Attack : MonoBehaviour
         yield return new WaitForSeconds(2);
         Debug.Log(attacker.cardName+" -> Yperit => "+receiver.cardName);
 	}
-
     //102
     public IEnumerator Blitzkrieg(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -1741,7 +1775,6 @@ public class Attack : MonoBehaviour
         Debug.Log(attacker.cardName+" -> Blitzkrieg => "+receiver.cardName);
         yield return new WaitForSeconds(2);
 	}
-
     //103
     public IEnumerator Propaganda(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -1751,6 +1784,64 @@ public class Attack : MonoBehaviour
         Debug.Log(attacker.cardName+" -> Propaganda => "+receiver.cardName);
         yield return new WaitForSeconds(2);
 	}
+    //104
+    public IEnumerator Retiarius(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " throws the net";
+        yield return new WaitForSeconds(2);
+        if (attacker.attack > receiver.speed && Random.value <= 0.9f) 
+        {
+            StartCoroutine(receiver.AddEffect(9,1));//Tether
+            dialogText.text = receiver.cardName + " was captured";
+            attacker.state = CardState.STAY;
+            StartCoroutine(attacker.AddEffect(23,1));//Trident
+            yield return new WaitForSeconds(2);
+        }
+        Debug.Log(attacker.cardName+" -> Retiarius => "+receiver.cardName);
+	}
+    //105
+    public IEnumerator Shuriken(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " is throwing stars";
+        if (Random.value <= ((20 + attacker.attack) / 30f))
+        {
+            receiver.TakeDamage(1);
+            receiver.HandleSpeed(-1);
+        }
+        else
+        {
+            yield return new WaitForSeconds(1);
+            dialogText.text = "throw missed";
+        }
+        Debug.Log(attacker.cardName+" -> Shuriken => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
+	}
+    //106
+    public IEnumerator Kusarigama(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + "'s Kusarigama strikes";
+		receiver.TakeDamage(2 + ((attacker.attack + attacker.knowledge + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+        if (Random.value <= 0.1f) 
+        {
+            dialogText.text = receiver.cardName + " is trapped in chain";
+            yield return StartCoroutine(receiver.AddEffect(9,1));//Tether
+        }
+        Debug.Log(attacker.cardName+" -> Kusarigama => "+receiver.cardName);
+    }
+    //107
+    public IEnumerator Ninjutsu(Kard attacker, Kard receiver, TMP_Text dialogText)
+    {
+        List<AttackDelegate> attacks = new List<AttackDelegate> { Kick, Punch, Shuriken, Kusarigama };
+
+        System.Random rnd = new System.Random();
+        attacks = attacks.OrderBy(x => rnd.Next()).ToList();
+
+        yield return StartCoroutine(attacks[0](attacker, receiver, dialogText));
+        yield return StartCoroutine(attacks[1](attacker, receiver, dialogText));
+
+        Debug.Log(attacker.cardName + " -> Ninjutsu => " + receiver.cardName);
+    }
+
 
 
 

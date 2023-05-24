@@ -15,13 +15,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 {
     public int cardId;
     public string cardName;
-    // public int health;
-    // public int strength;
-    // public int speed;
-    // public int attack;
-    // public int defense;
-    // public int knowledge;
-    // public int charisma;
+
     public string image;
     public Color32 color;
     public int level;

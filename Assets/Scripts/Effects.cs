@@ -98,6 +98,9 @@ public class Effects : MonoBehaviour
             case 22:
                 yield return StartCoroutine(Reloading(card, dialogText, iteration, target));
                 break;
+            case 23:
+                yield return StartCoroutine(DelayedDmg(card, dialogText, iteration, target));
+                break;
             default:
                 Debug.LogError("Invalid effect type.");
                 break;
@@ -284,11 +287,11 @@ public class Effects : MonoBehaviour
         }
         else
         {
-            card.effects[iteration][1] -= 1;
+            if (UnityEngine.Random.value <= 0.9f) card.effects[iteration][1] -= 1;
             dialogText.text = card.cardName + " is locked";
+            yield return new WaitForSeconds(2);
         }
         Debug.Log(card.cardName + " => Tether");
-        yield return new WaitForSeconds(2);
 	}
     //10
     public IEnumerator Starving(Kard card, TMP_Text dialogText, int iteration)
@@ -568,6 +571,28 @@ public class Effects : MonoBehaviour
             dialogText.text = card.cardName + " is still reloading";
         }
         Debug.Log(card.cardName + " => Reloading");
+        yield return new WaitForSeconds(2);
+	}
+    //23
+    public IEnumerator DelayedDmg(Kard card, TMP_Text dialogText, int iteration, Kard target)
+	{
+        card.state = CardState.STAY;
+        //StartCoroutine(textBubble.ShowForSeconds("surrender!", Resources.Load<Sprite>("oblacik"), 2.5f));
+        if (card.effects[iteration][1] == 0)
+        {
+            card.RemoveEffect(iteration);
+            card.state = CardState.ATTACK;
+            target.TakeDamage(card.attack - target.defense);
+            dialogText.text = card.cardName + "attacks with trident";
+            yield return new WaitForSeconds(2);
+            yield break;
+        }
+        else
+        {
+            card.effects[iteration][1] -= 1;
+            dialogText.text = card.cardName + " is aiming";
+        }
+        Debug.Log(card.cardName + " => DelayedDmg");
         yield return new WaitForSeconds(2);
 	}
 }

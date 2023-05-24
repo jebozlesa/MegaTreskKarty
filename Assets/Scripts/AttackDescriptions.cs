@@ -322,6 +322,12 @@ public class AttackDescriptions : MonoBehaviour
             case 98://HungerStrike
                 count = attacker.health / 5;
                 break;
+            case 99://Gladius
+                count = attacker.strength * 5;
+                break;
+            case 100://ShieldBash
+                count = attacker.defense * 3;
+                break;
             case 101://Yperit
                 count = 3;
                 break;
@@ -331,8 +337,17 @@ public class AttackDescriptions : MonoBehaviour
             case 103://Propaganda
                 count = attacker.knowledge * 2;
                 break;
-            case 104://nictuneni
-                count = attacker.strength * 10;
+            case 104://Retiarius
+                count = attacker.attack * 3;
+                break;
+            case 105://Shuriken
+                count = attacker.attack;
+                break;
+            case 106://Kusarigama
+                count = attacker.strength * 5;
+                break;
+            case 107://Ninjutsu
+                count = (attacker.attack + attacker.knowledge) / 4;
                 break;
             default:
                 Debug.LogError("Invalid attack type.");
@@ -660,6 +675,12 @@ public class AttackDescriptions : MonoBehaviour
             case 98:
                 dialogText.text = "Hunger Strike chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
+            case 99:
+                dialogText.text = "Gladius chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 100:
+                dialogText.text = "Shield Bash Strike chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
             case 101:
                 dialogText.text = "Yperit chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
@@ -670,7 +691,16 @@ public class AttackDescriptions : MonoBehaviour
                 dialogText.text = "Propaganda chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
             case 104:
-                dialogText.text = "Punch chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                dialogText.text = "Retiarius chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 105:
+                dialogText.text = "Shuriken chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 106:
+                dialogText.text = "Kusarigama chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 107:
+                dialogText.text = "Ninjutsu chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
             default:
                 Debug.LogError("Invalid attack type.");
@@ -985,6 +1015,12 @@ public class AttackDescriptions : MonoBehaviour
             case 98:
                 HungerStrike(buttonText);
                 break;
+            case 99:
+                Gladius(buttonText);
+                break;
+            case 100:
+                ShieldBash(buttonText);
+                break;
             case 101:
                 Yperit(buttonText);
                 break;
@@ -995,7 +1031,16 @@ public class AttackDescriptions : MonoBehaviour
                 Propaganda(buttonText);
                 break;
             case 104:
-                Propaganda(buttonText);
+                Retiarius(buttonText);
+                break;
+            case 105:
+                Shuriken(buttonText);
+                break;
+            case 106:
+                Kusarigama(buttonText);
+                break;
+            case 107:
+                Ninjutsu(buttonText);
                 break;
             default:
                 Debug.LogError("Invalid attack type.");
@@ -1559,6 +1604,16 @@ public class AttackDescriptions : MonoBehaviour
 	{
         buttonText.text = "Hunger Strike";
 	}
+    //99
+    public void Gladius(TMP_Text buttonText)
+	{
+        buttonText.text = "Gladius";
+	}
+    //100
+    public void ShieldBash(TMP_Text buttonText)
+	{
+        buttonText.text = "Shield Bash";
+	}
     //101
     public void Yperit(TMP_Text buttonText)
 	{
@@ -1573,5 +1628,25 @@ public class AttackDescriptions : MonoBehaviour
     public void Propaganda(TMP_Text buttonText)
 	{
         buttonText.text = "Propaganda";
+	}
+    //104
+    public void Retiarius(TMP_Text buttonText)
+	{
+        buttonText.text = "Propaganda";
+	}
+    //105
+    public void Shuriken(TMP_Text buttonText)
+	{
+        buttonText.text = "Shuriken";
+	}
+    //106
+    public void Kusarigama(TMP_Text buttonText)
+	{
+        buttonText.text = "Kusarigama";
+	}
+    //107
+    public void Ninjutsu(TMP_Text buttonText)
+	{
+        buttonText.text = "Ninjutsu";
 	}
 }
