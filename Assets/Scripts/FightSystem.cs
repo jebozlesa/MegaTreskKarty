@@ -82,7 +82,7 @@ public class FightSystem : MonoBehaviour
         yield return StartCoroutine(VytvorKartyZBalicka(hrac,player));
         yield return new WaitForSeconds(0.5f);
 
-        yield return StartCoroutine(VytvorKartyAI(nepriatel,enemy));
+        yield return StartCoroutine(VytvorKartyAIMission(nepriatel,enemy,6));
         yield return new WaitForSeconds(1);
 
         // player.PlayCard(player.hand[0],playerBoard);
@@ -471,6 +471,87 @@ public class FightSystem : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
         }
     }
+
+    private IEnumerator VytvorKartyAIMission(GameObject playerGO, Player player, int missionID)
+    {
+        int[] boost = new int[6];
+        int iter = 0;
+        
+        IDbConnection dbConnection = new SqliteConnection(connectionString);
+        dbConnection.Open();
+
+        IDbCommand dbCommand = dbConnection.CreateCommand();
+        dbCommand.CommandText = $"SELECT Card1ID, Card2ID, Card3ID FROM Missions WHERE MissionID = {missionID}";
+        IDataReader reader = dbCommand.ExecuteReader();
+
+        List<int> cardIDs = new List<int>();
+        while (reader.Read())
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                cardIDs.Add(reader.GetInt32(i));
+            }
+        }
+        reader.Close();
+        dbCommand.Dispose();
+
+        // Načítanie kariet podľa ich ID
+        foreach (int cardID in cardIDs)
+        {
+            dbCommand = dbConnection.CreateCommand();
+            dbCommand.CommandText = $"SELECT * FROM CardDatabase WHERE StyleID = {cardID}";
+            reader = dbCommand.ExecuteReader();
+
+            while (reader.Read())
+            {
+                boost = DistributeRandomly(0);
+                string[] kartaHodnoty = new string[reader.FieldCount];
+
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    kartaHodnoty[i] = reader[i].ToString();
+                }
+
+                string[] farbaKarty = kartaHodnoty[10].Split(';');
+                Color32 cardColor = new Color32(byte.Parse(farbaKarty[0]), byte.Parse(farbaKarty[1]), byte.Parse(farbaKarty[2]), 255);
+
+                GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
+                novaKarta.GetComponent<Kard>().cardName = kartaHodnoty[1];
+                novaKarta.GetComponent<Kard>().health = int.Parse(kartaHodnoty[2]) + iter;
+                novaKarta.GetComponent<Kard>().strength = int.Parse(kartaHodnoty[3]) + boost[0];
+                novaKarta.GetComponent<Kard>().speed = int.Parse(kartaHodnoty[4]) + boost[1];
+                novaKarta.GetComponent<Kard>().attack = int.Parse(kartaHodnoty[5]) + boost[2];
+                novaKarta.GetComponent<Kard>().defense = int.Parse(kartaHodnoty[6]) + boost[3];
+                novaKarta.GetComponent<Kard>().knowledge = int.Parse(kartaHodnoty[7]) + boost[4];
+                novaKarta.GetComponent<Kard>().charisma = int.Parse(kartaHodnoty[8]) + boost[5];
+                novaKarta.GetComponent<Kard>().image = kartaHodnoty[15];
+                novaKarta.GetComponent<Kard>().color = cardColor;
+                novaKarta.GetComponent<Kard>().level = 1  + iter;
+                novaKarta.GetComponent<Kard>().attack1 = int.Parse(kartaHodnoty[11]);
+                novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[11]));
+                novaKarta.GetComponent<Kard>().attack2 = int.Parse(kartaHodnoty[12]);
+                novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[12]));
+                novaKarta.GetComponent<Kard>().attack3 = int.Parse(kartaHodnoty[13]);
+                novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[13]));
+                novaKarta.GetComponent<Kard>().attack4 = int.Parse(kartaHodnoty[14]);
+                novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[14]));
+
+                novaKarta.GetComponent<Kard>().isDragable = false;
+                novaKarta.GetComponent<Kard>().battleArea = enemyBoard;
+
+                player.AddCardToHand(novaKarta.GetComponent<Kard>());
+            }
+
+            reader.Close();
+            dbCommand.Dispose();
+        }
+
+        dbConnection.Close();
+
+        yield return new WaitForSeconds(0.1f);
+    }
+
+
 
     private IEnumerator VytvorKartyAI(GameObject playerGO, Player player)
     {

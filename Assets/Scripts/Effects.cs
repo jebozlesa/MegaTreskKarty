@@ -101,6 +101,9 @@ public class Effects : MonoBehaviour
             case 23:
                 yield return StartCoroutine(DelayedDmg(card, dialogText, iteration, target));
                 break;
+            case 24:
+                yield return StartCoroutine(Poison(card, dialogText, iteration));
+                break;
             default:
                 Debug.LogError("Invalid effect type.");
                 break;
@@ -436,7 +439,6 @@ public class Effects : MonoBehaviour
     //16
     public IEnumerator Burn(Kard card, TMP_Text dialogText, int iteration)
 	{
-
         card.TakeDamage(1);
         dialogText.text = card.cardName + " is on fire";
 
@@ -594,5 +596,15 @@ public class Effects : MonoBehaviour
         }
         Debug.Log(card.cardName + " => DelayedDmg");
         yield return new WaitForSeconds(2);
+	}
+    //24
+    public IEnumerator Poison(Kard card, TMP_Text dialogText, int iteration)
+	{
+        if (UnityEngine.Random.value <= 0.33f) card.HandleStrength(-1);
+        card.TakeDamage(1);
+        dialogText.text = card.cardName + " is poisoned";
+
+        yield return new WaitForSeconds(2);
+        Debug.Log(card.cardName + " => Poison");
 	}
 }

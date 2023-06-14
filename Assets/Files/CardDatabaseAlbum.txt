@@ -17,11 +17,11 @@ Napoleon Bonaparte,28,5,5,7,6,6,7,napoleon,248;231;143,1,46,47,49,50
 Vincent van Gogh,24,2,3,4,4,7,2,vangogh,161;156;152,1,51,52,53,54
 Stephen Hawking,27,2,5,2,3,10,6,hawkins,252;61;42,1,55,11,9,40
 The Wright Brothers,24,4,7,6,6,9,7,wright,0;0;0,1,56,57,58,41
-Eleanor Roosvelt,1,1,1,1,1,1,1,eleanor,214;203;173,1,1,1,1,1,        //nuda, slaba
+Eleanor Roosvelt,1,1,1,1,1,1,1,eleanor,214;203;173,1,1,1,1,1
 Francis Drake,1,1,1,1,1,1,1,drake,255;255;160,1,1,1,1,1
 Harry Houdini,1,1,1,1,1,1,1,houdini,179;223;234,1,1,1,1,1
 Enzo Ferrari,1,1,1,1,1,1,1,ferrari,238;11;30,1,1,1,1,1
-Mata Hari,1,1,1,1,1,1,1,matahari,254;233;166,1,1,1,1,1			//neviem vymysliet utoky
+Mata Hari,1,1,1,1,1,1,1,matahari,254;233;166,1,1,1,1,1
 Billy the Kid,1,1,1,1,1,1,1,kid,0;0;0,1,1,1,1,1
 Wernher Von Braun,1,1,1,1,1,1,1,vonbraun,252;255;255,1,1,1,1,1
 Joan of Arc,1,1,1,1,1,1,1,johanka,226;229;234,1,1,1,1,1
@@ -30,13 +30,13 @@ Shaka Zulu,1,1,1,1,1,1,1,shaka,74;5;8,1,1,1,1,1
 Miyamoto Musashi,1,1,1,1,1,1,1,musashi,236;3;0,1,1,1,1,1
 Yasuke,1,1,1,1,1,1,1,yasuke,0;0;0,1,1,1,1,1
 Boudica,1,1,1,1,1,1,1,boudica,118;122;97,1,1,1,1,1
-Carl Marx,1,1,1,1,1,1,1,marx,248;254;250,1,1,1,1,1              //neviem vymysliet utoky
+Carl Marx,1,1,1,1,1,1,1,marx,248;254;250,1,1,1,1,1     
 Giacomo Casanova,1,1,1,1,1,1,1,casanova,255;38;83,1,1,1,1,1
 Confucius,1,1,1,1,1,1,1,confucius,202;197;93,1,1,1,1,1
 Mahatma Gandhi,1,1,1,1,1,1,1,ghandi,234;211;19,1,1,1,1,1
 Spatracus,1,1,1,1,1,1,1,spartacus,247;212;110,1,1,1,1,1
 Hatori Hanzo,1,1,1,1,1,1,1,hanzo,132;131;127,1,1,1,1,1
-Marco Polo,1,1,1,1,1,1,1,polo,207;164;129,1,1,1,1,1
+Marco Polo,1,1,1,1,1,1,1,polo,207;164;129,1,1,1,1,1 
 Ching Shih,1,1,1,1,1,1,1,chingshih,197;1;11,1,1,1,1,1
 Ragnar Lothbrok,1,1,1,1,1,1,1,ragnar,156;194;153,1,1,1,1,1
 Montezuma,1,1,1,1,1,1,1,montezuma,255;181;24,1,1,1,1,1

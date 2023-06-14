@@ -34,7 +34,7 @@ public class RecordHandler : MonoBehaviour
             if (enemyLevel > 0)
             {
                 // Počkajte, kým sa dokončí druhá metóda AddRandomCard
-                yield return StartCoroutine(cardGenerator.AddRandomCard());
+                yield return StartCoroutine(cardGenerator.AddRandomCardCoroutine());
             }
         }
     }

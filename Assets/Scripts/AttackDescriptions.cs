@@ -349,6 +349,18 @@ public class AttackDescriptions : MonoBehaviour
             case 107://Ninjutsu
                 count = (attacker.attack + attacker.knowledge) / 4;
                 break;
+            case 108://OrientalSpice
+                count = (int)System.Math.Ceiling((double)attacker.charisma / 5);
+                break;
+            case 109://FieryArquebus
+                count = attacker.attack;
+                break;
+            case 110://PirateRaid
+                count = attacker.attack / 2;
+                break;
+            case 111://Axe
+                count = attacker.strength * 5;
+                break;
             default:
                 Debug.LogError("Invalid attack type.");
                 break;
@@ -702,6 +714,18 @@ public class AttackDescriptions : MonoBehaviour
             case 107:
                 dialogText.text = "Ninjutsu chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
+            case 108:
+                dialogText.text = "Oriental Spice chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 109:
+                dialogText.text = "Fiery Arquebus chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 110:
+                dialogText.text = "Pirate Raid chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 111:
+                dialogText.text = "Axe chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
             default:
                 Debug.LogError("Invalid attack type.");
                 break;
@@ -1041,6 +1065,18 @@ public class AttackDescriptions : MonoBehaviour
                 break;
             case 107:
                 Ninjutsu(buttonText);
+                break;
+            case 108:
+                OrientalSpice(buttonText);
+                break;
+            case 109:
+                FieryArquebus(buttonText);
+                break;
+            case 110:
+                PirateRaid(buttonText);
+                break;
+            case 111:
+                Axe(buttonText);
                 break;
             default:
                 Debug.LogError("Invalid attack type.");
@@ -1632,7 +1668,7 @@ public class AttackDescriptions : MonoBehaviour
     //104
     public void Retiarius(TMP_Text buttonText)
 	{
-        buttonText.text = "Propaganda";
+        buttonText.text = "Retiarius";
 	}
     //105
     public void Shuriken(TMP_Text buttonText)
@@ -1648,5 +1684,25 @@ public class AttackDescriptions : MonoBehaviour
     public void Ninjutsu(TMP_Text buttonText)
 	{
         buttonText.text = "Ninjutsu";
+	}
+    //108
+    public void OrientalSpice(TMP_Text buttonText)
+	{
+        buttonText.text = "Oriental Spice";
+	}
+    //109
+    public void FieryArquebus(TMP_Text buttonText)
+	{
+        buttonText.text = "Fiery Arquebus";
+	}
+    //110
+    public void PirateRaid(TMP_Text buttonText)
+	{
+        buttonText.text = "Pirate Raid";
+	}
+    //111
+    public void Axe(TMP_Text buttonText)
+	{
+        buttonText.text = "Axe";
 	}
 }

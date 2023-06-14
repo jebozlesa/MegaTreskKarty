@@ -893,19 +893,19 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '"...In 1582, near Mikawa, Japan, Hattori Hanzo and his loyal band of ninjas
-    were entrusted with a mission of life and death. They were tasked with guiding
-    Tokugawa Ieyasu, the future shogun, safely through enemy territory to the Okazaki
-    Castle.
+  m_text: '"...In 1275, Marco Polo was in the grand court of Kublai Khan in China.
+    There was a risky game called ''Game of the White Dove'' that people talked about.
+    Wanting to impress Khan, Marco asked to play.
 
-    As moonlight filtered through the tall trees, casting long eerie
-    shadows, the ninjas moved silently. Suddenly, an ambush erupted from the darkness,
-    enemy warriors bent on killing Ieyasu. Hanzo''s ninjas countered with unparalleled
-    stealth and speed.
+    The game was at night, and
+    the hall was full of people watching in the candlelight. The game was tough.
+    You had to guide a dove through a maze full of dangers, only by guessing where
+    to go. Marco let the dove go and followed his gut. Everyone watched as the dove
+    moved through the maze.
 
-    Under Hanzo''s strategic command, the ninjas fought
-    fiercely, their expert maneuvers turning the forest into a deadly maze for the
-    enemy..."
+    Surprisingly, Marco won the game. This impressed
+    Khan and helped Marco gain respect. That night added to the many exciting stories
+    Marco Polo later told about his travels..."
 
 '
   m_isRightToLeft: 0

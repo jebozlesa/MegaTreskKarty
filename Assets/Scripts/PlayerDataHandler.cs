@@ -10,7 +10,7 @@ public class PlayerDataHandler : MonoBehaviour
 {
     private string connectionString;
 
-    private void Awake()
+    private void Start()
     {
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
     }

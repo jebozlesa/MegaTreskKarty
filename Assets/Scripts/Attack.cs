@@ -8,7 +8,6 @@ public class Attack : MonoBehaviour
 {
 
     public List<int> exceptionAttacks = new List<int> { 64 };  //je tu utek z retazov od houdiniho co rusi efekty, exception preto ze ide aj ked nieje v stave attack
-   // public List<int> priorityAttacks = new List<int> { 1, 2 }; //rychlostrelba billyho kida alebo rychlotasenie musashiho
 
     public List<int> priorityAttacks;
 
@@ -401,6 +400,18 @@ public class Attack : MonoBehaviour
             case 107:
                 yield return StartCoroutine(Ninjutsu(attacker, receiver, dialogText));
                 break;
+            case 108:
+                yield return StartCoroutine(OrientalSpice(attacker, receiver, dialogText));
+                break;
+            case 109:
+                yield return StartCoroutine(FieryArquebus(attacker, receiver, dialogText));
+                break;
+            case 110:
+                yield return StartCoroutine(PirateRaid(attacker, receiver, dialogText));
+                break;
+            case 111:
+                yield return StartCoroutine(Axe(attacker, receiver, dialogText));
+                break;
             default:
                 Debug.LogError("Invalid attack type.");
                 break;
@@ -659,7 +670,6 @@ public class Attack : MonoBehaviour
         Debug.Log(attacker.cardName+" -> Terrify => "+receiver.cardName);
         yield return new WaitForSeconds(2);
 	}
-
     //22
     public IEnumerator DrinkWine(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -669,7 +679,6 @@ public class Attack : MonoBehaviour
         Debug.Log(attacker.cardName+" -> drink wine => "+receiver.cardName);
         yield return new WaitForSeconds(2);
 	}
-
     //23
     public IEnumerator FlamingGun(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
@@ -1770,7 +1779,7 @@ public class Attack : MonoBehaviour
         else
         {
             dialogText.text = attacker.cardName+" uses Blitzkrieg tactics";
-            receiver.TakeDamage(attacker.speed - receiver.speed);
+            receiver.TakeDamage(3 + attacker.speed - receiver.speed);
         }
         Debug.Log(attacker.cardName+" -> Blitzkrieg => "+receiver.cardName);
         yield return new WaitForSeconds(2);
@@ -1840,6 +1849,83 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(attacks[1](attacker, receiver, dialogText));
 
         Debug.Log(attacker.cardName + " -> Ninjutsu => " + receiver.cardName);
+    }
+    //108
+    public IEnumerator OrientalSpice(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " offers some spices to enemy";
+        yield return StartCoroutine(receiver.AddEffect(24,0));//Poison
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName+" -> OrientalSpice => "+receiver.cardName);
+	}
+    //109
+    public IEnumerator FieryArquebus(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = "Bum! Fiery Arquebus gun explosed";
+		receiver.TakeDamage(Random.Range(1,Random.Range(3, 7)));
+        if (Random.value <= 0.5f) attacker.TakeDamage(Random.Range(2, 5));
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName+" -> FieryArquebus => "+receiver.cardName);
+	}
+    //110
+    public IEnumerator PirateRaid(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        if (((attacker.speed + attacker.charisma) / 2) < receiver.defense && Random.value <= 0.8f)
+        {
+            dialogText.text = "Raiding doesn't went well";
+            attacker.TakeDamage(receiver.defense);
+        }
+        else
+        {
+            dialogText.text = attacker.cardName+" raids the enemy";
+            receiver.TakeDamage((attacker.speed + attacker.charisma) / 2);
+        }
+        Debug.Log(attacker.cardName+" -> PirateRaid => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
+	}
+    //111
+    public IEnumerator Axe(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " attacks with axe";
+		receiver.TakeDamage(((attacker.attack + (attacker.strength * 2)) / 3) - ((receiver.defense - receiver.speed) / 2));
+        if (Random.value <= 0.5f) receiver.TakeDamage(6);//critical hit
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName+" -> Axe => "+receiver.cardName);
+    }
+    //112
+    public IEnumerator JaguarWarriors(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " sends Jaguar Warriors";
+		receiver.TakeDamage(Random.Range(1, attacker.attack+2));
+        if (Random.value <= 0.2f) receiver.HandleAttack(-(Random.Range(2, 4)));//critical hit
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName+" -> JaguarWarriors => "+receiver.cardName);
+    }
+    //113
+    public IEnumerator Atlatl(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " throws spear";
+        if (Random.value <= (attacker.strength / 10f))
+        {
+            receiver.TakeDamage(3);
+            if (Random.value <= 0.2f) yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 4)));//bleed
+        }
+        else
+        {
+            yield return new WaitForSeconds(1);
+            dialogText.text = "spear missed";
+        }
+        Debug.Log(attacker.cardName+" -> Atlatl => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
+	}
+    //114
+    public IEnumerator Macuahuitl(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " smashes with Macuahuitl";
+		receiver.TakeDamage(((attacker.attack + attacker.strength * 2) / 2) - ((receiver.defense - receiver.speed) / 2));
+        if (Random.value <= 0.2f) receiver.TakeDamage(3);//critical hit
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName+" -> Macuahuitl => "+receiver.cardName);
     }
 
 

@@ -30,7 +30,7 @@ public class CardGenerator : MonoBehaviour
         dbConnection.Open();
 
         IDbCommand dbCommand = dbConnection.CreateCommand();
-        dbCommand.CommandText = "SELECT StyleID FROM CardDatabase";
+        dbCommand.CommandText = "SELECT StyleID FROM CardDatabase WHERE Series = 1";
         IDataReader reader = dbCommand.ExecuteReader();
 
         while (reader.Read())
@@ -129,24 +129,28 @@ public class CardGenerator : MonoBehaviour
         }
     }
 
+    public void AddRandomCard()
+    {
+        StartCoroutine(AddRandomCardCoroutine());
+    }
 
-    public IEnumerator AddRandomCard()
-{
-    IDbConnection dbConnection = new SqliteConnection(connectionString);
-    dbConnection.Open();
+    public IEnumerator AddRandomCardCoroutine()
+    {
+        IDbConnection dbConnection = new SqliteConnection(connectionString);
+        dbConnection.Open();
 
-    IDbCommand dbCommand = dbConnection.CreateCommand();
-    dbCommand.CommandText = "SELECT COUNT(*) FROM CardDatabase";
-    int cardCount = int.Parse(dbCommand.ExecuteScalar().ToString());
+        IDbCommand dbCommand = dbConnection.CreateCommand();
+        dbCommand.CommandText = "SELECT COUNT(*) FROM CardDatabase WHERE Series = 1";
+        int cardCount = int.Parse(dbCommand.ExecuteScalar().ToString());
 
-    int randomIndex = UnityEngine.Random.Range(1, cardCount + 1);
-    dbCommand.Dispose();
+        int randomIndex = UnityEngine.Random.Range(1, cardCount + 1);
+        dbCommand.Dispose();
 
-   // randomIndex = 29;  // docasne - vymazat resp. zakomentovat ked netreeba                                         <============  RANDOM INDEX
-    yield return StartCoroutine(AddCardById(randomIndex)); 
+        randomIndex = 42;  // docasne - vymazat resp. zakomentovat ked netreeba                                         <============  RANDOM INDEX
+        yield return StartCoroutine(AddCardById(randomIndex)); 
 
-    dbConnection.Close();
-}
+        dbConnection.Close();
+    }
 
     public IEnumerator AddCardById(int id)
     {
