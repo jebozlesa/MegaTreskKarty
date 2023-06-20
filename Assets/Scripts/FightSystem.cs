@@ -66,7 +66,7 @@ public class FightSystem : MonoBehaviour
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
 
         state = FightState.START;
-        StartCoroutine(SetupBattle());
+        StartCoroutine(SetupBattle(GameParameters.MissionID));
     }
 
     public void RestartGame()
@@ -74,17 +74,19 @@ public class FightSystem : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
-    IEnumerator SetupBattle()
+    IEnumerator SetupBattle(int missionID = 0)
     {
-
         dialogText.text = "lets get ready for rumble!";
 
-        yield return StartCoroutine(VytvorKartyZBalicka(hrac,player));
+        yield return StartCoroutine(VytvorKartyZBalicka(hrac, player));
         yield return new WaitForSeconds(0.5f);
 
-        yield return StartCoroutine(VytvorKartyAIMission(nepriatel,enemy,6));
-        yield return new WaitForSeconds(1);
+        if(missionID > 0)
+            yield return StartCoroutine(VytvorKartyAIMission(nepriatel, enemy, missionID));
+        else
+            yield return StartCoroutine(VytvorKartyAI(nepriatel, enemy));
 
+        yield return new WaitForSeconds(1);
         // player.PlayCard(player.hand[0],playerBoard);
         // playerLifeBar.SetBar(player.cardInGame);
         // player.cardInGame.isDragable = false;
@@ -475,19 +477,19 @@ public class FightSystem : MonoBehaviour
     private IEnumerator VytvorKartyAIMission(GameObject playerGO, Player player, int missionID)
     {
         int[] boost = new int[6];
-        int iter = 0;
+        int iter = missionID - 1;
         
         IDbConnection dbConnection = new SqliteConnection(connectionString);
         dbConnection.Open();
 
         IDbCommand dbCommand = dbConnection.CreateCommand();
-        dbCommand.CommandText = $"SELECT Card1ID, Card2ID, Card3ID FROM Missions WHERE MissionID = {missionID}";
+        dbCommand.CommandText = $"SELECT Card1ID, Card2ID, Card3ID, Card4ID, Card5ID FROM Missions WHERE MissionID = {missionID}";
         IDataReader reader = dbCommand.ExecuteReader();
 
         List<int> cardIDs = new List<int>();
         while (reader.Read())
         {
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 5; i++)
             {
                 cardIDs.Add(reader.GetInt32(i));
             }
@@ -504,7 +506,7 @@ public class FightSystem : MonoBehaviour
 
             while (reader.Read())
             {
-                boost = DistributeRandomly(0);
+                boost = DistributeRandomly(iter);
                 string[] kartaHodnoty = new string[reader.FieldCount];
 
                 for (int i = 0; i < reader.FieldCount; i++)

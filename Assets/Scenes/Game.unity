@@ -1729,6 +1729,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4f4abcaad1059b43bc81967c94b29bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  onButtonClick:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1168539315
 GameObject:
   m_ObjectHideFlags: 0
@@ -3377,6 +3380,7 @@ GameObject:
   - component: {fileID: 2078459214}
   - component: {fileID: 2078459216}
   - component: {fileID: 2078459215}
+  - component: {fileID: 2078459217}
   m_Layer: 5
   m_Name: BattlefieldBackground
   m_TagString: Untagged
@@ -3442,6 +3446,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2078459213}
   m_CullTransparentMesh: 1
+--- !u!114 &2078459217
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2078459213}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5dce40ee2ed41c0419d1950fdbdb1549, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  backgroundImage: {fileID: 2078459215}
 --- !u!1 &2078776981
 GameObject:
   m_ObjectHideFlags: 0
