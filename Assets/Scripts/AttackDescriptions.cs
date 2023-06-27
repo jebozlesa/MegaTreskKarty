@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -95,7 +96,7 @@ public class AttackDescriptions : MonoBehaviour
                 count = attacker.knowledge;
                 break;
             case 23://Flaming Gun
-                count = Random.Range(5, 15);
+                count = UnityEngine.Random.Range(5, 15);
                 break;
             case 24://Cleaver
                 count = attacker.strength * 5;
@@ -134,7 +135,7 @@ public class AttackDescriptions : MonoBehaviour
                 count = attacker.attack;
                 break;
             case 36://Guerilla
-                count = (int) (attacker.attack * 5);
+                count = attacker.attack * 5;
                 break;
             case 37://Famine
                 count = attacker.strength;
@@ -152,7 +153,7 @@ public class AttackDescriptions : MonoBehaviour
                 count = attacker.knowledge * 10;
                 break;
             case 42://TommyGun
-                count = new int[] {2, 3, 5, 10}[Random.Range(0, 4)];
+                count = new int[] {2, 3, 5, 10}[UnityEngine.Random.Range(0, 4)];
                 break;
             case 43://TieUp
                 count = 10;
@@ -359,6 +360,15 @@ public class AttackDescriptions : MonoBehaviour
                 count = attacker.attack / 2;
                 break;
             case 111://Axe
+                count = attacker.strength * 5;
+                break;
+            case 112://JaguarWarriors
+                count = attacker.attack * 5;
+                break;
+            case 113://Atlatl
+                count = (int)Math.Round(attacker.strength * 1.2);
+                break;
+            case 114://Macuahuitl
                 count = attacker.strength * 5;
                 break;
             default:
@@ -726,6 +736,15 @@ public class AttackDescriptions : MonoBehaviour
             case 111:
                 dialogText.text = "Axe chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
+            case 112:
+                dialogText.text = "Jaguar Warriors chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 113:
+                dialogText.text = "Atlatl chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 114:
+                dialogText.text = "Macuahuitl chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
             default:
                 Debug.LogError("Invalid attack type.");
                 break;
@@ -1077,6 +1096,15 @@ public class AttackDescriptions : MonoBehaviour
                 break;
             case 111:
                 Axe(buttonText);
+                break;
+            case 112:
+                JaguarWarriors(buttonText);
+                break;
+            case 113:
+                Atlatl(buttonText);
+                break;
+            case 114:
+                Macuahuitl(buttonText);
                 break;
             default:
                 Debug.LogError("Invalid attack type.");
@@ -1704,5 +1732,20 @@ public class AttackDescriptions : MonoBehaviour
     public void Axe(TMP_Text buttonText)
 	{
         buttonText.text = "Axe";
+	}
+    //112
+    public void JaguarWarriors(TMP_Text buttonText)
+	{
+        buttonText.text = "Jaguar Warriors";
+	}
+    //113
+    public void Atlatl(TMP_Text buttonText)
+	{
+        buttonText.text = "Atlatl";
+	}
+    //114
+    public void Macuahuitl(TMP_Text buttonText)
+	{
+        buttonText.text = "Macuahuitl";
 	}
 }

@@ -412,6 +412,15 @@ public class Attack : MonoBehaviour
             case 111:
                 yield return StartCoroutine(Axe(attacker, receiver, dialogText));
                 break;
+            case 112:
+                yield return StartCoroutine(JaguarWarriors(attacker, receiver, dialogText));
+                break;
+            case 113:
+                yield return StartCoroutine(Atlatl(attacker, receiver, dialogText));
+                break;
+            case 114:
+                yield return StartCoroutine(Macuahuitl(attacker, receiver, dialogText));
+                break;
             default:
                 Debug.LogError("Invalid attack type.");
                 break;
