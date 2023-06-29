@@ -26,7 +26,7 @@ public class DragKard : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDrag
     public void OnBeginDrag(PointerEventData eventData)
     {
 
-        if (fightManager.state == FightState.PLAYERDEATH || fightManager.state == FightState.START)
+        if ((fightManager.state == FightState.PLAYERDEATH || fightManager.state == FightState.START) && kard.isDragable)
 
         {
             originalPosition = rectTransform.position;
@@ -37,7 +37,7 @@ public class DragKard : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDrag
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (fightManager.state == FightState.PLAYERDEATH || fightManager.state == FightState.START)
+        if ((fightManager.state == FightState.PLAYERDEATH || fightManager.state == FightState.START) && kard.isDragable)
         {
             rectTransform.position += new Vector3(eventData.delta.x, eventData.delta.y);
         }
@@ -45,7 +45,7 @@ public class DragKard : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDrag
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        if (fightManager.state == FightState.PLAYERDEATH || fightManager.state == FightState.START)
+        if ((fightManager.state == FightState.PLAYERDEATH || fightManager.state == FightState.START) && kard.isDragable)
         {
             // Overenie, či je karta na správnom mieste pre premiestnenie do bojového priestoru
             // Ak nie, vráti sa na pôvodnú pozíciu

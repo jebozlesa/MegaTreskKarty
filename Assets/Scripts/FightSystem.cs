@@ -66,6 +66,10 @@ public class FightSystem : MonoBehaviour
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
 
         state = FightState.START;
+
+        player.isEnemy = false;
+        enemy.isEnemy = true;
+
         StartCoroutine(SetupBattle(GameParameters.MissionID));
     }
 
@@ -325,6 +329,7 @@ public class FightSystem : MonoBehaviour
             player.cardInGame.isDragable = false;
             state = FightState.TURN;
             playerLifeBar.SetBar(player.cardInGame);
+            
         }
         else
         {

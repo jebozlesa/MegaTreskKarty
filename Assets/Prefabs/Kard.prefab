@@ -463,13 +463,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: 0
   cardName: 
-  health: 0
-  strength: 0
-  speed: 0
-  attack: 0
-  defense: 0
-  knowledge: 0
-  charisma: 0
   image: hitler
   color:
     serializedVersion: 2
@@ -699,7 +692,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7341383018226265499, guid: 97393fafa53b88241afb245b42969407, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7341383018226265500, guid: 97393fafa53b88241afb245b42969407, type: 3}
       propertyPath: m_Pivot.x
@@ -731,11 +724,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7341383018226265500, guid: 97393fafa53b88241afb245b42969407, type: 3}
       propertyPath: m_SizeDelta.x
-      value: -20
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7341383018226265500, guid: 97393fafa53b88241afb245b42969407, type: 3}
       propertyPath: m_SizeDelta.y
-      value: -20
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7341383018226265500, guid: 97393fafa53b88241afb245b42969407, type: 3}
       propertyPath: m_LocalPosition.x

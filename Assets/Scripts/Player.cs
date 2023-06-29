@@ -9,6 +9,7 @@ public class Player : MonoBehaviour
 
     public List<Kard> hand = new List<Kard>();
     public List<Kard> cardsInGame = new List<Kard>();
+    public bool isEnemy = false;
 
     public Kard cardInGame;
 
@@ -21,6 +22,9 @@ public class Player : MonoBehaviour
 
         card.transform.SetParent(playerBoard.transform);        
         card.transform.localPosition = new Vector3(0f, 0f, 0f);
+
+        GameObject cardBack = card.gameObject.transform.Find("CardBack").gameObject;
+        cardBack.SetActive(false);
         
     }
 
@@ -47,9 +51,15 @@ public class Player : MonoBehaviour
 
     public void AddCardToHand(Kard card)
     {
-            hand.Add(card);
-            card.transform.SetParent(transform);
-            card.transform.localScale = Vector3.one;
+        hand.Add(card);
+        card.transform.SetParent(transform);
+        card.transform.localScale = Vector3.one;
+
+        GameObject cardBack = card.gameObject.transform.Find("CardBack").gameObject;
+        if (!isEnemy)
+        {
+            cardBack.SetActive(false);
+        }
     }
 
     public void RemoveCardFromHand(Kard card)
