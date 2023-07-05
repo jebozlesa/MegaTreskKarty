@@ -79,6 +79,8 @@ public class Attack : MonoBehaviour
 
         switch (attackType)
         {
+            case 0:
+                break;
             case 1:
                 yield return StartCoroutine(Punch(attacker, receiver, dialogText));
                 break;

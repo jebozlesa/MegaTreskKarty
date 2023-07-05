@@ -301,6 +301,7 @@ public class FightSystem : MonoBehaviour
             {
                 state = FightState.LOST;
                 dialogText.text = "Loser you are!";
+                recordHandler.SendNewRecordToPlayFab(enemyLevel);
                 yield break;
             }
             else
@@ -309,9 +310,7 @@ public class FightSystem : MonoBehaviour
             }
             yield return new WaitUntil(() => state == FightState.TURN);
         }
-        
-        
-
+    
         Turn();
 
     }

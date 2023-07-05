@@ -11,6 +11,8 @@ public class RecordHandler : MonoBehaviour
 
     public CardGenerator cardGenerator;
 
+    public PlayFabManager playFabManager;
+
 
 
     // Start is called before the first frame update
@@ -37,6 +39,11 @@ public class RecordHandler : MonoBehaviour
                 yield return StartCoroutine(cardGenerator.AddRandomCardCoroutine());
             }
         }
+    }
+
+    public void SendNewRecordToPlayFab(int enemyLevel)
+    {
+        playFabManager.SendLeaderboard(enemyLevel);
     }
 
 }
