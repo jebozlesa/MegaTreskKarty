@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,9 +7,7 @@ using PlayFab.ClientModels;
 
 public class PlayFabManager : MonoBehaviour
 {
-
-    // public GameObject rowPrefab;
-    // public Transform rowParent;
+    public event Action<List<PlayerLeaderboardEntry>> OnLeaderboardLoaded;
 
     // Start is called before the first frame update
     void Start()
@@ -58,7 +57,7 @@ public class PlayFabManager : MonoBehaviour
         Debug.Log("Rekordy poslane");
     }
 
-    public void GetLeaderboard(int score)
+    public void GetLeaderboard()
     {
         var request = new GetLeaderboardRequest
         {
@@ -74,6 +73,7 @@ public class PlayFabManager : MonoBehaviour
         foreach (var item in result.Leaderboard)
         {
             Debug.Log(item.Position + " " + item.PlayFabId + " " + item.StatValue);
+            OnLeaderboardLoaded?.Invoke(result.Leaderboard);
         }
     }
 }
