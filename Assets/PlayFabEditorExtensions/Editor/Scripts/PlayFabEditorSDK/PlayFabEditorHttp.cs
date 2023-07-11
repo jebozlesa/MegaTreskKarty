@@ -89,6 +89,9 @@ namespace PlayFab.PfEditor
                 method = "POST"
             };
 
+            www.disposeUploadHandlerOnDispose = true;
+            www.disposeDownloadHandlerOnDispose = true;
+
             foreach (var header in headers)
             {
                 if (!string.IsNullOrEmpty(header.Key) && !string.IsNullOrEmpty(header.Value))
@@ -224,12 +227,21 @@ namespace PlayFab.PfEditor
 #else 
         private static IEnumerator Post(WWW www, Action<string> callBack, Action<string> errorCallback)
         {
-            yield return www;
-
-            if (!string.IsNullOrEmpty(www.error))
-                errorCallback(www.error);
+            if (www != null)
+            {
+                yield return www.SendWebRequest();
+                if (!string.IsNullOrEmpty(www.error))
+                    errorCallback(www.error);
+                else
+                    callBack(www.downloadHandler.text);
+                //Add this line
+                www.Dispose();
+            }
             else
-                callBack(www.text);
+            {
+                UnityEngine.Debug.Log("UnityWebRequest was null");
+                errorCallback("UnityWebRequest Object was null");
+            }
         }
 
         private static IEnumerator PostDownload(WWW www, Action<byte[]> callBack, Action<string> errorCallback)

@@ -138,6 +138,7 @@ Library: lib_burst_generated
 --root-assembly=C:\MegaTresk\MegaTreskKarty\Temp\StagingArea\Data\Managed\Unity.VisualScripting.State.dll
 --root-assembly=C:\MegaTresk\MegaTreskKarty\Temp\StagingArea\Data\Managed\UnityEngine.Purchasing.WinRTCore.dll
 --root-assembly=C:\MegaTresk\MegaTreskKarty\Temp\StagingArea\Data\Managed\Unity.VisualScripting.Core.dll
+--root-assembly=C:\MegaTresk\MegaTreskKarty\Temp\StagingArea\Data\Managed\PlayFab.dll
 --root-assembly=C:\MegaTresk\MegaTreskKarty\Temp\StagingArea\Data\Managed\UnityEngine.Purchasing.AppleCore.dll
 --root-assembly=C:\MegaTresk\MegaTreskKarty\Temp\StagingArea\Data\Managed\Unity.Services.Core.Environments.Internal.dll
 --root-assembly=C:\MegaTresk\MegaTreskKarty\Temp\StagingArea\Data\Managed\Unity.Burst.dll

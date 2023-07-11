@@ -10,7 +10,7 @@ public class PlayFabManager : MonoBehaviour
     public event Action<List<PlayerLeaderboardEntry>> OnLeaderboardLoaded;
 
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         Login();
     }
@@ -28,6 +28,7 @@ public class PlayFabManager : MonoBehaviour
     void OnSuccess(LoginResult result)
     {
         Debug.Log("Sicko dobre");
+        GetLeaderboard();
     }
 
     void OnError(PlayFabError error)

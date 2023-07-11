@@ -17,11 +17,16 @@ public class RecordsLoader : MonoBehaviour
         playFabManager.OnLeaderboardLoaded += UpdateRecordList;
 
         // Načítame záznamy
-        playFabManager.GetLeaderboard();
+        //playFabManager.GetLeaderboard();
     }
 
     void UpdateRecordList(List<PlayerLeaderboardEntry> records)
     {
+        // Odstránime existujúce záznamy
+        foreach (Transform child in rowsParent)
+        {
+            Destroy(child.gameObject);
+        }
         // Prejdeme všetky záznamy
         foreach (var record in records)
         {
@@ -30,7 +35,7 @@ public class RecordsLoader : MonoBehaviour
 
             // Nastavíme textové polia v zázname
             TextMeshProUGUI[] texts = rowInstance.GetComponentsInChildren<TextMeshProUGUI>();
-            texts[0].text = record.Position.ToString();
+            texts[0].text = (record.Position + 1).ToString() + ".";
             texts[1].text = record.PlayFabId;
             texts[2].text = record.StatValue.ToString();
         }
