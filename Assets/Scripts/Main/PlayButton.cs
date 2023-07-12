@@ -27,4 +27,13 @@ public class PlayButton : MonoBehaviour
         GameParameters.CampaignID = campaignID;
         SceneManager.LoadScene("Campaign");
     }
+
+    public void LogoutAndLoadSceneLogin()
+    {
+        PlayerPrefs.DeleteKey("username");
+        PlayerPrefs.DeleteKey("email");
+        PlayerPrefs.DeleteKey("password");
+        PlayerPrefs.Save();
+        SceneManager.LoadScene("Login");
+    }
 }

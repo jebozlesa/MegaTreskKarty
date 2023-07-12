@@ -6,25 +6,66 @@ using PlayFab;
 using PlayFab.ClientModels;
 using TMPro;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class PlayFabManagerLogin : MonoBehaviour
 {
-    public TMP_Text messageText;
+    public GameObject loadingImage;
+    public GameObject messageGandhiBubble;
+    public GameObject messageStalinBubble;
+    public GameObject messageEinsteinBubble;
+    public GameObject controlPanel;
+    public TMP_Text messageGandhiText;
+    public TMP_Text messageStalinText;
+    public TMP_Text messageEinsteinText;
     public TMP_InputField usernameInput;
     public TMP_InputField emailInput;
     public TMP_InputField passwordInput;
 
     // Start is called before the first frame update
-    void Awake()
+    void Start()
     {
-       // Login();
+        loadingImage.SetActive(true);
+
+        // Načítanie prihlasovacích údajov
+        string username = PlayerPrefs.GetString("username");
+        string email = PlayerPrefs.GetString("email");
+        string password = PlayerPrefs.GetString("password");
+
+        Debug.Log("Username: " + username);
+        Debug.Log("Email: " + email);
+        Debug.Log("Password: " + password);
+
+        // Ak sú prihlasovacie údaje uložené, prihlás užívateľa
+        if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(password))
+        {
+            var request = new LoginWithEmailAddressRequest 
+            {
+                Email = email,
+                Password = password
+            };
+            PlayFabClientAPI.LoginWithEmailAddress(request, OnLoginSuccess, OnError);
+        }
+        else
+        {
+            loadingImage.SetActive(false);
+            messageGandhiBubble.SetActive(true);
+            messageStalinBubble.SetActive(true);
+            controlPanel.SetActive(true);
+        }
     }
 
     public void RegisterButton()
     {
+        messageGandhiBubble.SetActive(false);
+        messageStalinBubble.SetActive(false);
+        controlPanel.SetActive(false);
+
+        loadingImage.SetActive(true);
+
         if (passwordInput.text.Length < 6)
         {
-            messageText.text = "Password too short!";
+            messageGandhiText.text = "Password too short!";
             return;
         }
 
@@ -40,11 +81,45 @@ public class PlayFabManagerLogin : MonoBehaviour
 
     void OnRegisterSuccess(RegisterPlayFabUserResult result)
     {
-        messageText.text = "Registered and logged in";
+        loadingImage.SetActive(false);
+
+        messageEinsteinBubble.SetActive(true);
+        messageEinsteinText.text = "Welcome " + usernameInput.text;
+
+        PlayerPrefs.SetString("username", usernameInput.text);
+        PlayerPrefs.SetString("email", emailInput.text);
+        PlayerPrefs.SetString("password", passwordInput.text);
+        PlayerPrefs.Save();
+
+        // Nastavenie DisplayName na užívateľské meno
+        UpdateUserTitleDisplayName(usernameInput.text);
+
+        StartCoroutine(LoadMainSceneAfterDelay(2));
     }
+
+    void UpdateUserTitleDisplayName(string displayName)
+    {
+        var request = new UpdateUserTitleDisplayNameRequest
+        {
+            DisplayName = displayName
+        };
+        PlayFabClientAPI.UpdateUserTitleDisplayName(request, OnDisplayNameUpdated, OnError);
+    }
+
+    void OnDisplayNameUpdated(UpdateUserTitleDisplayNameResult result)
+    {
+        Debug.Log("DisplayName updated successfully");
+    }
+
 
     public void LoginButton()
     {
+        messageGandhiBubble.SetActive(false);
+        messageStalinBubble.SetActive(false);
+        controlPanel.SetActive(false);
+
+        loadingImage.SetActive(true);
+
         var request = new LoginWithEmailAddressRequest 
         {
             Email = emailInput.text,
@@ -55,8 +130,22 @@ public class PlayFabManagerLogin : MonoBehaviour
 
     void OnLoginSuccess(LoginResult result)
     {
+        loadingImage.SetActive(false);
         Debug.Log("Sicko dobre");
-        messageText.text = "OK";
+        messageEinsteinBubble.SetActive(true);
+        messageEinsteinText.text = "Welcome " + PlayerPrefs.GetString("username");
+        StartCoroutine(LoadMainSceneAfterDelay(2));
+    }
+
+    IEnumerator LoadMainSceneAfterDelay(float delay)
+    {
+        // Počkaj určitý počet sekúnd
+        yield return new WaitForSeconds(delay);
+
+        messageEinsteinBubble.SetActive(false);
+
+        // Potom načítaj hlavnú scénu
+        SceneManager.LoadScene("Main");
     }
 
     public void ResetPasswordButton()
@@ -71,7 +160,7 @@ public class PlayFabManagerLogin : MonoBehaviour
 
     void OnPasswordReset(SendAccountRecoveryEmailResult result)
     {
-        messageText.text = "toto hovno robi";
+        messageGandhiText.text = "toto hovno robi";
     }
 
     void Login()
@@ -91,10 +180,14 @@ public class PlayFabManagerLogin : MonoBehaviour
 
     void OnError(PlayFabError error)
     {
-        messageText.text = error.ErrorMessage;
+        messageStalinBubble.SetActive(true);
+        controlPanel.SetActive(true);
+
+        loadingImage.SetActive(false);
+
+        messageStalinText.text = error.ErrorMessage;
         Debug.Log("Nahovno daco");
         Debug.Log(error.GenerateErrorReport());
     }
-
 
 }

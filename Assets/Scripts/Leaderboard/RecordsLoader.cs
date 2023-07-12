@@ -36,7 +36,7 @@ public class RecordsLoader : MonoBehaviour
             // Nastavíme textové polia v zázname
             TextMeshProUGUI[] texts = rowInstance.GetComponentsInChildren<TextMeshProUGUI>();
             texts[0].text = (record.Position + 1).ToString() + ".";
-            texts[1].text = record.PlayFabId;
+            texts[1].text = string.IsNullOrEmpty(record.DisplayName) ? "Noname" : record.DisplayName;
             texts[2].text = record.StatValue.ToString();
         }
     }

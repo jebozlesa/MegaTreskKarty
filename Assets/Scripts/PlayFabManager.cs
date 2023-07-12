@@ -15,7 +15,7 @@ public class PlayFabManager : MonoBehaviour
         Login();
     }
 
-    void Login()
+    void LoginFake()
     {
         var request = new LoginWithCustomIDRequest 
         {
@@ -23,6 +23,20 @@ public class PlayFabManager : MonoBehaviour
             CreateAccount = true
         };
         PlayFabClientAPI.LoginWithCustomID(request, OnSuccess, OnError);
+    }
+
+    void Login()
+    {
+        string username = PlayerPrefs.GetString("username");
+        string email = PlayerPrefs.GetString("email");
+        string password = PlayerPrefs.GetString("password");
+
+        var request = new LoginWithEmailAddressRequest 
+            {
+                Email = email,
+                Password = password
+            };
+            PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
     }
 
     void OnSuccess(LoginResult result)
@@ -64,7 +78,11 @@ public class PlayFabManager : MonoBehaviour
         {
             StatisticName = "RoyalRumble",
             StartPosition = 0,
-            MaxResultsCount = 10
+            MaxResultsCount = 10,
+            ProfileConstraints = new PlayerProfileViewConstraints
+            {
+                ShowDisplayName = true
+            }
         };
         PlayFabClientAPI.GetLeaderboard(request, OnLeaderboardGet, OnError);
     }
@@ -73,8 +91,11 @@ public class PlayFabManager : MonoBehaviour
     {
         foreach (var item in result.Leaderboard)
         {
-            Debug.Log(item.Position + " " + item.PlayFabId + " " + item.StatValue);
+            string username = string.IsNullOrEmpty(item.DisplayName) ? "Noname" : item.DisplayName;
+            Debug.Log(item.Position + " " + username + " " + item.StatValue);
             OnLeaderboardLoaded?.Invoke(result.Leaderboard);
         }
     }
+
+
 }
