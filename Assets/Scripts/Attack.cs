@@ -37,11 +37,11 @@ public class Attack : MonoBehaviour
     }
 
     public bool IsPriorityAttack(int attackNumber)
-{
-    bool isPriority = priorityAttacks.Contains(attackNumber);
-    Debug.Log("Attack number: " + attackNumber + ", is priority: " + isPriority);
-    return isPriority;
-}
+    {
+        bool isPriority = priorityAttacks.Contains(attackNumber);
+        Debug.Log("Attack number: " + attackNumber + ", is priority: " + isPriority);
+        return isPriority;
+    }
 
 
     public IEnumerator ExecuteAttack(Kard attacker, Kard receiver, int attackType, TMP_Text dialogText)

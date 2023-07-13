@@ -5,6 +5,8 @@ using Mono.Data.Sqlite;
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
+using PlayFab;
+using PlayFab.ClientModels;
 
 public class Album : MonoBehaviour
 {
@@ -22,10 +24,41 @@ public class Album : MonoBehaviour
     void Start()
     {
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
+        //LoginPlayFab();
 
         deckPanel.SetActive(false);
 
         StartCoroutine(VytvorKarty());
+    }
+
+    void LoginPlayFab()
+    {
+//        loadingImage.SetActive(true);
+        string username = PlayerPrefs.GetString("username");
+        string email = PlayerPrefs.GetString("email");
+        string password = PlayerPrefs.GetString("password");
+
+        var request = new LoginWithEmailAddressRequest 
+            {
+                Email = email,
+                Password = password
+            };
+            PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
+//        loadingImage.SetActive(false);
+    }
+
+    void OnSuccess(LoginResult result)
+    {
+        Debug.Log("Sicko dobre");
+  //      loadingImage.SetActive(false);
+        StartCoroutine(VytvorKartyPlayFab());
+    }
+
+    void OnError(PlayFabError error)
+    {
+        Debug.Log("Daco nahovno");
+  //      errorImage.SetActive(true);
+        Debug.Log(error.GenerateErrorReport());
     }
 
     string LoadStory(int cardID)
@@ -113,5 +146,64 @@ public class Album : MonoBehaviour
         dbCommand.Dispose();
         dbConnection.Close();
     }
+
+    private IEnumerator VytvorKartyPlayFab()
+    {
+        // Získanie údajov z PlayFab
+        PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
+        {
+            if (result.Data.ContainsKey("PlayerCards"))
+            {
+                // Prevod údajov z formátu JSON do objektov GeneratedCard
+                Dictionary<string, GeneratedCard> data = JsonUtility.FromJson<Dictionary<string, GeneratedCard>>(result.Data["PlayerCards"].Value);
+
+                // Spracovanie údajov o kartách
+                StartCoroutine(SpracujKarty(data));
+            }
+        }, error => Debug.LogError(error.GenerateErrorReport()));
+
+        yield return null;
+    }
+
+    private IEnumerator SpracujKarty(Dictionary<string, GeneratedCard> data)
+    {
+        foreach (KeyValuePair<string, GeneratedCard> entry in data)
+        {
+            GeneratedCard cardData = entry.Value;
+
+            GameObject novaKarta = Instantiate(kartaPrefab, transform);
+            novaKarta.GetComponent<Card>().cardId = cardData.StyleID;
+            novaKarta.GetComponent<Card>().styleId = cardData.StyleID;
+            novaKarta.GetComponent<Card>().level = cardData.Level;
+            novaKarta.GetComponent<Card>().experience = cardData.Experience;
+            novaKarta.GetComponent<Card>().cardName = cardData.PersonName;
+            novaKarta.GetComponent<Card>().health = cardData.Health;
+            novaKarta.GetComponent<Card>().strength = cardData.Strength;
+            novaKarta.GetComponent<Card>().speed = cardData.Speed;
+            novaKarta.GetComponent<Card>().attack = cardData.Attack;
+            novaKarta.GetComponent<Card>().defense = cardData.Defense;
+            novaKarta.GetComponent<Card>().knowledge = cardData.Knowledge;
+            novaKarta.GetComponent<Card>().charisma = cardData.Charisma;
+            novaKarta.GetComponent<Card>().image = cardData.CardPicture;
+            Color32 cardColor = new Color32((byte)cardData.Color[0], (byte)cardData.Color[1], (byte)cardData.Color[2], 255);
+            novaKarta.GetComponent<Card>().color = cardColor;
+            novaKarta.GetComponent<Card>().attack1 = cardData.Attack1;
+            novaKarta.GetComponent<Card>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Card>(), cardData.Attack1);
+            novaKarta.GetComponent<Card>().attack2 = cardData.Attack2;
+            novaKarta.GetComponent<Card>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Card>(), cardData.Attack2);
+            novaKarta.GetComponent<Card>().attack3 = cardData.Attack3;
+            novaKarta.GetComponent<Card>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Card>(), cardData.Attack3);
+            novaKarta.GetComponent<Card>().attack4 = cardData.Attack4;
+            novaKarta.GetComponent<Card>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Card>(), cardData.Attack4);
+            novaKarta.GetComponent<Card>().story = LoadStory(cardData.StyleID);
+            novaKarta.GetComponent<Card>().zoomedCardHolder = zoomedCardHolder;
+            novaKarta.GetComponent<Card>().transform.SetParent(content.transform);
+            novaKarta.GetComponent<Card>().transform.localScale = Vector3.one;
+            novaKarta.GetComponent<Card>().Initialize(deckPanel);
+
+            yield return new WaitForSeconds(0.05f);
+        }
+    }
+        
 
 }

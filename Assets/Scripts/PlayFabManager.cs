@@ -7,6 +7,9 @@ using PlayFab.ClientModels;
 
 public class PlayFabManager : MonoBehaviour
 {
+ //   public GameObject loadingImage;
+ //   public GameObject errorImage;
+
     public event Action<List<PlayerLeaderboardEntry>> OnLeaderboardLoaded;
 
     // Start is called before the first frame update
@@ -15,18 +18,9 @@ public class PlayFabManager : MonoBehaviour
         Login();
     }
 
-    void LoginFake()
-    {
-        var request = new LoginWithCustomIDRequest 
-        {
-            CustomId = SystemInfo.deviceUniqueIdentifier,
-            CreateAccount = true
-        };
-        PlayFabClientAPI.LoginWithCustomID(request, OnSuccess, OnError);
-    }
-
     void Login()
     {
+//        loadingImage.SetActive(true);
         string username = PlayerPrefs.GetString("username");
         string email = PlayerPrefs.GetString("email");
         string password = PlayerPrefs.GetString("password");
@@ -37,17 +31,20 @@ public class PlayFabManager : MonoBehaviour
                 Password = password
             };
             PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
+//        loadingImage.SetActive(false);
     }
 
     void OnSuccess(LoginResult result)
     {
         Debug.Log("Sicko dobre");
+  //      loadingImage.SetActive(false);
         GetLeaderboard();
     }
 
     void OnError(PlayFabError error)
     {
-        Debug.Log("Sicko dobre");
+        Debug.Log("Daco nahovno");
+  //      errorImage.SetActive(true);
         Debug.Log(error.GenerateErrorReport());
     }
 
@@ -74,6 +71,7 @@ public class PlayFabManager : MonoBehaviour
 
     public void GetLeaderboard()
     {
+  //      loadingImage.SetActive(true);
         var request = new GetLeaderboardRequest
         {
             StatisticName = "RoyalRumble",

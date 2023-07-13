@@ -4,6 +4,8 @@ using Mono.Data.Sqlite;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using PlayFab;
+using PlayFab.ClientModels;
 
 public class CardGenerator : MonoBehaviour
 {
@@ -15,6 +17,35 @@ public class CardGenerator : MonoBehaviour
     private void Start()
     {
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
+ //       PlayFabLogin();
+    }
+
+    void PlayFabLogin()
+    {
+        //loadingImage.SetActive(true);
+        string username = PlayerPrefs.GetString("username");
+        string email = PlayerPrefs.GetString("email");
+        string password = PlayerPrefs.GetString("password");
+
+        var request = new LoginWithEmailAddressRequest 
+            {
+                Email = email,
+                Password = password
+            };
+            PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
+    }
+
+    void OnSuccess(LoginResult result)
+    {
+        Debug.Log("Sicko dobre");
+    //    loadingImage.SetActive(false);
+    }
+
+    void OnError(PlayFabError error)
+    {
+        Debug.Log("Daco nahovno");
+   //     errorImage.SetActive(true);
+        Debug.Log(error.GenerateErrorReport());
     }
 
     public void AddAllCardsFromDatabase()
@@ -192,6 +223,71 @@ public class CardGenerator : MonoBehaviour
             string[] colorComponents = reader.GetString(10).Split(';');
             Color32 color = new Color32(byte.Parse(colorComponents[0]), byte.Parse(colorComponents[1]), byte.Parse(colorComponents[2]), 255);
 
+            GeneratedCard card = new GeneratedCard
+            {
+                StyleID = reader.GetInt32(0),
+                PersonName = reader.GetString(1),
+                Level = 1,
+                Experience = 0,
+                Health = reader.GetInt32(2),
+                Strength = reader.GetInt32(3),
+                Speed = reader.GetInt32(4),
+                Attack = reader.GetInt32(5),
+                Defense = reader.GetInt32(6),
+                Knowledge = reader.GetInt32(7),
+                Charisma = reader.GetInt32(8),
+                Color = Array.ConvertAll(reader.GetString(10).Split(';'), int.Parse),
+                Attack1 = reader.GetInt32(11),
+                Attack2 = reader.GetInt32(12),
+                Attack3 = reader.GetInt32(13),
+                Attack4 = reader.GetInt32(14),
+                CardPicture = reader.GetString(15)
+            };
+
+            Debug.Log("Card object: " + card.ToString());
+
+            // Konverzia objektu karty na JSON
+            string json = JsonUtility.ToJson(card);
+
+            Debug.Log("Card JSON: " + json);
+
+            // Získanie existujúcich údajov o kartách z PlayFab
+            PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
+            {
+                string existingDataJson = "{}";
+                if (result.Data.ContainsKey("PlayerCards"))
+                {
+                    existingDataJson = result.Data["PlayerCards"].Value;
+                }
+
+                // Pridanie novej karty do existujúcich údajov
+                Dictionary<string, GeneratedCard> data = new Dictionary<string, GeneratedCard>();
+                if (!string.IsNullOrEmpty(existingDataJson))
+                {
+                    CardListWrapper existingCards = JsonUtility.FromJson<CardListWrapper>(existingDataJson);
+                    foreach (GeneratedCard existingCard in existingCards.cards)
+                    {
+                        data.Add(existingCard.StyleID.ToString(), existingCard);
+                    }
+                }
+                data.Add(card.StyleID.ToString(), card);
+
+                // Konverzia aktualizovaných údajov späť na JSON
+                CardListWrapper updatedCards = new CardListWrapper
+                {
+                    cards = new List<GeneratedCard>(data.Values)
+                };
+                string updatedJson = JsonUtility.ToJson(updatedCards);
+
+                // Odoslanie aktualizovaných údajov do PlayFab
+                var updateRequest = new UpdateUserDataRequest
+                {
+                    Data = new Dictionary<string, string> { { "PlayerCards", updatedJson } }
+                };
+                PlayFabClientAPI.UpdateUserData(updateRequest, updateResult => Debug.Log("User data updated successfully"), error => Debug.LogError(error.GenerateErrorReport()));
+            }, error => Debug.LogError(error.GenerateErrorReport()));
+
+
             // Pridajte volanie ShowCardOnScreen po vložení karty do databázy
             yield return StartCoroutine(ShowCardOnScreen(id, reader.GetString(1), reader.GetString(15), color, 1));
         }
@@ -204,4 +300,5 @@ public class CardGenerator : MonoBehaviour
         dbCommand.Dispose();
         dbConnection.Close();
     }
+
 }

@@ -130,12 +130,23 @@ public class PlayFabManagerLogin : MonoBehaviour
 
     void OnLoginSuccess(LoginResult result)
     {
-        loadingImage.SetActive(false);
-        Debug.Log("Sicko dobre");
-        messageEinsteinBubble.SetActive(true);
-        messageEinsteinText.text = "Welcome " + PlayerPrefs.GetString("username");
-        StartCoroutine(LoadMainSceneAfterDelay(2));
+        PlayerPrefs.SetString("email", emailInput.text);
+        PlayerPrefs.SetString("password", passwordInput.text);
+
+        // Get the username
+        PlayFabClientAPI.GetAccountInfo(new GetAccountInfoRequest { PlayFabId = result.PlayFabId }, resultAccountInfo =>
+        {
+            string username = resultAccountInfo.AccountInfo.Username;
+            PlayerPrefs.SetString("username", username);
+
+            loadingImage.SetActive(false);
+            Debug.Log("Sicko dobre");
+            messageEinsteinBubble.SetActive(true);
+            messageEinsteinText.text = "Welcome " + username;
+            StartCoroutine(LoadMainSceneAfterDelay(2));
+        }, error => { Debug.LogError(error.GenerateErrorReport()); });
     }
+
 
     IEnumerator LoadMainSceneAfterDelay(float delay)
     {
