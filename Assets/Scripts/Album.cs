@@ -22,17 +22,19 @@ public class Album : MonoBehaviour
     public GameObject deckPanel;
 
     void Start()
-    {
+    {   Debug.Log("Album.Start  -- Start");
+
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
-        //LoginPlayFab();
+        LoginPlayFab();
 
         deckPanel.SetActive(false);
 
-        StartCoroutine(VytvorKarty());
+        //StartCoroutine(VytvorKarty());
     }
 
     void LoginPlayFab()
-    {
+    {   Debug.Log("Album.LoginPlayFab  -- Start");
+
 //        loadingImage.SetActive(true);
         string username = PlayerPrefs.GetString("username");
         string email = PlayerPrefs.GetString("email");
@@ -48,21 +50,24 @@ public class Album : MonoBehaviour
     }
 
     void OnSuccess(LoginResult result)
-    {
+    {   Debug.Log("Album.OnSuccess  -- Start");
+
         Debug.Log("Sicko dobre");
   //      loadingImage.SetActive(false);
         StartCoroutine(VytvorKartyPlayFab());
     }
 
     void OnError(PlayFabError error)
-    {
+    {   Debug.Log("Album.OnError  -- Start");
+
         Debug.Log("Daco nahovno");
   //      errorImage.SetActive(true);
         Debug.Log(error.GenerateErrorReport());
     }
 
     string LoadStory(int cardID)
-    {
+    {   Debug.Log("Album.LoadStory  -- Start");
+
         string cardStory = "";
         IDbConnection dbConnection = new SqliteConnection(connectionString);
         dbConnection.Open();
@@ -84,7 +89,8 @@ public class Album : MonoBehaviour
     }
 
     private IEnumerator VytvorKarty()
-    {
+    {Debug.Log("Album.VytvorKarty  -- Start");
+
         IDbConnection dbConnection = new SqliteConnection(connectionString);
         dbConnection.Open();
 
@@ -154,22 +160,29 @@ public class Album : MonoBehaviour
         {
             if (result.Data.ContainsKey("PlayerCards"))
             {
-                // Prevod údajov z formátu JSON do objektov GeneratedCard
-                Dictionary<string, GeneratedCard> data = JsonUtility.FromJson<Dictionary<string, GeneratedCard>>(result.Data["PlayerCards"].Value);
+                Debug.Log("PlayerCards data: " + result.Data["PlayerCards"].Value); // Pridaný výpis
+
+                // Prevod údajov z formátu JSON do objektov PlayerCardsData
+                PlayerCardsData data = JsonUtility.FromJson<PlayerCardsData>(result.Data["PlayerCards"].Value);
 
                 // Spracovanie údajov o kartách
-                StartCoroutine(SpracujKarty(data));
+                StartCoroutine(SpracujKarty(data.cards));
             }
         }, error => Debug.LogError(error.GenerateErrorReport()));
 
         yield return null;
     }
 
-    private IEnumerator SpracujKarty(Dictionary<string, GeneratedCard> data)
-    {
-        foreach (KeyValuePair<string, GeneratedCard> entry in data)
+
+    private IEnumerator SpracujKarty(List<GeneratedCard> data)
+    {Debug.Log("Album.SpracujKarty  -- Start");
+
+        Debug.Log("Number of cards: " + data.Count); // Pridaný výpis
+
+        foreach (GeneratedCard cardData in data)
         {
-            GeneratedCard cardData = entry.Value;
+
+            Debug.Log("Hero : " + cardData.PersonName);
 
             GameObject novaKarta = Instantiate(kartaPrefab, transform);
             novaKarta.GetComponent<Card>().cardId = cardData.StyleID;

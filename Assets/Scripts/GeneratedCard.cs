@@ -6,7 +6,7 @@ using System;
 [Serializable]
 public class GeneratedCard
 {
-
+    public string CardID;
     public int StyleID;
     public string PersonName;
     public int Level;
