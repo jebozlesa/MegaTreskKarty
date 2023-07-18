@@ -158,18 +158,18 @@ public class CardGenerator : MonoBehaviour
             generatedCards.Add(randomCardID); // Pridajte kartu do zoznamu vygenerovaných kariet
             pack.RemoveAt(randomIndex);
 
-            if (i == 4) // Po vygenerovaní 5. karty
-            {
-                yield return StartCoroutine(CreateFirstDeck(generatedCards)); // Vytvorte prvý balíček
-            }
-
             if (i < 4) // Ak ešte nie je koniec, počkajte pol sekundy medzi kartami
             {
                 yield return new WaitForSeconds(0.5f);
             }
         }
-    }
 
+        // Po vygenerovaní všetkých kariet vytvorte balíček, ak hráč ešte nedokončil tutoriál
+        if (PlayerPrefs.GetInt("HasCompletedTutorial", 0) == 0)
+        {
+            yield return StartCoroutine(CreateFirstDeck(generatedCards)); // Vytvorte prvý balíček
+        }
+    }
 
     public void AddRandomCard()
     {
@@ -311,7 +311,8 @@ public class CardGenerator : MonoBehaviour
     }
 
     public IEnumerator CreateFirstDeck(List<int> cardIds)
-    {
+    {   Debug.Log("CreateFirstDeck ====> START");
+
         if (cardIds.Count < 5)
         {
             Debug.LogError("Not enough cards to create a deck");
