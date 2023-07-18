@@ -89,12 +89,13 @@ public class PlayFabManagerLogin : MonoBehaviour
         PlayerPrefs.SetString("username", usernameInput.text);
         PlayerPrefs.SetString("email", emailInput.text);
         PlayerPrefs.SetString("password", passwordInput.text);
+        PlayerPrefs.SetInt("HasCompletedTutorial", 0);
         PlayerPrefs.Save();
 
         // Nastavenie DisplayName na užívateľské meno
         UpdateUserTitleDisplayName(usernameInput.text);
 
-        StartCoroutine(LoadMainSceneAfterDelay(2));
+        StartCoroutine(LoadMarketplaceSceneAfterDelay(2));
     }
 
     void UpdateUserTitleDisplayName(string displayName)
@@ -157,6 +158,17 @@ public class PlayFabManagerLogin : MonoBehaviour
 
         // Potom načítaj hlavnú scénu
         SceneManager.LoadScene("Main");
+    }
+
+    IEnumerator LoadMarketplaceSceneAfterDelay(float delay)
+    {
+        // Počkaj určitý počet sekúnd
+        yield return new WaitForSeconds(delay);
+
+        messageEinsteinBubble.SetActive(false);
+
+        // Potom načítaj hlavnú scénu
+        SceneManager.LoadScene("Marketplace");
     }
 
     public void ResetPasswordButton()
