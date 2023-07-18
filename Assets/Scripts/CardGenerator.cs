@@ -167,6 +167,7 @@ public class CardGenerator : MonoBehaviour
         // Po vygenerovaní všetkých kariet vytvorte balíček, ak hráč ešte nedokončil tutoriál
         if (PlayerPrefs.GetInt("HasCompletedTutorial", 0) == 0)
         {
+            Debug.Log("Generated cards: " + string.Join(", ", generatedCards));
             yield return StartCoroutine(CreateFirstDeck(generatedCards)); // Vytvorte prvý balíček
         }
     }
@@ -307,38 +308,52 @@ public class CardGenerator : MonoBehaviour
         {
             Data = new Dictionary<string, string> { { "PlayerCards", updatedJson } }
         };
+        Debug.Log("Updated JSON card: " + updatedJson);
         PlayFabClientAPI.UpdateUserData(updateRequest, updateResult => Debug.Log("User data updated successfully"), error => Debug.LogError(error.GenerateErrorReport()));
     }
 
-    public IEnumerator CreateFirstDeck(List<int> cardIds)
-    {   Debug.Log("CreateFirstDeck ====> START");
+    public IEnumerator CreateFirstDeck(List<int> generatedCards)
+    {
+        Debug.Log("CreateFirstDeck ====> START");
 
-        if (cardIds.Count < 5)
-        {
-            Debug.LogError("Not enough cards to create a deck");
-            yield break;
-        }
-
+        // Vytvoríme nový balíček s prvými 5 kartami
         Deck newDeck = new Deck
         {
             DeckID = Guid.NewGuid().ToString(),
             DeckName = "First Deck",
-            CardIDs = cardIds.Take(5).ToList()
+            Card1 = generatedCards[0],
+            Card2 = generatedCards[1],
+            Card3 = generatedCards[2],
+            Card4 = generatedCards[3],
+            Card5 = generatedCards[4]
         };
 
-        string json = ConvertDeckToJson(newDeck);
+        Debug.Log($"New deck created with ID: {newDeck.DeckID}");
+        Debug.Log($"New deck CardIDs: {newDeck.Card1}, {newDeck.Card2}, {newDeck.Card3}, {newDeck.Card4}, {newDeck.Card5}");
 
-        PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
+        // Získame existujúce balíčky
+        string existingDeckJson = PlayerPrefs.GetString("PlayerDecks", "");
+        List<Deck> existingDecks = new List<Deck>();
+        if (!string.IsNullOrEmpty(existingDeckJson))
         {
-            string existingDataJson = GetExistingDeckDataJson(result);
-            Dictionary<string, Deck> data = AddDeckToExistingData(existingDataJson, newDeck);
-            string updatedJson = ConvertUpdatedDeckDataToJson(data);
+            DeckListWrapper deckListWrapper = JsonUtility.FromJson<DeckListWrapper>(existingDeckJson);
+            existingDecks = deckListWrapper.Decks;
+        }
 
-            UpdateDeckDataInPlayFab(updatedJson);
-        }, error => Debug.LogError(error.GenerateErrorReport()));
+        // Pridáme nový balíček
+        existingDecks.Add(newDeck);
+        Debug.Log($"Adding new deck with ID: {newDeck.DeckID}");
+        Debug.Log($"Total decks after adding new deck: {existingDecks.Count}");
+
+        // Uložíme balíčky späť
+        DeckListWrapper newDeckListWrapper = new DeckListWrapper { Decks = existingDecks };
+        string newDeckJson = JsonUtility.ToJson(newDeckListWrapper);
+        Debug.Log($"Updated JSON deck: {newDeckJson}");
+        PlayerPrefs.SetString("PlayerDecks", newDeckJson);
 
         yield return null;
     }
+
 
     private string ConvertDeckToJson(Deck deck)
     {
@@ -366,7 +381,9 @@ public class CardGenerator : MonoBehaviour
                 data.Add(existingDeck.DeckID, existingDeck);
             }
         }
+        Debug.Log("Adding new deck with ID: " + deck.DeckID);
         data.Add(deck.DeckID, deck);
+        Debug.Log("Total decks after adding new deck: " + data.Count);
 
         return data;
     }
@@ -387,6 +404,7 @@ public class CardGenerator : MonoBehaviour
         {
             Data = new Dictionary<string, string> { { "PlayerDecks", updatedJson } }
         };
+        Debug.Log("Updated JSON deck: " + updatedJson);
         PlayFabClientAPI.UpdateUserData(updateRequest, updateResult => Debug.Log("User deck data updated successfully"), error => Debug.LogError(error.GenerateErrorReport()));
     }
 

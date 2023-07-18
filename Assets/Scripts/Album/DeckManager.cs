@@ -64,12 +64,14 @@ public class DeckManager : MonoBehaviour
             {
                 string deckDataJson = result.Data["PlayerDecks"].Value;
                 DeckListWrapper deckList = JsonUtility.FromJson<DeckListWrapper>(deckDataJson);
+
                 foreach (Deck deck in deckList.Decks)
                 {
-                    foreach (int cardID in deck.CardIDs)
-                    {
-                        AddCardToHand(cardID);
-                    }
+                    AddCardToHand(deck.Card1);
+                    AddCardToHand(deck.Card2);
+                    AddCardToHand(deck.Card3);
+                    AddCardToHand(deck.Card4);
+                    AddCardToHand(deck.Card5);
                 }
             }
             else
@@ -78,6 +80,7 @@ public class DeckManager : MonoBehaviour
             }
         }, error => Debug.LogError(error.GenerateErrorReport()));
     }
+
 
     // private void LoadDeckCards()
     // {
