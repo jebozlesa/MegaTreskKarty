@@ -6,6 +6,8 @@ using System.Collections;
 using System.Collections.Generic;
 using PlayFab;
 using PlayFab.ClientModels;
+using System.Linq;
+
 
 public class CardGenerator : MonoBehaviour
 {
@@ -139,6 +141,7 @@ public class CardGenerator : MonoBehaviour
         }
 
         List<int> pack = new List<int>(themedPacks[packIndex]);
+        List<int> generatedCards = new List<int>(); // Nový zoznam pre uchovanie vygenerovaných kariet
 
         for (int i = 0; i < 5; i++)
         {
@@ -152,7 +155,13 @@ public class CardGenerator : MonoBehaviour
             int randomCardID = pack[randomIndex];
             yield return StartCoroutine(AddCardById(randomCardID)); // Zmenené na korutinu
 
+            generatedCards.Add(randomCardID); // Pridajte kartu do zoznamu vygenerovaných kariet
             pack.RemoveAt(randomIndex);
+
+            if (i == 4) // Po vygenerovaní 5. karty
+            {
+                yield return StartCoroutine(CreateFirstDeck(generatedCards)); // Vytvorte prvý balíček
+            }
 
             if (i < 4) // Ak ešte nie je koniec, počkajte pol sekundy medzi kartami
             {
@@ -160,6 +169,7 @@ public class CardGenerator : MonoBehaviour
             }
         }
     }
+
 
     public void AddRandomCard()
     {
@@ -184,121 +194,201 @@ public class CardGenerator : MonoBehaviour
         dbConnection.Close();
     }
 
-public IEnumerator AddCardById(int id)
-{
-    Debug.Log("AddCardById("+id+")");
-    IDbConnection dbConnection = new SqliteConnection(connectionString);
-    dbConnection.Open();
-
-    IDbCommand dbCommand = dbConnection.CreateCommand();
-    dbCommand.CommandText = $"SELECT * FROM CardDatabase WHERE StyleID = {id}";
-    IDataReader reader = dbCommand.ExecuteReader();
-
-    if (reader.Read())
+    public IEnumerator AddCardById(int id)
     {
-        GeneratedCard card = CreateCardFromDatabase(reader);
-        string json = ConvertCardToJson(card);
+        Debug.Log("AddCardById("+id+")");
+        IDbConnection dbConnection = new SqliteConnection(connectionString);
+        dbConnection.Open();
+
+        IDbCommand dbCommand = dbConnection.CreateCommand();
+        dbCommand.CommandText = $"SELECT * FROM CardDatabase WHERE StyleID = {id}";
+        IDataReader reader = dbCommand.ExecuteReader();
+
+        if (reader.Read())
+        {
+            GeneratedCard card = CreateCardFromDatabase(reader);
+            string json = ConvertCardToJson(card);
+
+            PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
+            {
+                string existingDataJson = GetExistingDataJson(result);
+                Dictionary<string, GeneratedCard> data = AddCardToExistingData(existingDataJson, card);
+                string updatedJson = ConvertUpdatedDataToJson(data);
+
+                UpdateUserDataInPlayFab(updatedJson);
+            }, error => Debug.LogError(error.GenerateErrorReport()));
+
+            yield return StartCoroutine(ShowCardOnScreen(card.StyleID, card.PersonName, card.CardPicture, new Color32((byte)card.Color[0], (byte)card.Color[1], (byte)card.Color[2], 255), card.Level));
+        }
+        else
+        {
+            Debug.LogError("Card with the specified ID not found");
+        }
+
+        reader.Close();
+        dbCommand.Dispose();
+        dbConnection.Close();
+    }
+
+    private GeneratedCard CreateCardFromDatabase(IDataReader reader)
+    {
+        string[] colorComponents = reader.GetString(10).Split(';');
+        Color32 color = new Color32(byte.Parse(colorComponents[0]), byte.Parse(colorComponents[1]), byte.Parse(colorComponents[2]), 255);
+
+        GeneratedCard card = new GeneratedCard
+        {
+            CardID = Guid.NewGuid().ToString(),
+            StyleID = reader.GetInt32(0),
+            PersonName = reader.GetString(1),
+            Level = 1,
+            Experience = 0,
+            Health = reader.GetInt32(2),
+            Strength = reader.GetInt32(3),
+            Speed = reader.GetInt32(4),
+            Attack = reader.GetInt32(5),
+            Defense = reader.GetInt32(6),
+            Knowledge = reader.GetInt32(7),
+            Charisma = reader.GetInt32(8),
+            Color = Array.ConvertAll(reader.GetString(10).Split(';'), int.Parse),
+            Attack1 = reader.GetInt32(11),
+            Attack2 = reader.GetInt32(12),
+            Attack3 = reader.GetInt32(13),
+            Attack4 = reader.GetInt32(14),
+            CardPicture = reader.GetString(15)
+        };
+
+        return card;
+    }
+
+    private string ConvertCardToJson(GeneratedCard card)
+    {
+        return JsonUtility.ToJson(card);
+    }
+
+    private string GetExistingDataJson(GetUserDataResult result)
+    {
+        if (result.Data.ContainsKey("PlayerCards"))
+        {
+            return result.Data["PlayerCards"].Value;
+        }
+
+        return "{}";
+    }
+
+    private Dictionary<string, GeneratedCard> AddCardToExistingData(string existingDataJson, GeneratedCard card)
+    {
+        Dictionary<string, GeneratedCard> data = new Dictionary<string, GeneratedCard>();
+        if (!string.IsNullOrEmpty(existingDataJson))
+        {
+            CardListWrapper existingCards = JsonUtility.FromJson<CardListWrapper>(existingDataJson);
+            foreach (GeneratedCard existingCard in existingCards.cards)
+            {
+                data.Add(existingCard.CardID, existingCard);
+            }
+        }
+        data.Add(card.CardID, card);
+
+        return data;
+    }
+
+    private string ConvertUpdatedDataToJson(Dictionary<string, GeneratedCard> data)
+    {
+        CardListWrapper updatedCards = new CardListWrapper
+        {
+            cards = new List<GeneratedCard>(data.Values)
+        };
+
+        return JsonUtility.ToJson(updatedCards);
+    }
+
+    private void UpdateUserDataInPlayFab(string updatedJson)
+    {
+        var updateRequest = new UpdateUserDataRequest
+        {
+            Data = new Dictionary<string, string> { { "PlayerCards", updatedJson } }
+        };
+        PlayFabClientAPI.UpdateUserData(updateRequest, updateResult => Debug.Log("User data updated successfully"), error => Debug.LogError(error.GenerateErrorReport()));
+    }
+
+    public IEnumerator CreateFirstDeck(List<int> cardIds)
+    {
+        if (cardIds.Count < 5)
+        {
+            Debug.LogError("Not enough cards to create a deck");
+            yield break;
+        }
+
+        Deck newDeck = new Deck
+        {
+            DeckID = Guid.NewGuid().ToString(),
+            DeckName = "First Deck",
+            CardIDs = cardIds.Take(5).ToList()
+        };
+
+        string json = ConvertDeckToJson(newDeck);
 
         PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
         {
-            string existingDataJson = GetExistingDataJson(result);
-            Dictionary<string, GeneratedCard> data = AddCardToExistingData(existingDataJson, card);
-            string updatedJson = ConvertUpdatedDataToJson(data);
+            string existingDataJson = GetExistingDeckDataJson(result);
+            Dictionary<string, Deck> data = AddDeckToExistingData(existingDataJson, newDeck);
+            string updatedJson = ConvertUpdatedDeckDataToJson(data);
 
-            UpdateUserDataInPlayFab(updatedJson);
+            UpdateDeckDataInPlayFab(updatedJson);
         }, error => Debug.LogError(error.GenerateErrorReport()));
 
-        yield return StartCoroutine(ShowCardOnScreen(card.StyleID, card.PersonName, card.CardPicture, new Color32((byte)card.Color[0], (byte)card.Color[1], (byte)card.Color[2], 255), card.Level));
-    }
-    else
-    {
-        Debug.LogError("Card with the specified ID not found");
+        yield return null;
     }
 
-    reader.Close();
-    dbCommand.Dispose();
-    dbConnection.Close();
-}
-
-private GeneratedCard CreateCardFromDatabase(IDataReader reader)
-{
-    string[] colorComponents = reader.GetString(10).Split(';');
-    Color32 color = new Color32(byte.Parse(colorComponents[0]), byte.Parse(colorComponents[1]), byte.Parse(colorComponents[2]), 255);
-
-    GeneratedCard card = new GeneratedCard
+    private string ConvertDeckToJson(Deck deck)
     {
-        CardID = Guid.NewGuid().ToString(),
-        StyleID = reader.GetInt32(0),
-        PersonName = reader.GetString(1),
-        Level = 1,
-        Experience = 0,
-        Health = reader.GetInt32(2),
-        Strength = reader.GetInt32(3),
-        Speed = reader.GetInt32(4),
-        Attack = reader.GetInt32(5),
-        Defense = reader.GetInt32(6),
-        Knowledge = reader.GetInt32(7),
-        Charisma = reader.GetInt32(8),
-        Color = Array.ConvertAll(reader.GetString(10).Split(';'), int.Parse),
-        Attack1 = reader.GetInt32(11),
-        Attack2 = reader.GetInt32(12),
-        Attack3 = reader.GetInt32(13),
-        Attack4 = reader.GetInt32(14),
-        CardPicture = reader.GetString(15)
-    };
-
-    return card;
-}
-
-private string ConvertCardToJson(GeneratedCard card)
-{
-    return JsonUtility.ToJson(card);
-}
-
-private string GetExistingDataJson(GetUserDataResult result)
-{
-    if (result.Data.ContainsKey("PlayerCards"))
-    {
-        return result.Data["PlayerCards"].Value;
+        return JsonUtility.ToJson(deck);
     }
 
-    return "{}";
-}
-
-private Dictionary<string, GeneratedCard> AddCardToExistingData(string existingDataJson, GeneratedCard card)
-{
-    Dictionary<string, GeneratedCard> data = new Dictionary<string, GeneratedCard>();
-    if (!string.IsNullOrEmpty(existingDataJson))
+    private string GetExistingDeckDataJson(GetUserDataResult result)
     {
-        CardListWrapper existingCards = JsonUtility.FromJson<CardListWrapper>(existingDataJson);
-        foreach (GeneratedCard existingCard in existingCards.cards)
+        if (result.Data.ContainsKey("PlayerDecks"))
         {
-            data.Add(existingCard.CardID, existingCard);
+            return result.Data["PlayerDecks"].Value;
         }
+
+        return "{}";
     }
-    data.Add(card.CardID, card);
 
-    return data;
-}
-
-private string ConvertUpdatedDataToJson(Dictionary<string, GeneratedCard> data)
-{
-    CardListWrapper updatedCards = new CardListWrapper
+    private Dictionary<string, Deck> AddDeckToExistingData(string existingDataJson, Deck deck)
     {
-        cards = new List<GeneratedCard>(data.Values)
-    };
+        Dictionary<string, Deck> data = new Dictionary<string, Deck>();
+        if (!string.IsNullOrEmpty(existingDataJson))
+        {
+            DeckListWrapper existingDecks = JsonUtility.FromJson<DeckListWrapper>(existingDataJson);
+            foreach (Deck existingDeck in existingDecks.Decks)
+            {
+                data.Add(existingDeck.DeckID, existingDeck);
+            }
+        }
+        data.Add(deck.DeckID, deck);
 
-    return JsonUtility.ToJson(updatedCards);
-}
+        return data;
+    }
 
-private void UpdateUserDataInPlayFab(string updatedJson)
-{
-    var updateRequest = new UpdateUserDataRequest
+    private string ConvertUpdatedDeckDataToJson(Dictionary<string, Deck> data)
     {
-        Data = new Dictionary<string, string> { { "PlayerCards", updatedJson } }
-    };
-    PlayFabClientAPI.UpdateUserData(updateRequest, updateResult => Debug.Log("User data updated successfully"), error => Debug.LogError(error.GenerateErrorReport()));
-}
+        DeckListWrapper updatedDecks = new DeckListWrapper
+        {
+            Decks = new List<Deck>(data.Values)
+        };
+
+        return JsonUtility.ToJson(updatedDecks);
+    }
+
+    private void UpdateDeckDataInPlayFab(string updatedJson)
+    {
+        var updateRequest = new UpdateUserDataRequest
+        {
+            Data = new Dictionary<string, string> { { "PlayerDecks", updatedJson } }
+        };
+        PlayFabClientAPI.UpdateUserData(updateRequest, updateResult => Debug.Log("User deck data updated successfully"), error => Debug.LogError(error.GenerateErrorReport()));
+    }
+
 
 
 }

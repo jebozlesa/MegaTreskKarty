@@ -5,6 +5,7 @@ using UnityEngine;
 [System.Serializable]
 public class Deck
 {
-    public string DeckID;
-    public List<int> CardIDs;
+    public string DeckID { get; set; }
+    public string DeckName { get; set; }
+    public List<int> CardIDs { get; set; }
 }
