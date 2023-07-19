@@ -331,25 +331,16 @@ public class CardGenerator : MonoBehaviour
         Debug.Log($"New deck created with ID: {newDeck.DeckID}");
         Debug.Log($"New deck CardIDs: {newDeck.Card1}, {newDeck.Card2}, {newDeck.Card3}, {newDeck.Card4}, {newDeck.Card5}");
 
-        // Získame existujúce balíčky
-        string existingDeckJson = PlayerPrefs.GetString("PlayerDecks", "");
-        List<Deck> existingDecks = new List<Deck>();
-        if (!string.IsNullOrEmpty(existingDeckJson))
+        string json = ConvertDeckToJson(newDeck);
+
+        PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
         {
-            DeckListWrapper deckListWrapper = JsonUtility.FromJson<DeckListWrapper>(existingDeckJson);
-            existingDecks = deckListWrapper.Decks;
-        }
+            string existingDataJson = GetExistingDeckDataJson(result);
+            Dictionary<string, Deck> data = AddDeckToExistingData(existingDataJson, newDeck);
+            string updatedJson = ConvertUpdatedDeckDataToJson(data);
 
-        // Pridáme nový balíček
-        existingDecks.Add(newDeck);
-        Debug.Log($"Adding new deck with ID: {newDeck.DeckID}");
-        Debug.Log($"Total decks after adding new deck: {existingDecks.Count}");
-
-        // Uložíme balíčky späť
-        DeckListWrapper newDeckListWrapper = new DeckListWrapper { Decks = existingDecks };
-        string newDeckJson = JsonUtility.ToJson(newDeckListWrapper);
-        Debug.Log($"Updated JSON deck: {newDeckJson}");
-        PlayerPrefs.SetString("PlayerDecks", newDeckJson);
+            UpdateDeckDataInPlayFab(updatedJson);
+        }, error => Debug.LogError(error.GenerateErrorReport()));
 
         yield return null;
     }
