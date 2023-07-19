@@ -143,7 +143,7 @@ public class CardGenerator : MonoBehaviour
         List<int> pack = new List<int>(themedPacks[packIndex]);
         List<int> generatedCards = new List<int>(); // Nový zoznam pre uchovanie vygenerovaných kariet
 
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 6; i++)
         {
             if (pack.Count == 0)
             {

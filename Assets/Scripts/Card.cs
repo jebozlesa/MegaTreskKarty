@@ -6,6 +6,8 @@ using UnityEngine.EventSystems;
 using TMPro;
 using Mono.Data.Sqlite;
 using System.Data;
+using PlayFab;
+using PlayFab.ClientModels;
 
 public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
@@ -128,9 +130,13 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     private int selectedAttackId = -1;
     private int selectedOriginalAttackId = -1;
 
+    string PlayFabId;
+
 
     void Start()
     {
+        //LoginPlayFab();
+
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
         backSideAttributes.SetActive(false);
         backSideDescription.SetActive(false);
@@ -458,7 +464,91 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         dbConnection.Close();
     }
 
-    private void SwapCardsInDatabase(int newCardId, int oldCardId)
+    private void SwapCardsInPlayFab(int newCardId, int oldCardId)
+    {
+        // Získame existujúce údaje o balíčkoch z PlayFab
+        PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
+        {
+            string existingDataJson = GetExistingDeckDataJson(result);
+            Dictionary<string, Deck> existingDecks = ConvertJsonToDeckData(existingDataJson);
+
+            // Prejdeme všetky balíčky a zmeníme starú kartu za novú
+            foreach (Deck deck in existingDecks.Values)
+            {
+                if (deck.Card1 == oldCardId) deck.Card1 = newCardId;
+                else if (deck.Card2 == oldCardId) deck.Card2 = newCardId;
+                else if (deck.Card3 == oldCardId) deck.Card3 = newCardId;
+                else if (deck.Card4 == oldCardId) deck.Card4 = newCardId;
+                else if (deck.Card5 == oldCardId) deck.Card5 = newCardId;
+            }
+
+            // Konvertujeme upravené balíčky späť na JSON a aktualizujeme údaje v PlayFab
+            string updatedJson = ConvertDeckDataToJson(existingDecks);
+            UpdateDeckDataInPlayFab(updatedJson);
+        }, error => Debug.LogError(error.GenerateErrorReport()));
+    }
+
+    private string GetExistingDeckDataJson(GetUserDataResult result)
+    {
+        if (result.Data.ContainsKey("PlayerDecks"))
+        {
+            return result.Data["PlayerDecks"].Value;
+        }
+        return "{}";
+    }
+
+    private Dictionary<string, Deck> ConvertJsonToDeckData(string existingDataJson)
+    {
+        Dictionary<string, Deck> data = new Dictionary<string, Deck>();
+        if (!string.IsNullOrEmpty(existingDataJson))
+        {
+            DeckListWrapper existingDecks = JsonUtility.FromJson<DeckListWrapper>(existingDataJson);
+            foreach (Deck existingDeck in existingDecks.Decks)
+            {
+                data.Add(existingDeck.DeckID, existingDeck);
+            }
+        }
+        return data;
+    }
+
+    private string ConvertDeckDataToJson(Dictionary<string, Deck> data)
+    {
+        DeckListWrapper updatedDecks = new DeckListWrapper
+        {
+            Decks = new List<Deck>(data.Values)
+        };
+        return JsonUtility.ToJson(updatedDecks);
+    }
+
+    private void UpdateDeckDataInPlayFab(string updatedJson)
+    {
+        var updateRequest = new UpdateUserDataRequest
+        {
+            Data = new Dictionary<string, string>
+            {
+                { "PlayerDecks", updatedJson }
+            }
+        };
+        Debug.Log("Updated JSON deck: " + updatedJson);
+        PlayFabClientAPI.UpdateUserData(updateRequest, updateResult => Debug.Log("User deck data updated successfully"), error => Debug.LogError(error.GenerateErrorReport()));
+    }
+
+
+
+    void OnDataUpdated(UpdateUserDataResult result)
+    {
+        Debug.Log("User data updated successfully");
+    }
+
+    void OnUpdateError(PlayFabError error)
+    {
+        Debug.LogError("Error updating user data: " + error.GenerateErrorReport());
+    }
+
+
+
+
+    private void SwapCardsInDatabase(int newCardId, int oldCardId)  //POTOM VYMAZAT
     {
         IDbConnection dbConnection = new SqliteConnection(connectionString);
         dbConnection.Open();
@@ -677,6 +767,35 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     {
         return new Color32(inputColor.r, inputColor.g, inputColor.b, newAlpha);
     }
+
+    void LoginPlayFab()
+    {
+//        loadingImage.SetActive(true);
+        string username = PlayerPrefs.GetString("username");
+        string email = PlayerPrefs.GetString("email");
+        string password = PlayerPrefs.GetString("password");
+
+        var request = new LoginWithEmailAddressRequest 
+            {
+                Email = email,
+                Password = password
+            };
+            PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
+//        loadingImage.SetActive(false);
+    }
+
+    void OnSuccess(LoginResult result)
+{
+    Debug.Log("Successfully logged in to PlayFab!");
+    // Store the PlayFabId for later use
+    PlayFabId = result.PlayFabId;
+}
+
+void OnError(PlayFabError error)
+{
+    Debug.LogError("Error logging in to PlayFab: " + error.GenerateErrorReport());
+}
+
 
 
 }

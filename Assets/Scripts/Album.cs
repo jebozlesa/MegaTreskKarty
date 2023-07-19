@@ -21,6 +21,8 @@ public class Album : MonoBehaviour
 
     public GameObject deckPanel;
 
+    public static bool IsLoggedIn = false;
+
     void Start()
     {   Debug.Log("Album.Start  -- Start");
 
@@ -51,7 +53,8 @@ public class Album : MonoBehaviour
 
     void OnSuccess(LoginResult result)
     {   Debug.Log("Album.OnSuccess  -- Start");
-
+    
+        IsLoggedIn = true;
         Debug.Log("Sicko dobre");
   //      loadingImage.SetActive(false);
         StartCoroutine(VytvorKartyPlayFab());
