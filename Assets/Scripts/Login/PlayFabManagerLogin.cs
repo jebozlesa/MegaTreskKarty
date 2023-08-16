@@ -22,6 +22,21 @@ public class PlayFabManagerLogin : MonoBehaviour
     public TMP_InputField emailInput;
     public TMP_InputField passwordInput;
 
+    // public static PlayFabManager Instance { get; private set; }
+
+    // private void Awake()
+    // {
+    //     if (Instance == null)
+    //     {
+    //         Instance = this;
+    //         DontDestroyOnLoad(gameObject);
+    //     }
+    //     else
+    //     {
+    //         Destroy(gameObject);
+    //     }
+    // }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -89,6 +104,9 @@ public class PlayFabManagerLogin : MonoBehaviour
         PlayerPrefs.SetString("username", usernameInput.text);
         PlayerPrefs.SetString("email", emailInput.text);
         PlayerPrefs.SetString("password", passwordInput.text);
+        PlayerPrefs.SetInt("HasCompletedTutorialMarketplace", 0);
+        PlayerPrefs.SetInt("HasCompletedTutorialAlbum", 0);
+        PlayerPrefs.SetInt("HasCompletedTutorialCard", 0);
         PlayerPrefs.SetInt("HasCompletedTutorial", 0);
         PlayerPrefs.Save();
 
@@ -131,8 +149,11 @@ public class PlayFabManagerLogin : MonoBehaviour
 
     void OnLoginSuccess(LoginResult result)
     {
-        PlayerPrefs.SetString("email", emailInput.text);
-        PlayerPrefs.SetString("password", passwordInput.text);
+        if (!string.IsNullOrEmpty(emailInput.text) && !string.IsNullOrEmpty(passwordInput.text))
+        {
+            PlayerPrefs.SetString("email", emailInput.text);
+            PlayerPrefs.SetString("password", passwordInput.text);
+        }
 
         // Get the username
         PlayFabClientAPI.GetAccountInfo(new GetAccountInfoRequest { PlayFabId = result.PlayFabId }, resultAccountInfo =>
@@ -146,6 +167,12 @@ public class PlayFabManagerLogin : MonoBehaviour
             messageEinsteinText.text = "Welcome " + username;
             StartCoroutine(LoadMainSceneAfterDelay(2));
         }, error => { Debug.LogError(error.GenerateErrorReport()); });
+    }
+
+    private void SaveEmailAndPasswordToPlayerPrefs(string email, string password)
+    {
+        PlayerPrefs.SetString("email", email);
+        PlayerPrefs.SetString("password", password);
     }
 
 
@@ -186,15 +213,15 @@ public class PlayFabManagerLogin : MonoBehaviour
         messageGandhiText.text = "toto hovno robi";
     }
 
-    void Login()
-    {
-        var request = new LoginWithCustomIDRequest 
-        {
-            CustomId = SystemInfo.deviceUniqueIdentifier,
-            CreateAccount = true
-        };
-        PlayFabClientAPI.LoginWithCustomID(request, OnSuccess, OnError);
-    }
+    // void Login()
+    // {
+    //     var request = new LoginWithCustomIDRequest 
+    //     {
+    //         CustomId = SystemInfo.deviceUniqueIdentifier,
+    //         CreateAccount = true
+    //     };
+    //     PlayFabClientAPI.LoginWithCustomID(request, OnSuccess, OnError);
+    // }
 
     void OnSuccess(LoginResult result)
     {

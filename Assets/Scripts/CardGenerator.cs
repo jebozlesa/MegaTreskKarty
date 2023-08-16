@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using PlayFab;
 using PlayFab.ClientModels;
 using System.Linq;
+using UnityEngine.SceneManagement;
 
 
 public class CardGenerator : MonoBehaviour
@@ -341,6 +342,8 @@ public class CardGenerator : MonoBehaviour
 
             UpdateDeckDataInPlayFab(updatedJson);
         }, error => Debug.LogError(error.GenerateErrorReport()));
+
+        SceneManager.LoadScene("Cards");
 
         yield return null;
     }

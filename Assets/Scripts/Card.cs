@@ -132,6 +132,10 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     string PlayFabId;
 
+    //public GameObject tutorial;
+
+    GameObject cardTutorialObject;
+
 
     void Start()
     {
@@ -161,6 +165,8 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
         changeButton.onClick.AddListener(ShowAttackList);
         //attackListContainer.gameObject.SetActive(false);
+
+        //cardTutorialObject = GameObject.Find("CardTutorial"); // Nájdenie objektu s názvom "CardTutorial" na scéne
     }
 
     public void Initialize(GameObject deckPanelReference)
@@ -402,7 +408,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
                     Debug.LogWarning("Card with the same name already exists in the deck.");
                     return;
                 }
-                UpdateCardInDatabase(currentZoomedCard.cardId, cardId);
+                SwapCardsInPlayFab(currentZoomedCard.cardId, cardId);
                 deckManager.AddCardToHand(currentZoomedCard.cardId);
                 if (!currentZoomedCard.deckCard)
                 {
@@ -422,47 +428,6 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         }
     }
 
-    private void UpdateCardInDatabase(int newCardId, int oldCardId)
-    {
-        IDbConnection dbConnection = new SqliteConnection(deckManager.connectionString);
-        dbConnection.Open();
-
-        Debug.Log("UpdateCardInDatabase " + newCardId + " -> " + oldCardId);
-
-        // Find the column to update
-        string columnName = "";
-        for (int i = 1; i <= 5; i++)
-        {
-            IDbCommand dbCommand = dbConnection.CreateCommand();
-            dbCommand.CommandText = $"SELECT Card{i} FROM PlayerDecks WHERE DeckID = 1";
-            IDataReader reader = dbCommand.ExecuteReader();
-            if (reader.Read() && reader.GetInt32(0) == oldCardId)
-            {
-                columnName = $"Card{i}";
-                reader.Close();
-                dbCommand.Dispose();
-                break;
-            }
-            reader.Close();
-            dbCommand.Dispose();
-        }
-
-        // Update the column with the new card ID
-        if (!string.IsNullOrEmpty(columnName))
-        {
-            IDbCommand dbCommand = dbConnection.CreateCommand();
-            dbCommand.CommandText = $"UPDATE PlayerDecks SET {columnName} = {newCardId} WHERE DeckID = 1";
-            int rowsAffected = dbCommand.ExecuteNonQuery();
-            Debug.Log($"Rows affected: {rowsAffected}");
-            dbCommand.Dispose();
-        }
-        else
-        {
-            Debug.LogWarning("Could not find the column to update.");
-        }
-
-        dbConnection.Close();
-    }
 
     private void SwapCardsInPlayFab(int newCardId, int oldCardId)
     {
@@ -521,7 +486,8 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     }
 
     private void UpdateDeckDataInPlayFab(string updatedJson)
-    {
+    {   Debug.Log("UpdateDeckDataInPlayFab ==> Start");
+
         var updateRequest = new UpdateUserDataRequest
         {
             Data = new Dictionary<string, string>
@@ -600,9 +566,9 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         }
     }
 
-    public void OnSwipeLeft()
+    public void OnSwipeRight()
     {
-        Debug.Log("Swipe Left");
+        Debug.Log("Swipe Right");
         if (isZoomed)
         {
             if (frontSide.activeSelf)
@@ -627,9 +593,9 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         }
     }
 
-    public void OnSwipeRight()
+    public void OnSwipeLeft()
     {
-        Debug.Log("Swipe Right");
+        Debug.Log("Swipe Left");
         if (isZoomed)
         {
             if (frontSide.activeSelf)
@@ -727,6 +693,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     public void ZoomIn()
     {
+        Debug.Log("Card.ZoomIn() ===> START");
         if (!isZoomed)
         {
             originalParent = transform.parent.gameObject;
@@ -740,6 +707,11 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
             // Show the deck panel
             deckPanel.SetActive(true);
+
+            if (PlayerPrefs.GetInt("HasCompletedTutorialCard", 0) == 0) 
+            {
+                CardTutorial.instance.gameObject.SetActive(true);
+            }
         }
     }
 

@@ -2796,6 +2796,7 @@ MonoBehaviour:
   attackListContainer: {fileID: 177257748}
   changeButton: {fileID: 5584801138109163951}
   attackListController: {fileID: 3954495145577202541}
+  tutorial: {fileID: 988837065773047693, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
 --- !u!114 &7714274170560113377
 MonoBehaviour:
   m_ObjectHideFlags: 0
