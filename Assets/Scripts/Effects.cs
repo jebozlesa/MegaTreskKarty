@@ -433,7 +433,7 @@ public class Effects : MonoBehaviour
             card.HandleDefense(1);
             dialogText.text = card.cardName + " is making art";
         }
-        Debug.Log(card.cardName + " => Starving");
+        Debug.Log(card.cardName + " => Autoportrait");
         yield return new WaitForSeconds(2);
 	}
     //16

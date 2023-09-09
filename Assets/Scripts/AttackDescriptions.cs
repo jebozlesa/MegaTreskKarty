@@ -371,6 +371,15 @@ public class AttackDescriptions : MonoBehaviour
             case 114://Macuahuitl
                 count = attacker.strength * 5;
                 break;
+            case 115://Cubism
+                count = 3;
+                break;
+            case 116://CosaNostra
+                count = attacker.charisma;
+                break;
+            case 117://Act
+                count = 5;
+                break;
             default:
                 Debug.LogError("Invalid attack type.");
                 break;
@@ -745,6 +754,15 @@ public class AttackDescriptions : MonoBehaviour
             case 114:
                 dialogText.text = "Macuahuitl chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
+            case 115:
+                dialogText.text = "Cubism chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 116:
+                dialogText.text = "La cosa nostra chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 117:
+                dialogText.text = "Act a fool chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
             default:
                 Debug.LogError("Invalid attack type.");
                 break;
@@ -1105,6 +1123,15 @@ public class AttackDescriptions : MonoBehaviour
                 break;
             case 114:
                 Macuahuitl(buttonText);
+                break;
+            case 115:
+                Cubism(buttonText);
+                break;
+            case 116:
+                CosaNostra(buttonText);
+                break;
+            case 117:
+                Act(buttonText);
                 break;
             default:
                 Debug.LogError("Invalid attack type.");
@@ -1747,5 +1774,20 @@ public class AttackDescriptions : MonoBehaviour
     public void Macuahuitl(TMP_Text buttonText)
 	{
         buttonText.text = "Macuahuitl";
+	}
+    //115
+    public void Cubism(TMP_Text buttonText)
+	{
+        buttonText.text = "Cubism";
+	}
+    //116
+    public void CosaNostra(TMP_Text buttonText)
+	{
+        buttonText.text = "La Cosa Nostra";
+	}
+    //117
+    public void Act(TMP_Text buttonText)
+	{
+        buttonText.text = "Act a fool";
 	}
 }

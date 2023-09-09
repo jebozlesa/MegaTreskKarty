@@ -423,6 +423,12 @@ public class Attack : MonoBehaviour
             case 114:
                 yield return StartCoroutine(Macuahuitl(attacker, receiver, dialogText));
                 break;
+            case 115:
+                yield return StartCoroutine(Cubism(attacker, receiver, dialogText));
+                break;
+            case 116:
+                yield return StartCoroutine(CosaNostra(attacker, receiver, dialogText));
+                break;
             default:
                 Debug.LogError("Invalid attack type.");
                 break;
@@ -1394,7 +1400,7 @@ public class Attack : MonoBehaviour
     public IEnumerator IambicPentameter(Kard attacker, Kard receiver, TMP_Text dialogText)
 	{
         dialogText.text = attacker.cardName + "'s poetry confuses the enemy";
-        yield return StartCoroutine(receiver.AddEffect(17,Random.Range(2, 5)));//confusion
+        if (Random.value <= 0.7f) yield return StartCoroutine(receiver.AddEffect(17,Random.Range(2, 5)));//confusion
         receiver.HandleKnowledge(-1);
         yield return new WaitForSeconds(2);
         Debug.Log(attacker.cardName+" -> IambicPentameter => "+receiver.cardName);
@@ -1938,6 +1944,48 @@ public class Attack : MonoBehaviour
         yield return new WaitForSeconds(2);
         Debug.Log(attacker.cardName+" -> Macuahuitl => "+receiver.cardName);
     }
+    //115
+    public IEnumerator Cubism(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + "'s picture confuses the enemy";
+        yield return StartCoroutine(receiver.AddEffect(17,Random.Range(2, 5)));//confusion
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName+" -> Cubism => "+receiver.cardName);
+	}
+    //116
+    public IEnumerator CosaNostra(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " orders mafia to attrack";
+		receiver.TakeDamage(3 + (attacker.charisma - receiver.defense));
+        if (Random.value <= 0.5f) receiver.HandleCharisma(-2);//critical hit
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName+" -> CosaNostra => "+receiver.cardName);
+	}
+    //117
+    public IEnumerator Act(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " behaves like insane";
+        yield return new WaitForSeconds(2);
+        if (Random.value <= (int)System.Math.Ceiling((double)receiver.strength / 20))
+        {
+            receiver.HandleStrength(-1);
+            receiver.HandleAttack(-1);
+            receiver.HandleDefense(1);
+            receiver.HandleCharisma(-1);
+            dialogText.text = receiver.cardName + " is scared";
+        }
+        else
+        {
+            receiver.HandleStrength(UnityEngine.Random.Range(-2,0));
+            receiver.HandleSpeed(UnityEngine.Random.Range(-2,0));
+            receiver.HandleAttack(UnityEngine.Random.Range(-2,0));
+            receiver.HandleDefense(UnityEngine.Random.Range(-2,0));
+            receiver.HandleKnowledge(UnityEngine.Random.Range(0,3));
+            dialogText.text = receiver.cardName + " is impressed";
+        }
+        Debug.Log(attacker.cardName+" -> Act => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
+	}
 
 
 

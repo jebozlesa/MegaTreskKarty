@@ -108,17 +108,17 @@ public class CardDatabase : MonoBehaviour
         cardList.Add(new Card(6,"Vlad Tepes 'The Impaler'",1,Resources.Load<Sprite>("dracula"),card6,2,10));
         cardList.Add(new Card(7,"Marylin Monroe",1,Resources.Load<Sprite>("marylin"),card7,2,10));
         cardList.Add(new Card(8,"Saladin",1,Resources.Load<Sprite>("saladin"),card8,2,10));
-        cardList.Add(new Card(9,"Steven Hawking",1,Resources.Load<Sprite>("hawkins"),card9,2,10));//preskoceny tayke utoky, bude nakoniec
+        cardList.Add(new Card(9,"Steven Hawking",1,Resources.Load<Sprite>("hawkins"),card9,2,10));                                      //preskoceny tazke utoky, bude nakoniec
         cardList.Add(new Card(10,"Sitting Bull",1,Resources.Load<Sprite>("sittingbull"),card10,2,10));
         cardList.Add(new Card(11,"Vladimir Iljic Lenin",1,Resources.Load<Sprite>("lenin"),card11,2,10));
         cardList.Add(new Card(12,"Nikola Tesla",1,Resources.Load<Sprite>("tesla"),card12,2,10));
         cardList.Add(new Card(13,"Lucky Luciano",1,Resources.Load<Sprite>("luciano"),color_black,2,10));
-        cardList.Add(new Card(14,"The Wright Brothers",1,Resources.Load<Sprite>("wright"),color_black,2,10));//preskoceny len tak
-        cardList.Add(new Card(15,"Eleanor Roosvelt",1,Resources.Load<Sprite>("eleanor"),card15,2,10));//preskoceny nuda
+        cardList.Add(new Card(14,"The Wright Brothers",1,Resources.Load<Sprite>("wright"),color_black,2,10));
+        cardList.Add(new Card(15,"Eleanor Roosvelt",1,Resources.Load<Sprite>("eleanor"),card15,2,10));
         cardList.Add(new Card(16,"Napoleon Bonaparte",1,Resources.Load<Sprite>("napoleon"),card16,2,10));
         cardList.Add(new Card(17,"Bruce Lee",1,Resources.Load<Sprite>("brucelee"),color_black,2,10));
         cardList.Add(new Card(18,"Vincent Van Gogh",1,Resources.Load<Sprite>("vangogh"),card18,2,10));
-        cardList.Add(new Card(19,"Francis Drake",1,Resources.Load<Sprite>("drake"),card19,2,10));//preskoceny skareda karticka
+        cardList.Add(new Card(19,"Francis Drake",1,Resources.Load<Sprite>("drake"),card19,2,10));
         cardList.Add(new Card(20,"Harry Houdini",1,Resources.Load<Sprite>("houdini"),card20,2,10));
         cardList.Add(new Card(21,"Enzo Ferrari",1,Resources.Load<Sprite>("ferrari"),card21,2,10));
         cardList.Add(new Card(22,"Mata Hari",1,Resources.Load<Sprite>("matahari"),card22,2,10));

@@ -893,19 +893,14 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '"...In 1503, on the vibrant plains of Central America, Aztec Emperor Montezuma
-    II. rallied his army to quell a fiery rebellion in the distant province of Tochtepec. 
-    Montezuma''s warriors, with their obsidian-bladed weapons, stood a formidable
-    force.
-
-    Against the fierce resistance , Montezuma II led with calm precision
-    and fervor, his strategic brilliance outshining the sun above. Guided by his
-    astute command, his warriors moved with an unyielding determination, their maneuvers
-    orchestrated into a harmonious dance of war.
-
-    The dust settled to reveal
-    Montezuma''s warriors victorious. Their triumph was not just a reaffirmation
-    of Aztec dominance, but a testament to the cunning and courage of their emperor..."
+  m_text: '"...In 1976, in the steamy jungles of the Philippines during the filming
+    of "Apocalypse Now", the renowned Marlon Brando brought an unconventional approach
+    to his role. With the movie''s complex and deep monologues, Brando opted not
+    to memorize them. Instead, he had the lines recorded and played them back through
+    earpieces as he acted, ensuring he captured the essence of his character. The
+    cast and crew were baffled by his unique method, but with every delivered line,
+    Brando''s genius shone through, reaffirming his legendary status in the annals
+    of cinema..."
 
 '
   m_isRightToLeft: 0
@@ -2796,7 +2791,6 @@ MonoBehaviour:
   attackListContainer: {fileID: 177257748}
   changeButton: {fileID: 5584801138109163951}
   attackListController: {fileID: 3954495145577202541}
-  tutorial: {fileID: 988837065773047693, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
 --- !u!114 &7714274170560113377
 MonoBehaviour:
   m_ObjectHideFlags: 0
