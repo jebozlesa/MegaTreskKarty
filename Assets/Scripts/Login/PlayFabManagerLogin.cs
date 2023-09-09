@@ -107,7 +107,7 @@ public class PlayFabManagerLogin : MonoBehaviour
         PlayerPrefs.SetInt("HasCompletedTutorialMarketplace", 0);
         PlayerPrefs.SetInt("HasCompletedTutorialAlbum", 0);
         PlayerPrefs.SetInt("HasCompletedTutorialCard", 0);
-        PlayerPrefs.SetInt("HasCompletedTutorial", 0);
+        PlayerPrefs.SetInt("HasCompletedTutorialRoyal", 0);
         PlayerPrefs.Save();
 
         // Nastavenie DisplayName na užívateľské meno

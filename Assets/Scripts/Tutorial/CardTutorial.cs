@@ -53,14 +53,14 @@ public class CardTutorial : MonoBehaviour
     {
         Debug.Log("CardTutorial.CloseSecondHint() ===> START");
         tutorialPanelHint2.SetActive(false);
-        StartCoroutine(ShowHintAfterDelay(tutorialPanelHint3, 0f));
+        StartCoroutine(ShowHintAfterDelay(tutorialPanelHint3, 5f));
     }
 
     public void CloseThirdHint()
     {
         Debug.Log("CardTutorial.CloseThirdHint() ===> START");
         tutorialPanelHint3.SetActive(false);
-        StartCoroutine(ShowHintAfterDelay(tutorialPanelHint4, 5f));
+        StartCoroutine(ShowHintAfterDelay(tutorialPanelHint4, 0f));
     }
 
     public void CloseFourthHint()
