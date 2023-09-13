@@ -77,12 +77,15 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
     public GameObject battleArea;
 
     public bool priorityAttack;
+
+    private PlayFabCardManager playFabManager = new PlayFabCardManager();
     
 
 
     private void Start()
     {
-
+        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + "Kard.Start => START");
+        
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
 
         nameText.text = cardName;
@@ -95,171 +98,321 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         
         InitializeAttackCount();
 
-        LoadPlayerCardData();
+        //LoadPlayerCardData();
     }
 
-    private void LoadPlayerCardData()
-    {
-        kartyHrac = LoadPlayerCardFromDatabase(cardId);
-    }
+    // private void LoadPlayerCardData()
+    // {
+    //     Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + "Kard.LoadPlayerCardData => START");
+    //     kartyHrac = LoadPlayerCardFromDatabase(cardId);
+    // }
 
-    private List<string> LoadPlayerCardFromDatabase(int cardId)
-    {
-        List<string> kartaData = new List<string>();
+    // private List<string> LoadPlayerCardFromDatabase(int cardId)
+    // {
+    //     Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + "Kard.LoadPlayerCardFromDatabase => START " + cardId);
+    //     List<string> kartaData = new List<string>();
 
-        IDbConnection dbConnection = new SqliteConnection(connectionString);
-        dbConnection.Open();
+    //     IDbConnection dbConnection = new SqliteConnection(connectionString);
+    //     dbConnection.Open();
 
-        IDbCommand dbCommand = dbConnection.CreateCommand();
-        dbCommand.CommandText = $"SELECT * FROM PlayerCards WHERE CardID = {cardId}";
-        IDataReader reader = dbCommand.ExecuteReader();
+    //     IDbCommand dbCommand = dbConnection.CreateCommand();
+    //     dbCommand.CommandText = $"SELECT * FROM PlayerCards WHERE CardID = {cardId}";
+    //     IDataReader reader = dbCommand.ExecuteReader();
 
-        while (reader.Read())
-        {
-            string cardDataString = "";
-            for (int i = 0; i < reader.FieldCount; i++)
-            {
-                cardDataString += reader.GetValue(i).ToString();
-                if (i < reader.FieldCount - 1) cardDataString += ",";
-            }
-            kartaData.Add(cardDataString);
-        }
+    //     while (reader.Read())
+    //     {
+    //         string cardDataString = "";
+    //         for (int i = 0; i < reader.FieldCount; i++)
+    //         {
+    //             cardDataString += reader.GetValue(i).ToString();
+    //             if (i < reader.FieldCount - 1) cardDataString += ",";
+    //         }
+    //         kartaData.Add(cardDataString);
+    //     }
 
-        reader.Close();
-        dbCommand.Dispose();
-        dbConnection.Close();
+    //     reader.Close();
+    //     dbCommand.Dispose();
+    //     dbConnection.Close();
 
-        return kartaData;
-    }
+    //     return kartaData;
+    // }
 
 
     private void LoadCardData()
     {
+        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.LoadCardData => START");
+
         levelText.text = "lvl " + level;
     }
 
+    // public void AddExperience(int increase)
+    // {
+    //     Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.AddExperience => START " + increase);
+
+    //     //bool lvlUp = false;
+    //     Debug.Log("LoadCardData()");
+
+    //     // Connect to the database
+    //     using (IDbConnection dbConnection = new SqliteConnection(connectionString))
+    //     {
+    //         dbConnection.Open();
+    //         Debug.Log("DATABAZA PRIPOJENA");
+
+    //         // Get the current experience and level
+    //         using (IDbCommand dbCommand = dbConnection.CreateCommand())
+    //         {
+    //             dbCommand.CommandText = $"SELECT Level, Experience FROM PlayerCards WHERE CardID = {cardId}";
+    //             using (IDataReader reader = dbCommand.ExecuteReader())
+    //             {
+    //                 if (reader.Read())
+    //                 {
+    //                     int currentExperience = reader.GetInt32(1);
+    //                     int currentLevel = reader.GetInt32(0);
+    //                     int newExperience = currentExperience + increase;
+
+    //                     // Update the experience
+    //                     UpdateStat("Experience", increase, dbConnection);
+    //                     StartCoroutine(EffectAnimations(increase, "XP", color_purple));
+    //                     experience = newExperience;
+
+    //                     // Check if player leveled up
+    //                     if (currentLevel * (10*(currentLevel)) <= newExperience)                                             //LEVEL   <========== dat potom nadruhu corentlevel
+    //                     {
+    //                         //lvlUp = true;
+    //                         UpdateStat("Level", 1, dbConnection);
+    //                         UpdateRandomStat(dbConnection);
+    //                         level = currentLevel + 1;
+    //                         StartCoroutine(EffectAnimations(level, "LVL", color_yellow));
+    //                     }
+
+    //                 }
+    //             }
+    //             dbCommand.Dispose();
+    //             dbConnection.Close();
+    //         }
+    //     }
+
+    //     LoadCardData();
+    // }
+
+    // public void UpdateRandomStat(IDbConnection dbConnection)
+    // {
+
+    //     switch ((int)UnityEngine.Random.Range(2, 9))
+    //     {
+    //         case 2:
+    //             Heal(2);
+    //             UpdateStat("Health", 2, dbConnection);
+    //             StartCoroutine(EffectAnimations(2, "HP", color_blue));
+    //             break;
+    //         case 3:
+    //             HandleStrength(1);
+    //             UpdateStat("Strength", 1, dbConnection);
+    //             StartCoroutine(EffectAnimations(1, "STR", color_blue));
+    //             break;
+    //         case 4:
+    //             HandleSpeed(1);
+    //             UpdateStat("Speed", 1, dbConnection);
+    //             StartCoroutine(EffectAnimations(1, "SPE", color_blue));
+    //             break;
+    //         case 5:
+    //             HandleAttack(1);
+    //             UpdateStat("Attack", 1, dbConnection);
+    //             StartCoroutine(EffectAnimations(1, "ATT", color_blue));
+    //             break;
+    //         case 6:
+    //             HandleDefense(1);
+    //             UpdateStat("Defense", 1, dbConnection);
+    //             StartCoroutine(EffectAnimations(1, "DEF", color_blue));
+    //             break;
+    //         case 7:
+    //             HandleKnowledge(1);
+    //             UpdateStat("Knowledge", 1, dbConnection);
+    //             StartCoroutine(EffectAnimations(1, "KNO", color_blue));
+    //             break;
+    //         case 8:
+    //             HandleCharisma(1);
+    //             UpdateStat("Charisma", 1, dbConnection);
+    //             StartCoroutine(EffectAnimations(1, "CHA", color_blue));
+    //             break;
+    //         default:
+    //             Debug.LogError("Invalid shit fak UpdateRandomStat(int index,int increase)");
+    //             break;
+    //     }
+    // }
+
+    // public void UpdateStat(string parameterName, int difference, IDbConnection dbConnection)
+    // {
+    //     if (string.IsNullOrEmpty(parameterName)) return;
+
+    //     // Aktualizácia hodnôt karty s rozdielmi
+    //     using (IDbCommand dbCommand = dbConnection.CreateCommand())
+    //     {
+    //         string query = $"UPDATE PlayerCards SET {parameterName} = {parameterName} + @{parameterName} WHERE CardID = @CardID";
+    //         Debug.Log("TU JE TO   " + query);
+
+    //         dbCommand.CommandText = query;
+
+    //         // Pridajte hodnoty parametrov pre aktualizáciu do SQL dotazu
+    //         IDbDataParameter parameter = dbCommand.CreateParameter();
+    //         parameter.ParameterName = $"@{parameterName}";
+    //         parameter.Value = difference;
+    //         dbCommand.Parameters.Add(parameter);
+
+    //         IDbDataParameter cardIdParameter = dbCommand.CreateParameter();
+    //         cardIdParameter.ParameterName = "@CardID";
+    //         cardIdParameter.Value = cardId;
+    //         dbCommand.Parameters.Add(cardIdParameter);
+
+    //         dbCommand.ExecuteNonQuery();
+    //     }
+
+    // }
+
     public void AddExperience(int increase)
     {
-        //bool lvlUp = false;
-        Debug.Log("LoadCardData()");
-
-        // Connect to the database
-        using (IDbConnection dbConnection = new SqliteConnection(connectionString))
+        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.AddExperience => START " + increase);
+        playFabManager.GetCardData(cardId, cardDataDictionary =>
         {
-            dbConnection.Open();
-            Debug.Log("DATABAZA PRIPOJENA");
-
-            // Get the current experience and level
-            using (IDbCommand dbCommand = dbConnection.CreateCommand())
+            if (cardDataDictionary != null)
             {
-                dbCommand.CommandText = $"SELECT Level, Experience FROM PlayerCards WHERE CardID = {cardId}";
-                using (IDataReader reader = dbCommand.ExecuteReader())
-                {
-                    if (reader.Read())
-                    {
-                        int currentExperience = reader.GetInt32(1);
-                        int currentLevel = reader.GetInt32(0);
-                        int newExperience = currentExperience + increase;
+                // Konvertujte slovník na objekt CardData
+                PlayFabCardManager.CardData cardData = ConvertDictionaryToCardData(cardDataDictionary);
 
-                        // Update the experience
-                        UpdateStat("Experience", increase, dbConnection);
+                int currentExperience = cardData.Experience;
+                int currentLevel = cardData.Level;
+                int newExperience = currentExperience + increase;
+
+                // Update the experience
+                Dictionary<string, string> updates = new Dictionary<string, string>
+                {
+                    { $"cards.{cardId}.Experience", newExperience.ToString() }
+                };
+
+                playFabManager.UpdateCardData(cardId.ToString(), updates, success =>
+                {
+                    if (success)
+                    {
                         StartCoroutine(EffectAnimations(increase, "XP", color_purple));
                         experience = newExperience;
 
                         // Check if player leveled up
-                        if (currentLevel * (10*(currentLevel)) <= newExperience)                                             //LEVEL   <========== dat potom nadruhu corentlevel
+                        if (currentLevel * (10 * (currentLevel)) <= newExperience)
                         {
-                            //lvlUp = true;
-                            UpdateStat("Level", 1, dbConnection);
-                            UpdateRandomStat(dbConnection);
+                            UpdateRandomStat();
                             level = currentLevel + 1;
                             StartCoroutine(EffectAnimations(level, "LVL", color_yellow));
                         }
-
                     }
-                }
-                dbCommand.Dispose();
-                dbConnection.Close();
+                });
             }
-        }
-
-        LoadCardData();
+            else
+            {
+                Debug.Log("ERROR: cardDataDictionary == null");
+            }
+        });
     }
 
-    public void UpdateRandomStat(IDbConnection dbConnection)
+    private PlayFabCardManager.CardData ConvertDictionaryToCardData(Dictionary<string, object> cardDataDictionary)
     {
+        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.PlayFabCardManager.CardData => START ");
+
+        PlayFabCardManager.CardData cardData = new PlayFabCardManager.CardData();
+        cardData.CardID = cardDataDictionary["StyleID"].ToString();
+        cardData.Experience = Convert.ToInt32(cardDataDictionary["Experience"]);
+        cardData.Level = Convert.ToInt32(cardDataDictionary["Level"]);
+        cardData.StyleID = Convert.ToInt32(cardDataDictionary["StyleID"]);
+        cardData.PersonName = cardDataDictionary["PersonName"].ToString();
+        cardData.Health = Convert.ToInt32(cardDataDictionary["Health"]);
+        cardData.Strength = Convert.ToInt32(cardDataDictionary["Strength"]);
+        cardData.Speed = Convert.ToInt32(cardDataDictionary["Speed"]);
+        cardData.Attack = Convert.ToInt32(cardDataDictionary["Attack"]);
+        cardData.Defense = Convert.ToInt32(cardDataDictionary["Defense"]);
+        cardData.Knowledge = Convert.ToInt32(cardDataDictionary["Knowledge"]);
+        cardData.Charisma = Convert.ToInt32(cardDataDictionary["Charisma"]);
+        cardData.Color = (List<int>)cardDataDictionary["Color"];
+        cardData.Attack1 = Convert.ToInt32(cardDataDictionary["Attack1"]);
+        cardData.Attack2 = Convert.ToInt32(cardDataDictionary["Attack2"]);
+        cardData.Attack3 = Convert.ToInt32(cardDataDictionary["Attack3"]);
+        cardData.Attack4 = Convert.ToInt32(cardDataDictionary["Attack4"]);
+        cardData.CardPicture = cardDataDictionary["CardPicture"].ToString();
+
+        return cardData;
+    }
+
+
+
+    public void UpdateRandomStat()
+    {
+        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.UpdateRandomStat => START ");
+        string statName = "";
+        int increaseValue = 0;
 
         switch ((int)UnityEngine.Random.Range(2, 9))
         {
             case 2:
                 Heal(2);
-                UpdateStat("Health", 2, dbConnection);
+                statName = "Health";
+                increaseValue = 2;
                 StartCoroutine(EffectAnimations(2, "HP", color_blue));
                 break;
             case 3:
                 HandleStrength(1);
-                UpdateStat("Strength", 1, dbConnection);
+                statName = "Strength";
+                increaseValue = 1;
                 StartCoroutine(EffectAnimations(1, "STR", color_blue));
                 break;
             case 4:
                 HandleSpeed(1);
-                UpdateStat("Speed", 1, dbConnection);
+                statName = "Speed";
+                increaseValue = 1;
                 StartCoroutine(EffectAnimations(1, "SPE", color_blue));
                 break;
             case 5:
                 HandleAttack(1);
-                UpdateStat("Attack", 1, dbConnection);
+                statName = "Attack";
+                increaseValue = 1;
                 StartCoroutine(EffectAnimations(1, "ATT", color_blue));
                 break;
             case 6:
                 HandleDefense(1);
-                UpdateStat("Defense", 1, dbConnection);
+                statName = "Defense";
+                increaseValue = 1;
                 StartCoroutine(EffectAnimations(1, "DEF", color_blue));
                 break;
             case 7:
                 HandleKnowledge(1);
-                UpdateStat("Knowledge", 1, dbConnection);
+                statName = "Knowledge";
+                increaseValue = 1;
                 StartCoroutine(EffectAnimations(1, "KNO", color_blue));
                 break;
             case 8:
                 HandleCharisma(1);
-                UpdateStat("Charisma", 1, dbConnection);
+                statName = "Charisma";
+                increaseValue = 1;
                 StartCoroutine(EffectAnimations(1, "CHA", color_blue));
                 break;
             default:
-                Debug.LogError("Invalid shit fak UpdateRandomStat(int index,int increase)");
+                Debug.LogError("Invalid value in UpdateRandomStat");
                 break;
         }
-    }
 
-    public void UpdateStat(string parameterName, int difference, IDbConnection dbConnection)
-    {
-        if (string.IsNullOrEmpty(parameterName)) return;
-
-        // Aktualizácia hodnôt karty s rozdielmi
-        using (IDbCommand dbCommand = dbConnection.CreateCommand())
+        if (!string.IsNullOrEmpty(statName))
         {
-            string query = $"UPDATE PlayerCards SET {parameterName} = {parameterName} + @{parameterName} WHERE CardID = @CardID";
-            Debug.Log("TU JE TO   " + query);
+            Dictionary<string, string> updates = new Dictionary<string, string>
+            {
+                { $"cards.{cardId}.{statName}", increaseValue.ToString() }
+            };
 
-            dbCommand.CommandText = query;
-
-            // Pridajte hodnoty parametrov pre aktualizáciu do SQL dotazu
-            IDbDataParameter parameter = dbCommand.CreateParameter();
-            parameter.ParameterName = $"@{parameterName}";
-            parameter.Value = difference;
-            dbCommand.Parameters.Add(parameter);
-
-            IDbDataParameter cardIdParameter = dbCommand.CreateParameter();
-            cardIdParameter.ParameterName = "@CardID";
-            cardIdParameter.Value = cardId;
-            dbCommand.Parameters.Add(cardIdParameter);
-
-            dbCommand.ExecuteNonQuery();
+            playFabManager.UpdateCardData(cardId.ToString(), updates, success =>
+            {
+                if (!success)
+                {
+                    Debug.LogError("Failed to update stat in PlayFab");
+                }
+            });
         }
-
     }
-
 
 
     private void InitializeAttackCount()

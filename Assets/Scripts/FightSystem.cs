@@ -373,74 +373,7 @@ public class FightSystem : MonoBehaviour
         }
     }
 
-    // private IEnumerator VytvorKartyZBalickaOld(GameObject playerGO, Player player)
-    // {
-    //     IDbConnection dbConnection = new SqliteConnection(connectionString);
-    //     dbConnection.Open();
-
-    //     IDbCommand dbCommand = dbConnection.CreateCommand();
-    //     dbCommand.CommandText = "SELECT * FROM PlayerDecks WHERE DeckID = 1";
-    //     IDataReader reader = dbCommand.ExecuteReader();
-
-    //     List<int> cardIDs = new List<int>();
-    //     if (reader.Read())
-    //     {
-    //         for (int i = 0; i < 5; i++)
-    //         {
-    //             cardIDs.Add(reader.GetInt32(i + 2));
-    //         }
-    //     }
-    //     reader.Close();
-    //     dbCommand.Dispose();
-
-    //     foreach (int cardID in cardIDs)
-    //     {
-    //         dbCommand = dbConnection.CreateCommand();
-    //         dbCommand.CommandText = $"SELECT * FROM PlayerCards WHERE CardID = {cardID}";
-    //         reader = dbCommand.ExecuteReader();
-
-    //         if (reader.Read())
-    //         {
-    //             string[] farbaKarty = reader.GetString(13).Split(';');
-    //             Color32 cardColor = new Color32(byte.Parse(farbaKarty[0]), byte.Parse(farbaKarty[1]), byte.Parse(farbaKarty[2]), 255);
-
-    //             GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
-    //             novaKarta.GetComponent<Kard>().cardId = reader.GetInt32(0);
-    //             novaKarta.GetComponent<Kard>().cardName = reader.GetString(2);
-    //             novaKarta.GetComponent<Kard>().level = reader.GetInt32(3);
-    //             novaKarta.GetComponent<Kard>().experience = reader.GetInt32(4);
-    //             novaKarta.GetComponent<Kard>().health = reader.GetInt32(5);
-    //             novaKarta.GetComponent<Kard>().strength = reader.GetInt32(6);
-    //             novaKarta.GetComponent<Kard>().speed = reader.GetInt32(7);
-    //             novaKarta.GetComponent<Kard>().attack = reader.GetInt32(8);
-    //             novaKarta.GetComponent<Kard>().defense = reader.GetInt32(9);
-    //             novaKarta.GetComponent<Kard>().knowledge = reader.GetInt32(10);
-    //             novaKarta.GetComponent<Kard>().charisma = reader.GetInt32(11);
-    //             novaKarta.GetComponent<Kard>().color = cardColor;
-    //             novaKarta.GetComponent<Kard>().attack1 = reader.GetInt32(14);
-    //             novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), reader.GetInt32(14));
-    //             novaKarta.GetComponent<Kard>().attack2 = reader.GetInt32(15);
-    //             novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), reader.GetInt32(15));
-    //             novaKarta.GetComponent<Kard>().attack3 = reader.GetInt32(16);
-    //             novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), reader.GetInt32(16));
-    //             novaKarta.GetComponent<Kard>().attack4 = reader.GetInt32(17);
-    //             novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), reader.GetInt32(17));
-    //             novaKarta.GetComponent<Kard>().image = reader.GetString(18);
-
-    //             novaKarta.GetComponent<Kard>().battleArea = playerBoard;
-
-    //             player.AddCardToHand(novaKarta.GetComponent<Kard>());
-
-    //             yield return new WaitForSeconds(0.1f);
-    //         }
-    //         reader.Close();
-    //         dbCommand.Dispose();
-    //     }
-
-    //     dbConnection.Close();
-    // }
-
-        private IEnumerator VytvorKartyZBalicka(GameObject playerGO, Player player)
+    private IEnumerator VytvorKartyZBalicka(GameObject playerGO, Player player)
     {
         PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
         {
@@ -520,81 +453,6 @@ public class FightSystem : MonoBehaviour
     }
 
 
-
-
-    // private IEnumerator VytvorJedinecneKarty(int pocet, GameObject playerGO, Player player)
-    // {
-    //     List<int> usedIndexes = new List<int>();
-    //     IDbConnection dbConnection = new SqliteConnection(connectionString);
-    //     dbConnection.Open();
-
-    //     IDbCommand dbCommand = dbConnection.CreateCommand();
-    //     dbCommand.CommandText = "SELECT * FROM PlayerCards";
-    //     IDataReader reader = dbCommand.ExecuteReader();
-
-    //     List<string[]> kartyHrac = new List<string[]>();
-    //     while (reader.Read())
-    //     {
-    //         string[] rowValues = new string[reader.FieldCount];
-    //         for (int i = 0; i < reader.FieldCount; i++)
-    //         {
-    //             rowValues[i] = reader[i].ToString();
-    //         }
-    //         kartyHrac.Add(rowValues);
-    //     }
-
-    //     reader.Close();
-    //     dbCommand.Dispose();
-    //     dbConnection.Close();
-
-    //     int maxIndex = kartyHrac.Count;
-
-    //     for (int i = 0; i < pocet; i++)
-    //     {
-    //         int index;
-    //         do
-    //         {
-    //             index = Random.Range(0, maxIndex);
-    //         } while (usedIndexes.Contains(index));
-
-    //         usedIndexes.Add(index);
-
-    //         string[] kartaHodnoty = kartyHrac[index];
-
-    //         string[] farbaKarty = kartaHodnoty[13].Split(';');
-    //         Color32 cardColor = new Color32(byte.Parse(farbaKarty[0]), byte.Parse(farbaKarty[1]), byte.Parse(farbaKarty[2]), 255);
-
-    //         GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
-    //         novaKarta.GetComponent<Kard>().cardId = int.Parse(kartaHodnoty[0]);
-    //         novaKarta.GetComponent<Kard>().cardName = kartaHodnoty[2];
-    //         novaKarta.GetComponent<Kard>().level = int.Parse(kartaHodnoty[3]);
-    //         novaKarta.GetComponent<Kard>().experience = int.Parse(kartaHodnoty[4]);
-    //         novaKarta.GetComponent<Kard>().health = int.Parse(kartaHodnoty[5]);
-    //         novaKarta.GetComponent<Kard>().strength = int.Parse(kartaHodnoty[6]);
-    //         novaKarta.GetComponent<Kard>().speed = int.Parse(kartaHodnoty[7]);
-    //         novaKarta.GetComponent<Kard>().attack = int.Parse(kartaHodnoty[8]);
-    //         novaKarta.GetComponent<Kard>().defense = int.Parse(kartaHodnoty[9]);
-    //         novaKarta.GetComponent<Kard>().knowledge = int.Parse(kartaHodnoty[10]);
-    //         novaKarta.GetComponent<Kard>().charisma = int.Parse(kartaHodnoty[11]);
-    //         novaKarta.GetComponent<Kard>().color = cardColor;
-    //         novaKarta.GetComponent<Kard>().attack1 = int.Parse(kartaHodnoty[14]);
-    //         novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[14]));
-    //         novaKarta.GetComponent<Kard>().attack2 = int.Parse(kartaHodnoty[15]);
-    //         novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[15]));
-    //         novaKarta.GetComponent<Kard>().attack3 = int.Parse(kartaHodnoty[16]);
-    //         novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[16]));
-    //         novaKarta.GetComponent<Kard>().attack4 = int.Parse(kartaHodnoty[17]);
-    //         novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[17]));
-    //         novaKarta.GetComponent<Kard>().image = kartaHodnoty[18];
-
-    //         novaKarta.GetComponent<Kard>().battleArea = playerBoard;
-
-    //         player.AddCardToHand(novaKarta.GetComponent<Kard>());
-
-    //         yield return new WaitForSeconds(0.1f);
-    //     }
-    // }
-
     private IEnumerator VytvorKartyAIMission(GameObject playerGO, Player player, int missionID)
     {
         int[] boost = new int[6];
@@ -673,8 +531,6 @@ public class FightSystem : MonoBehaviour
 
         yield return new WaitForSeconds(0.1f);
     }
-
-
 
     private IEnumerator VytvorKartyAI(GameObject playerGO, Player player)
     {

@@ -1849,10 +1849,12 @@ public class Attack : MonoBehaviour
 		receiver.TakeDamage(2 + ((attacker.attack + attacker.knowledge + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
         if (Random.value <= 0.1f) 
         {
+            yield return new WaitForSeconds(2);
             dialogText.text = receiver.cardName + " is trapped in chain";
             yield return StartCoroutine(receiver.AddEffect(9,1));//Tether
         }
         Debug.Log(attacker.cardName+" -> Kusarigama => "+receiver.cardName);
+        yield return new WaitForSeconds(2);
     }
     //107
     public IEnumerator Ninjutsu(Kard attacker, Kard receiver, TMP_Text dialogText)

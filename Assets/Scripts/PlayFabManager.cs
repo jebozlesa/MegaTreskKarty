@@ -36,14 +36,14 @@ public class PlayFabManager : MonoBehaviour
 
     void OnSuccess(LoginResult result)
     {
-        Debug.Log("Sicko dobre");
+        Debug.Log("PlayFabManager = Sicko dobre");
   //      loadingImage.SetActive(false);
         GetLeaderboard();
     }
 
     void OnError(PlayFabError error)
     {
-        Debug.Log("Daco nahovno");
+        Debug.Log("PlayFabManager = Daco nahovno");
   //      errorImage.SetActive(true);
         Debug.Log(error.GenerateErrorReport());
     }
