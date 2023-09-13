@@ -152,10 +152,12 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
         maxHP = health; 
 
-        cardImage.sprite = Resources.Load<Sprite>(image);
-        cardImageAttr.sprite = Resources.Load<Sprite>(image + "_back");
-        cardImageDesc.sprite = Resources.Load<Sprite>(image + "_back");
-        cardImageAttack.sprite = Resources.Load<Sprite>(image + "_back");
+        string imagePath = "Cards/" + image;
+
+        cardImage.sprite = Resources.Load<Sprite>(imagePath);
+        cardImageAttr.sprite = Resources.Load<Sprite>(imagePath + "_back");
+        cardImageDesc.sprite = Resources.Load<Sprite>(imagePath + "_back");
+        cardImageAttack.sprite = Resources.Load<Sprite>(imagePath + "_back");
 
         background.GetComponent<Image>().color = color;
         nameText.color = color;

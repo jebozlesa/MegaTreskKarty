@@ -91,7 +91,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         nameText.text = cardName;
         levelText.text = "lvl " + level;
         maxHP = health; 
-        cardImage.sprite = Resources.Load<Sprite>(image);
+        cardImage.sprite = Resources.Load<Sprite>("Cards/" + image);
         background.GetComponent<Image>().color = color;
         nameText.color = color;
         levelText.color = color;
