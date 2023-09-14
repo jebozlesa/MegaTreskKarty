@@ -283,26 +283,28 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
                 int currentLevel = cardData.Level;
                 int newExperience = currentExperience + increase;
 
-                // Update the experience
+                cardData.Experience = newExperience;
+
                 Dictionary<string, string> updates = new Dictionary<string, string>
                 {
-                    { $"cards.{cardId}.Experience", newExperience.ToString() }
+                    { "Experience", newExperience.ToString() }
                 };
 
-                playFabManager.UpdateCardData(cardId.ToString(), updates, success =>
+                // Check if player leveled up
+                if (currentLevel * (10 * (currentLevel)) <= newExperience)
+                {
+                    cardData.Level = currentLevel + 1;
+                    updates.Add("Level", (currentLevel + 1).ToString());
+                    StartCoroutine(EffectAnimations(level, "LVL", color_yellow));
+                    UpdateRandomStat();                                                     //TU POKRACUJ!!!!!!!!!
+                }
+
+                playFabManager.UpdateCardData(cardId, updates, success =>
                 {
                     if (success)
                     {
                         StartCoroutine(EffectAnimations(increase, "XP", color_purple));
                         experience = newExperience;
-
-                        // Check if player leveled up
-                        if (currentLevel * (10 * (currentLevel)) <= newExperience)
-                        {
-                            UpdateRandomStat();
-                            level = currentLevel + 1;
-                            StartCoroutine(EffectAnimations(level, "LVL", color_yellow));
-                        }
                     }
                 });
             }
@@ -336,6 +338,8 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         cardData.Attack3 = Convert.ToInt32(cardDataDictionary["Attack3"]);
         cardData.Attack4 = Convert.ToInt32(cardDataDictionary["Attack4"]);
         cardData.CardPicture = cardDataDictionary["CardPicture"].ToString();
+
+        Debug.Log(cardData.PersonName);
 
         return cardData;
     }
@@ -399,16 +403,39 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
         if (!string.IsNullOrEmpty(statName))
         {
-            Dictionary<string, string> updates = new Dictionary<string, string>
+            playFabManager.GetCardData(cardId, cardDataDictionary =>
             {
-                { $"cards.{cardId}.{statName}", increaseValue.ToString() }
-            };
-
-            playFabManager.UpdateCardData(cardId.ToString(), updates, success =>
-            {
-                if (!success)
+                if (cardDataDictionary != null)
                 {
-                    Debug.LogError("Failed to update stat in PlayFab");
+                    // Konvertujte slovník na objekt CardData
+                    PlayFabCardManager.CardData cardData = ConvertDictionaryToCardData(cardDataDictionary);
+
+                    // Aktualizujte hodnoty karty dle potřeby
+                    var property = cardData.GetType().GetProperty(statName);
+                    if (property != null)
+                    {
+                        property.SetValue(cardData, Convert.ChangeType(increaseValue, property.PropertyType));
+                    }
+
+                    // Serializujte aktualizovaný seznam karet zpět do formátu JSON
+                    string updatedData = JsonUtility.ToJson(cardData);
+
+                    Dictionary<string, string> updates = new Dictionary<string, string>
+                    {
+                        { "PlayerCards", updatedData }
+                    };
+
+                    playFabManager.UpdateCardData(cardId, updates, success =>
+                    {
+                        if (!success)
+                        {
+                            Debug.LogError("Failed to update stat in PlayFab");
+                        }
+                    });
+                }
+                else
+                {
+                    Debug.Log("ERROR: cardDataDictionary == null");
                 }
             });
         }

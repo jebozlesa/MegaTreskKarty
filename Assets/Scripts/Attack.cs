@@ -456,8 +456,8 @@ public class Attack : MonoBehaviour
 	{
         dialogText.text = "Plesk! kick from " + attacker.cardName;
 		receiver.TakeDamage(((attacker.speed + attacker.attack)/2) - ((receiver.defense + receiver.strength)/2));
-        yield return new WaitForSeconds(2);
         if (Random.value <= 0.2f) receiver.TakeDamage(4);//extra dmg
+        yield return new WaitForSeconds(2);
         Debug.Log(attacker.cardName + " -> Kick => " + receiver.cardName);
 	}
     //3

@@ -432,6 +432,7 @@ public class FightSystem : MonoBehaviour
                         Color32 cardColor = new Color32((byte)existingCard.Color[0], (byte)existingCard.Color[1], (byte)existingCard.Color[2], 255);
                         novaKarta.GetComponent<Kard>().color = cardColor;
                         novaKarta.GetComponent<Kard>().level = existingCard.Level;
+                        novaKarta.GetComponent<Kard>().experience = existingCard.Experience;
                         novaKarta.GetComponent<Kard>().attack1 = existingCard.Attack1;
                         novaKarta.GetComponent<Kard>().attack2 = existingCard.Attack2;
                         novaKarta.GetComponent<Kard>().attack3 = existingCard.Attack3;

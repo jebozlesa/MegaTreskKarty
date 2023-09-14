@@ -103,22 +103,78 @@ public class PlayFabCardManager : MonoBehaviour
     }
 
 
-    public void UpdateCardData(string cardId, Dictionary<string, string> updates, UpdateCallback callback)
+    public void UpdateCardData(int styleID, Dictionary<string, string> updates, UpdateCallback callback)
     {
-        UpdateUserDataRequest request = new UpdateUserDataRequest
+        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " PlayFabCardManager.UpdateCardData => START " + styleID);
+
+        GetUserDataRequest getRequest = new GetUserDataRequest
         {
-            Data = updates
+            Keys = new List<string> { "PlayerCards" }
         };
 
-        PlayFabClientAPI.UpdateUserData(request, result =>
+        PlayFabClientAPI.GetUserData(getRequest, result =>
         {
-            callback?.Invoke(true);
+            if (result.Data != null && result.Data.ContainsKey("PlayerCards"))
+            {
+                Debug.Log("Data from PlayFab: " + result.Data["PlayerCards"].Value);
+                var cardsData = JsonUtility.FromJson<CardsContainer>(result.Data["PlayerCards"].Value);
+                Debug.Log("Number of cards: " + cardsData.cards.Count);
+
+                foreach (var card in cardsData.cards)
+                {
+                    if (card.StyleID == styleID)
+                    {
+                        // Aktualizujte hodnoty karty dle potřeby
+                        foreach (var update in updates)
+                        {
+                            Debug.Log("Checking card with StyleID: " + card.StyleID);
+
+                            var field = card.GetType().GetField(update.Key);
+                            if (field != null)
+                            {
+                                Debug.Log($"Updating {update.Key} from {field.GetValue(card)} to {update.Value}");
+                                field.SetValue(card, Convert.ChangeType(update.Value, field.FieldType));
+                                Debug.Log($"Updated {update.Key} to {field.GetValue(card)}");
+                            }
+                            else
+                            {
+                                Debug.Log("property == null");
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                // Serializujte aktualizovaný seznam karet zpět do formátu JSON
+                string updatedData = JsonUtility.ToJson(cardsData);
+                Debug.Log(updatedData);
+
+                UpdateUserDataRequest updateRequest = new UpdateUserDataRequest
+                {
+                    Data = new Dictionary<string, string> { { "PlayerCards", updatedData } }
+                };
+
+                PlayFabClientAPI.UpdateUserData(updateRequest, updateResult =>
+                {
+                    callback?.Invoke(true);
+                }, error =>
+                {
+                    Debug.LogError(error.GenerateErrorReport());
+                    callback?.Invoke(false);
+                });
+            }
+            else
+            {
+                Debug.LogError("Daco tu chyba");
+                callback?.Invoke(false);
+            }
         }, error =>
         {
             Debug.LogError(error.GenerateErrorReport());
             callback?.Invoke(false);
         });
     }
+
 
     [System.Serializable]
     public class CardsContainer
