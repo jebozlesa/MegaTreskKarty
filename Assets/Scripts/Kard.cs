@@ -283,20 +283,18 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
                 int currentLevel = cardData.Level;
                 int newExperience = currentExperience + increase;
 
-                cardData.Experience = newExperience;
-
                 Dictionary<string, string> updates = new Dictionary<string, string>
                 {
                     { "Experience", newExperience.ToString() }
                 };
 
+                bool leveledUp = false;
                 // Check if player leveled up
                 if (currentLevel * (10 * (currentLevel)) <= newExperience)
                 {
                     cardData.Level = currentLevel + 1;
                     updates.Add("Level", (currentLevel + 1).ToString());
-                    StartCoroutine(EffectAnimations(level, "LVL", color_yellow));
-                    UpdateRandomStat();                                                     //TU POKRACUJ!!!!!!!!!
+                    leveledUp = true;
                 }
 
                 playFabManager.UpdateCardData(cardId, updates, success =>
@@ -305,6 +303,13 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
                     {
                         StartCoroutine(EffectAnimations(increase, "XP", color_purple));
                         experience = newExperience;
+
+                        if (leveledUp)
+                        {
+                            StartCoroutine(EffectAnimations(level, "LVL", color_yellow));
+                            UpdateRandomStat();
+                            LoadCardData();
+                        }
                     }
                 });
             }
@@ -314,6 +319,8 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
             }
         });
     }
+
+
 
     private PlayFabCardManager.CardData ConvertDictionaryToCardData(Dictionary<string, object> cardDataDictionary)
     {
@@ -349,80 +356,71 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
     public void UpdateRandomStat()
     {
         Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.UpdateRandomStat => START ");
-        string statName = "";
-        int increaseValue = 0;
 
-        switch ((int)UnityEngine.Random.Range(2, 9))
+        playFabManager.GetCardData(cardId, cardDataDictionary =>
         {
-            case 2:
-                Heal(2);
-                statName = "Health";
-                increaseValue = 2;
-                StartCoroutine(EffectAnimations(2, "HP", color_blue));
-                break;
-            case 3:
-                HandleStrength(1);
-                statName = "Strength";
-                increaseValue = 1;
-                StartCoroutine(EffectAnimations(1, "STR", color_blue));
-                break;
-            case 4:
-                HandleSpeed(1);
-                statName = "Speed";
-                increaseValue = 1;
-                StartCoroutine(EffectAnimations(1, "SPE", color_blue));
-                break;
-            case 5:
-                HandleAttack(1);
-                statName = "Attack";
-                increaseValue = 1;
-                StartCoroutine(EffectAnimations(1, "ATT", color_blue));
-                break;
-            case 6:
-                HandleDefense(1);
-                statName = "Defense";
-                increaseValue = 1;
-                StartCoroutine(EffectAnimations(1, "DEF", color_blue));
-                break;
-            case 7:
-                HandleKnowledge(1);
-                statName = "Knowledge";
-                increaseValue = 1;
-                StartCoroutine(EffectAnimations(1, "KNO", color_blue));
-                break;
-            case 8:
-                HandleCharisma(1);
-                statName = "Charisma";
-                increaseValue = 1;
-                StartCoroutine(EffectAnimations(1, "CHA", color_blue));
-                break;
-            default:
-                Debug.LogError("Invalid value in UpdateRandomStat");
-                break;
-        }
-
-        if (!string.IsNullOrEmpty(statName))
-        {
-            playFabManager.GetCardData(cardId, cardDataDictionary =>
+            if (cardDataDictionary != null)
             {
-                if (cardDataDictionary != null)
+                // Konvertujte slovník na objekt CardData
+                PlayFabCardManager.CardData cardData = ConvertDictionaryToCardData(cardDataDictionary);
+
+                string statName = "";
+                int increaseValue = 0;
+
+                switch ((int)UnityEngine.Random.Range(2, 9))
                 {
-                    // Konvertujte slovník na objekt CardData
-                    PlayFabCardManager.CardData cardData = ConvertDictionaryToCardData(cardDataDictionary);
+                    case 2:
+                        cardData.Health += 2;
+                        statName = "Health";
+                        increaseValue = cardData.Health; // Aktualizujte na novú celkovú hodnotu
+                        StartCoroutine(EffectAnimations(2, "HP", color_blue));
+                        break;
+                    case 3:
+                        cardData.Strength += 1;
+                        statName = "Strength";
+                        increaseValue = cardData.Strength;
+                        StartCoroutine(EffectAnimations(1, "STR", color_blue));
+                        break;
+                    case 4:
+                        cardData.Speed += 1;
+                        statName = "Speed";
+                        increaseValue = cardData.Speed;
+                        StartCoroutine(EffectAnimations(1, "SPE", color_blue));
+                        break;
+                    case 5:
+                        cardData.Attack += 1;
+                        statName = "Attack";
+                        increaseValue = cardData.Attack;
+                        StartCoroutine(EffectAnimations(1, "ATT", color_blue));
+                        break;
+                    case 6:
+                        cardData.Defense += 1;
+                        statName = "Defense";
+                        increaseValue = cardData.Defense;
+                        StartCoroutine(EffectAnimations(1, "DEF", color_blue));
+                        break;
+                    case 7:
+                        cardData.Knowledge += 1;
+                        statName = "Knowledge";
+                        increaseValue = cardData.Knowledge;
+                        StartCoroutine(EffectAnimations(1, "KNO", color_blue));
+                        break;
+                    case 8:
+                        cardData.Charisma += 1;
+                        statName = "Charisma";
+                        increaseValue = cardData.Charisma;
+                        StartCoroutine(EffectAnimations(1, "CHA", color_blue));
+                        break;
+                    default:
+                        Debug.LogError("Invalid value in UpdateRandomStat");
+                        break;
+                }
 
-                    // Aktualizujte hodnoty karty dle potřeby
-                    var property = cardData.GetType().GetProperty(statName);
-                    if (property != null)
-                    {
-                        property.SetValue(cardData, Convert.ChangeType(increaseValue, property.PropertyType));
-                    }
-
-                    // Serializujte aktualizovaný seznam karet zpět do formátu JSON
-                    string updatedData = JsonUtility.ToJson(cardData);
-
+                if (!string.IsNullOrEmpty(statName))
+                {
                     Dictionary<string, string> updates = new Dictionary<string, string>
                     {
-                        { "PlayerCards", updatedData }
+                        { statName, increaseValue.ToString() }
                     };
 
                     playFabManager.UpdateCardData(cardId, updates, success =>
@@ -433,13 +431,15 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
                         }
                     });
                 }
-                else
-                {
-                    Debug.Log("ERROR: cardDataDictionary == null");
-                }
-            });
-        }
+            }
+            else
+            {
+                Debug.Log("ERROR: cardDataDictionary == null");
+            }
+        });
     }
+
+
 
 
     private void InitializeAttackCount()

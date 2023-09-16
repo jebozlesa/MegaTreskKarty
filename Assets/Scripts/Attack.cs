@@ -1178,7 +1178,7 @@ public class Attack : MonoBehaviour
     public IEnumerator JusticeCrusade(Kard attacker, Kard receiver, TMP_Text dialogText)     //nepouzite
 	{
         dialogText.text = attacker.cardName + " fights enemy for justice";
-		receiver.TakeDamage(((2 + attacker.knowledge + attacker.charisma)/2) - receiver.defense);
+		receiver.TakeDamage(((2 + attacker.knowledge + attacker.charisma)/2) - receiver.knowledge);
         yield return new WaitForSeconds(2);
         Debug.Log(attacker.cardName + " -> JusticeCrusade => " + receiver.cardName);
 	}
@@ -1988,6 +1988,71 @@ public class Attack : MonoBehaviour
         Debug.Log(attacker.cardName+" -> Act => "+receiver.cardName);
         yield return new WaitForSeconds(2);
 	}
+    //118
+    public IEnumerator Football(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " plays football";
+        receiver.HandleSpeed(1);
+        yield return new WaitForSeconds(2);
+        if (7 <= receiver.knowledge) 
+        {
+            dialogText.text = receiver.cardName + " is bored by Football";
+            yield return new WaitForSeconds(2);
+            if (Random.value <= 0.8f) 
+            {
+                dialogText.text = receiver.cardName + " falls asleep";
+                yield return StartCoroutine(receiver.AddEffect(3,Random.Range(1, 3)));//sleep
+            }
+        }
+        else
+        {
+            dialogText.text = receiver.cardName + " likes it";
+            receiver.HandleCharisma(1);
+        }
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName+" -> Football => "+receiver.cardName);
+	}
+    //119
+    public IEnumerator BicycleKick(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " tries bicykle kick";
+        yield return new WaitForSeconds(2);
+        if (Random.value <= 0.7f)
+        {
+            dialogText.text = "Plesk! Big kick from " + attacker.cardName;
+            receiver.TakeDamage((5 + (attacker.speed + attacker.attack)/2) - ((receiver.defense + receiver.strength)/2));
+            if (Random.value <= 0.4f) receiver.TakeDamage(4);//extra dmg
+        }
+        else
+        {
+            dialogText.text = attacker.cardName + " faces gravity";
+            attacker.TakeDamage(1);
+        }
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName + " -> BicycleKick => " + receiver.cardName);
+	}
+    //120
+    public IEnumerator WorldChampion(Kard attacker, Kard receiver, TMP_Text dialogText)
+	{
+        dialogText.text = attacker.cardName + " is world champion, remember!";
+        attacker.HandleStrength(1);
+        attacker.HandleCharisma(2);
+        yield return new WaitForSeconds(2);
+        Debug.Log(attacker.cardName+" -> WorldChampion => "+receiver.cardName);
+	}
+    //121
+    public IEnumerator ShaolinSoccer(Kard attacker, Kard receiver, TMP_Text dialogText)
+    {
+        List<AttackDelegate> attacks = new List<AttackDelegate> { Kick, Punch, BicycleKick, Act, Honesty, Jujutsu, Fury, Corruption, Scratch};
+
+        System.Random rnd = new System.Random();
+        attacks = attacks.OrderBy(x => rnd.Next()).ToList();
+
+        yield return StartCoroutine(Football(attacker, receiver, dialogText));
+        yield return StartCoroutine(attacks[0](attacker, receiver, dialogText));
+
+        Debug.Log(attacker.cardName + " -> ShaolinSoccer => " + receiver.cardName);
+    }
 
 
 

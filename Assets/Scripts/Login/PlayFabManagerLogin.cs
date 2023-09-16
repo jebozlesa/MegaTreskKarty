@@ -22,20 +22,22 @@ public class PlayFabManagerLogin : MonoBehaviour
     public TMP_InputField emailInput;
     public TMP_InputField passwordInput;
 
-    // public static PlayFabManager Instance { get; private set; }
+    public static PlayFabManagerLogin Instance { get; private set; }
 
-    // private void Awake()
-    // {
-    //     if (Instance == null)
-    //     {
-    //         Instance = this;
-    //         DontDestroyOnLoad(gameObject);
-    //     }
-    //     else
-    //     {
-    //         Destroy(gameObject);
-    //     }
-    // }
+    public static bool IsLoggedIn { get; private set; } = false;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -165,6 +167,7 @@ public class PlayFabManagerLogin : MonoBehaviour
             Debug.Log("Sicko dobre");
             messageEinsteinBubble.SetActive(true);
             messageEinsteinText.text = "Welcome " + username;
+            IsLoggedIn = true;
             StartCoroutine(LoadMainSceneAfterDelay(2));
         }, error => { Debug.LogError(error.GenerateErrorReport()); });
     }
@@ -236,6 +239,7 @@ public class PlayFabManagerLogin : MonoBehaviour
         loadingImage.SetActive(false);
 
         messageStalinText.text = error.ErrorMessage;
+        IsLoggedIn = false;
         Debug.Log("Nahovno daco");
         Debug.Log(error.GenerateErrorReport());
     }

@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using System.Data;
 using Mono.Data.Sqlite;
 using System.IO;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using PlayFab;
@@ -33,11 +34,18 @@ public class Album : MonoBehaviour
         if (PlayerPrefs.GetInt("HasCompletedTutorialAlbum", 0) == 0)  {   tutorial.SetActive(true);   }
 
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
-        LoginPlayFab();
 
         deckPanel.SetActive(false);
-    }
 
+        if (PlayFabManagerLogin.IsLoggedIn)
+        {
+            StartCoroutine(VytvorKartyPlayFab());
+        }
+        else
+        {
+            Debug.LogError("Hráč nie je prihlásený!");
+        }
+    }
 
     void LoginPlayFab()
     {   Debug.Log("Album.LoginPlayFab  -- Start");
@@ -62,7 +70,6 @@ public class Album : MonoBehaviour
         IsLoggedIn = true;
         Debug.Log("Sicko dobre");
   //      loadingImage.SetActive(false);
-        StartCoroutine(VytvorKartyPlayFab());
     }
 
     void OnError(PlayFabError error)
@@ -100,6 +107,7 @@ public class Album : MonoBehaviour
 
     private IEnumerator VytvorKartyPlayFab()
     {
+        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Album.VytvorKartyPlayFab => START ");
         // Získanie údajov z PlayFab
         PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
         {
@@ -113,7 +121,15 @@ public class Album : MonoBehaviour
                 // Spracovanie údajov o kartách
                 StartCoroutine(SpracujKarty(data.cards));
             }
-        }, error => Debug.LogError(error.GenerateErrorReport()));
+        }, 
+        error => 
+        {
+            Debug.LogError(error.GenerateErrorReport());
+            if (error.Error == PlayFabErrorCode.ConnectionError)
+            {
+                // Zobrazte chybové hlásenie alebo vráťte hráča do hlavného menu
+            }
+        });
 
         yield return null;
     }

@@ -380,6 +380,18 @@ public class AttackDescriptions : MonoBehaviour
             case 117://Act
                 count = 5;
                 break;
+            case 118://Football
+                count = (int)Math.Round(attacker.strength * 1.5);
+                break;
+            case 119://BicycleKick
+                count = attacker.strength * 3;
+                break;
+            case 120://WorldChampion
+                count = 3;
+                break;
+            case 121://ShaolinSoccer
+                count = 3;
+                break;
             default:
                 Debug.LogError("Invalid attack type.");
                 break;
@@ -763,6 +775,18 @@ public class AttackDescriptions : MonoBehaviour
             case 117:
                 dialogText.text = "Act a fool chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
+            case 118:
+                dialogText.text = "Football chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 119:
+                dialogText.text = "Bicycle kick chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 120:
+                dialogText.text = "World champion chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
+            case 121:
+                dialogText.text = "Shaolin soccer chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
             default:
                 Debug.LogError("Invalid attack type.");
                 break;
@@ -1132,6 +1156,18 @@ public class AttackDescriptions : MonoBehaviour
                 break;
             case 117:
                 Act(buttonText);
+                break;
+            case 118:
+                Football(buttonText);
+                break;
+            case 119:
+                BicycleKick(buttonText);
+                break;
+            case 120:
+                WorldChampion(buttonText);
+                break;
+            case 121:
+                ShaolinSoccer(buttonText);
                 break;
             default:
                 Debug.LogError("Invalid attack type.");
@@ -1789,5 +1825,25 @@ public class AttackDescriptions : MonoBehaviour
     public void Act(TMP_Text buttonText)
 	{
         buttonText.text = "Act a fool";
+	}
+    //118
+    public void Football(TMP_Text buttonText)
+	{
+        buttonText.text = "Football";
+	}
+    //119
+    public void BicycleKick(TMP_Text buttonText)
+	{
+        buttonText.text = "Bicycle Kick";
+	}
+    //120
+    public void WorldChampion(TMP_Text buttonText)
+	{
+        buttonText.text = "World Champion";
+	}
+    //121
+    public void ShaolinSoccer(TMP_Text buttonText)
+	{
+        buttonText.text = "Shaolin Soccer";
 	}
 }

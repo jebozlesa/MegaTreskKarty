@@ -12,7 +12,7 @@ public class PlayFabCardManager : MonoBehaviour
     void Awake()
     {
         Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " PlayFabCardManager.Awake => START");
-        Login();
+       // Login();
     }
 
     void Login()
@@ -130,16 +130,25 @@ public class PlayFabCardManager : MonoBehaviour
                             Debug.Log("Checking card with StyleID: " + card.StyleID);
 
                             var field = card.GetType().GetField(update.Key);
+                            var property = card.GetType().GetProperty(update.Key);
+
                             if (field != null)
                             {
                                 Debug.Log($"Updating {update.Key} from {field.GetValue(card)} to {update.Value}");
                                 field.SetValue(card, Convert.ChangeType(update.Value, field.FieldType));
                                 Debug.Log($"Updated {update.Key} to {field.GetValue(card)}");
                             }
+                            else if (property != null)
+                            {
+                                Debug.Log($"Updating {update.Key} from {property.GetValue(card)} to {update.Value}");
+                                property.SetValue(card, Convert.ChangeType(update.Value, property.PropertyType));
+                                Debug.Log($"Updated {update.Key} to {property.GetValue(card)}");
+                            }
                             else
                             {
-                                Debug.Log("property == null");
+                                Debug.Log("Neither field nor property found for " + update.Key);
                             }
+
                         }
                         break;
                     }

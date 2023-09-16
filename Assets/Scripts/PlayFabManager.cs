@@ -7,16 +7,26 @@ using PlayFab.ClientModels;
 
 public class PlayFabManager : MonoBehaviour
 {
- //   public GameObject loadingImage;
- //   public GameObject errorImage;
+    public static PlayFabManager Instance { get; private set; }
+
+    // public GameObject loadingImage;
+    // public GameObject errorImage;
 
     public event Action<List<PlayerLeaderboardEntry>> OnLeaderboardLoaded;
 
-    // Start is called before the first frame update
-    void Awake()
-    {
-        Login();
-    }
+    // private void Awake()
+    // {
+    //     if (Instance == null)
+    //     {
+    //         Instance = this;
+    //         DontDestroyOnLoad(gameObject);
+    //         Login();
+    //     }
+    //     else
+    //     {
+    //         Destroy(gameObject);
+    //     }
+    // }
 
     void Login()
     {
