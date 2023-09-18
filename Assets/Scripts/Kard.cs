@@ -546,7 +546,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
     public IEnumerator AddEffect(int id, int param)
     {
-        yield return new WaitForSeconds(1f);
+    //    yield return new WaitForSeconds(1f);
         Debug.Log(Time.time + "  " + cardName + " pridava efekt " + id + ", " + param);
 
         bool idExists = false;
@@ -572,7 +572,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
             attackCount[id] = param;
             StartCoroutine(ShakeCard(0.2f));
             Debug.Log(Time.time + "  " + cardName + " pridal efekt " + id + ", " + param);
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.1f);
         }
     }
     public void RemoveEffect(int index)

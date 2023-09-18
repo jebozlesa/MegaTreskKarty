@@ -893,12 +893,13 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\"...In 1958, in the sprawling Rasunda Stadium of Sweden, the World Cup
-    finals witnessed the rise of a young star. Brazil took on the host nation, Sweden.
-    Among the Brazilians was a 17-year-old Pel\xE9. In one iconic moment, he controlled
-    a lofted pass with his chest, elegantly flicked the ball over a Swedish defender,
-    and before it could touch the ground, volleyed it into the net.\r\nAs the ball
-    sailed from Pele's foot, piercing the net, a star was born....\"\n"
+  m_text: "\"...In 1958, in Sweden's Rasunda Stadium, the World Cup finals saw the
+    rise of a new hero. Brazil faced off against the host nation, Sweden. Among them
+    was a young 17-year-old named Pele. The crowd buzzed with anticipation. As the
+    ball came flying towards him, Pele skillfully trapped it with his chest. With
+    quick thinking, he then lifted the ball over a nearby defender's head. Racing
+    forward, he smashed a volley, catching the goalkeeper off-guard.\r\n\rAs the
+    ball hit the net, the world watched in awe, realizing a star was born...\"\n"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 125cb55b44b24c4393181402bc6200e6, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 125cb55b44b24c4393181402bc6200e6, type: 2}

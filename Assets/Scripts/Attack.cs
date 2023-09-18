@@ -6,6 +6,8 @@ using System.Linq;
 
 public class Attack : MonoBehaviour
 {
+   // public MoveImage moveImageAnimation;
+    public AttackAnimations attackAnimations;
 
     public List<int> exceptionAttacks = new List<int> { 64 };  //je tu utek z retazov od houdiniho co rusi efekty, exception preto ze ide aj ked nieje v stave attack
 
@@ -43,6 +45,13 @@ public class Attack : MonoBehaviour
         return isPriority;
     }
 
+    private IEnumerator ShowDialog(TMP_Text dialogText, string message)
+    {
+        dialogText.text = message;
+        yield return new WaitForSeconds(1.8f);
+        dialogText.text = "";
+        yield return new WaitForSeconds(0.2f);
+    }
 
     public IEnumerator ExecuteAttack(Kard attacker, Kard receiver, int attackType, TMP_Text dialogText)
     {
@@ -429,6 +438,21 @@ public class Attack : MonoBehaviour
             case 116:
                 yield return StartCoroutine(CosaNostra(attacker, receiver, dialogText));
                 break;
+            case 117:
+                yield return StartCoroutine(Act(attacker, receiver, dialogText));
+                break;
+            case 118:
+                yield return StartCoroutine(Football(attacker, receiver, dialogText));
+                break;
+            case 119:
+                yield return StartCoroutine(BicycleKick(attacker, receiver, dialogText));
+                break;
+            case 120:
+                yield return StartCoroutine(WorldChampion(attacker, receiver, dialogText));
+                break;
+            case 121:
+                yield return StartCoroutine(ShaolinSoccer(attacker, receiver, dialogText));
+                break;
             default:
                 Debug.LogError("Invalid attack type.");
                 break;
@@ -437,397 +461,416 @@ public class Attack : MonoBehaviour
 
     public delegate IEnumerator AttackDelegate(Kard attacker, Kard receiver, TMP_Text dialogText);
     
+
     //1
     public IEnumerator Punch(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = "Puf! punch from " + attacker.cardName;
-		receiver.TakeDamage(((attacker.strength + attacker.attack)/2) - ((receiver.defense + receiver.strength)/2));
-        yield return new WaitForSeconds(2);
+    {
+        yield return StartCoroutine(attackAnimations.PlayPunchAnimation(attacker.transform, receiver.transform));        //ANIMACIA
+        receiver.TakeDamage(((attacker.strength + attacker.attack) / 2) - ((receiver.defense + receiver.strength) / 2));   //DEMIDZ
+        yield return StartCoroutine(ShowDialog(dialogText, "Puf! punch from " + attacker.cardName));                        //TEXT A CAKANI                             <--- POUPRAVOVAT
+
         if (Random.value <= 0.1f)
         {
-            dialogText.text = receiver.cardName + " falls asleep";
-            yield return StartCoroutine(receiver.AddEffect(3,Random.Range(1, 3)));//sleep
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(receiver.AddEffect(3, Random.Range(1, 3))); //sleep
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " falls asleep"));
         }
+
         Debug.Log(attacker.cardName + " -> Punch => " + receiver.cardName);
-	}
+    }
+
     //2
     public IEnumerator Kick(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = "Plesk! kick from " + attacker.cardName;
-		receiver.TakeDamage(((attacker.speed + attacker.attack)/2) - ((receiver.defense + receiver.strength)/2));
-        if (Random.value <= 0.2f) receiver.TakeDamage(4);//extra dmg
-        yield return new WaitForSeconds(2);
+    {
+        yield return StartCoroutine(attackAnimations.PlayKickAnimation(attacker.transform, receiver.transform));        //ANIMACIA
+        receiver.TakeDamage(((attacker.speed + attacker.attack) / 2) - ((receiver.defense + receiver.strength) / 2));
+        if (Random.value <= 0.2f) receiver.TakeDamage(4); //extra dmg
+        yield return StartCoroutine(ShowDialog(dialogText, "Plesk! kick from " + attacker.cardName));
+
         Debug.Log(attacker.cardName + " -> Kick => " + receiver.cardName);
-	}
+    }
     //3
     public IEnumerator Heal(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName+ " Heals himself";
-		attacker.Heal(attacker.knowledge/2);
+    {
+        attacker.Heal(attacker.knowledge / 2);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " Heals himself"));
+
         Debug.Log(attacker.cardName + " -> Heal => " + attacker.cardName);
-        yield return new WaitForSeconds(2);
-	}
+    }
     //4
     public IEnumerator Forgiveness(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " forgives your heressy";
-		receiver.HandleAttack(-(int)System.Math.Ceiling((double)attacker.charisma / 5));
+    {
         receiver.HandleAttack(-(int)System.Math.Ceiling((double)attacker.charisma / 5));
-        yield return new WaitForSeconds(2);
+        receiver.HandleAttack(-(int)System.Math.Ceiling((double)attacker.charisma / 5));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " forgives your heresy"));
+
         if (Random.value <= 0.5f)
         {
-            dialogText.text = receiver.cardName + " began to repent";
-            yield return StartCoroutine(receiver.AddEffect(2,Random.Range(1, 3)));//Asceticism
+            yield return StartCoroutine(receiver.AddEffect(2, Random.Range(1, 3))); //Asceticism
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " began to repent"));
         }
-        Debug.Log(attacker.cardName+" -> Forgiveness => "+receiver.cardName);
-	}
+
+        Debug.Log(attacker.cardName + " -> Forgiveness => " + receiver.cardName);
+    }
     //5
     public IEnumerator Crusade(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = "In the name of crist!!! damage was done";
-		receiver.TakeDamage((attacker.strength + attacker.charisma) - ((receiver.defense + receiver.charisma)/2));
-        Debug.Log(attacker.cardName+" -> Crusade => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+    {
+        receiver.TakeDamage((attacker.strength + attacker.charisma) - ((receiver.defense + receiver.charisma) / 2));
+        yield return StartCoroutine(ShowDialog(dialogText, "In the name of Christ!!! damage was done"));
+
+        Debug.Log(attacker.cardName + " -> Crusade => " + receiver.cardName);
+    }
     //6
     public IEnumerator WaterToWine(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " changes his water to wine";
-		attacker.HandleAttack(2);
+    {
+        attacker.HandleAttack(2);
         attacker.HandleStrength(2);
         attacker.HandleDefense(-1);
-        Debug.Log(attacker.cardName+" -> WaterToWine => "+attacker.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " changes his water to wine"));
+
+        Debug.Log(attacker.cardName + " -> WaterToWine => " + attacker.cardName);
+    }
     //7
     public IEnumerator CarHit(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = "Tresk! hit by " + attacker.cardName + "'s car";
-		receiver.TakeDamage((attacker.speed*3) - receiver.strength - receiver.defense);
-        Debug.Log(attacker.cardName+" -> CarHit => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+    {
+        receiver.TakeDamage((attacker.speed * 3) - receiver.strength - receiver.defense);
+        yield return StartCoroutine(ShowDialog(dialogText, "Tresk! hit by " + attacker.cardName + "'s car"));
+
+        Debug.Log(attacker.cardName + " -> CarHit => " + receiver.cardName);
+    }
     //8
     public IEnumerator SteamGun(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = "Bum! Steam gun explosed";
-		receiver.TakeDamage(Random.Range(1,attacker.knowledge));
-        if (Random.value <= 0.5f) attacker.TakeDamage(attacker.knowledge/5);
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> SteamGun => "+receiver.cardName);
-	}
+    {
+        receiver.TakeDamage(Random.Range(1, attacker.knowledge));
+        if (Random.value <= 0.5f) attacker.TakeDamage(attacker.knowledge / 5);
+        yield return StartCoroutine(ShowDialog(dialogText, "Bum! Steam gun exploded"));
+
+        Debug.Log(attacker.cardName + " -> SteamGun => " + receiver.cardName);
+    }
     //9
     public IEnumerator Radiation(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-		if (Random.value <= 0.8f) 
+    {
+        if (Random.value <= 0.8f)
         {
-            dialogText.text = receiver.cardName + " is hit by radiation";
-            yield return StartCoroutine(receiver.AddEffect(4,0));//exposure
+            yield return StartCoroutine(receiver.AddEffect(4, 0)); //exposure
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is hit by radiation"));
         }
         if (Random.value <= 0.3f)
         {
-            dialogText.text = attacker.cardName + " is hit by radiation";
-            yield return StartCoroutine(attacker.AddEffect(4,0));//exposure
+            yield return StartCoroutine(attacker.AddEffect(4, 0)); //exposure
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is hit by radiation"));
         }
-        Debug.Log(attacker.cardName+" -> Radiation => "+receiver.cardName);
-	}
+
+        Debug.Log(attacker.cardName + " -> Radiation => " + receiver.cardName);
+    }
     //10
     public IEnumerator Scratch(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " scratches opponent!";
-		receiver.TakeDamage(attacker.attack - receiver.defense);
-        yield return new WaitForSeconds(2);
-        if (Random.value <= 0.1f) 
+    {
+        receiver.TakeDamage(attacker.attack - receiver.defense);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " scratches opponent!"));
+
+        if (Random.value <= 0.1f)
         {
-            dialogText.text = receiver.cardName + " is wounded";
-            yield return StartCoroutine(receiver.AddEffect(1,Random.Range(1, 3)));//bleed
+            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(1, 3))); //bleed
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
-        Debug.Log(attacker.cardName+" -> Scratch => "+receiver.cardName);
-	}
+
+        Debug.Log(attacker.cardName + " -> Scratch => " + receiver.cardName);
+    }
     //11
     public IEnumerator ScientificLecture(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " explaining sciience!!!";
-		receiver.TakeDamage(attacker.knowledge - receiver.knowledge);
-        yield return new WaitForSeconds(2);
+    {
+        receiver.TakeDamage(attacker.knowledge - receiver.knowledge);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " explaining science!!!"));
+
         if (Random.value <= 0.3f) 
         {
-            dialogText.text = receiver.cardName + " falls asleep";
-            yield return StartCoroutine(receiver.AddEffect(3,Random.Range(1, 3)));//sleep
+            yield return StartCoroutine(receiver.AddEffect(3, Random.Range(1, 3))); //sleep
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " falls asleep"));
         }
-        Debug.Log(attacker.cardName+" -> ScientificLecture => "+receiver.cardName);
-	}
+
+        Debug.Log(attacker.cardName + " -> ScientificLecture => " + receiver.cardName);
+    }
     //12
     public IEnumerator ChiSau(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " attacks with his sticky hands";
-        receiver.TakeDamage(Random.Range(1, 5) * (attacker.speed  - receiver.defense));
-        Debug.Log(attacker.cardName+" -> ChiSau => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+    {
+        receiver.TakeDamage(Random.Range(1, 5) * (attacker.speed - receiver.defense));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " attacks with his sticky hands"));
+
+        Debug.Log(attacker.cardName + " -> ChiSau => " + receiver.cardName);
+    }
     //13
     public IEnumerator OneInchPunch(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " pokes enemy with finger";
-		receiver.TakeDamage(attacker.attack + attacker.knowledge - receiver.defense);
-        if (Random.value <= 0.2f) receiver.TakeDamage(attacker.strength);//critical hit
-        Debug.Log(attacker.cardName+" -> OneInchPunch => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+    {
+        receiver.TakeDamage(attacker.attack + attacker.knowledge - receiver.defense);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " pokes enemy with finger"));
+
+        if (Random.value <= 0.2f) receiver.TakeDamage(attacker.strength); //critical hit
+
+        Debug.Log(attacker.cardName + " -> OneInchPunch => " + receiver.cardName);
+    }
     //14
     public IEnumerator UpInSmoke(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " smoke some s#!t and feels good";
+    {
         attacker.Heal((int)System.Math.Ceiling((double)attacker.strength / 4));
         attacker.HandleStrength(1);
-        yield return new WaitForSeconds(2);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " smokes some s#!t and feels good"));
+
         if (Random.value <= 0.1f) 
         {
-            dialogText.text = receiver.cardName + " falls asleep";
-            yield return StartCoroutine(attacker.AddEffect(3,Random.Range(1, 3)));//sleep
+            yield return StartCoroutine(attacker.AddEffect(3, Random.Range(1, 3))); //sleep
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " falls asleep"));
         }
-        Debug.Log(attacker.cardName+" -> UpInSmoke => "+receiver.cardName);
-	}
+
+        Debug.Log(attacker.cardName + " -> UpInSmoke => " + receiver.cardName);
+    }
     //15
     public IEnumerator Sing(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " sings a banger";
-		if (Random.value <= 0.5f) receiver.HandleAttack(-(attacker.charisma / 3));
+    {
+        if (Random.value <= 0.5f) receiver.HandleAttack(-(attacker.charisma / 3));
         if (Random.value <= 0.5f) receiver.HandleDefense(-(attacker.charisma / 3));
-        Debug.Log(attacker.cardName+" -> Sing => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " sings a banger"));
 
+        Debug.Log(attacker.cardName + " -> Sing => " + receiver.cardName);
+    }
     //16
     public IEnumerator Revolver(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         if (Random.value <= (attacker.attack / 15f))
         {
-        dialogText.text = "Bang! " + attacker.cardName + " shoots";
-		receiver.TakeDamage(7);
+            receiver.TakeDamage(7);
+            yield return StartCoroutine(ShowDialog(dialogText, "Bang! " + attacker.cardName + " shoots"));
         }
         else
         {
-            dialogText.text = "Bang! aaaand miss";
+            yield return StartCoroutine(ShowDialog(dialogText, "Bang! aaaand miss"));
         }
-        Debug.Log(attacker.cardName+" -> Revolver => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
 
+        Debug.Log(attacker.cardName + " -> Revolver => " + receiver.cardName);
+    }
     //17
     public IEnumerator ArtilleryRegiment(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-		if (Random.value <= 0.7f)
+    {
+        if (Random.value <= 0.7f)
         {
-        dialogText.text = receiver.cardName + " is heavily bombarded";
-		receiver.TakeDamage(15);
+            receiver.TakeDamage(15);
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is heavily bombarded"));
         }
         else
         {
-            dialogText.text = "Bang! aaaand miss";
+            yield return StartCoroutine(ShowDialog(dialogText, "Bang! aaaand miss"));
         }
-        Debug.Log(attacker.cardName+" -> ArtilleryRegiment => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
 
+        Debug.Log(attacker.cardName + " -> ArtilleryRegiment => " + receiver.cardName);
+    }
     //18
     public IEnumerator BloodSucking(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = receiver.cardName + " is being drained";
+    {
         int a = Random.Range(1, attacker.attack);
-		receiver.TakeDamage(a);
+        receiver.TakeDamage(a);
         attacker.Heal(a);
-        Debug.Log(attacker.cardName+" -> BloodSucking => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is being drained"));
 
+        Debug.Log(attacker.cardName + " -> BloodSucking => " + receiver.cardName);
+    }
     //19
     public IEnumerator Sword(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " cuts enemy with swort";
-		receiver.TakeDamage(3 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
-        yield return new WaitForSeconds(2);
+    {
+        receiver.TakeDamage(3 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " cuts enemy with sword"));
+
         if (Random.value <= 0.4f) 
         {
-            dialogText.text = receiver.cardName + " is wounded";
-            yield return StartCoroutine(receiver.AddEffect(1,Random.Range(1, 6)));//bleed
+            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(1, 6))); //bleed
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
-        Debug.Log(attacker.cardName+" -> Sword => "+receiver.cardName);
-	}
 
+        Debug.Log(attacker.cardName + " -> Sword => " + receiver.cardName);
+    }
     //20
     public IEnumerator Pike(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = receiver.cardName + " is impaled on a pike";
-		receiver.TakeDamage(((attacker.strength + attacker.speed + attacker.attack) / 2) - receiver.defense);
-        yield return new WaitForSeconds(2);
+    {
+        receiver.TakeDamage(((attacker.strength + attacker.speed + attacker.attack) / 2) - receiver.defense);
+        yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is impaled on a pike"));
+
         if (Random.value <= 0.2f) 
         {
-            dialogText.text = receiver.cardName + " is wounded";
-            yield return StartCoroutine(receiver.AddEffect(1,Random.Range(1, 4)));//bleed
+            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(1, 4))); //bleed
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
-        Debug.Log(attacker.cardName+" -> Pike => "+receiver.cardName);
-	}
+
+        Debug.Log(attacker.cardName + " -> Pike => " + receiver.cardName);
+    }
     //21
     public IEnumerator Terrify(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         if (Random.value <= (int)System.Math.Ceiling((double)receiver.strength / 20))
         {
-            dialogText.text = receiver.cardName + " is terribly frightened";
             receiver.HandleStrength((-1) - (attacker.attack/7));
             receiver.HandleAttack((-1) - (attacker.attack/7));
             receiver.HandleDefense(1);
             receiver.HandleCharisma((-(attacker.attack/3)));
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is terribly frightened"));
         }
         else
         {
-            dialogText.text = receiver.cardName + " does not fear you";
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " does not fear you"));
         }
-        Debug.Log(attacker.cardName+" -> Terrify => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+
+        Debug.Log(attacker.cardName + " -> Terrify => " + receiver.cardName);
+    }
     //22
     public IEnumerator DrinkWine(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " is getting slightlty drunk";
+    {
         attacker.HandleStrength(2);
-		attacker.Heal(attacker.charisma/3);
-        Debug.Log(attacker.cardName+" -> drink wine => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        attacker.Heal(attacker.charisma/3);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is getting slightly drunk"));
+
+        Debug.Log(attacker.cardName + " -> DrinkWine => " + receiver.cardName);
+    }
     //23
     public IEnumerator FlamingGun(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = receiver.cardName + " is being caramelized";
-		receiver.TakeDamage(4);
-        yield return new WaitForSeconds(2);
+    {
+        receiver.TakeDamage(4);
+        yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is being caramelized"));
+
         if (Random.value <= 0.1f) 
         {
-            dialogText.text = receiver.cardName + " is burning";
-            yield return StartCoroutine(receiver.AddEffect(16,1));//burn
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(receiver.AddEffect(16, 1)); //burn
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is burning"));
         }
-        Debug.Log(attacker.cardName+" -> flaming gun => "+receiver.cardName);
-	}
+
+        Debug.Log(attacker.cardName + " -> FlamingGun => " + receiver.cardName);
+    }
     //24
     public IEnumerator Cleaver(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = receiver.cardName + " gets chopped by cleaver ";
-		receiver.TakeDamage(1 + ((attacker.strength + attacker.attack) / 2) - ((receiver.defense - receiver.strength) / 2));
-        yield return new WaitForSeconds(2);
+    {
+        receiver.TakeDamage(1 + ((attacker.strength + attacker.attack) / 2) - ((receiver.defense - receiver.strength) / 2));
+        yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " gets chopped by cleaver"));
+
         if (Random.value <= 0.3f) 
         {
-            dialogText.text = receiver.cardName + " is wounded";
-            yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 5)));//bleed
+            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(2, 5))); //bleed
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
-        Debug.Log(attacker.cardName+" -> cleaver => "+receiver.cardName);
+
+        Debug.Log(attacker.cardName + " -> Cleaver => " + receiver.cardName);
     }
     //25
     public IEnumerator Pan(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = "Tongggg!!! "+ receiver.cardName + " gets hit by the pan ";
-		receiver.TakeDamage(1 + attacker.strength - receiver.defense);
-        yield return new WaitForSeconds(2);
+    {
+        receiver.TakeDamage(1 + attacker.strength - receiver.defense);
+        yield return StartCoroutine(ShowDialog(dialogText, "Tongggg!!! " + receiver.cardName + " gets hit by the pan"));
+
         if (Random.value <= 0.3f)
         {
-            dialogText.text = receiver.cardName + " falls asleep";
-            yield return StartCoroutine(receiver.AddEffect(3,Random.Range(2, 4)));//sleep
+            yield return StartCoroutine(receiver.AddEffect(3, Random.Range(2, 4))); //sleep
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " falls asleep"));
         }
-        Debug.Log(attacker.cardName+" -> pan => "+receiver.cardName);
+
+        Debug.Log(attacker.cardName + " -> Pan => " + receiver.cardName);
     }
     //26
     public IEnumerator Boost(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " gets some good boost";
-		attacker.HandleStrength(2);
+    {
+        attacker.HandleStrength(2);
         attacker.HandleAttack(2);
         attacker.HandleDefense(2);
         attacker.HandleCharisma(-1);
         attacker.HandleKnowledge(-2);
         attacker.RemoveEffectById(3);
-        Debug.Log(attacker.cardName+" -> Boost => "+attacker.cardName);
-        yield return new WaitForSeconds(2);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " gets some good boost"));
 
+        Debug.Log(attacker.cardName + " -> Boost => " + attacker.cardName);
     }
     //27
     public IEnumerator Temptation(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = "ohhh!!! "+ receiver.cardName + " falls in love <3 ";
+    {
         receiver.HandleAttack(- (attacker.charisma - receiver.charisma));
         receiver.HandleDefense(- (attacker.charisma - receiver.charisma));
         receiver.HandleCharisma(1);
         receiver.HandleKnowledge(- ((attacker.charisma - receiver.charisma) / 2));
-        Debug.Log(attacker.cardName+" -> Temptation => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
+        yield return StartCoroutine(ShowDialog(dialogText, "ohhh!!! " + receiver.cardName + " falls in love <3"));
+
+        Debug.Log(attacker.cardName + " -> Temptation => " + receiver.cardName);
     }
     //28
     public IEnumerator Shamshir(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " cuts wit shamshir";
-		receiver.TakeDamage(3 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
-        if (Random.value <= 0.2f) receiver.TakeDamage(3);//critical hit
-        yield return new WaitForSeconds(2);
+    {
+        receiver.TakeDamage(3 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " cuts with shamshir"));
+
+        if (Random.value <= 0.2f)
+        {
+            receiver.TakeDamage(3); //critical hit
+        }
+
         if (Random.value <= 0.5f) 
         {
-            dialogText.text = receiver.cardName + " is wounded";
-            yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 6)));//bleed
+            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(2, 6))); //bleed
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
-        Debug.Log(attacker.cardName+" -> Shamshir => "+receiver.cardName);
+
+        Debug.Log(attacker.cardName + " -> Shamshir => " + receiver.cardName);
     }
     //29
     public IEnumerator Diplomacy(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " made diplomatic gesture";
+    {
         receiver.HandleDefense(-(int)System.Math.Ceiling((double)attacker.charisma / 10));
         receiver.HandleKnowledge(-(int)System.Math.Ceiling((double)attacker.charisma / 10));
-        Debug.Log(attacker.cardName+" -> Diplomacy => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " made diplomatic gesture"));
+
+        Debug.Log(attacker.cardName + " -> Diplomacy => " + receiver.cardName);
     }
     //30
     public IEnumerator Siege(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " is building siege equipment";
-        StartCoroutine(attacker.AddEffect(5,3));//siege
+    {
+        StartCoroutine(attacker.AddEffect(5, 3)); //siege
         attacker.state = CardState.STAY;
         attacker.HandleDefense(10);
-        Debug.Log(attacker.cardName+" -> Siege => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is building siege equipment"));
+
+        Debug.Log(attacker.cardName + " -> Siege => " + receiver.cardName);
     }
+
     //31
     public IEnumerator TreeStratagem(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         if (attacker.knowledge >= receiver.knowledge)
         {
-        dialogText.text = "Trees attacks!";
-		receiver.TakeDamage(Random.Range(1, 3));
+            receiver.TakeDamage(Random.Range(1, 3));
+            yield return StartCoroutine(ShowDialog(dialogText, "Trees attacks!"));
         }
         else
         {
-            dialogText.text = receiver.cardName + ": Yo think am stupid?!";
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + ": Yo think am stupid?!"));
         }
-        Debug.Log(attacker.cardName+" -> TreeStratagem => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
+
+        Debug.Log(attacker.cardName + " -> TreeStratagem => " + receiver.cardName);
     }
+
     //32
     public IEnumerator Tomahawk(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " attacks wit tomahawk";
-		receiver.TakeDamage(2 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - receiver.defense );
-        if (Random.value <= 0.2f) receiver.TakeDamage(5);//critical hit
-        yield return new WaitForSeconds(2);
+    {
+        receiver.TakeDamage(2 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - receiver.defense);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " attacks with tomahawk"));
+
+        if (Random.value <= 0.2f)
+        {
+            receiver.TakeDamage(5); //critical hit
+        }
+
         if (Random.value <= 0.2f) 
         {
-            dialogText.text = receiver.cardName + " is wounded";
-            yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 6)));//bleed
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(2, 6))); //bleed
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
-        Debug.Log(attacker.cardName+" -> Tomahawk => "+receiver.cardName);
+
+        Debug.Log(attacker.cardName + " -> Tomahawk => " + receiver.cardName);
     }
+
     //33
     public IEnumerator PeacePipe(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " offers peace pipe";
+    {
         receiver.HandleStrength(Random.Range(-3, 3));
         receiver.HandleAttack(Random.Range(-3, 3));
         receiver.HandleDefense(Random.Range(-3, 3));
@@ -839,542 +882,526 @@ public class Attack : MonoBehaviour
         attacker.HandleDefense(Random.Range(-1, 1));
         attacker.HandleCharisma(Random.Range(-1, 1));
         attacker.HandleKnowledge(Random.Range(-1, 1));
-        Debug.Log(attacker.cardName+" -> PeacePipe => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " offers peace pipe"));
+
+        Debug.Log(attacker.cardName + " -> PeacePipe => " + receiver.cardName);
+    }
+
     //34
     public IEnumerator RecurveBow(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " shoots arrow";
+    {
         if (Random.value <= (attacker.strength / 10f))
         {
-		receiver.TakeDamage(5);
+            receiver.TakeDamage(5);
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " shoots arrow"));
         }
         else
         {
-            yield return new WaitForSeconds(1);
-            dialogText.text = "arrow missed";
+            yield return StartCoroutine(ShowDialog(dialogText, "arrow missed"));
         }
-        Debug.Log(attacker.cardName+" -> RecurveBow => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        Debug.Log(attacker.cardName + " -> RecurveBow => " + receiver.cardName);
+    }
+
     //35
     public IEnumerator Fury(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " is furious!";
-        StartCoroutine(attacker.AddEffect(6,3));//fury
+    {
+        StartCoroutine(attacker.AddEffect(6, 3)); //fury
         attacker.HandleStrength(5);
         attacker.HandleAttack(5);
         attacker.HandleDefense(-3);
-        Debug.Log(attacker.cardName+" -> Fury => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is furious!"));
+        Debug.Log(attacker.cardName + " -> Fury => " + receiver.cardName);
+    }
+
     //36
     public IEnumerator Guerilla(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " sends Guerillas";
-		receiver.TakeDamage(Random.Range(1, attacker.attack+2));
-        if (Random.value <= 0.2f) receiver.HandleAttack(-(Random.Range(2, 4)));//critical hit
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> Guerilla => "+receiver.cardName);
+    {
+        receiver.TakeDamage(Random.Range(1, attacker.attack + 2));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " sends Guerillas"));
+        if (Random.value <= 0.2f) receiver.HandleAttack(-(Random.Range(2, 4))); //critical hit
+        Debug.Log(attacker.cardName + " -> Guerilla => " + receiver.cardName);
     }
+
     //37
     public IEnumerator Famine(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         if (receiver.CheckEffect(7))
         {
-            dialogText.text = "Be a human, " + attacker.cardName + "!";
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, "Be a human, " + attacker.cardName + "!"));
         }
         else
         {
-            dialogText.text = attacker.cardName + " caused a famine";
             int r = Random.Range(5, 10);
             receiver.TakeDamage(2 * r);
             receiver.HandleDefense(-2 * r);
             StartCoroutine(receiver.AddEffect(7, r));
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " caused a famine"));
         }
-        Debug.Log(attacker.cardName+" -> Famine => "+receiver.cardName);
+        Debug.Log(attacker.cardName + " -> Famine => " + receiver.cardName);
     }
+
     //38
     public IEnumerator Marxism(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " explains a Marxism";
+    {
         receiver.HandleKnowledge(-(int)System.Math.Ceiling((double)attacker.charisma / 3));
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> Marxism => "+receiver.cardName);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " explains Marxism"));
+        Debug.Log(attacker.cardName + " -> Marxism => " + receiver.cardName);
     }
+
     //39
     public IEnumerator TeslaCoil(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " shocks enemy";
+    {
         receiver.TakeDamage(attacker.attack);
-        yield return new WaitForSeconds(2);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " shocks enemy"));
         if (Random.value <= 0.7f)
         {
-            dialogText.text = receiver.cardName + " is shocked";
-            StartCoroutine(receiver.AddEffect(8, 5));
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(receiver.AddEffect(8, 5)); //shock
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is shocked"));
         }
-        Debug.Log(attacker.cardName+" -> TeslaCoil => "+receiver.cardName);
+        Debug.Log(attacker.cardName + " -> TeslaCoil => " + receiver.cardName);
     }
+
     //40
     public IEnumerator WirelessCharger(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " is charging wireless!!!";
+    {
         attacker.HandleAttack(Random.Range(2, 4));
         attacker.Heal(1);
-        Debug.Log(attacker.cardName+" -> WirelessCharger => "+attacker.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is charging wirelessly!!!"));
+        Debug.Log(attacker.cardName + " -> WirelessCharger => " + attacker.cardName);
+    }
+
     //41
     public IEnumerator Experiment(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " is trying something";
+    {
         receiver.TakeDamage(Random.Range(0, 2));
         attacker.TakeDamage(Random.Range(0, 2));
         attacker.HandleKnowledge(2);
-        Debug.Log(attacker.cardName+" -> Experiment => "+attacker.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is trying something"));
+        Debug.Log(attacker.cardName + " -> Experiment => " + attacker.cardName);
+    }
+
     //42
     public IEnumerator TommyGun(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = "Ratatata!";
-		receiver.TakeDamage(Random.Range(1, 10));
-        yield return new WaitForSeconds(2);
-        if (Random.value <= 0.5f) 
+    {
+        receiver.TakeDamage(Random.Range(1, 10));
+        yield return StartCoroutine(ShowDialog(dialogText, "Ratatata!"));
+        if (Random.value <= 0.5f)
         {
-            dialogText.text = receiver.cardName + " is wounded";
-            yield return StartCoroutine(receiver.AddEffect(1,Random.Range(1, 4)));//bleed
+            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(1, 4))); //bleed
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
-        Debug.Log(attacker.cardName+" -> TommyGun => "+receiver.cardName);
-	}
+        Debug.Log(attacker.cardName + " -> TommyGun => " + receiver.cardName);
+    }
+
     //43
     public IEnumerator TieUp(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " tries catch enemy";
-        yield return new WaitForSeconds(2);
-        if (attacker.attack > receiver.speed && Random.value <= 0.9f) 
+    {
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " tries to catch enemy"));
+        if (attacker.attack > receiver.speed && Random.value <= 0.9f)
         {
-            StartCoroutine(receiver.AddEffect(9,1));//Tether
-            dialogText.text = receiver.cardName + " was captured";
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(receiver.AddEffect(9, 1)); //Tether
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " was captured"));
         }
-        Debug.Log(attacker.cardName+" -> TieUp => "+receiver.cardName);
-	}
-    //44
+        Debug.Log(attacker.cardName + " -> TieUp => " + receiver.cardName);
+    }
+
+        //44
     public IEnumerator Corruption(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " corrupted everybody around";
+    {
         int r = Random.Range(1, 3);
-		receiver.HandleSpeed(-r);
+        receiver.HandleSpeed(-r);
         receiver.HandleDefense(-r);
         attacker.HandleAttack(2 * r);
         attacker.HandleCharisma(-1);
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> Corruption => "+receiver.cardName);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " corrupted everybody around"));
+        Debug.Log(attacker.cardName + " -> Corruption => " + receiver.cardName);
     }
+
     //45
     public IEnumerator Colt1911(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         if (Random.value <= (attacker.attack / 12f))
         {
-        dialogText.text = "Bang! " + attacker.cardName + " shoots";
-		receiver.TakeDamage(7);
+            receiver.TakeDamage(7);
+            yield return StartCoroutine(ShowDialog(dialogText, "Bang! " + attacker.cardName + " shoots"));
         }
         else
         {
-            dialogText.text = "Bang! aaaand miss";
+            yield return StartCoroutine(ShowDialog(dialogText, "Bang! aaaand miss"));
         }
-        Debug.Log(attacker.cardName+" -> Colt1911 => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        Debug.Log(attacker.cardName + " -> Colt1911 => " + receiver.cardName);
+    }
+
     //46
     public IEnumerator Mortar(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         if (Random.value <= 0.9f) 
         {
-            dialogText.text = "Mortar fires";
             receiver.TakeDamage(Random.Range(5, 10));
+            yield return StartCoroutine(ShowDialog(dialogText, "Mortar fires"));
         }
         else
         {
-            dialogText.text = "Mortar exploded";
             attacker.TakeDamage(Random.Range(3, 7));
+            yield return StartCoroutine(ShowDialog(dialogText, "Mortar exploded"));
         }
-        Debug.Log(attacker.cardName+" -> Mortar => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        Debug.Log(attacker.cardName + " -> Mortar => " + receiver.cardName);
+    }
+
     //47
     public IEnumerator GreatArmy(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " is assembling an army";
+    {
         attacker.HandleStrength((int)System.Math.Ceiling((double)receiver.charisma / 10));
         attacker.HandleAttack((int)System.Math.Ceiling((double)receiver.charisma / 10));
         attacker.HandleDefense((int)System.Math.Ceiling((double)receiver.charisma / 10));
         attacker.HandleCharisma(1);
-        Debug.Log(attacker.cardName+" -> GrandArmee => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
-    //48
-    public IEnumerator ScorchedEarth(Kard attacker, Kard receiver, TMP_Text dialogText)                     //nepouzite
-	{
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is assembling an army"));
+        Debug.Log(attacker.cardName + " -> GrandArmee => " + receiver.cardName);
+    }
 
-        dialogText.text = attacker.cardName + " is Burning all in his wake";
-        yield return new WaitForSeconds(2);
+    //48
+    public IEnumerator ScorchedEarth(Kard attacker, Kard receiver, TMP_Text dialogText)
+    {
         yield return StartCoroutine(receiver.AddEffect(10,Random.Range(1, attacker.defense)));//Starving
-        Debug.Log(attacker.cardName+" -> ScorchedEarth => "+receiver.cardName);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is Burning all in his wake"));
+        Debug.Log(attacker.cardName + " -> ScorchedEarth => " + receiver.cardName);
+    }
+
     //49
     public IEnumerator DoubleEnvelopment(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " Launching the maneuver!";
+    {
         StartCoroutine(attacker.AddEffect(11,1));//Envelopment
         attacker.state = CardState.STAY;
         attacker.HandleDefense(-3);
-        Debug.Log(attacker.cardName+" -> DoubleEnvelopment => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " Launching the maneuver!"));
+        Debug.Log(attacker.cardName + " -> DoubleEnvelopment => " + receiver.cardName);
+    }
+
     //50
     public IEnumerator ContinentalBlockade(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-
-        dialogText.text = attacker.cardName + " Enforcing the blockade";
-        yield return new WaitForSeconds(2);
+    {
         yield return StartCoroutine(receiver.AddEffect(12,1));//Blockade
-        Debug.Log(attacker.cardName+" -> ContinentalBlockade => "+receiver.cardName);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " Enforcing the blockade"));
+        Debug.Log(attacker.cardName + " -> ContinentalBlockade => " + receiver.cardName);
+    }
+
     //51
     public IEnumerator Depression(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-
-        dialogText.text = attacker.cardName + " is depressed";
-        yield return new WaitForSeconds(2);
+    {
         receiver.HandleStrength(Random.Range(-3,0));
         receiver.HandleSpeed(Random.Range(-3,0));
         receiver.HandleAttack(Random.Range(-3,0));
         receiver.HandleDefense(Random.Range(-3,0));
         receiver.HandleCharisma(Random.Range(-3,0));
         yield return StartCoroutine(receiver.AddEffect(13,1));//Depression
-        dialogText.text = receiver.cardName + " feels bad for enemy";
-        yield return new WaitForSeconds(2);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is depressed"));
+        yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " feels bad for enemy"));
         if (Random.value <= 0.3f) 
         {
-            dialogText.text = attacker.cardName + " is empowered by muse";
             attacker.state = CardState.STAY;
             yield return StartCoroutine(attacker.AddEffect(14, 3));//ArtInspiration
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is empowered by muse"));
         }
-        Debug.Log(attacker.cardName+" -> Depression => "+receiver.cardName);
-	}
+        Debug.Log(attacker.cardName + " -> Depression => " + receiver.cardName);
+    }
+
     //52
     public IEnumerator SelfIsolation(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " feels happy alone";
+    {
         attacker.HandleDefense(3);
         if (Random.value <= 0.3f) 
         {
-            dialogText.text = attacker.cardName + " is empowered by muse";
             attacker.state = CardState.STAY;
             yield return StartCoroutine(attacker.AddEffect(14, 3));//ArtInspiration
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is empowered by muse"));
         }
-        Debug.Log(attacker.cardName+" -> SelfIsolation => "+attacker.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " feels happy alone"));
+        Debug.Log(attacker.cardName + " -> SelfIsolation => " + attacker.cardName);
+    }
+
     //53
     public IEnumerator Knife(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " cuts enemy with knife";
-		receiver.TakeDamage(1 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
-        yield return new WaitForSeconds(2);
+    {
+        receiver.TakeDamage(1 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " cuts enemy with knife"));
         if (Random.value <= 0.3f) 
         {
-            dialogText.text = receiver.cardName + " is wounded";
             yield return StartCoroutine(receiver.AddEffect(1,Random.Range(1, 3)));//bleed
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
-        Debug.Log(attacker.cardName+" -> Knife => "+receiver.cardName);
-	}
+        Debug.Log(attacker.cardName + " -> Knife => " + receiver.cardName);
+    }
     //54
     public IEnumerator Autoportrait(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-
-        dialogText.text = attacker.cardName + " discovers himself through art";
-        yield return new WaitForSeconds(2);
+    {
         attacker.HandleKnowledge(1);
         attacker.HandleStrength(1);
         attacker.HandleDefense(1);
         attacker.state = CardState.STAY;
         yield return StartCoroutine(attacker.AddEffect(15,Random.Range(1, 3)));//Autoportrait
-        Debug.Log(attacker.cardName+" -> Autoportrait => "+receiver.cardName);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " discovers himself through art"));
+        Debug.Log(attacker.cardName + " -> Autoportrait => " + receiver.cardName);
+    }
+
     //55
     public IEnumerator GravityPull(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         int r = Random.Range(0,3);
         string[] objects = {"piano", "boiler", "anvil", "gases"};
         int[] weight = {6,5,4,0};
-        dialogText.text = "Gravity pulled " + objects[r] + " to " + receiver.cardName;
-		receiver.TakeDamage(weight[r]);
-        yield return new WaitForSeconds(2);
+        receiver.TakeDamage(weight[r]);
+        yield return StartCoroutine(ShowDialog(dialogText, "Gravity pulled " + objects[r] + " to " + receiver.cardName));
         if (Random.value <= 0.1f) 
         {
-            dialogText.text = receiver.cardName + " falls asleep";
             yield return StartCoroutine(receiver.AddEffect(3,Random.Range(1, 3)));//sleep
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " falls asleep"));
         }
-        Debug.Log(attacker.cardName+" -> GravityPull => "+receiver.cardName);
-	}
+        Debug.Log(attacker.cardName + " -> GravityPull => " + receiver.cardName);
+    }
+
     //56
     public IEnumerator Kamikaze(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         int dmg = attacker.health;
         if (Random.value <= 0.9f) 
         {
-            dialogText.text = "Kamikaze strikes";
             attacker.TakeDamage(dmg);
             receiver.TakeDamage(Random.Range(1, (attacker.knowledge + attacker.speed + attacker.attack)));
+            yield return StartCoroutine(ShowDialog(dialogText, "Kamikaze strikes"));
         }
         else
         {
-            dialogText.text = "Ou! Nasty miss";
             attacker.TakeDamage(dmg);
+            yield return StartCoroutine(ShowDialog(dialogText, "Ou! Nasty miss"));
         }
-        Debug.Log(attacker.cardName+" -> Kamikaze => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        Debug.Log(attacker.cardName + " -> Kamikaze => " + receiver.cardName);
+    }
+
     //57
     public IEnumerator TookOff(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         if (Random.value <= 0.75f) 
         {
-            dialogText.text = attacker.cardName + " took off";
             attacker.HandleSpeed(3);
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " took off"));
         }
         else
         {
-            dialogText.text = attacker.cardName + " crashes";
             attacker.TakeDamage(Random.Range(1, attacker.speed));
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " crashes"));
         }
-        Debug.Log(attacker.cardName+" -> TookOff => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        Debug.Log(attacker.cardName + " -> TookOff => " + receiver.cardName);
+    }
+
     //58
     public IEnumerator AirStrike(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         int dmg = attacker.health;
-
-        dialogText.text = attacker.cardName + " strikes from air";
         receiver.TakeDamage(Random.Range(attacker.attack, attacker.speed + attacker.attack) - receiver.defense);
-
         if (Random.value <= (attacker.attack / 30f)) 
         {
             receiver.TakeDamage(attacker.speed);
         }
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " strikes from air"));
+        Debug.Log(attacker.cardName + " -> AirStrike => " + receiver.cardName);
+    }
 
-        Debug.Log(attacker.cardName+" -> AirStrike => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
     //59
-    public IEnumerator JusticeCrusade(Kard attacker, Kard receiver, TMP_Text dialogText)     //nepouzite
-	{
-        dialogText.text = attacker.cardName + " fights enemy for justice";
-		receiver.TakeDamage(((2 + attacker.knowledge + attacker.charisma)/2) - receiver.knowledge);
-        yield return new WaitForSeconds(2);
+    public IEnumerator JusticeCrusade(Kard attacker, Kard receiver, TMP_Text dialogText)
+    {
+        receiver.TakeDamage(((2 + attacker.knowledge + attacker.charisma)/2) - receiver.knowledge);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " fights enemy for justice"));
         Debug.Log(attacker.cardName + " -> JusticeCrusade => " + receiver.cardName);
-	}
+    }
+
     //60
     public IEnumerator Rapier(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " cuts wit Rapier";
-		receiver.TakeDamage(2 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
+    {
+        receiver.TakeDamage(2 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " cuts with Rapier"));
         if (Random.value <= 0.2f) receiver.TakeDamage(3);//critical hit
-        yield return new WaitForSeconds(2);
         if (Random.value <= 0.6f) 
         {
-            dialogText.text = receiver.cardName + " is wounded";
             yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 7)));//bleed
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
-        Debug.Log(attacker.cardName+" -> Rapier => "+receiver.cardName);
+        Debug.Log(attacker.cardName + " -> Rapier => " + receiver.cardName);
     }
+
     //61
     public IEnumerator ExpeditionaryAssault(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         if (Random.value <= (20f + attacker.knowledge) / 50f) 
         {
             int[] boost = DistributeRandomly(Random.Range(3, 6));
-            dialogText.text = attacker.cardName + " gets useful staff";
             attacker.HandleStrength(boost[0]);
             attacker.HandleAttack(boost[1]);
             attacker.HandleDefense(boost[2]);
             attacker.HandleCharisma(boost[3]);
             attacker.HandleKnowledge(boost[4]);
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " gets useful stuff"));
         }
         else
         {
-            dialogText.text = attacker.cardName + " almost died on sea";
             attacker.TakeDamage(Random.Range(3, 7));
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " almost died on sea"));
         }
-        Debug.Log(attacker.cardName+" -> ExpeditionaryAssault => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        Debug.Log(attacker.cardName + " -> ExpeditionaryAssault => " + receiver.cardName);
+    }
+
     //62
     public IEnumerator Culverin(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-		if (Random.value <= 0.8f)
+    {
+        if (Random.value <= 0.8f)
         {
-        dialogText.text = attacker.cardName + "'s cannon fires";
-		receiver.TakeDamage(Random.Range(1, 15));
+            receiver.TakeDamage(Random.Range(1, 15));
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s cannon fires"));
         }
         else
         {
-            dialogText.text = "Bang! aaaand miss";
+            yield return StartCoroutine(ShowDialog(dialogText, "Bang! aaaand miss"));
         }
-        Debug.Log(attacker.cardName+" -> Culverin => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        Debug.Log(attacker.cardName + " -> Culverin => " + receiver.cardName);
+    }
+
     //63
     public IEnumerator FireShip(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-		if (Random.value <= 0.5f)
+    {
+        if (Random.value <= 0.5f)
         {
-        dialogText.text = "Fire ship impacts";
-		receiver.TakeDamage(3);
-        yield return new WaitForSeconds(2);
-        if (Random.value <= 0.5f) 
-        {
-            dialogText.text = receiver.cardName + " is burning";
-            yield return StartCoroutine(receiver.AddEffect(16,1));//burn
-            yield return new WaitForSeconds(2);
-        }
+            receiver.TakeDamage(3);
+            yield return StartCoroutine(ShowDialog(dialogText, "Fire ship impacts"));
+            if (Random.value <= 0.5f) 
+            {
+                yield return StartCoroutine(receiver.AddEffect(16,1));//burn
+                yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is burning"));
+            }
         }
         else
         {
-            dialogText.text = receiver.cardName + " compelled to reposition";
             receiver.HandleDefense(-2);
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " compelled to reposition"));
         }
-        Debug.Log(attacker.cardName+" -> Culverin => "+receiver.cardName);
-	}
+        Debug.Log(attacker.cardName + " -> FireShip => " + receiver.cardName);
+    }
     //64
     public IEnumerator HandcuffEscape(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         int[] idsToRemove = { 3, 8, 9, 12, 16 };
         attacker.RemoveEffectsById(idsToRemove);
-        dialogText.text = attacker.cardName + " slips outta trouble";
-        yield return new WaitForSeconds(2);
-		if (Random.value <= 0.5f)
+        if (Random.value <= 0.5f)
         {
             yield return StartCoroutine(receiver.AddEffect(17,2));//confusion
-            dialogText.text = receiver.cardName + " is confused";
             attacker.HandleCharisma(1);
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is confused"));
         }
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " slips outta trouble"));
+        Debug.Log(attacker.cardName + " -> HandcuffEscape => " + receiver.cardName);
+    }
 
-        Debug.Log(attacker.cardName+" -> HandcuffEscape => "+receiver.cardName);
-	}
     //65
     public IEnumerator Illusion(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + "'s illusion confuses the enemy";
+    {
         yield return StartCoroutine(receiver.AddEffect(17,Random.Range(2, 5)));//confusion
         attacker.HandleCharisma(1);
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> Illusion => "+receiver.cardName);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s illusion confuses the enemy"));
+        Debug.Log(attacker.cardName + " -> Illusion => " + receiver.cardName);
+    }
+
     //66
     public IEnumerator CarcanoM91(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         if (Random.value <= ((20 + attacker.attack) / 37f))
         {
-        dialogText.text = "Bang! " + attacker.cardName + " shoots";
-		receiver.TakeDamage(Random.Range(6, 9));
+            receiver.TakeDamage(Random.Range(6, 9));
+            yield return StartCoroutine(ShowDialog(dialogText, "Bang! " + attacker.cardName + " shoots"));
         }
         else
         {
-            dialogText.text = "Bang! aaaand miss";
+            yield return StartCoroutine(ShowDialog(dialogText, "Bang! aaaand miss"));
         }
-        Debug.Log(attacker.cardName+" -> CarcanoM91 => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        Debug.Log(attacker.cardName + " -> CarcanoM91 => " + receiver.cardName);
+    }
+
     //67
     public IEnumerator Winchester(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         if (Random.value <= ((20 + attacker.attack) / 40f))
         {
-            dialogText.text = "Bang! " + attacker.cardName + " shoots";
             receiver.TakeDamage(Random.Range(6, 9));
+            yield return StartCoroutine(ShowDialog(dialogText, "Bang! " + attacker.cardName + " shoots"));
         }
         else
         {
-            dialogText.text = "Bang! aaaand miss";
+            yield return StartCoroutine(ShowDialog(dialogText, "Bang! aaaand miss"));
         }
-        Debug.Log(attacker.cardName+" -> Winchester => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        Debug.Log(attacker.cardName + " -> Winchester => " + receiver.cardName);
+    }
+
     //68
     public IEnumerator Ambush(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = receiver.cardName + " ambushed with surprise";
+    {
         receiver.TakeDamage(2);
         receiver.HandleCharisma(-1);
         attacker.HandleCharisma(1);
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> Ambush => "+receiver.cardName);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " ambushed with surprise"));
+        Debug.Log(attacker.cardName + " -> Ambush => " + receiver.cardName);
+    }
+
     //69
     public IEnumerator JupiterC(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         if (Random.value <= 0.9f)
         {
-            dialogText.text = attacker.cardName + " launches satellite";
-            yield return new WaitForSeconds(2);
             attacker.HandleAttack(1);
             attacker.HandleDefense(1);
             yield return StartCoroutine(attacker.AddEffect(18,0));//Satellite
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " launches satellite"));
         }
         else
         {
-            dialogText.text = "Rocket exploded";
+            yield return StartCoroutine(ShowDialog(dialogText, "Rocket exploded"));
         }
-        Debug.Log(attacker.cardName+" -> JupiterC => "+receiver.cardName);
-	}
+        Debug.Log(attacker.cardName + " -> JupiterC => " + receiver.cardName);
+    }
+
     //70
     public IEnumerator V2(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         if (Random.value <= 0.25f)
         {
-            dialogText.text = "V2 hits target";
             receiver.TakeDamage(Random.Range(15, 20));
+            yield return StartCoroutine(ShowDialog(dialogText, "V2 hits target"));
         }
         else
         {
-            dialogText.text = "Missile missed";
+            yield return StartCoroutine(ShowDialog(dialogText, "Missile missed"));
         }
-        Debug.Log(attacker.cardName+" -> V2 => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        Debug.Log(attacker.cardName + " -> V2 => " + receiver.cardName);
+    }
+
     //71
     public IEnumerator BattleCry(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " roared into battle";
+    {
+        yield return StartCoroutine(attackAnimations.PlayBattleCryAnimation(attacker.transform));        //ANIMACIA
         attacker.HandleStrength((int)System.Math.Ceiling((double)receiver.charisma / 5));
         attacker.HandleAttack((int)System.Math.Ceiling((double)receiver.charisma / 10));
-        Debug.Log(attacker.cardName+" -> BattleCry => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " roared into battle"));
+        Debug.Log(attacker.cardName + " -> BattleCry => " + receiver.cardName);
+    }
+
     //72
     public IEnumerator Revelation(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = "God is with " + attacker.cardName;
+    {
         attacker.HandleCharisma(2);
         attacker.HandleKnowledge(2);
-        Debug.Log(attacker.cardName+" -> Revelation => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, "God is with " + attacker.cardName));
+        Debug.Log(attacker.cardName + " -> Revelation => " + receiver.cardName);
+    }
+
     //73
     public IEnumerator Standard(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + "'s Banner Ignites Valor";
+    {
         receiver.TakeDamage(2);
         if (Random.value <= 0.5f)
         {
@@ -1384,259 +1411,248 @@ public class Attack : MonoBehaviour
         {
             attacker.HandleStrength(1);
         }
-        Debug.Log(attacker.cardName+" -> V2 => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s Banner Ignites Valor"));
+        Debug.Log(attacker.cardName + " -> Standard => " + receiver.cardName);
+    }
     //74
     public IEnumerator Pen(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = "The pen is mightier than the sword";
-		receiver.TakeDamage(2 + ((attacker.knowledge + attacker.charisma + attacker.attack) / 3) - (receiver.defense));
+    {
+        receiver.TakeDamage(2 + ((attacker.knowledge + attacker.charisma + attacker.attack) / 3) - (receiver.defense));
         receiver.HandleStrength(-1);
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> Pen => "+receiver.cardName);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, "The pen is mightier than the sword"));
+        Debug.Log(attacker.cardName + " -> Pen => " + receiver.cardName);
+    }
+
     //75
     public IEnumerator IambicPentameter(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + "'s poetry confuses the enemy";
+    {
         if (Random.value <= 0.7f) yield return StartCoroutine(receiver.AddEffect(17,Random.Range(2, 5)));//confusion
         receiver.HandleKnowledge(-1);
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> IambicPentameter => "+receiver.cardName);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s poetry confuses the enemy"));
+        Debug.Log(attacker.cardName + " -> IambicPentameter => " + receiver.cardName);
+    }
+
     //76
     public IEnumerator Ghost(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " summons ghost, enemy fears";
+    {
         StartCoroutine(receiver.AddEffect(19,2));//fear
         receiver.HandleStrength(-6);
         receiver.HandleAttack(-5);
         receiver.HandleDefense(3);
-        Debug.Log(attacker.cardName+" -> Ghost => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " summons ghost, enemy fears"));
+        Debug.Log(attacker.cardName + " -> Ghost => " + receiver.cardName);
+    }
+
     //77
     public IEnumerator BuffaloHorns(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " Launching the maneuver!";
+    {
         StartCoroutine(attacker.AddEffect(20,1));//Horns
         attacker.state = CardState.STAY;
         receiver.HandleAttack(2);
         attacker.HandleDefense(-1);
-        Debug.Log(attacker.cardName+" -> BuffaloHorns => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " Launching the maneuver!"));
+        Debug.Log(attacker.cardName + " -> BuffaloHorns => " + receiver.cardName);
+    }
+
     //78
     public IEnumerator Iklwa(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " attacks wit Iklwa";
-		receiver.TakeDamage(((attacker.strength + attacker.attack) / 2) - receiver.defense );
+    {
+        receiver.TakeDamage(((attacker.strength + attacker.attack) / 2) - receiver.defense );
         if (Random.value <= 0.3f) receiver.TakeDamage(5);//critical hit
-        yield return new WaitForSeconds(2);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " attacks wit Iklwa"));
         if (Random.value <= 0.3f) 
         {
-            dialogText.text = receiver.cardName + " is wounded";
             yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 6)));//bleed
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
-        Debug.Log(attacker.cardName+" -> Iklwa => "+receiver.cardName);
+        Debug.Log(attacker.cardName + " -> Iklwa => " + receiver.cardName);
     }
+
     //79
     public IEnumerator Iwisa(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " throws Iwisa";
+    {
         if (Random.value <= (attacker.strength / 10f))
         {
             receiver.TakeDamage(5);
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " throws Iwisa"));
             if (Random.value <= 0.3f) 
             {
-                yield return new WaitForSeconds(1);
-                dialogText.text = receiver.cardName + " is wounded";
                 yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 5)));//bleed
+                yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
             }
         }
         else
         {
-            yield return new WaitForSeconds(1);
-            dialogText.text = "throw missed";
+            yield return StartCoroutine(ShowDialog(dialogText, "throw missed"));
         }
-        Debug.Log(attacker.cardName+" -> Iwisa => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        Debug.Log(attacker.cardName + " -> Iwisa => " + receiver.cardName);
+    }
+
     //80
     public IEnumerator NitenIchiRyu(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " attacks wit Katana";
-		receiver.TakeDamage(attacker.strength - (receiver.defense / 2));
-        yield return new WaitForSeconds(1);
-        dialogText.text = attacker.cardName + " attacks wit Wakizashi";
+    {
+        receiver.TakeDamage(attacker.strength - (receiver.defense / 2));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " attacks wit Katana"));
         receiver.TakeDamage(attacker.speed - (receiver.defense / 2));
-        yield return new WaitForSeconds(1);
-        Debug.Log(attacker.cardName+" -> NitenIchiRyu => "+receiver.cardName);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " attacks wit Wakizashi"));
+        Debug.Log(attacker.cardName + " -> NitenIchiRyu => " + receiver.cardName);
     }
+
     //81
-    public IEnumerator Tessenjutsu (Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " moves like Kitana";
+    public IEnumerator Tessenjutsu(Kard attacker, Kard receiver, TMP_Text dialogText)
+    {
         attacker.HandleDefense(2);
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> Tessenjutsu  => "+receiver.cardName);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " moves like Kitana"));
+        Debug.Log(attacker.cardName + " -> Tessenjutsu  => " + receiver.cardName);
+    }
+
     //82
-    public IEnumerator Iaijutsu (Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = "Flash of steel by" + attacker.cardName;
+    public IEnumerator Iaijutsu(Kard attacker, Kard receiver, TMP_Text dialogText)
+    {
         receiver.TakeDamage(attacker.speed - (receiver.defense / 2));
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> Iaijutsu  => "+receiver.cardName);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, "Flash of steel by" + attacker.cardName));
+        Debug.Log(attacker.cardName + " -> Iaijutsu  => " + receiver.cardName);
+    }
+
     //83
     public IEnumerator Katana(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " slashes with katana ";
-		receiver.TakeDamage(3 + ((attacker.knowledge + attacker.attack + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+    {
+        receiver.TakeDamage(3 + ((attacker.knowledge + attacker.attack + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " slashes with katana "));
         if (Random.value <= 0.2f) receiver.TakeDamage(3);//critical hit
-        yield return new WaitForSeconds(2);
         if (Random.value <= 0.3f) 
         {
-            dialogText.text = receiver.cardName + " is wounded";
             yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 5)));//bleed
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
-        Debug.Log(attacker.cardName+" -> Katana => "+receiver.cardName);
+        Debug.Log(attacker.cardName + " -> Katana => " + receiver.cardName);
     }
     //84
     public IEnumerator Nodachi(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " slashes with Nodachi ";
-		receiver.TakeDamage(3 + ((attacker.knowledge + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+    {
+        receiver.TakeDamage(3 + ((attacker.knowledge + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " slashes with Nodachi "));
         if (Random.value <= 0.2f) receiver.TakeDamage(3);//critical hit
-        yield return new WaitForSeconds(2);
         if (Random.value <= 0.3f) 
         {
-            dialogText.text = receiver.cardName + " is wounded";
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
             yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 5)));//bleed
         }
-        Debug.Log(attacker.cardName+" -> Nodachi => "+receiver.cardName);
+        Debug.Log(attacker.cardName + " -> Nodachi => " + receiver.cardName);
     }
+
     //85
     public IEnumerator Yumi(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " shoots arrow";
+    {
         if (Random.value <= (attacker.strength / 10f))
         {
-		receiver.TakeDamage(3);
+            receiver.TakeDamage(3);
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " shoots arrow"));
         }
         else
         {
-            yield return new WaitForSeconds(1);
-            dialogText.text = "arrow missed";
+            yield return StartCoroutine(ShowDialog(dialogText, "arrow missed"));
         }
-        Debug.Log(attacker.cardName+" -> Yumi => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        Debug.Log(attacker.cardName + " -> Yumi => " + receiver.cardName);
+    }
+
     //86
     public IEnumerator Jujutsu(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + "'s Jujutsu Takedown";
-		receiver.TakeDamage(attacker.attack + attacker.knowledge - receiver.defense);
+    {
+        receiver.TakeDamage(attacker.attack + attacker.knowledge - receiver.defense);
         if (Random.value <= 0.3f) receiver.HandleDefense(2);//critical hit
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> Jujutsu => "+receiver.cardName);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s Jujutsu Takedown"));
+        Debug.Log(attacker.cardName + " -> Jujutsu => " + receiver.cardName);
+    }
+
     //87
     public IEnumerator Espionage(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " spies on enemy";
-		receiver.HandleDefense(-((attacker.knowledge + attacker.charisma) / 7));
+    {
+        receiver.HandleDefense(-((attacker.knowledge + attacker.charisma) / 7));
         receiver.HandleSpeed(-((attacker.knowledge + attacker.charisma) / 7));
-        Debug.Log(attacker.cardName+" -> Espionage => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " spies on enemy"));
+        Debug.Log(attacker.cardName + " -> Espionage => " + receiver.cardName);
+    }
+
     //88
     public IEnumerator Sabre(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " cuts with Sabre ";
-		receiver.TakeDamage(3 + ((attacker.attack + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+    {
+        receiver.TakeDamage(3 + ((attacker.attack + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
         if (Random.value <= 0.2f) receiver.TakeDamage(3);//critical hit
-        yield return new WaitForSeconds(2);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " cuts with Sabre "));
         if (Random.value <= 0.3f) 
         {
-            dialogText.text = receiver.cardName + " is wounded";
             yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 5)));//bleed
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
-        Debug.Log(attacker.cardName+" -> Sabre => "+receiver.cardName);
+        Debug.Log(attacker.cardName + " -> Sabre => " + receiver.cardName);
     }
+
     //89
     public IEnumerator Gamble(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " is raising bets";
-        yield return new WaitForSeconds(1);
+    {
         int bet = Random.Range(1, 3);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is raising bets"));
         if (Random.value <= 0.66f)
         {
-            dialogText.text = "And wins";
             attacker.HandleCharisma(bet);
             receiver.HandleCharisma(-bet);
+            yield return StartCoroutine(ShowDialog(dialogText, "And wins"));
         }
         else
         {
-            dialogText.text = "And loses";
             attacker.HandleCharisma(-bet);
             receiver.HandleCharisma(bet);
+            yield return StartCoroutine(ShowDialog(dialogText, "And loses"));
         }
-        Debug.Log(attacker.cardName+" -> Gamble => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        Debug.Log(attacker.cardName + " -> Gamble => " + receiver.cardName);
+    }
+
     //90
     public IEnumerator Philosophy(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " philosophizes!!!";
-        yield return new WaitForSeconds(1);
+    {
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " philosophizes!!!"));
         if (attacker.knowledge <= receiver.knowledge) 
         {
-            dialogText.text = receiver.cardName + " is intersted in philosophy";
             receiver.HandleKnowledge(1);
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is interested in philosophy"));
         }
         else if (5 <= receiver.knowledge) 
         {
-            dialogText.text = receiver.cardName + " is bored by Philosophy";
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is bored by Philosophy"));
             if (Random.value <= 0.3f) 
             {
-                yield return new WaitForSeconds(1);
-                dialogText.text = receiver.cardName + " falls asleep";
                 yield return StartCoroutine(receiver.AddEffect(3,Random.Range(1, 3)));//sleep
+                yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " falls asleep"));
             }
         }
         else
         {
-            dialogText.text = receiver.cardName + " doesn't understand that Philosophy";
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " doesn't understand that Philosophy"));
             if (Random.value <= 0.9f) 
             {
-                yield return new WaitForSeconds(1);
-                dialogText.text = receiver.cardName + " is confused";
                 yield return StartCoroutine(receiver.AddEffect(17,Random.Range(2, 5)));//confusion
+                yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is confused"));
             }
         }
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> Philosophy => "+receiver.cardName);
-	}
+        Debug.Log(attacker.cardName + " -> Philosophy => " + receiver.cardName);
+    }
+
     //91
     public IEnumerator Calm(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " calmed down his enemy";
+    {
         StartCoroutine(receiver.AddEffect(21,3));//calm
         receiver.HandleStrength(-3);
         receiver.HandleAttack(-3);
-        Debug.Log(attacker.cardName+" -> Calm => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " calmed down his enemy"));
+        Debug.Log(attacker.cardName + " -> Calm => " + receiver.cardName);
+    }
+
     //92
     public IEnumerator Honesty(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + "is brutally honest";
-		receiver.TakeDamage(((attacker.knowledge + attacker.attack + attacker.charisma)/2) - (receiver.defense));
-        yield return new WaitForSeconds(2);
+    {
+        receiver.TakeDamage(((attacker.knowledge + attacker.attack + attacker.charisma)/2) - (receiver.defense));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "is brutally honest"));
         if (Random.value <= 0.1f)
         {
             attacker.HandleStrength(Random.Range(-3,0));
@@ -1645,54 +1661,53 @@ public class Attack : MonoBehaviour
             attacker.HandleDefense(Random.Range(-3,0));
             attacker.HandleCharisma(Random.Range(-3,0));
             yield return StartCoroutine(attacker.AddEffect(13,1));//Depression
-            dialogText.text = attacker.cardName + " feels bad for enemy";
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " feels bad for enemy"));
         }
-        Debug.Log(attacker.cardName + " -> Punch => " + receiver.cardName);
-	}
+        Debug.Log(attacker.cardName + " -> Honesty => " + receiver.cardName);
+    }
+
     //93
     public IEnumerator Valaska(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + "'s valaska strikes";
-		receiver.TakeDamage(3 + ((attacker.attack + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+    {
+        receiver.TakeDamage(3 + ((attacker.attack + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s valaska strikes"));
         if (Random.value <= 0.5f) receiver.TakeDamage(2);//critical hit
-        yield return new WaitForSeconds(2);
         if (Random.value <= 0.1f) 
         {
-            dialogText.text = receiver.cardName + " is wounded";
             yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 4)));//bleed
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
-        Debug.Log(attacker.cardName+" -> Valaska => "+receiver.cardName);
+        Debug.Log(attacker.cardName + " -> Valaska => " + receiver.cardName);
     }
+
     //94
     public IEnumerator Moonshine(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " is getting pretty drunk";
+    {
         attacker.Heal(1);
         attacker.HandleStrength(2);
         attacker.HandleAttack(2);
         attacker.HandleDefense(-2);
-        yield return new WaitForSeconds(2);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is getting pretty drunk"));
         if (Random.value <= 0.1f) 
         {
-            dialogText.text = receiver.cardName + " falls asleep";
             yield return StartCoroutine(attacker.AddEffect(3,Random.Range(1, 3)));//sleep
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " falls asleep"));
         }
         else if (Random.value <= 0.2f) 
         {
-            dialogText.text = attacker.cardName + " is furious!";
             StartCoroutine(attacker.AddEffect(6,3));//fury
             attacker.HandleStrength(5);
             attacker.HandleAttack(5);
             attacker.HandleDefense(-3);
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is furious!"));
         }
-        Debug.Log(attacker.cardName+" -> Moonshine => "+receiver.cardName);
-	}
+        Debug.Log(attacker.cardName + " -> Moonshine => " + receiver.cardName);
+    }
+
     //95
     public IEnumerator OutlawBand(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + "'s Band Attacks";
-        yield return new WaitForSeconds(2);
+    {
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s Band Attacks"));
         int loot = Random.Range(1,3);
         if (receiver.charisma > receiver.strength) 
         {
@@ -1702,38 +1717,36 @@ public class Attack : MonoBehaviour
         }
         else
         {
-            dialogText.text = "The outlaw band stumbled";
+            yield return StartCoroutine(ShowDialog(dialogText, "The outlaw band stumbled"));
             attacker.TakeDamage(Random.Range(3, 7));
-            yield return new WaitForSeconds(2);
         }
+        Debug.Log(attacker.cardName + " -> OutlawBand => " + receiver.cardName);
+    }
 
-        Debug.Log(attacker.cardName+" -> OutlawBand => "+receiver.cardName);
-	}
     //96
     public IEnumerator FlintlockPistol(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " is cleaning his flintlock";
+    {
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is cleaning his flintlock"));
         StartCoroutine(attacker.AddEffect(22,Random.Range(1, 2)));//Reloading
         attacker.state = CardState.STAY;
         attacker.HandleDefense(-1);
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> FlintlockPistol => "+receiver.cardName);
+        Debug.Log(attacker.cardName + " -> FlintlockPistol => " + receiver.cardName);
     }
+
     //97
     public IEnumerator PassiveResistance(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " is resisting passively!!!";
+    {
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is resisting passively!!!"));
         receiver.HandleAttack(-1);
         attacker.HandleDefense(2);
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> PassiveResistance => "+receiver.cardName);
-	}
+        Debug.Log(attacker.cardName + " -> PassiveResistance => " + receiver.cardName);
+    }
+
     //98
     public IEnumerator HungerStrike(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " refuses to eat";
-		attacker.TakeDamage(5);
-        yield return new WaitForSeconds(2);
+    {
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " refuses to eat"));
+        attacker.TakeDamage(5);
         if (Random.value <= ((40 - receiver.strength) / 30f))
         {
             receiver.HandleStrength(Random.Range(-3,0));
@@ -1742,93 +1755,96 @@ public class Attack : MonoBehaviour
             receiver.HandleDefense(Random.Range(-3,0));
             receiver.HandleCharisma(Random.Range(-3,0));
             yield return StartCoroutine(receiver.AddEffect(13,1));//Depression
-            dialogText.text = receiver.cardName + " feels bad for enemy";
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " feels bad for enemy"));
         }
         else
         {
-            dialogText.text = receiver.cardName + " desn't care";
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " doesn't care"));
         }
-        yield return new WaitForSeconds(2);
         Debug.Log(attacker.cardName + " -> HungerStrike => " + receiver.cardName);
-	}
+    }
+
     //99
     public IEnumerator Gladius(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " attacks with gladius";
-		receiver.TakeDamage(2 + ((attacker.attack + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+    {
+        receiver.TakeDamage(2 + ((attacker.attack + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " attacks with gladius"));
         if (Random.value <= 0.5f) receiver.TakeDamage(4);//critical hit
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> Gladius => "+receiver.cardName);
+        Debug.Log(attacker.cardName + " -> Gladius => " + receiver.cardName);
     }
+
     //100
     public IEnumerator ShieldBash(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " smashes with his shield";
-		receiver.TakeDamage(2);
+    {
+        yield return StartCoroutine(attackAnimations.PlayShieldBashAnimation(attacker.transform, receiver.transform));        //ANIMACIA
+        receiver.TakeDamage(2);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " smashes with his shield"));
         if (Random.value <= 0.5f) attacker.HandleDefense(2);//critical hit
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> ShieldBash => "+receiver.cardName);
+        Debug.Log(attacker.cardName + " -> ShieldBash => " + receiver.cardName);
     }
+
     //101
     public IEnumerator Yperit(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         if (Random.value <= 0.9f) 
         {
-            dialogText.text = "Yperit strikes";
+            yield return StartCoroutine(ShowDialog(dialogText, "Yperit strikes"));
             receiver.TakeDamage(Random.Range(5, 10));
         }
         else
         {
-            dialogText.text = "A breeze blows";
+            yield return StartCoroutine(ShowDialog(dialogText, "A breeze blows"));
             attacker.TakeDamage(Random.Range(3, 7));
         }
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> Yperit => "+receiver.cardName);
-	}
+        Debug.Log(attacker.cardName + " -> Yperit => " + receiver.cardName);
+    }
+
     //102
     public IEnumerator Blitzkrieg(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         if (attacker.speed < receiver.speed)
         {
-            dialogText.text = "Too slow, buddy";
+            yield return StartCoroutine(ShowDialog(dialogText, "Too slow, buddy"));
             attacker.TakeDamage(receiver.speed - attacker.speed);
         }
         else
         {
-            dialogText.text = attacker.cardName+" uses Blitzkrieg tactics";
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " uses Blitzkrieg tactics"));
             receiver.TakeDamage(3 + attacker.speed - receiver.speed);
         }
-        Debug.Log(attacker.cardName+" -> Blitzkrieg => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        Debug.Log(attacker.cardName + " -> Blitzkrieg => " + receiver.cardName);
+    }
+
     //103
     public IEnumerator Propaganda(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " uses propaganda";
-		receiver.HandleAttack(-((attacker.knowledge + attacker.charisma) / 7));
+    {
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " uses propaganda"));
+        receiver.HandleAttack(-((attacker.knowledge + attacker.charisma) / 7));
         receiver.HandleKnowledge(-((attacker.knowledge + attacker.charisma) / 7));
-        Debug.Log(attacker.cardName+" -> Propaganda => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+        Debug.Log(attacker.cardName + " -> Propaganda => " + receiver.cardName);
+    }
+
     //104
     public IEnumerator Retiarius(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " throws the net";
-        yield return new WaitForSeconds(2);
+    {
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " throws the net"));
+
         if (attacker.attack > receiver.speed && Random.value <= 0.9f) 
         {
-            StartCoroutine(receiver.AddEffect(9,1));//Tether
-            dialogText.text = receiver.cardName + " was captured";
+            StartCoroutine(receiver.AddEffect(9,1)); //Tether
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " was captured"));
             attacker.state = CardState.STAY;
-            StartCoroutine(attacker.AddEffect(23,1));//Trident
-            yield return new WaitForSeconds(2);
+            StartCoroutine(attacker.AddEffect(23,1)); //Trident
         }
-        Debug.Log(attacker.cardName+" -> Retiarius => "+receiver.cardName);
-	}
+
+        Debug.Log(attacker.cardName + " -> Retiarius => " + receiver.cardName);
+    }
+
     //105
     public IEnumerator Shuriken(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " is throwing stars";
+    {
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is throwing stars"));
+
         if (Random.value <= ((20 + attacker.attack) / 30f))
         {
             receiver.TakeDamage(1);
@@ -1836,31 +1852,31 @@ public class Attack : MonoBehaviour
         }
         else
         {
-            yield return new WaitForSeconds(1);
-            dialogText.text = "throw missed";
+            yield return StartCoroutine(ShowDialog(dialogText, "throw missed"));
         }
-        Debug.Log(attacker.cardName+" -> Shuriken => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+
+        Debug.Log(attacker.cardName + " -> Shuriken => " + receiver.cardName);
+    }
+
     //106
     public IEnumerator Kusarigama(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + "'s Kusarigama strikes";
-		receiver.TakeDamage(2 + ((attacker.attack + attacker.knowledge + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+    {
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s Kusarigama strikes"));
+        receiver.TakeDamage(2 + ((attacker.attack + attacker.knowledge + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+
         if (Random.value <= 0.1f) 
         {
-            yield return new WaitForSeconds(2);
-            dialogText.text = receiver.cardName + " is trapped in chain";
-            yield return StartCoroutine(receiver.AddEffect(9,1));//Tether
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is trapped in chain"));
+            yield return StartCoroutine(receiver.AddEffect(9,1)); //Tether
         }
-        Debug.Log(attacker.cardName+" -> Kusarigama => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
+
+        Debug.Log(attacker.cardName + " -> Kusarigama => " + receiver.cardName);
     }
+
     //107
     public IEnumerator Ninjutsu(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
         List<AttackDelegate> attacks = new List<AttackDelegate> { Kick, Punch, Shuriken, Kusarigama };
-
         System.Random rnd = new System.Random();
         attacks = attacks.OrderBy(x => rnd.Next()).ToList();
 
@@ -1869,182 +1885,223 @@ public class Attack : MonoBehaviour
 
         Debug.Log(attacker.cardName + " -> Ninjutsu => " + receiver.cardName);
     }
+
     //108
     public IEnumerator OrientalSpice(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " offers some spices to enemy";
-        yield return StartCoroutine(receiver.AddEffect(24,0));//Poison
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> OrientalSpice => "+receiver.cardName);
-	}
+    {
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " offers some spices to enemy"));
+        yield return StartCoroutine(receiver.AddEffect(24,0)); //Poison
+
+        Debug.Log(attacker.cardName + " -> OrientalSpice => " + receiver.cardName);
+    }
+
     //109
     public IEnumerator FieryArquebus(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = "Bum! Fiery Arquebus gun explosed";
-		receiver.TakeDamage(Random.Range(1,Random.Range(3, 7)));
-        if (Random.value <= 0.5f) attacker.TakeDamage(Random.Range(2, 5));
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> FieryArquebus => "+receiver.cardName);
-	}
+    {
+        receiver.TakeDamage(Random.Range(1,Random.Range(3, 7)));
+        yield return StartCoroutine(ShowDialog(dialogText, "Bum! Fiery Arquebus gun exploded"));
+
+        if (Random.value <= 0.5f) 
+        {
+            attacker.TakeDamage(Random.Range(2, 5));
+        }
+
+        Debug.Log(attacker.cardName + " -> FieryArquebus => " + receiver.cardName);
+    }
+
     //110
     public IEnumerator PirateRaid(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
+    {
         if (((attacker.speed + attacker.charisma) / 2) < receiver.defense && Random.value <= 0.8f)
         {
-            dialogText.text = "Raiding doesn't went well";
             attacker.TakeDamage(receiver.defense);
+            yield return StartCoroutine(ShowDialog(dialogText, "Raiding didn't go well"));
         }
         else
         {
-            dialogText.text = attacker.cardName+" raids the enemy";
             receiver.TakeDamage((attacker.speed + attacker.charisma) / 2);
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " raids the enemy"));
         }
-        Debug.Log(attacker.cardName+" -> PirateRaid => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+
+        Debug.Log(attacker.cardName + " -> PirateRaid => " + receiver.cardName);
+    }
+
     //111
     public IEnumerator Axe(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " attacks with axe";
-		receiver.TakeDamage(((attacker.attack + (attacker.strength * 2)) / 3) - ((receiver.defense - receiver.speed) / 2));
-        if (Random.value <= 0.5f) receiver.TakeDamage(6);//critical hit
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> Axe => "+receiver.cardName);
+    {
+        yield return StartCoroutine(attackAnimations.PlayAxeAnimation(attacker.transform, receiver.transform));        //ANIMACIA
+        receiver.TakeDamage(((attacker.attack + (attacker.strength * 2)) / 3) - ((receiver.defense - receiver.speed) / 2));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " attacks with axe"));
+
+        if (Random.value <= 0.5f) 
+        {
+            receiver.TakeDamage(6); //critical hit
+        }
+
+        Debug.Log(attacker.cardName + " -> Axe => " + receiver.cardName);
     }
+
     //112
     public IEnumerator JaguarWarriors(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " sends Jaguar Warriors";
-		receiver.TakeDamage(Random.Range(1, attacker.attack+2));
-        if (Random.value <= 0.2f) receiver.HandleAttack(-(Random.Range(2, 4)));//critical hit
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> JaguarWarriors => "+receiver.cardName);
+    {
+        receiver.TakeDamage(Random.Range(1, attacker.attack+2));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " sends Jaguar Warriors"));
+
+        if (Random.value <= 0.2f) 
+        {
+            receiver.HandleAttack(-(Random.Range(2, 4))); //critical hit
+        }
+
+        Debug.Log(attacker.cardName + " -> JaguarWarriors => " + receiver.cardName);
     }
+
     //113
     public IEnumerator Atlatl(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " throws spear";
+    {
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " throws spear"));
+
         if (Random.value <= (attacker.strength / 10f))
         {
             receiver.TakeDamage(3);
-            if (Random.value <= 0.2f) yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 4)));//bleed
+
+            if (Random.value <= 0.2f) 
+            {
+                yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 4))); //bleed
+            }
         }
         else
         {
-            yield return new WaitForSeconds(1);
-            dialogText.text = "spear missed";
+            yield return StartCoroutine(ShowDialog(dialogText, "spear missed"));
         }
-        Debug.Log(attacker.cardName+" -> Atlatl => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+
+        Debug.Log(attacker.cardName + " -> Atlatl => " + receiver.cardName);
+    }
     //114
     public IEnumerator Macuahuitl(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " smashes with Macuahuitl";
-		receiver.TakeDamage(((attacker.attack + attacker.strength * 2) / 2) - ((receiver.defense - receiver.speed) / 2));
-        if (Random.value <= 0.2f) receiver.TakeDamage(3);//critical hit
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> Macuahuitl => "+receiver.cardName);
+    {
+        receiver.TakeDamage(((attacker.attack + attacker.strength * 2) / 2) - ((receiver.defense - receiver.speed) / 2));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " smashes with Macuahuitl"));
+
+        if (Random.value <= 0.2f) 
+        {
+            receiver.TakeDamage(3); //critical hit
+        }
+
+        Debug.Log(attacker.cardName + " -> Macuahuitl => " + receiver.cardName);
     }
+
     //115
     public IEnumerator Cubism(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + "'s picture confuses the enemy";
-        yield return StartCoroutine(receiver.AddEffect(17,Random.Range(2, 5)));//confusion
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> Cubism => "+receiver.cardName);
-	}
+    {
+        yield return StartCoroutine(receiver.AddEffect(17, Random.Range(2, 5))); //confusion
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s picture confuses the enemy"));
+
+        Debug.Log(attacker.cardName + " -> Cubism => " + receiver.cardName);
+    }
+
     //116
     public IEnumerator CosaNostra(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " orders mafia to attrack";
-		receiver.TakeDamage(3 + (attacker.charisma - receiver.defense));
-        if (Random.value <= 0.5f) receiver.HandleCharisma(-2);//critical hit
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> CosaNostra => "+receiver.cardName);
-	}
+    {
+        receiver.TakeDamage(3 + (attacker.charisma - receiver.defense));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " orders mafia to attack"));
+
+        if (Random.value <= 0.5f) 
+        {
+            receiver.HandleCharisma(-2); //critical hit
+        }
+
+        Debug.Log(attacker.cardName + " -> CosaNostra => " + receiver.cardName);
+    }
+
     //117
     public IEnumerator Act(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " behaves like insane";
-        yield return new WaitForSeconds(2);
+    {
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " behaves like insane"));
+
         if (Random.value <= (int)System.Math.Ceiling((double)receiver.strength / 20))
         {
             receiver.HandleStrength(-1);
             receiver.HandleAttack(-1);
             receiver.HandleDefense(1);
             receiver.HandleCharisma(-1);
-            dialogText.text = receiver.cardName + " is scared";
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is scared"));
         }
         else
         {
-            receiver.HandleStrength(UnityEngine.Random.Range(-2,0));
-            receiver.HandleSpeed(UnityEngine.Random.Range(-2,0));
-            receiver.HandleAttack(UnityEngine.Random.Range(-2,0));
-            receiver.HandleDefense(UnityEngine.Random.Range(-2,0));
-            receiver.HandleKnowledge(UnityEngine.Random.Range(0,3));
-            dialogText.text = receiver.cardName + " is impressed";
+            receiver.HandleStrength(UnityEngine.Random.Range(-2, 0));
+            receiver.HandleSpeed(UnityEngine.Random.Range(-2, 0));
+            receiver.HandleAttack(UnityEngine.Random.Range(-2, 0));
+            receiver.HandleDefense(UnityEngine.Random.Range(-2, 0));
+            receiver.HandleKnowledge(UnityEngine.Random.Range(0, 3));
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is impressed"));
         }
-        Debug.Log(attacker.cardName+" -> Act => "+receiver.cardName);
-        yield return new WaitForSeconds(2);
-	}
+
+        Debug.Log(attacker.cardName + " -> Act => " + receiver.cardName);
+    }
+
     //118
     public IEnumerator Football(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " plays football";
+    {
         receiver.HandleSpeed(1);
-        yield return new WaitForSeconds(2);
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " plays football"));
+
         if (7 <= receiver.knowledge) 
         {
-            dialogText.text = receiver.cardName + " is bored by Football";
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is bored by Football"));
+
             if (Random.value <= 0.8f) 
             {
-                dialogText.text = receiver.cardName + " falls asleep";
-                yield return StartCoroutine(receiver.AddEffect(3,Random.Range(1, 3)));//sleep
+                yield return StartCoroutine(receiver.AddEffect(3, Random.Range(1, 3))); //sleep
+                yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " falls asleep"));
             }
         }
         else
         {
-            dialogText.text = receiver.cardName + " likes it";
             receiver.HandleCharisma(1);
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " likes it"));
         }
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> Football => "+receiver.cardName);
-	}
+
+        Debug.Log(attacker.cardName + " -> Football => " + receiver.cardName);
+    }
+
     //119
     public IEnumerator BicycleKick(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " tries bicykle kick";
-        yield return new WaitForSeconds(2);
+    {
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " tries bicycle kick"));
+
         if (Random.value <= 0.7f)
         {
-            dialogText.text = "Plesk! Big kick from " + attacker.cardName;
-            receiver.TakeDamage((5 + (attacker.speed + attacker.attack)/2) - ((receiver.defense + receiver.strength)/2));
-            if (Random.value <= 0.4f) receiver.TakeDamage(4);//extra dmg
+            receiver.TakeDamage((5 + (attacker.speed + attacker.attack) / 2) - ((receiver.defense + receiver.strength) / 2));
+            yield return StartCoroutine(ShowDialog(dialogText, "Plesk! Big kick from " + attacker.cardName));
+
+            if (Random.value <= 0.4f) 
+            {
+                receiver.TakeDamage(4); //extra dmg
+            }
         }
         else
         {
-            dialogText.text = attacker.cardName + " faces gravity";
             attacker.TakeDamage(1);
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " faces gravity"));
         }
-        yield return new WaitForSeconds(2);
+
         Debug.Log(attacker.cardName + " -> BicycleKick => " + receiver.cardName);
-	}
+    }
+
     //120
     public IEnumerator WorldChampion(Kard attacker, Kard receiver, TMP_Text dialogText)
-	{
-        dialogText.text = attacker.cardName + " is world champion, remember!";
+    {
         attacker.HandleStrength(1);
         attacker.HandleCharisma(2);
-        yield return new WaitForSeconds(2);
-        Debug.Log(attacker.cardName+" -> WorldChampion => "+receiver.cardName);
-	}
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is world champion, remember!"));
+
+        Debug.Log(attacker.cardName + " -> WorldChampion => " + receiver.cardName);
+    }
+
     //121
     public IEnumerator ShaolinSoccer(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
-        List<AttackDelegate> attacks = new List<AttackDelegate> { Kick, Punch, BicycleKick, Act, Honesty, Jujutsu, Fury, Corruption, Scratch};
-
+        List<AttackDelegate> attacks = new List<AttackDelegate> { Kick, Punch, BicycleKick, Act, Honesty, Jujutsu, Fury, Corruption, Scratch };
         System.Random rnd = new System.Random();
         attacks = attacks.OrderBy(x => rnd.Next()).ToList();
 
@@ -2053,6 +2110,7 @@ public class Attack : MonoBehaviour
 
         Debug.Log(attacker.cardName + " -> ShaolinSoccer => " + receiver.cardName);
     }
+
 
 
 
