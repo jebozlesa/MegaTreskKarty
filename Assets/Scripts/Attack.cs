@@ -491,6 +491,7 @@ public class Attack : MonoBehaviour
     //3
     public IEnumerator Heal(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(attackAnimations.PlayHealAnimation(attacker.transform));        //ANIMACIA
         attacker.Heal(attacker.knowledge / 2);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " Heals himself"));
 
@@ -499,6 +500,7 @@ public class Attack : MonoBehaviour
     //4
     public IEnumerator Forgiveness(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(attackAnimations.PlayForgivenessAnimation(attacker.transform));        //ANIMACIA
         receiver.HandleAttack(-(int)System.Math.Ceiling((double)attacker.charisma / 5));
         receiver.HandleAttack(-(int)System.Math.Ceiling((double)attacker.charisma / 5));
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " forgives your heresy"));
@@ -514,6 +516,7 @@ public class Attack : MonoBehaviour
     //5
     public IEnumerator Crusade(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(attackAnimations.PlayCrusadeAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage((attacker.strength + attacker.charisma) - ((receiver.defense + receiver.charisma) / 2));
         yield return StartCoroutine(ShowDialog(dialogText, "In the name of Christ!!! damage was done"));
 
@@ -522,6 +525,7 @@ public class Attack : MonoBehaviour
     //6
     public IEnumerator WaterToWine(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(attackAnimations.PlayWaterToWineAnimation(attacker.transform));        //ANIMACIA
         attacker.HandleAttack(2);
         attacker.HandleStrength(2);
         attacker.HandleDefense(-1);
@@ -532,13 +536,14 @@ public class Attack : MonoBehaviour
     //7
     public IEnumerator CarHit(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(attackAnimations.PlayCarHitAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage((attacker.speed * 3) - receiver.strength - receiver.defense);
         yield return StartCoroutine(ShowDialog(dialogText, "Tresk! hit by " + attacker.cardName + "'s car"));
 
         Debug.Log(attacker.cardName + " -> CarHit => " + receiver.cardName);
     }
     //8
-    public IEnumerator SteamGun(Kard attacker, Kard receiver, TMP_Text dialogText)
+    public IEnumerator SteamGun(Kard attacker, Kard receiver, TMP_Text dialogText)                  //ASI DAT DOPICI
     {
         receiver.TakeDamage(Random.Range(1, attacker.knowledge));
         if (Random.value <= 0.5f) attacker.TakeDamage(attacker.knowledge / 5);
@@ -549,6 +554,8 @@ public class Attack : MonoBehaviour
     //9
     public IEnumerator Radiation(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        dialogText.text = attacker.cardName + " showing radiation";
+        yield return StartCoroutine(attackAnimations.PlayRadioactivityAnimation(attacker.transform));        //ANIMACIA
         if (Random.value <= 0.8f)
         {
             yield return StartCoroutine(receiver.AddEffect(4, 0)); //exposure
@@ -565,6 +572,7 @@ public class Attack : MonoBehaviour
     //10
     public IEnumerator Scratch(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(attackAnimations.PlayScratchAnimation(attacker.transform));        //ANIMACIA
         receiver.TakeDamage(attacker.attack - receiver.defense);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " scratches opponent!"));
 
@@ -579,6 +587,7 @@ public class Attack : MonoBehaviour
     //11
     public IEnumerator ScientificLecture(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(attackAnimations.PlayScientificLectureAnimation(attacker.transform));        //ANIMACIA
         receiver.TakeDamage(attacker.knowledge - receiver.knowledge);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " explaining science!!!"));
 
@@ -593,7 +602,10 @@ public class Attack : MonoBehaviour
     //12
     public IEnumerator ChiSau(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
-        receiver.TakeDamage(Random.Range(1, 5) * (attacker.speed - receiver.defense));
+        int multiply = Random.Range(1, 5);
+
+        yield return StartCoroutine(attackAnimations.PlayChiSauAnimation(attacker.transform, receiver.transform, multiply));        //ANIMACIA
+        receiver.TakeDamage(multiply * (attacker.speed - receiver.defense));
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " attacks with his sticky hands"));
 
         Debug.Log(attacker.cardName + " -> ChiSau => " + receiver.cardName);

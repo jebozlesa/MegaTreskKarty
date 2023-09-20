@@ -607,4 +607,26 @@ public class Effects : MonoBehaviour
         yield return new WaitForSeconds(2);
         Debug.Log(card.cardName + " => Poison");
 	}
+    //25
+    public IEnumerator KnockOut(Kard card, TMP_Text dialogText, int iteration)
+	{
+        if (card.state != CardState.STAY) card.state = CardState.MAYBE;
+        //StartCoroutine(textBubble.ShowForSeconds("ZZZZZ!", Resources.Load<Sprite>("oblacik"), 2.5f));
+        if (card.effects[iteration][1] == 0)
+        {
+            card.RemoveEffect(iteration);
+            card.state = CardState.ATTACK;
+            dialogText.text = card.cardName + " wokes up";
+            yield return new WaitForSeconds(2);
+            yield break;
+        }
+        else
+        {
+            card.effects[iteration][1] -= 1;
+            card.state = CardState.MAYBE;
+            dialogText.text = card.cardName + " is Knocked Out";
+            yield return new WaitForSeconds(2);
+        }
+        Debug.Log(card.cardName + " => KnockOut");
+	}
 }
