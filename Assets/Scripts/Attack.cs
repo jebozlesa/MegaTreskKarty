@@ -45,12 +45,20 @@ public class Attack : MonoBehaviour
         return isPriority;
     }
 
-    private IEnumerator ShowDialog(TMP_Text dialogText, string message)
+    private IEnumerator ShowAttackDialog(TMP_Text dialogText, string message)
     {
-        dialogText.text = message;
-        yield return new WaitForSeconds(1.8f);
         dialogText.text = "";
         yield return new WaitForSeconds(0.2f);
+        dialogText.text = message;
+        yield return new WaitForSeconds(0.8f);
+    }
+
+    private IEnumerator ShowDialog(TMP_Text dialogText, string message)
+    {
+        dialogText.text = "";
+        yield return new WaitForSeconds(0.2f);
+        dialogText.text = message;
+        yield return new WaitForSeconds(1.8f);
     }
 
     public IEnumerator ExecuteAttack(Kard attacker, Kard receiver, int attackType, TMP_Text dialogText)
@@ -613,6 +621,7 @@ public class Attack : MonoBehaviour
     //13
     public IEnumerator OneInchPunch(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(attackAnimations.PlayOneInchPunchAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(attacker.attack + attacker.knowledge - receiver.defense);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " pokes enemy with finger"));
 
@@ -623,6 +632,7 @@ public class Attack : MonoBehaviour
     //14
     public IEnumerator UpInSmoke(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(attackAnimations.PlayUpInSmokeAnimation(attacker.transform));        //ANIMACIA
         attacker.Heal((int)System.Math.Ceiling((double)attacker.strength / 4));
         attacker.HandleStrength(1);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " smokes some s#!t and feels good"));
@@ -638,6 +648,7 @@ public class Attack : MonoBehaviour
     //15
     public IEnumerator Sing(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(attackAnimations.PlaySingAnimation(attacker.transform));        //ANIMACIA
         if (Random.value <= 0.5f) receiver.HandleAttack(-(attacker.charisma / 3));
         if (Random.value <= 0.5f) receiver.HandleDefense(-(attacker.charisma / 3));
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " sings a banger"));
@@ -647,13 +658,18 @@ public class Attack : MonoBehaviour
     //16
     public IEnumerator Revolver(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Revolver"));
+
         if (Random.value <= (attacker.attack / 15f))
         {
+            yield return StartCoroutine(attackAnimations.PlayRevolverAnimation(attacker.transform, receiver.transform, true));        //ANIMACIA
             receiver.TakeDamage(7);
-            yield return StartCoroutine(ShowDialog(dialogText, "Bang! " + attacker.cardName + " shoots"));
+            yield return StartCoroutine(ShowDialog(dialogText, "Bang! " + attacker.cardName + " hits target"));
+            
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayRevolverAnimation(attacker.transform, receiver.transform, false));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, "Bang! aaaand miss"));
         }
 
@@ -662,13 +678,17 @@ public class Attack : MonoBehaviour
     //17
     public IEnumerator ArtilleryRegiment(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Artillery Regiment"));
+
         if (Random.value <= 0.7f)
         {
+            yield return StartCoroutine(attackAnimations.PlayArtilleryRegimentAnimation(attacker.transform, receiver.transform, true));        //ANIMACIA
             receiver.TakeDamage(15);
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is heavily bombarded"));
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayArtilleryRegimentAnimation(attacker.transform, receiver.transform, false));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, "Bang! aaaand miss"));
         }
 
@@ -677,10 +697,13 @@ public class Attack : MonoBehaviour
     //18
     public IEnumerator BloodSucking(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Blood Sucking"));
+
+        yield return StartCoroutine(attackAnimations.PlayBloodSuckingAnimation(receiver.transform, attacker.transform));        //ANIMACIA
         int a = Random.Range(1, attacker.attack);
         receiver.TakeDamage(a);
         attacker.Heal(a);
-        yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is being drained"));
+        yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " was drained"));
 
         Debug.Log(attacker.cardName + " -> BloodSucking => " + receiver.cardName);
     }

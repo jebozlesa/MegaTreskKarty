@@ -10,6 +10,8 @@ public class AttackAnimations : MonoBehaviour
     public DualImageAnimation dualImageAnimation;
     public RandomMoveImage randomMoveImageAnimation;
 
+    public ShootAnimation shootAnimation;
+
     //1
     public IEnumerator PlayPunchAnimation(Transform attacker, Transform receiver)
     {
@@ -222,6 +224,7 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
+    //12
     public IEnumerator PlayChiSauAnimation(Transform sourceCard, Transform targetCard, int numberOfAttacks)
     {
         Sprite attackSprite = Resources.Load<Sprite>("Game/Animations/chisau");
@@ -243,7 +246,138 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
+    //13
+    public IEnumerator PlayOneInchPunchAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/oneinchpunch");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/oneinchpunch");
 
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250, 250),
+                duration: 0.7f,
+                startSound: startSound,
+                initialRotation: 0f, // napr. -15 stupňov na začiatku
+                finalRotation: 0f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    //14
+    public IEnumerator PlayUpInSmokeAnimation(Transform targetCard)
+    {
+        Sprite[] sprites = new Sprite[3];
+        sprites[0] = Resources.Load<Sprite>("Game/Animations/upinsmoke1");
+        sprites[1] = Resources.Load<Sprite>("Game/Animations/upinsmoke2");
+        sprites[2] = Resources.Load<Sprite>("Game/Animations/upinsmoke3");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/upinsmoke");
+
+        Vector2 initialSize = new Vector2(50f, 50f); // Počiatočná veľkosť obrázka
+        Vector2 finalSize = new Vector2(300f, 300f);   // Konečná veľkosť obrázka
+
+        yield return StartCoroutine(
+            randomImageSpawner.StartRandomSpawnAnimation(
+                sprites: sprites,
+                targetCard: targetCard,
+                cardSize: new Vector2(300f, 500f), // Predpokladaná veľkosť karty + 10%
+                duration: 1f,
+                spawnIntensity: 1,
+                spawnInterval: 0.4f,
+                startSize: initialSize,
+                endSize: finalSize,
+                imageLifetime: 0.5f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //15
+    public IEnumerator PlaySingAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/sing");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/sing");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(400f, 400f),
+                duration: 1f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //16
+    public IEnumerator PlayRevolverAnimation(Transform shooterCard, Transform targetCard, bool hit)
+    {
+        Sprite shooterSprite = Resources.Load<Sprite>("Game/Animations/revolver1");
+        Sprite hitSprite = Resources.Load<Sprite>("Game/Animations/revolver2");
+        AudioClip shootSound = Resources.Load<AudioClip>("Sounds/Game/Animations/revolver");
+
+        yield return StartCoroutine(
+            shootAnimation.StartShootAnimation(
+                shooterSprite: shooterSprite,
+                hitSprite: hitSprite,
+                shooterCard: shooterCard,
+                targetCard: targetCard,
+                imageSize: new Vector2(300f, 300f),
+                duration: 1f,
+                shootRatio: 0.5f,
+                shootSound: shootSound,
+                recoilAngle: 10f,
+                showHitImage: hit
+            )
+        );
+    }
+
+    //17
+    public IEnumerator PlayArtilleryRegimentAnimation(Transform shooterCard, Transform targetCard, bool hit)
+    {
+        Sprite shooterSprite = Resources.Load<Sprite>("Game/Animations/artilleryregiment1");
+        Sprite hitSprite = Resources.Load<Sprite>("Game/Animations/artilleryregiment2");
+        AudioClip shootSound = Resources.Load<AudioClip>("Sounds/Game/Animations/artilleryregiment");
+
+        yield return StartCoroutine(
+            shootAnimation.StartShootAnimation(
+                shooterSprite: shooterSprite,
+                hitSprite: hitSprite,
+                shooterCard: shooterCard,
+                targetCard: targetCard,
+                imageSize: new Vector2(400f, 400f),
+                duration: 1f,
+                shootRatio: 0.5f,
+                shootSound: shootSound,
+                recoilAngle: 10f,
+                showHitImage: hit,
+                rotateToTarget: false
+            )
+        );
+    }
+
+    //18
+    public IEnumerator PlayBloodSuckingAnimation(Transform attacker, Transform receiver) //tu je receiver a attecker trochu naopak aby som to nemenil cele
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/bloodsucking");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/bloodsucking");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250, 250),
+                duration: 0.7f,
+                startSound: startSound,
+                initialRotation: 0f, // napr. -15 stupňov na začiatku
+                finalRotation: 0f     // napr. 15 stupňov na konci
+            )
+        );
+    }
 
     //100
     public IEnumerator PlayShieldBashAnimation(Transform attacker, Transform receiver)
