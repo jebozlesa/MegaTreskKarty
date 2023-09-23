@@ -7,38 +7,43 @@ public class MoveImage : MonoBehaviour
     public Canvas canvas; // Referencia na váš Canvas
 
     public IEnumerator StartAnimation(Sprite sprite, Transform startPoint, Transform endPoint, Vector2 imageSize, float duration, AudioClip startSound, float initialRotation = 0f, float finalRotation = 0f, bool rotateTowardsTarget = true)
+{
+    // Ak existuje zvuk pre začiatok, prehrať ho
+    AudioSource.PlayClipAtPoint(startSound, Camera.main.transform.position);
+
+    // Vytvorenie GameObjectu pre obrázok
+    GameObject imageObject = new GameObject("MoveImageSprite");
+    imageObject.transform.SetParent(canvas.transform, false); // Nastavenie ako dieťa Canvasu
+    Image img = imageObject.AddComponent<Image>();
+    img.sprite = sprite;
+
+    // Nastavenie veľkosti obrázka
+    RectTransform rectTransform = imageObject.GetComponent<RectTransform>();
+    rectTransform.sizeDelta = imageSize;
+
+    // Nastavenie pozície obrázka na začiatočný bod
+    imageObject.transform.position = startPoint.position;
+
+    float originalRotation = imageObject.transform.eulerAngles.z;
+
+    // Otočenie obrázka smerom k cieľu, ak je to požadované
+    if (rotateTowardsTarget)
     {
-        // Ak existuje zvuk pre začiatok, prehrať ho
-        AudioSource.PlayClipAtPoint(startSound, Camera.main.transform.position);
-
-        // Vytvorenie GameObjectu pre obrázok
-        GameObject imageObject = new GameObject("MoveImageSprite");
-        imageObject.transform.SetParent(canvas.transform, false); // Nastavenie ako dieťa Canvasu
-        Image img = imageObject.AddComponent<Image>();
-        img.sprite = sprite;
-
-        // Nastavenie veľkosti obrázka
-        RectTransform rectTransform = imageObject.GetComponent<RectTransform>();
-        rectTransform.sizeDelta = imageSize;
-
-        // Nastavenie pozície obrázka na začiatočný bod
-        imageObject.transform.position = startPoint.position;
-
-        // Otočenie obrázka smerom k cieľu, ak je to požadované
-        if (rotateTowardsTarget)
-        {
-            imageObject.transform.up = endPoint.position - startPoint.position;
-        }
-
-        // Pridanie dodatočnej rotácie
-        imageObject.transform.rotation *= Quaternion.Euler(0, 0, initialRotation);
-
-        // Spustenie animácie
-        yield return StartCoroutine(AnimateMove(imageObject, startPoint, endPoint, duration, finalRotation));
-
-        // Zničenie obrázka po skončení animácie
-        Destroy(imageObject, 0.1f);
+        imageObject.transform.up = endPoint.position - startPoint.position;
     }
+
+    float rotationDifference = imageObject.transform.eulerAngles.z - originalRotation;
+
+    // Pridanie dodatočnej rotácie
+    imageObject.transform.rotation *= Quaternion.Euler(0, 0, initialRotation);
+
+    // Spustenie animácie
+    yield return StartCoroutine(AnimateMove(imageObject, startPoint, endPoint, duration, finalRotation + rotationDifference));
+
+    // Zničenie obrázka po skončení animácie
+    Destroy(imageObject, 0.1f);
+}
+
 
     private IEnumerator AnimateMove(GameObject image, Transform startPoint, Transform endPoint, float duration, float finalRotation)
     {

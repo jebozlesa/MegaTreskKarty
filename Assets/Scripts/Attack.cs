@@ -710,6 +710,8 @@ public class Attack : MonoBehaviour
     //19
     public IEnumerator Sword(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Sword"));
+        yield return StartCoroutine(attackAnimations.PlaySwordAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(3 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " cuts enemy with sword"));
 
@@ -724,6 +726,8 @@ public class Attack : MonoBehaviour
     //20
     public IEnumerator Pike(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Pike"));
+        yield return StartCoroutine(attackAnimations.PlayPikeAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(((attacker.strength + attacker.speed + attacker.attack) / 2) - receiver.defense);
         yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is impaled on a pike"));
 
@@ -738,16 +742,21 @@ public class Attack : MonoBehaviour
     //21
     public IEnumerator Terrify(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Terrify"));
+        yield return StartCoroutine(attackAnimations.PlayTerrifyAnimation(attacker.transform));        //ANIMACIA
+
         if (Random.value <= (int)System.Math.Ceiling((double)receiver.strength / 20))
         {
             receiver.HandleStrength((-1) - (attacker.attack/7));
             receiver.HandleAttack((-1) - (attacker.attack/7));
             receiver.HandleDefense(1);
             receiver.HandleCharisma((-(attacker.attack/3)));
+            StartCoroutine(attackAnimations.PlayAnimationTerrified(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is terribly frightened"));
         }
         else
         {
+            StartCoroutine(attackAnimations.PlayAnimationNotImpressed(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " does not fear you"));
         }
 
@@ -756,6 +765,8 @@ public class Attack : MonoBehaviour
     //22
     public IEnumerator DrinkWine(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Drink Wine"));
+        yield return StartCoroutine(attackAnimations.PlayDrinkWineAnimation(attacker.transform));        //ANIMACIA
         attacker.HandleStrength(2);
         attacker.Heal(attacker.charisma/3);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is getting slightly drunk"));

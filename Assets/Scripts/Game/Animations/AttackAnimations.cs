@@ -24,7 +24,7 @@ public class AttackAnimations : MonoBehaviour
                 startPoint: attacker,
                 endPoint: receiver,
                 imageSize: new Vector2(250f, 250f),
-                duration: 0.5f,
+                duration: 0.7f,
                 startSound: startSound,
                 initialRotation: 0f, // napr. -15 stupňov na začiatku
                 finalRotation: 0f     // napr. 15 stupňov na konci
@@ -44,7 +44,7 @@ public class AttackAnimations : MonoBehaviour
                 startPoint: attacker,
                 endPoint: receiver,
                 imageSize: new Vector2(250f, 250f),
-                duration: 0.5f,
+                duration: 0.7f,
                 startSound: startSound,
                 initialRotation: 180f, // napr. -15 stupňov na začiatku
                 finalRotation: 180f     // napr. 15 stupňov na konci
@@ -59,8 +59,8 @@ public class AttackAnimations : MonoBehaviour
         sprites[0] = Resources.Load<Sprite>("Game/Animations/heal");
         AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/heal");
 
-        Vector2 initialSize = new Vector2(10f, 10f); // Počiatočná veľkosť obrázka
-        Vector2 finalSize = new Vector2(50f, 50f);   // Konečná veľkosť obrázka
+        Vector2 initialSize = new Vector2(50f, 50f); // Počiatočná veľkosť obrázka
+        Vector2 finalSize = new Vector2(100f, 100f);   // Konečná veľkosť obrázka
 
         yield return StartCoroutine(
             randomImageSpawner.StartRandomSpawnAnimation(
@@ -69,7 +69,7 @@ public class AttackAnimations : MonoBehaviour
                 cardSize: new Vector2(300f, 500f), // Predpokladaná veľkosť karty + 10%
                 duration: 1f,
                 spawnIntensity: 3,
-                spawnInterval: 0.1f,
+                spawnInterval: 0.2f,
                 startSize: initialSize,
                 endSize: finalSize,
                 soundEffect: effectSound
@@ -150,7 +150,7 @@ public class AttackAnimations : MonoBehaviour
                 startPoint: attacker,
                 endPoint: receiver,
                 imageSize: new Vector2(250f, 250f),
-                duration: 1f,
+                duration: 0.7f,
                 startSound: startSound,
                 initialRotation: 0f, // napr. -15 stupňov na začiatku
                 finalRotation: 90f     // napr. 15 stupňov na konci
@@ -371,10 +371,146 @@ public class AttackAnimations : MonoBehaviour
                 startPoint: attacker,
                 endPoint: receiver,
                 imageSize: new Vector2(250, 250),
-                duration: 0.7f,
+                duration: 1f,
                 startSound: startSound,
                 initialRotation: 0f, // napr. -15 stupňov na začiatku
                 finalRotation: 0f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    //19
+    public IEnumerator PlaySwordAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/sword");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/sword");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 100f, // napr. -15 stupňov na začiatku
+                finalRotation: -15f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    //20
+    public IEnumerator PlayPikeAnimation(Transform sourceCard, Transform targetCard)
+    {
+        Sprite attackSprite = Resources.Load<Sprite>("Game/Animations/pike");
+        AudioClip attackSound = Resources.Load<AudioClip>("Sounds/Game/Animations/pike");
+        
+        int numberOfAttacks = 5; // Generuje náhodné číslo medzi 1 a 5 vrátane.
+
+        yield return StartCoroutine(
+            randomMoveImageAnimation.StartRandomMoveAnimation(
+                sprite: attackSprite,
+                sourceCard: sourceCard,
+                targetCard: targetCard,
+                cardSize: new Vector2(100f, 200f), // Predpokladaná veľkosť karty
+                numberOfAttacks: numberOfAttacks,
+                imageSize: new Vector2(350f, 350f),  // Veľkosť obrázka útoku
+                duration: 1f,
+                startSound: attackSound
+            )
+        );
+    }
+
+    //21
+    public IEnumerator PlayTerrifyAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/terrify");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/terrify");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(400f, 400f),
+                duration: 1f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //21
+    public IEnumerator PlayAnimationTerrified(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/terrified");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/terrified");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(400f, 400f),
+                duration: 1f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //21
+    public IEnumerator PlayAnimationNotImpressed(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/notimpressed");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/notimpressed");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(400f, 400f),
+                duration: 1f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //22
+    public IEnumerator PlayDrinkWineAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/drinkwine");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/drinkwine");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(400f, 400f),
+                endSize: new Vector2(400f, 400f),
+                duration: 1f,
+                endRotation: 180f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //23
+    public IEnumerator PlayFlamingGunAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/flaminggun");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/flaminggun");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(300f, 300f),
+                duration: 1f,
+                startSound: startSound,
+                initialRotation: 0f, // napr. -15 stupňov na začiatku
+                finalRotation: 0f,     // napr. 15 stupňov na konci
+                rotateTowardsTarget: false 
             )
         );
     }
@@ -435,6 +571,7 @@ public class AttackAnimations : MonoBehaviour
             )
         );
     }
+    
 
     public IEnumerator PlaySleepAnimation(Transform targetCard)
     {

@@ -599,7 +599,7 @@ public class FightSystem : MonoBehaviour
         dbConnection.Open();
 
         IDbCommand dbCommand = dbConnection.CreateCommand();
-        dbCommand.CommandText = "SELECT * FROM CardDatabase";
+        dbCommand.CommandText = "SELECT * FROM CardDatabase where Series = 1";
         IDataReader reader = dbCommand.ExecuteReader();
 
         while (reader.Read())
