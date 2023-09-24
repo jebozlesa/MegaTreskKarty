@@ -776,6 +776,8 @@ public class Attack : MonoBehaviour
     //23
     public IEnumerator FlamingGun(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Flaming Gun"));
+        yield return StartCoroutine(attackAnimations.PlayFlamingGunAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(4);
         yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is being caramelized"));
 
@@ -790,6 +792,8 @@ public class Attack : MonoBehaviour
     //24
     public IEnumerator Cleaver(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Cleaver"));
+        yield return StartCoroutine(attackAnimations.PlayCleaverAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(1 + ((attacker.strength + attacker.attack) / 2) - ((receiver.defense - receiver.strength) / 2));
         yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " gets chopped by cleaver"));
 
@@ -804,6 +808,8 @@ public class Attack : MonoBehaviour
     //25
     public IEnumerator Pan(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Pan"));
+        yield return StartCoroutine(attackAnimations.PlayPanAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(1 + attacker.strength - receiver.defense);
         yield return StartCoroutine(ShowDialog(dialogText, "Tongggg!!! " + receiver.cardName + " gets hit by the pan"));
 
@@ -818,6 +824,8 @@ public class Attack : MonoBehaviour
     //26
     public IEnumerator Boost(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Boost"));
+        yield return StartCoroutine(attackAnimations.PlayBoostAnimation(attacker.transform));        //ANIMACIA
         attacker.HandleStrength(2);
         attacker.HandleAttack(2);
         attacker.HandleDefense(2);
@@ -831,6 +839,8 @@ public class Attack : MonoBehaviour
     //27
     public IEnumerator Temptation(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Temptation"));
+        yield return StartCoroutine(attackAnimations.PlayTemptationAnimation(receiver.transform));        //ANIMACIA
         receiver.HandleAttack(- (attacker.charisma - receiver.charisma));
         receiver.HandleDefense(- (attacker.charisma - receiver.charisma));
         receiver.HandleCharisma(1);

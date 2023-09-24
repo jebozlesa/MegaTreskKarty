@@ -515,6 +515,106 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
+    //24
+    public IEnumerator PlayCleaverAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/cleaver");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/cleaver");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(300f, 300f),
+                duration: 1f,
+                startSound: startSound,
+                initialRotation: 90f, // napr. -15 stupňov na začiatku
+                finalRotation: 0f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    //25
+    public IEnumerator PlayPanAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/pan");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/pan");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(300f, 300f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 0f, // napr. -15 stupňov na začiatku
+                finalRotation: 180f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    //26
+    public IEnumerator PlayBoostAnimation(Transform targetCard)
+    {
+        Sprite[] sprites = new Sprite[4];
+        sprites[0] = Resources.Load<Sprite>("Game/Animations/boost1");
+        sprites[1] = Resources.Load<Sprite>("Game/Animations/boost2");
+        sprites[2] = Resources.Load<Sprite>("Game/Animations/boost3");
+        sprites[3] = Resources.Load<Sprite>("Game/Animations/boost4");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/boost");
+
+        Vector2 initialSize = new Vector2(100f, 100f); // Počiatočná veľkosť obrázka
+        Vector2 finalSize = new Vector2(150f, 150f);   // Konečná veľkosť obrázka
+
+        yield return StartCoroutine(
+            randomImageSpawner.StartRandomSpawnAnimation(
+                sprites: sprites,
+                targetCard: targetCard,
+                cardSize: new Vector2(200f, 400f), // Predpokladaná veľkosť karty + 10%
+                duration: 1f,
+                spawnIntensity: 3,
+                spawnInterval: 0.2f,
+                startSize: initialSize,
+                endSize: finalSize,
+                imageLifetime: 0.3f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //27
+    public IEnumerator PlayTemptationAnimation(Transform targetCard)
+    {
+        Sprite[] sprites = new Sprite[5];
+        sprites[0] = Resources.Load<Sprite>("Game/Animations/temptation1");
+        sprites[1] = Resources.Load<Sprite>("Game/Animations/temptation2");
+        sprites[2] = Resources.Load<Sprite>("Game/Animations/temptation3");
+        sprites[3] = Resources.Load<Sprite>("Game/Animations/temptation4");
+        sprites[4] = Resources.Load<Sprite>("Game/Animations/temptation5");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/temptation");
+
+        Vector2 initialSize = new Vector2(50f, 50f); // Počiatočná veľkosť obrázka
+        Vector2 finalSize = new Vector2(150f, 150f);   // Konečná veľkosť obrázka
+
+        yield return StartCoroutine(
+            randomImageSpawner.StartRandomSpawnAnimation(
+                sprites: sprites,
+                targetCard: targetCard,
+                cardSize: new Vector2(300f, 500f), // Predpokladaná veľkosť karty + 10%
+                duration: 1f,
+                spawnIntensity: 3,
+                spawnInterval: 0.2f,
+                startSize: initialSize,
+                endSize: finalSize,
+                imageLifetime: 0.3f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+
     //100
     public IEnumerator PlayShieldBashAnimation(Transform attacker, Transform receiver)
     {
