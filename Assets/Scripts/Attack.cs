@@ -852,13 +852,14 @@ public class Attack : MonoBehaviour
     //28
     public IEnumerator Shamshir(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Shamshir"));
+        yield return StartCoroutine(attackAnimations.PlayShamshirAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(3 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " cuts with shamshir"));
-
         if (Random.value <= 0.2f)
         {
             receiver.TakeDamage(3); //critical hit
         }
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " cuts with shamshir"));
 
         if (Random.value <= 0.5f) 
         {
@@ -871,6 +872,8 @@ public class Attack : MonoBehaviour
     //29
     public IEnumerator Diplomacy(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Diplomacy"));
+        yield return StartCoroutine(attackAnimations.PlayDiplomacyAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.HandleDefense(-(int)System.Math.Ceiling((double)attacker.charisma / 10));
         receiver.HandleKnowledge(-(int)System.Math.Ceiling((double)attacker.charisma / 10));
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " made diplomatic gesture"));
@@ -880,6 +883,8 @@ public class Attack : MonoBehaviour
     //30
     public IEnumerator Siege(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Siege"));
+        yield return StartCoroutine(attackAnimations.PlaySiegeAnimation(receiver.transform));        //ANIMACIA
         StartCoroutine(attacker.AddEffect(5, 3)); //siege
         attacker.state = CardState.STAY;
         attacker.HandleDefense(10);
@@ -891,6 +896,8 @@ public class Attack : MonoBehaviour
     //31
     public IEnumerator TreeStratagem(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Tree Stratagem"));
+        yield return StartCoroutine(attackAnimations.PlayTreeStratagemAnimation(receiver.transform));        //ANIMACIA
         if (attacker.knowledge >= receiver.knowledge)
         {
             receiver.TakeDamage(Random.Range(1, 3));
@@ -898,6 +905,7 @@ public class Attack : MonoBehaviour
         }
         else
         {
+            StartCoroutine(attackAnimations.PlayAnimationNotImpressed(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + ": Yo think am stupid?!"));
         }
 

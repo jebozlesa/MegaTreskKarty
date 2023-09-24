@@ -457,24 +457,6 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
-    //21
-    public IEnumerator PlayAnimationNotImpressed(Transform targetCard)
-    {
-        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/notimpressed");
-        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/notimpressed");
-
-        yield return StartCoroutine(
-            enlargeImageAnimation.StartEnlargeAnimation(
-                sprite: effectSprite,
-                targetCard: targetCard,
-                startSize: new Vector2(250f, 250f),
-                endSize: new Vector2(400f, 400f),
-                duration: 1f,
-                soundEffect: effectSound
-            )
-        );
-    }
-
     //22
     public IEnumerator PlayDrinkWineAnimation(Transform targetCard)
     {
@@ -614,6 +596,84 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
+    //28
+    public IEnumerator PlayShamshirAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/shamshir");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/shamshir");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 100f, // napr. -15 stupňov na začiatku
+                finalRotation: -15f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    //28
+    public IEnumerator PlayDiplomacyAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/diplomacy");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/diplomacy");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250f, 250f),
+                duration: 1f,
+                startSound: startSound,
+                initialRotation: 0f, // napr. -15 stupňov na začiatku
+                finalRotation: 0f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    //29
+    public IEnumerator PlaySiegeAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/siege");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/siege");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(400f, 400f),
+                duration: 1f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //30
+    public IEnumerator PlayTreeStratagemAnimation(Transform targetCard)
+    {
+        Sprite waterSprite = Resources.Load<Sprite>("Game/Animations/treestratagem1");
+        Sprite wineSprite = Resources.Load<Sprite>("Game/Animations/treestratagem2");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/treestratagem");
+
+        yield return StartCoroutine(
+            dualImageAnimation.StartAnimation(
+                sprite1: waterSprite,
+                sprite2: wineSprite,
+                position: targetCard,
+                imageSize: new Vector2(300f, 300f), // Predpokladaná veľkosť pohára
+                duration: 1f, // Celková doba trvania animácie
+                startSound: startSound,
+                switchRatio: 0.3f // V polovici animácie sa zmení na fľašu vína
+            )
+        );
+    }
+
 
     //100
     public IEnumerator PlayShieldBashAnimation(Transform attacker, Transform receiver)
@@ -667,6 +727,23 @@ public class AttackAnimations : MonoBehaviour
                 startSize: new Vector2(250f, 250f),
                 endSize: new Vector2(350f, 350f),
                 duration: 0.7f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    public IEnumerator PlayAnimationNotImpressed(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/notimpressed");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/notimpressed");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(400f, 400f),
+                duration: 1f,
                 soundEffect: effectSound
             )
         );
