@@ -9,8 +9,9 @@ public class AttackAnimations : MonoBehaviour
     public RandomImageSpawner randomImageSpawner;
     public DualImageAnimation dualImageAnimation;
     public RandomMoveImage randomMoveImageAnimation;
-
     public ShootAnimation shootAnimation;
+    public BowShootAnimation bowShootAnimation;
+    public DualMoveImageAnimation dualMoveImageAnimation;
 
     //1
     public IEnumerator PlayPunchAnimation(Transform attacker, Transform receiver)
@@ -631,7 +632,8 @@ public class AttackAnimations : MonoBehaviour
                 duration: 1f,
                 startSound: startSound,
                 initialRotation: 0f, // napr. -15 stupňov na začiatku
-                finalRotation: 0f     // napr. 15 stupňov na konci
+                finalRotation: 0f,     // napr. 15 stupňov na konci
+                rotateTowardsTarget: false
             )
         );
     }
@@ -670,6 +672,92 @@ public class AttackAnimations : MonoBehaviour
                 duration: 1f, // Celková doba trvania animácie
                 startSound: startSound,
                 switchRatio: 0.3f // V polovici animácie sa zmení na fľašu vína
+            )
+        );
+    }
+
+    //31
+    public IEnumerator PlayTomahawkAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/tomahawk");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/tomahawk");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 100f, // napr. -15 stupňov na začiatku
+                finalRotation: -15f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    //32
+    public IEnumerator PlayRecurveBowAnimation(Transform shooterCard, Transform targetCard,  bool hit)
+    {
+        Sprite bowSprite = Resources.Load<Sprite>("Game/Animations/recurvebow");
+        Sprite arrowSprite = Resources.Load<Sprite>("Game/Animations/arrow");
+        AudioClip shootSound = Resources.Load<AudioClip>("Sounds/Game/Animations/recurvebow");
+
+        yield return StartCoroutine(
+            bowShootAnimation.StartShootAnimation(
+                bowSprite: bowSprite,
+                arrowSprite: arrowSprite,
+                shooterCard: shooterCard,
+                targetCard: targetCard,
+                imageSize: new Vector2(350f, 350f), // Veľkosť obrázka luku
+                duration: 1f, // Trvanie animácie
+                shootSound: shootSound,
+                showHitImage: hit, // Zobrazenie šípu
+                rotateToTarget: true, // Otočenie smerom k cieľu
+                arrowImageSize: new Vector2(250f, 250f) // Veľkosť obrázka šípu
+            )
+        );
+    }
+
+    //33
+    public IEnumerator PlayFuryAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/fury");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/fury");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(350f, 350f),
+                duration: 0.7f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //31
+    public IEnumerator PlayGuerillaAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite sprite1 = Resources.Load<Sprite>("Game/Animations/guerilla1");
+        Sprite sprite2 = Resources.Load<Sprite>("Game/Animations/guerilla2");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/guerilla");
+
+        yield return StartCoroutine(
+            dualMoveImageAnimation.StartAnimation(
+                sprite1: sprite1,
+                sprite2: sprite2,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(305f, 350f),
+                duration: 1f,
+                startSound: startSound,
+                switchRatio: 0.5f, // V 30% animácie sa zmení obrázok
+                //switchEffectDuration: 0.2f, // Trvanie efektu zmeny
+                initialRotation: 0f, // Začiatočná rotácia -15 stupňov
+                finalRotation: 0f,   // Konečná rotácia 15 stupňov
+                rotateTowardsTarget: true
             )
         );
     }

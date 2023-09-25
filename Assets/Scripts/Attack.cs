@@ -915,13 +915,15 @@ public class Attack : MonoBehaviour
     //32
     public IEnumerator Tomahawk(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Tomahawk"));
+        yield return StartCoroutine(attackAnimations.PlayTomahawkAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(2 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - receiver.defense);
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " attacks with tomahawk"));
 
         if (Random.value <= 0.2f)
         {
             receiver.TakeDamage(5); //critical hit
         }
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " hits with tomahawk"));
 
         if (Random.value <= 0.2f) 
         {
@@ -935,6 +937,10 @@ public class Attack : MonoBehaviour
     //33
     public IEnumerator PeacePipe(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Peace Pipe"));
+        StartCoroutine(attackAnimations.PlayUpInSmokeAnimation(receiver.transform));        //ANIMACIA
+        yield return StartCoroutine(attackAnimations.PlayUpInSmokeAnimation(attacker.transform));        //ANIMACIA
+
         receiver.HandleStrength(Random.Range(-3, 3));
         receiver.HandleAttack(Random.Range(-3, 3));
         receiver.HandleDefense(Random.Range(-3, 3));
@@ -954,13 +960,16 @@ public class Attack : MonoBehaviour
     //34
     public IEnumerator RecurveBow(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Recurve Bow"));
         if (Random.value <= (attacker.strength / 10f))
         {
+            yield return StartCoroutine(attackAnimations.PlayRecurveBowAnimation(attacker.transform, receiver.transform, true));        //ANIMACIA
             receiver.TakeDamage(5);
             yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " shoots arrow"));
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayRecurveBowAnimation(attacker.transform, receiver.transform, false));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, "arrow missed"));
         }
         Debug.Log(attacker.cardName + " -> RecurveBow => " + receiver.cardName);
@@ -969,6 +978,8 @@ public class Attack : MonoBehaviour
     //35
     public IEnumerator Fury(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Fury"));
+        yield return StartCoroutine(attackAnimations.PlayFuryAnimation(attacker.transform));        //ANIMACIA
         StartCoroutine(attacker.AddEffect(6, 3)); //fury
         attacker.HandleStrength(5);
         attacker.HandleAttack(5);
@@ -980,6 +991,8 @@ public class Attack : MonoBehaviour
     //36
     public IEnumerator Guerilla(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Guerilla"));
+        yield return StartCoroutine(attackAnimations.PlayGuerillaAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(Random.Range(1, attacker.attack + 2));
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " sends Guerillas"));
         if (Random.value <= 0.2f) receiver.HandleAttack(-(Random.Range(2, 4))); //critical hit
