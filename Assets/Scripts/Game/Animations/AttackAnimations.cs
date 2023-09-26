@@ -617,7 +617,7 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
-    //28
+    //29
     public IEnumerator PlayDiplomacyAnimation(Transform attacker, Transform receiver)
     {
         Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/diplomacy");
@@ -638,7 +638,7 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
-    //29
+    //30
     public IEnumerator PlaySiegeAnimation(Transform targetCard)
     {
         Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/siege");
@@ -656,7 +656,7 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
-    //30
+    //31
     public IEnumerator PlayTreeStratagemAnimation(Transform targetCard)
     {
         Sprite waterSprite = Resources.Load<Sprite>("Game/Animations/treestratagem1");
@@ -676,7 +676,7 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
-    //31
+    //32
     public IEnumerator PlayTomahawkAnimation(Transform attacker, Transform receiver)
     {
         Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/tomahawk");
@@ -696,7 +696,7 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
-    //32
+    //34
     public IEnumerator PlayRecurveBowAnimation(Transform shooterCard, Transform targetCard,  bool hit)
     {
         Sprite bowSprite = Resources.Load<Sprite>("Game/Animations/recurvebow");
@@ -719,7 +719,7 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
-    //33
+    //35
     public IEnumerator PlayFuryAnimation(Transform targetCard)
     {
         Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/fury");
@@ -737,7 +737,7 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
-    //31
+    //36
     public IEnumerator PlayGuerillaAnimation(Transform attacker, Transform receiver)
     {
         Sprite sprite1 = Resources.Load<Sprite>("Game/Animations/guerilla1");
@@ -758,6 +758,94 @@ public class AttackAnimations : MonoBehaviour
                 initialRotation: 0f, // Začiatočná rotácia -15 stupňov
                 finalRotation: 0f,   // Konečná rotácia 15 stupňov
                 rotateTowardsTarget: true
+            )
+        );
+    }
+
+    //37
+    public IEnumerator PlayFamineAnimation(Transform targetCard)
+    {
+        Sprite[] sprites = new Sprite[5];
+        sprites[0] = Resources.Load<Sprite>("Game/Animations/famine1");
+        sprites[1] = Resources.Load<Sprite>("Game/Animations/famine2");
+        sprites[2] = Resources.Load<Sprite>("Game/Animations/famine3");
+        sprites[3] = Resources.Load<Sprite>("Game/Animations/famine4");
+        sprites[4] = Resources.Load<Sprite>("Game/Animations/famine5");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/famine");
+
+        Vector2 initialSize = new Vector2(150f, 150f); // Počiatočná veľkosť obrázka
+        Vector2 finalSize = new Vector2(250f, 250f);   // Konečná veľkosť obrázka
+
+        yield return StartCoroutine(
+            randomImageSpawner.StartRandomSpawnAnimation(
+                sprites: sprites,
+                targetCard: targetCard,
+                cardSize: new Vector2(300f, 500f), // Predpokladaná veľkosť karty + 10%
+                duration: 1f,
+                spawnIntensity: 3,
+                spawnInterval: 0.2f,
+                startSize: initialSize,
+                endSize: finalSize,
+                imageLifetime: 1f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //38
+    public IEnumerator PlayMarxismAnimation(Transform targetCard)
+    {
+        Sprite[] sprites = new Sprite[5];
+        sprites[0] = Resources.Load<Sprite>("Game/Animations/marxism1");
+        sprites[1] = Resources.Load<Sprite>("Game/Animations/marxism2");
+        sprites[2] = Resources.Load<Sprite>("Game/Animations/marxism3");
+        sprites[3] = Resources.Load<Sprite>("Game/Animations/marxism4");
+        sprites[4] = Resources.Load<Sprite>("Game/Animations/marxism5");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/marxism");
+
+        Vector2 initialSize = new Vector2(50f, 50f); // Počiatočná veľkosť obrázka
+        Vector2 finalSize = new Vector2(300f, 300f);   // Konečná veľkosť obrázka
+
+        yield return StartCoroutine(
+            randomImageSpawner.StartRandomSpawnAnimation(
+                sprites: sprites,
+                targetCard: targetCard,
+                cardSize: new Vector2(250f, 400), // Predpokladaná veľkosť karty + 10%
+                duration: 1f,
+                spawnIntensity: 1,
+                spawnInterval: 0.4f,
+                startSize: initialSize,
+                endSize: finalSize,
+                imageLifetime: 0.5f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //39
+    public IEnumerator PlayTeslaCoilAnimation(Transform shooterCard, Transform targetCard)
+    {
+        // Načítanie zdrojov pre animáciu
+        Sprite bowSprite = Resources.Load<Sprite>("Game/Animations/teslacoil1");
+        Sprite arrowSprite = Resources.Load<Sprite>("Game/Animations/teslacoil2");
+        AudioClip shootSound = Resources.Load<AudioClip>("Sounds/Game/Animations/teslacoil");
+
+        // Spustenie animácie výstrelu šípu
+        yield return StartCoroutine(
+            bowShootAnimation.StartShootAnimation(
+                bowSprite: bowSprite,
+                arrowSprite: arrowSprite,
+                shooterCard: shooterCard,
+                targetCard: targetCard,
+                imageSize: new Vector2(350f, 350f), // Veľkosť obrázka luku
+                duration: 1f, // Trvanie animácie
+                shootSound: shootSound,
+                showHitImage: true, // Zobrazenie šípu
+                rotateToTarget: true, // Otočenie smerom k cieľu
+                arrowImageSize: new Vector2(250f, 250f), // Veľkosť obrázka šípu
+                arrowCount: 10, // Počet šípov
+                arrowInterval: 0.1f, // Interval medzi šípmi
+                arrowFlightDuration: 0.3f // Čas letu šípu
             )
         );
     }

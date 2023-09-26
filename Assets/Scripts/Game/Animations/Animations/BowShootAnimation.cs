@@ -6,33 +6,51 @@ public class BowShootAnimation : MonoBehaviour
 {
     public Canvas canvas; // Referencia na váš Canvas
 
-    public IEnumerator StartShootAnimation(Sprite bowSprite, Sprite arrowSprite, Transform shooterCard, Transform targetCard, Vector2 imageSize, float duration, AudioClip shootSound = null, bool showHitImage = true, bool rotateToTarget = true, Vector2 arrowImageSize = default)
+    public IEnumerator StartShootAnimation(Sprite bowSprite, Sprite arrowSprite, Transform shooterCard, Transform targetCard, Vector2 imageSize, float duration, AudioClip shootSound = null, bool showHitImage = true, bool rotateToTarget = true, Vector2 arrowImageSize = default, int arrowCount = 1, float arrowInterval = 0.2f, float arrowFlightDuration = 0.5f)
+{
+    if (shootSound)
     {
-        if (shootSound)
+        AudioSource.PlayClipAtPoint(shootSound, Camera.main.transform.position);
+    }
+
+    // Vytvorenie GameObjectu pre luk
+    GameObject bowImageObject = new GameObject("BowImage");
+    bowImageObject.transform.SetParent(canvas.transform, false);
+    Image bowImg = bowImageObject.AddComponent<Image>();
+    bowImg.sprite = bowSprite;
+
+    // Nastavenie veľkosti a pozície luku
+    RectTransform bowRectTransform = bowImageObject.GetComponent<RectTransform>();
+    bowRectTransform.sizeDelta = imageSize;
+    bowImageObject.transform.position = shooterCard.position;
+
+    // Otočenie luku smerom k cieľu
+    if (rotateToTarget)
+    {
+        bowImageObject.transform.up = targetCard.position - shooterCard.position;
+    }
+
+    yield return new WaitForSeconds(duration * 0.5f); // Čakanie na výstrel
+
+    for (int i = 0; i < arrowCount; i++)
+    {
+        // Spustenie animácie šípu v paralelnej korutine
+        StartCoroutine(ShootArrow(arrowSprite, shooterCard, targetCard, imageSize, showHitImage, rotateToTarget, arrowImageSize, arrowFlightDuration));
+
+        // Čakanie medzi šípmi
+        if (i < arrowCount - 1)
         {
-            AudioSource.PlayClipAtPoint(shootSound, Camera.main.transform.position);
+            yield return new WaitForSeconds(arrowInterval);
         }
+    }
 
-        // Vytvorenie GameObjectu pre luk
-        GameObject bowImageObject = new GameObject("BowImage");
-        bowImageObject.transform.SetParent(canvas.transform, false);
-        Image bowImg = bowImageObject.AddComponent<Image>();
-        bowImg.sprite = bowSprite;
+    // Zničenie luku po skončení animácie
+    Destroy(bowImageObject);
+}
 
-        // Nastavenie veľkosti a pozície luku
-        RectTransform bowRectTransform = bowImageObject.GetComponent<RectTransform>();
-        bowRectTransform.sizeDelta = imageSize;
-        bowImageObject.transform.position = shooterCard.position;
-
-        // Otočenie luku smerom k cieľu
-        if (rotateToTarget)
-        {
-            bowImageObject.transform.up = targetCard.position - shooterCard.position;
-        }
-
-        yield return new WaitForSeconds(duration * 0.5f); // Čakanie na výstrel
-
-        // Vytvorenie GameObjectu pre šíp
+private IEnumerator ShootArrow(Sprite arrowSprite, Transform shooterCard, Transform targetCard, Vector2 imageSize, bool showHitImage, bool rotateToTarget, Vector2 arrowImageSize, float arrowFlightDuration)
+{
+    // Vytvorenie GameObjectu pre šíp
     GameObject arrowImageObject = new GameObject("ArrowImage");
     arrowImageObject.transform.SetParent(canvas.transform, false);
     Image arrowImg = arrowImageObject.AddComponent<Image>();
@@ -52,13 +70,13 @@ public class BowShootAnimation : MonoBehaviour
     }
 
     // Spustenie animácie šípu
-    yield return StartCoroutine(AnimateMove(arrowImageObject, shooterCard.position, endPosition, duration * 0.5f));
+    yield return StartCoroutine(AnimateMove(arrowImageObject, shooterCard.position, endPosition, arrowFlightDuration));
+
+    // Zničenie šípu po skončení animácie
+    Destroy(arrowImageObject);
+}
 
 
-        // Zničenie obrázkov po skončení animácie
-        Destroy(bowImageObject);
-        Destroy(arrowImageObject);
-    }
 
     private Vector3 GetRandomPosition(Vector3 cardCenter, Vector2 imageSize)
     {

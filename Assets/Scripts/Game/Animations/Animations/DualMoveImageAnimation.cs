@@ -6,8 +6,10 @@ public class DualMoveImageAnimation : MonoBehaviour
 {
     public Canvas canvas; // Referencia na váš Canvas
 
-    public IEnumerator StartAnimation(Sprite sprite1, Sprite sprite2, Transform startPoint, Transform endPoint, Vector2 imageSize, float duration, AudioClip startSound, float switchRatio = 0.5f, float initialRotation = 0f, float finalRotation = 0f, bool rotateTowardsTarget = true)
+    public IEnumerator StartAnimation(Sprite sprite1, Sprite sprite2, Transform startPoint, Transform endPoint, Vector2 imageSize, float duration, AudioClip startSound, float switchRatio = 0.5f, float switchDelay = 0.2f, float initialRotation = 0f, float finalRotation = 0f, bool rotateTowardsTarget = true)
     {
+        
+
         // Ak existuje zvuk pre začiatok, prehrať ho
         if (startSound != null)
         {
@@ -49,18 +51,21 @@ public class DualMoveImageAnimation : MonoBehaviour
         imageObject2.transform.rotation *= Quaternion.Euler(0, 0, initialRotation);
 
         // Spustenie animácie
-        yield return StartCoroutine(AnimateMoveAndSwitch(imageObject1, imageObject2, startPoint, endPoint, duration, switchRatio, finalRotation));
+        yield return StartCoroutine(AnimateMoveAndSwitch(imageObject1, imageObject2, startPoint, endPoint, duration, switchRatio, switchDelay, finalRotation));
 
         // Zničenie obrázkov po skončení animácie
         Destroy(imageObject1);
         Destroy(imageObject2);
     }
 
-    private IEnumerator AnimateMoveAndSwitch(GameObject image1, GameObject image2, Transform startPoint, Transform endPoint, float duration, float switchRatio, float finalRotation)
+    private IEnumerator AnimateMoveAndSwitch(GameObject image1, GameObject image2, Transform startPoint, Transform endPoint, float duration, float switchRatio, float switchDelay, float finalRotation)
     {
         float elapsedTime = 0;
         Vector3 startingPos = startPoint.position;
         float startingRotationAngle = image1.transform.eulerAngles.z;
+
+        float switchStart = duration * (switchRatio - switchDelay);
+        float switchEnd = duration * (switchRatio + switchDelay);
 
         while (elapsedTime < duration)
         {
@@ -76,12 +81,17 @@ public class DualMoveImageAnimation : MonoBehaviour
             image1.transform.eulerAngles = new Vector3(0, 0, currentRotationAngle);
             image2.transform.eulerAngles = new Vector3(0, 0, currentRotationAngle);
 
-            // Zmena obrázkov na základe switchRatio
-            if (progress > switchRatio)
+            // Zmena obrázkov na základe switchRatio a switchDelay
+            if (progress > switchStart && progress < switchEnd)
             {
-                float switchProgress = (progress - switchRatio) / (1 - switchRatio);
+                float switchProgress = (progress - switchStart) / (switchEnd - switchStart);
                 image1.transform.localScale = Vector3.one * (1 - switchProgress);
                 image2.transform.localScale = Vector3.one * switchProgress;
+            }
+            else if (progress >= switchEnd)
+            {
+                image1.transform.localScale = Vector3.zero;
+                image2.transform.localScale = Vector3.one;
             }
 
             elapsedTime += Time.deltaTime;
@@ -93,4 +103,5 @@ public class DualMoveImageAnimation : MonoBehaviour
         image1.transform.eulerAngles = new Vector3(0, 0, finalRotation);
         image2.transform.eulerAngles = new Vector3(0, 0, finalRotation);
     }
+
 }

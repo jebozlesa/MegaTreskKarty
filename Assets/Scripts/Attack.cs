@@ -1002,12 +1002,15 @@ public class Attack : MonoBehaviour
     //37
     public IEnumerator Famine(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Famine"));
         if (receiver.CheckEffect(7))
         {
+            StartCoroutine(attackAnimations.PlayAnimationNotImpressed(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, "Be a human, " + attacker.cardName + "!"));
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayFamineAnimation(receiver.transform));        //ANIMACIA
             int r = Random.Range(5, 10);
             receiver.TakeDamage(2 * r);
             receiver.HandleDefense(-2 * r);
@@ -1020,6 +1023,8 @@ public class Attack : MonoBehaviour
     //38
     public IEnumerator Marxism(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Marxism"));
+        yield return StartCoroutine(attackAnimations.PlayMarxismAnimation(attacker.transform));        //ANIMACIA
         receiver.HandleKnowledge(-(int)System.Math.Ceiling((double)attacker.charisma / 3));
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " explains Marxism"));
         Debug.Log(attacker.cardName + " -> Marxism => " + receiver.cardName);
@@ -1028,6 +1033,8 @@ public class Attack : MonoBehaviour
     //39
     public IEnumerator TeslaCoil(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Tesla Coil"));
+        yield return StartCoroutine(attackAnimations.PlayTeslaCoilAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(attacker.attack);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " shocks enemy"));
         if (Random.value <= 0.7f)
