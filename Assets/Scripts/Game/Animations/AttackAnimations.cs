@@ -12,6 +12,8 @@ public class AttackAnimations : MonoBehaviour
     public ShootAnimation shootAnimation;
     public BowShootAnimation bowShootAnimation;
     public DualMoveImageAnimation dualMoveImageAnimation;
+    public WirelessChargerAnimation wirelessChargerAnimation;
+    public MachineGunAnimation machineGunAnimation;
 
     //1
     public IEnumerator PlayPunchAnimation(Transform attacker, Transform receiver)
@@ -850,6 +852,72 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
+    //40
+    public IEnumerator PlayWirelessChargerAnimation(Transform position)
+    {
+        Sprite sprite1 = Resources.Load<Sprite>("Game/Animations/wirelessCharger");
+        Sprite sprite2 = Resources.Load<Sprite>("Game/Animations/wirelessCharger");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/wirelessCharger");
+
+        yield return StartCoroutine(
+            wirelessChargerAnimation.StartAnimation(
+                sprite1: sprite1,
+                sprite2: sprite2,
+                position: position,
+                imageSize: new Vector2(300f, 300f),
+                duration: 1f,
+                startSound: startSound,
+                switchRatio: 0.3f,
+                fadeDurationRatio: 0.4f
+            )
+        );
+    }
+
+    //41
+    public IEnumerator PlayExperimentAnimation(Transform targetCard)
+    {
+        Sprite sprite1 = Resources.Load<Sprite>("Game/Animations/experiment1");
+        Sprite sprite2 = Resources.Load<Sprite>("Game/Animations/experiment2");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/experiment");
+
+        yield return StartCoroutine(
+            dualImageAnimation.StartAnimation(
+                sprite1: sprite1,
+                sprite2: sprite2,
+                position: targetCard,
+                imageSize: new Vector2(300f, 300f), // Predpokladaná veľkosť pohára
+                duration: 1f, // Celková doba trvania animácie
+                startSound: startSound,
+                switchRatio: 0.5f // V polovici animácie sa zmení na fľašu vína
+            )
+        );
+    }
+
+    //42
+    public IEnumerator PlayTommyGunAnimation(Transform shooterCard, Transform targetCard, int hits)
+    {
+        Sprite shooterSprite = Resources.Load<Sprite>("Game/Animations/tommygun1");
+        Sprite hitSprite = Resources.Load<Sprite>("Game/Animations/tommygun2");
+        AudioClip shootSound = Resources.Load<AudioClip>("Sounds/Game/Animations/tommygun");
+
+        yield return StartCoroutine(
+            machineGunAnimation.StartShootAnimation(
+                shooterSprite: shooterSprite,
+                hitSprite: hitSprite,
+                shooterCard: shooterCard,
+                targetCard: targetCard,
+                imageSize: new Vector2(400f, 400f),
+                duration: 1f,
+                shootRatio: 0.2f,
+                shootRatioEnd: 0.7f,
+                shootSound: shootSound,
+                recoilAngle: 5f,
+                showHitImageCount: hits, // Napríklad 5 zásahov
+                rotateToTarget: true,
+                hitImageSize: new Vector2(150f, 150f)
+            )
+        );
+    }
 
     //100
     public IEnumerator PlayShieldBashAnimation(Transform attacker, Transform receiver)

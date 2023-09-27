@@ -1048,6 +1048,8 @@ public class Attack : MonoBehaviour
     //40
     public IEnumerator WirelessCharger(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Wireless Charger"));
+        yield return StartCoroutine(attackAnimations.PlayWirelessChargerAnimation(attacker.transform));        //ANIMACIA
         attacker.HandleAttack(Random.Range(2, 4));
         attacker.Heal(1);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is charging wirelessly!!!"));
@@ -1057,6 +1059,8 @@ public class Attack : MonoBehaviour
     //41
     public IEnumerator Experiment(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Experiment"));
+        yield return StartCoroutine(attackAnimations.PlayExperimentAnimation(attacker.transform));        //ANIMACIA
         receiver.TakeDamage(Random.Range(0, 2));
         attacker.TakeDamage(Random.Range(0, 2));
         attacker.HandleKnowledge(2);
@@ -1067,7 +1071,12 @@ public class Attack : MonoBehaviour
     //42
     public IEnumerator TommyGun(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
-        receiver.TakeDamage(Random.Range(1, 10));
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Tommy Gun"));
+        
+        int hits = Random.Range(1, 10);
+
+        yield return StartCoroutine(attackAnimations.PlayTommyGunAnimation(attacker.transform, receiver.transform, hits));        //ANIMACIA
+        receiver.TakeDamage(hits);
         yield return StartCoroutine(ShowDialog(dialogText, "Ratatata!"));
         if (Random.value <= 0.5f)
         {
