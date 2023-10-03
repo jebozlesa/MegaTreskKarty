@@ -8,7 +8,24 @@ using TMPro;
 public class Effects : MonoBehaviour
 {
 
+    public AttackAnimations attackAnimations;
     public TextBubble textBubble;
+
+    private IEnumerator ShowDialog(TMP_Text dialogText, string message)
+    {
+        dialogText.text = "";
+        yield return new WaitForSeconds(0.2f);
+        dialogText.text = message;
+        yield return new WaitForSeconds(1.8f);
+    }
+
+    private IEnumerator ShowAttackDialog(TMP_Text dialogText, string message)
+    {
+        dialogText.text = "";
+        yield return new WaitForSeconds(0.2f);
+        dialogText.text = message;
+        yield return new WaitForSeconds(0.8f);
+    }
 
     public IEnumerator ExecuteEffects(Kard card, TMP_Text dialogText, Kard target)
     {
@@ -321,96 +338,105 @@ public class Effects : MonoBehaviour
     public IEnumerator Envelop(Kard card, TMP_Text dialogText, int iteration, Kard target)
 	{
         card.state = CardState.STAY;
-        //StartCoroutine(textBubble.ShowForSeconds("surrender!", Resources.Load<Sprite>("oblacik"), 2.5f));
+        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " using Double Envelopment"));
+    
         if (card.effects[iteration][1] == 0)
         {
+            yield return StartCoroutine(attackAnimations.PlayDoubleEnvelopAttackAnimation(target.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
             card.state = CardState.ATTACK;
             card.HandleDefense(3);
             target.TakeDamage(UnityEngine.Random.Range(3, Math.Max(4, 3 + card.speed + card.attack + card.strength + card.knowledge - target.defense - target.speed)));
-            dialogText.text = card.cardName + " attacks from all sides";
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " attacks from all sides"));
             yield break;
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayDoubleEnvelopmentWaitAnimation(card.transform));        //ANIMACIA
             card.effects[iteration][1] -= 1;
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is turning direction"));
         }
         Debug.Log(card.cardName + " => Envelop");
 	}
     //12
     public IEnumerator Blockade(Kard card, TMP_Text dialogText, int iteration)
 	{
+        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is affected by Continental Blockade"));
         if (card.effects[iteration][1] == 0 || (UnityEngine.Random.value <= 0.5f))
         {
             card.state = CardState.ATTACK;
+            yield return StartCoroutine(attackAnimations.PlayBlocadeEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            dialogText.text = card.cardName + " Blockade breached!";
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, "Blockade breached!"));
             yield break;
         }
         else
         {
             card.state = CardState.MAYBE;
-            dialogText.text = "The blockade holds strong";
+            yield return StartCoroutine(attackAnimations.PlayBlocadeWaitAnimation(card.transform));        //ANIMACIA
             card.TakeDamage(2);
             card.HandleDefense(-1);
             card.HandleStrength(-1);
             card.effects[iteration][1] -= 1;
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, "The blockade holds strong"));
         }
         Debug.Log(card.cardName + " => Blockade");
 	}
     //13
     public IEnumerator Depression(Kard card, TMP_Text dialogText, int iteration)
 	{
+        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is affected by Depression"));
         //StartCoroutine(textBubble.ShowForSeconds("surrender!", Resources.Load<Sprite>("oblacik"), 2.5f));
         if (card.effects[iteration][1] == 0)
         {
+            yield return StartCoroutine(attackAnimations.PlayDepressionEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
             card.HandleStrength(UnityEngine.Random.Range(0,3));
             card.HandleSpeed(UnityEngine.Random.Range(0,3));
             card.HandleAttack(UnityEngine.Random.Range(0,3));
             card.HandleDefense(UnityEngine.Random.Range(0,3));
             card.HandleCharisma(UnityEngine.Random.Range(0,3));
-            dialogText.text = card.cardName + " feels better";
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " feels better"));
             yield break;
         }
         else
         {
             card.effects[iteration][1] -= 1;
+            yield return StartCoroutine(attackAnimations.PlayDepressionStartAnimation(card.transform));        //ANIMACIA
         }
         Debug.Log(card.cardName + " => Depression");
 	}
     //14
     public IEnumerator ArtInspiration(Kard card, TMP_Text dialogText, int iteration, Kard target)
 	{
+        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is affected by Art Inspiration"));
         //StartCoroutine(textBubble.ShowForSeconds("surrender!", Resources.Load<Sprite>("oblacik"), 2.5f));
         if (card.effects[iteration][1] == 0)
         {
             card.state = CardState.ATTACK;
+            yield return StartCoroutine(attackAnimations.PlayArtInspirationEndAnimation(card.transform));        //ANIMACIA
+//            StartCoroutine(ShowDialog(dialogText, card.cardName + " finished his creation"));
             card.RemoveEffect(iteration);
+            yield return StartCoroutine(attackAnimations.PlayArtInspirationEndEnemyAnimation(target.transform));        //ANIMACIA
             target.HandleStrength(UnityEngine.Random.Range(-3,0));
             target.HandleSpeed(UnityEngine.Random.Range(-3,0));
             target.HandleAttack(UnityEngine.Random.Range(-3,0));
             target.HandleDefense(UnityEngine.Random.Range(-3,0));
             target.HandleKnowledge(UnityEngine.Random.Range(0,3));
-            dialogText.text = target.cardName + " is impressed by masterpiece";
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, target.cardName + " is impressed by masterpiece"));
+            yield return StartCoroutine(attackAnimations.PlayArtInspirationEndAttackAnimation(card.transform, target.transform));        //ANIMACIA
             target.TakeDamage(UnityEngine.Random.Range(1, target.defense * 2));
-            dialogText.text = card.cardName + " attacks from behind";
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " attacks in distruption"));
             yield break;
         }
         else
         {
             card.state = CardState.STAY;
-            dialogText.text = card.cardName + " is making art";
+            yield return StartCoroutine(attackAnimations.PlayArtInspirationWaitAnimation(card.transform));        //ANIMACIA
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is making art"));
             card.effects[iteration][1] -= 1;
         }
-        Debug.Log(card.cardName + " => Depression");
-        yield return new WaitForSeconds(2);
+        Debug.Log(card.cardName + " => ArtInspiration");
 	}
     //15
     public IEnumerator Autoportrait(Kard card, TMP_Text dialogText, int iteration)

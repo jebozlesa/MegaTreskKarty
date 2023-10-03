@@ -29,6 +29,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Leaderboard.unity
     guid: 254346085a920284e9bc4db14f840ca0
+  - enabled: 1
+    path: Assets/Scenes/Multiplayer.unity
+    guid: 8591851143674d14fb842103740c45ad
   m_configObjects:
     com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: 56369a66005a0e846a1f3b148b5f3712, type: 2}
     com.unity.adaptiveperformance.samsung.android.provider_settings: {fileID: 11400000, guid: 002713a17f8af5943b1b9fb9abb35622, type: 2}

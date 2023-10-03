@@ -6,7 +6,7 @@ public class WirelessChargerAnimation : MonoBehaviour
 {
     public Canvas canvas; // Referencia na váš Canvas
 
-    public IEnumerator StartAnimation(Sprite sprite1, Sprite sprite2, Transform position, Vector2 imageSize, float duration, AudioClip startSound, float switchRatio = 0.5f, float fadeDurationRatio = 0.2f)
+    public IEnumerator StartAnimation(Sprite sprite1, Sprite sprite2, Transform position, Vector2 imageSize, float duration, AudioClip startSound, float switchRatio = 1f, float fadeDurationRatio = 0.2f)
     {
         // Ak existuje zvuk pre začiatok, prehrať ho
         if (startSound != null)
