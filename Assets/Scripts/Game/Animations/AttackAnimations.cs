@@ -18,6 +18,8 @@ public class AttackAnimations : MonoBehaviour
     public EnvelopAnimation envelopAnimation;
     public BlocadeAnimation blocadeAnimation;
     public DepressionAnimation depressionAnimation;
+    public BleedAnimation bleedAnimation;
+    public AutoportraitAnimation autoportraitAnimation;
 
     //1
     public IEnumerator PlayPunchAnimation(Transform attacker, Transform receiver)
@@ -1276,6 +1278,180 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
+
+    //53
+    public IEnumerator PlayKnifeAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/knife");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/knife");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(300f, 300f),
+                duration: 0.7f,
+                startSound: startSound,
+                initialRotation: 0f, // napr. -15 stupňov na začiatku
+                finalRotation: 0f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    //54
+    public IEnumerator PlayAutoportraitAnimation(Transform targetCard)
+    {
+        Sprite animationSprite = Resources.Load<Sprite>("Game/Animations/autoportrait");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/autoportrait");
+
+        yield return StartCoroutine(
+            autoportraitAnimation.StartAnimation(
+                sprite: animationSprite,
+                targetCard: targetCard,
+                imageSize: new Vector2(250f, 250f),
+                duration: 1f,
+                moveWidth: 100f,
+                speed: 300f,
+                tiltAngle: -15f,
+                soundEffect: startSound
+            )
+        );
+    }
+
+
+    //100
+    public IEnumerator PlayShieldBashAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/shield");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/shield");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 15f, // napr. -15 stupňov na začiatku
+                finalRotation: -15f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    //111
+    public IEnumerator PlayAxeAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/axe");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/axe");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 100f, // napr. -15 stupňov na začiatku
+                finalRotation: -15f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    public IEnumerator PlayBattleCryAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/battlecry");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/battlecry");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(350f, 350f),
+                duration: 0.7f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    public IEnumerator PlayAnimationNotImpressed(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/notimpressed");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/notimpressed");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(400f, 400f),
+                duration: 1f,
+                soundEffect: effectSound
+            )
+        );
+    }
+    
+    //1e
+    public IEnumerator PlayBleedStartAnimation(Transform targetCard)
+    {
+        Sprite sprite = Resources.Load<Sprite>("Game/Animations/bleedstart");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/bleedstart");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: sprite,
+                targetCard: targetCard,
+                startSize: new Vector2(300f, 300f),
+                endSize: new Vector2(300f, 300f),
+                duration: 0.5f,
+                soundEffect: soundEffect
+            )
+        );
+    }
+
+    //1e
+    public IEnumerator PlayBleedContinueAnimation(Transform targetCard)
+    {
+        Sprite[] sprites = new Sprite[]
+        {
+            Resources.Load<Sprite>("Game/Animations/bleedcontinue"),
+        };
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/bleedcontinue");
+
+        yield return StartCoroutine(
+            bleedAnimation.StartAnimation(
+                sprites: sprites,
+                soundEffect: soundEffect,
+                targetCard: targetCard,
+                cardSize: new Vector2(300f, 300f), // Predpokladaná veľkosť karty
+                duration: 0.5f, // Celková doba trvania animácie
+                numberOfImages: 3, // Number of images you want to spawn
+                imageSize: new Vector2(100f, 100f), // Size of the generated images
+                scatterSpeed: 400f // Speed at which the images scatter
+            )
+        );
+    }
+
+    public IEnumerator PlaySleepAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/battlecry");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/battlecry");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(350f, 350f),
+                duration: 0.7f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
     //14e
     public IEnumerator PlayArtInspirationWaitAnimation(Transform targetCard)
     {
@@ -1368,97 +1544,23 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
-
-    //100
-    public IEnumerator PlayShieldBashAnimation(Transform attacker, Transform receiver)
+    //15e
+    public IEnumerator PlayAutoportraitFinishAnimation(Transform attacker)
     {
-        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/shield");
-        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/shield");
-
-        yield return StartCoroutine(
-            moveImageAnimation.StartAnimation(
-                sprite: animationImageSprite,
-                startPoint: attacker,
-                endPoint: receiver,
-                imageSize: new Vector2(250f, 250f),
-                duration: 0.5f,
-                startSound: startSound,
-                initialRotation: 15f, // napr. -15 stupňov na začiatku
-                finalRotation: -15f     // napr. 15 stupňov na konci
-            )
-        );
-    }
-
-    //111
-    public IEnumerator PlayAxeAnimation(Transform attacker, Transform receiver)
-    {
-        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/axe");
-        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/axe");
-
-        yield return StartCoroutine(
-            moveImageAnimation.StartAnimation(
-                sprite: animationImageSprite,
-                startPoint: attacker,
-                endPoint: receiver,
-                imageSize: new Vector2(250f, 250f),
-                duration: 0.5f,
-                startSound: startSound,
-                initialRotation: 100f, // napr. -15 stupňov na začiatku
-                finalRotation: -15f     // napr. 15 stupňov na konci
-            )
-        );
-    }
-
-    public IEnumerator PlayBattleCryAnimation(Transform targetCard)
-    {
-        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/battlecry");
-        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/battlecry");
+        Sprite sprite = Resources.Load<Sprite>("Game/Animations/autoportraitfinish");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/autoportraitfinish");
 
         yield return StartCoroutine(
             enlargeImageAnimation.StartEnlargeAnimation(
-                sprite: effectSprite,
-                targetCard: targetCard,
+                sprite: sprite,
+                targetCard: attacker,
                 startSize: new Vector2(250f, 250f),
                 endSize: new Vector2(350f, 350f),
                 duration: 0.7f,
-                soundEffect: effectSound
+                soundEffect: soundEffect
             )
         );
     }
 
-    public IEnumerator PlayAnimationNotImpressed(Transform targetCard)
-    {
-        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/notimpressed");
-        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/notimpressed");
-
-        yield return StartCoroutine(
-            enlargeImageAnimation.StartEnlargeAnimation(
-                sprite: effectSprite,
-                targetCard: targetCard,
-                startSize: new Vector2(250f, 250f),
-                endSize: new Vector2(400f, 400f),
-                duration: 1f,
-                soundEffect: effectSound
-            )
-        );
-    }
-    
-
-    public IEnumerator PlaySleepAnimation(Transform targetCard)
-    {
-        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/battlecry");
-        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/battlecry");
-
-        yield return StartCoroutine(
-            enlargeImageAnimation.StartEnlargeAnimation(
-                sprite: effectSprite,
-                targetCard: targetCard,
-                startSize: new Vector2(250f, 250f),
-                endSize: new Vector2(350f, 350f),
-                duration: 0.7f,
-                soundEffect: effectSound
-            )
-        );
-    }
 
 }

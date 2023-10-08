@@ -136,12 +136,12 @@ public class Effects : MonoBehaviour
         }
         else
         {
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " Bleeds"));
+            yield return StartCoroutine(attackAnimations.PlayBleedContinueAnimation(card.transform));        //ANIMACIA
             card.effects[iteration][1] -= 1;
             card.TakeDamage(1);
-            dialogText.text = card.cardName + " Bleeds";
         }
         Debug.Log(card.cardName + " => Bleed");
-        yield return new WaitForSeconds(2);
 	}
     //2
     public IEnumerator Asceticism(Kard card, TMP_Text dialogText, int iteration)
@@ -427,7 +427,7 @@ public class Effects : MonoBehaviour
             yield return StartCoroutine(attackAnimations.PlayArtInspirationEndAttackAnimation(card.transform, target.transform));        //ANIMACIA
             target.TakeDamage(UnityEngine.Random.Range(1, target.defense * 2));
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " attacks in distruption"));
-            yield break;
+        //    yield break;
         }
         else
         {
@@ -441,26 +441,26 @@ public class Effects : MonoBehaviour
     //15
     public IEnumerator Autoportrait(Kard card, TMP_Text dialogText, int iteration)
 	{
-        //StartCoroutine(textBubble.ShowForSeconds("surrender!", Resources.Load<Sprite>("oblacik"), 2.5f));
+        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " uses Autoportrait"));
         if (card.effects[iteration][1] == 0)
         {
             card.state = CardState.ATTACK;
+            yield return StartCoroutine(attackAnimations.PlayAutoportraitFinishAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            dialogText.text = card.cardName + " finished";
-            yield return new WaitForSeconds(2);
-            yield break;
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " finished"));
+        //    yield break;
         }
         else
         {
             card.state = CardState.STAY;
+            yield return StartCoroutine(attackAnimations.PlayAutoportraitAnimation(card.transform));        //ANIMACIA
             card.effects[iteration][1] -= 1;
             card.HandleKnowledge(1);
             card.HandleStrength(1);
             card.HandleDefense(1);
-            dialogText.text = card.cardName + " is making art";
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is still painting"));
         }
         Debug.Log(card.cardName + " => Autoportrait");
-        yield return new WaitForSeconds(2);
 	}
     //16
     public IEnumerator Burn(Kard card, TMP_Text dialogText, int iteration)

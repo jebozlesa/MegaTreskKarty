@@ -1225,7 +1225,7 @@ public class Attack : MonoBehaviour
         if (Random.value <= 0.3f) 
         {
             attacker.state = CardState.STAY;
-            yield return StartCoroutine(attackAnimations.PlayArtInspirationStartAnimation(attacker.transform));        //ANIMACIA
+            StartCoroutine(attackAnimations.PlayArtInspirationStartAnimation(attacker.transform));        //ANIMACIA
             yield return StartCoroutine(attacker.AddEffect(14, 3));//ArtInspiration
             yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is empowered by muse"));
         }
@@ -1252,10 +1252,13 @@ public class Attack : MonoBehaviour
     //53
     public IEnumerator Knife(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Knife"));
+        yield return StartCoroutine(attackAnimations.PlayKnifeAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(1 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " cuts enemy with knife"));
         if (Random.value <= 0.3f) 
         {
+            StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(1,Random.Range(1, 3)));//bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
@@ -1264,6 +1267,8 @@ public class Attack : MonoBehaviour
     //54
     public IEnumerator Autoportrait(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Autoportrait"));
+        yield return StartCoroutine(attackAnimations.PlayAutoportraitAnimation(attacker.transform));        //ANIMACIA
         attacker.HandleKnowledge(1);
         attacker.HandleStrength(1);
         attacker.HandleDefense(1);
