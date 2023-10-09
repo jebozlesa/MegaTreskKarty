@@ -267,7 +267,7 @@ public class Attack : MonoBehaviour
                 yield return StartCoroutine(Kamikaze(attacker, receiver, dialogText));
                 break;
             case 57:
-                yield return StartCoroutine(TookOff(attacker, receiver, dialogText));
+                yield return StartCoroutine(TakeOff(attacker, receiver, dialogText));
                 break;
             case 58:
                 yield return StartCoroutine(AirStrike(attacker, receiver, dialogText));
@@ -1281,12 +1281,14 @@ public class Attack : MonoBehaviour
     //55
     public IEnumerator GravityPull(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
-        int r = Random.Range(0,3);
+        int r = Random.Range(0,4);
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Gravity Pull"));
+        yield return StartCoroutine(attackAnimations.PlayGravityPullAnimation(attacker.transform, receiver.transform, r));        //ANIMACIA
         string[] objects = {"piano", "boiler", "anvil", "gases"};
         int[] weight = {6,5,4,0};
-        receiver.TakeDamage(weight[r]);
+        if (r != 3) { receiver.TakeDamage(weight[r]); }
         yield return StartCoroutine(ShowDialog(dialogText, "Gravity pulled " + objects[r] + " to " + receiver.cardName));
-        if (Random.value <= 0.1f) 
+        if (Random.value <= 0.1f && r != 3) 
         {
             yield return StartCoroutine(receiver.AddEffect(3,Random.Range(1, 3)));//sleep
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " falls asleep"));
@@ -1296,16 +1298,19 @@ public class Attack : MonoBehaviour
 
     //56
     public IEnumerator Kamikaze(Kard attacker, Kard receiver, TMP_Text dialogText)
-    {
+    { 
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Kamikaze"));
         int dmg = attacker.health;
         if (Random.value <= 0.9f) 
         {
+            yield return StartCoroutine(attackAnimations.PlayKamikazeAnimation(attacker.transform, receiver.transform, true));        //ANIMACIA
             attacker.TakeDamage(dmg);
             receiver.TakeDamage(Random.Range(1, (attacker.knowledge + attacker.speed + attacker.attack)));
             yield return StartCoroutine(ShowDialog(dialogText, "Kamikaze strikes"));
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayKamikazeAnimation(attacker.transform, receiver.transform, false));        //ANIMACIA
             attacker.TakeDamage(dmg);
             yield return StartCoroutine(ShowDialog(dialogText, "Ou! Nasty miss"));
         }
@@ -1313,28 +1318,34 @@ public class Attack : MonoBehaviour
     }
 
     //57
-    public IEnumerator TookOff(Kard attacker, Kard receiver, TMP_Text dialogText)
+    public IEnumerator TakeOff(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Take Off"));
         if (Random.value <= 0.75f) 
         {
+            yield return StartCoroutine(attackAnimations.PlayTakeOffAnimation(attacker.transform));        //ANIMACIA
             attacker.HandleSpeed(3);
             yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " took off"));
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayTakeOffCrashAnimation(attacker.transform));        //ANIMACIA
             attacker.TakeDamage(Random.Range(1, attacker.speed));
             yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " crashes"));
         }
-        Debug.Log(attacker.cardName + " -> TookOff => " + receiver.cardName);
+        Debug.Log(attacker.cardName + " -> TakeOff => " + receiver.cardName);
     }
 
     //58
     public IEnumerator AirStrike(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
-        int dmg = attacker.health;
-        receiver.TakeDamage(Random.Range(attacker.attack, attacker.speed + attacker.attack) - receiver.defense);
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses AirStrike"));
+        int hits = Random.Range(attacker.attack, attacker.speed + attacker.attack) - receiver.defense;
+        yield return StartCoroutine(attackAnimations.PlayAirStrikeAnimation(attacker.transform, receiver.transform, hits));        //ANIMACIA
+        receiver.TakeDamage(hits);
         if (Random.value <= (attacker.attack / 30f)) 
         {
+            yield return StartCoroutine(attackAnimations.PlayAirStrikeCriticalAnimation(receiver.transform));        //ANIMACIA
             receiver.TakeDamage(attacker.speed);
         }
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " strikes from air"));

@@ -4,8 +4,8 @@ using UnityEngine.UI;
 
 public class AttackAnimations : MonoBehaviour
 {
-    public MoveImage moveImageAnimation;
-    public EnlargeImage enlargeImageAnimation;
+    public MoveImage moveImageAnimation;                                //klasika od karty ku karte
+    public EnlargeImage enlargeImageAnimation;                          
     public RandomImageSpawner randomImageSpawner;
     public DualImageAnimation dualImageAnimation;
     public RandomMoveImage randomMoveImageAnimation;
@@ -20,6 +20,10 @@ public class AttackAnimations : MonoBehaviour
     public DepressionAnimation depressionAnimation;
     public BleedAnimation bleedAnimation;
     public AutoportraitAnimation autoportraitAnimation;
+    public GravityPullAnimation gravityPullAnimation;
+    public KamikazeAnimation kamikazeAnimation;
+    public AirStrikeAnimation airStrikeAnimation;
+
 
     //1
     public IEnumerator PlayPunchAnimation(Transform attacker, Transform receiver)
@@ -56,7 +60,7 @@ public class AttackAnimations : MonoBehaviour
                 duration: 0.7f,
                 startSound: startSound,
                 initialRotation: 180f, // napr. -15 stupňov na začiatku
-                finalRotation: 180f     // napr. 15 stupňov na konci
+                finalRotation: 0f     // napr. 15 stupňov na konci
             )
         );
     }
@@ -1154,51 +1158,10 @@ public class AttackAnimations : MonoBehaviour
                 imageSize: new Vector2(250f, 250f),
                 duration: 0.5f,
                 startSound: startSound,
+                rotateTowardsTarget: false,
                 initialRotation: 0f, // napr. -15 stupňov na začiatku
                 finalRotation: 0f,     // napr. 15 stupňov na konci
                 moveDurationRatio: 0.5f
-            )
-        );
-    }
-
-    //12e
-    public IEnumerator PlayBlocadeWaitAnimation(Transform targetCard)
-    {
-        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/continentalblocade");
-        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/blocadewait");
-
-        // Spustenie animácie
-        yield return StartCoroutine(
-            blocadeAnimation.StartAnimation(
-                sprite: animationImageSprite,
-                targetCard: targetCard,
-                startSize: new Vector2(250f, 250f),
-                endSize: new Vector2(300f, 300f),
-                duration: 1f,
-                shakeDuration: 0.1f,
-                startRotation: 0f,
-                endRotation: 0f,
-                soundEffect: soundEffect
-            )
-        );
-    }
-
-    //12e
-    public IEnumerator PlayBlocadeEndAnimation(Transform targetCard)
-    {
-        Sprite sprite1 = Resources.Load<Sprite>("Game/Animations/continentalblocade");
-        Sprite sprite2 = Resources.Load<Sprite>("Game/Animations/blocadeend");
-        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/blocadeend");
-
-        yield return StartCoroutine(
-            dualImageAnimation.StartAnimation(
-                sprite1: sprite1,
-                sprite2: sprite2,
-                position: targetCard,
-                imageSize: new Vector2(300f, 300f), // Predpokladaná veľkosť pohára
-                duration: 1f, // Celková doba trvania animácie
-                startSound: startSound,
-                switchRatio: 0.5f // V polovici animácie sa zmení na fľašu vína
             )
         );
     }
@@ -1221,46 +1184,7 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
-    //51
-    public IEnumerator PlayDepressionStartAnimation(Transform targetCard)
-    {
-        Sprite sprite = Resources.Load<Sprite>("Game/Animations/depressionstart");
-        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/depressionstart");
-
-        yield return StartCoroutine(
-            enlargeImageAnimation.StartEnlargeAnimation(
-                sprite: sprite,
-                targetCard: targetCard,
-                startSize: new Vector2(250f, 250f),
-                endSize: new Vector2(350f, 350f),
-                duration: 0.7f,
-                soundEffect: soundEffect
-            )
-        );
-    }
-
-    //13e
-    public IEnumerator PlayDepressionEndAnimation(Transform targetCard)
-    {
-        Sprite sprite = Resources.Load<Sprite>("Game/Animations/depressionend");
-        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/depressionend");
-
-        yield return StartCoroutine(
-            blocadeAnimation.StartAnimation(
-                sprite: sprite,
-                targetCard: targetCard,
-                startSize: new Vector2(250f, 250f),
-                endSize: new Vector2(300f, 300f),
-                duration: 1f,
-                shakeDuration: 0.2f,
-                startRotation: 0f,
-                endRotation: 0f,
-                soundEffect: soundEffect
-            )
-        );
-    }
-
-    //51
+    //?
     public IEnumerator PlayArtInspirationStartAnimation(Transform targetCard)
     {
         Sprite sprite = Resources.Load<Sprite>("Game/Animations/artinspitationstart");
@@ -1290,8 +1214,8 @@ public class AttackAnimations : MonoBehaviour
                 sprite: animationImageSprite,
                 startPoint: attacker,
                 endPoint: receiver,
-                imageSize: new Vector2(300f, 300f),
-                duration: 0.7f,
+                imageSize: new Vector2(350f, 350f),
+                duration: 0.5f,
                 startSound: startSound,
                 initialRotation: 0f, // napr. -15 stupňov na začiatku
                 finalRotation: 0f     // napr. 15 stupňov na konci
@@ -1319,6 +1243,150 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
+    //55
+    public IEnumerator PlayGravityPullAnimation(Transform attacker, Transform receiver, int variantIndex)
+    {
+        Sprite[] sprites = new Sprite[]
+        {
+            Resources.Load<Sprite>("Game/Animations/gravitypull1"),
+            Resources.Load<Sprite>("Game/Animations/gravitypull2"),
+            Resources.Load<Sprite>("Game/Animations/gravitypull3"),
+            Resources.Load<Sprite>("Game/Animations/gravitypull4"),
+        };
+        AudioClip[] sounds = new AudioClip[]
+        {
+            Resources.Load<AudioClip>("Sounds/Game/Animations/gravitypull1"),
+            Resources.Load<AudioClip>("Sounds/Game/Animations/gravitypull2"),
+            Resources.Load<AudioClip>("Sounds/Game/Animations/gravitypull3"),
+            Resources.Load<AudioClip>("Sounds/Game/Animations/gravitypull4"),
+        };
+
+        // Spustenie animácie s konkrétnym obrázkom a zvukom
+        yield return StartCoroutine(
+            gravityPullAnimation.StartAnimation(
+                sprite: sprites[variantIndex],
+                sound: sounds[variantIndex],
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(300f, 300f),
+                duration: 0.7f,
+                initialRotation: 0f,
+                finalRotation: 0f,
+                rotateTowardsTarget: false,
+                moveDurationRatio: 1f
+            )
+        );
+    }
+
+    //56
+    public IEnumerator PlayKamikazeAnimation(Transform attacker, Transform defender, bool isSuccessful)
+    {
+        // Načítanie obrázkov a zvukov
+        Sprite planeSprite = Resources.Load<Sprite>("Game/Animations/kamikaze1");
+        Sprite explosionSprite = Resources.Load<Sprite>("Game/Animations/kamikaze2");
+
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/kamikaze");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            kamikazeAnimation.StartAnimation(
+                planeSprite: planeSprite,
+                explosionSprite: explosionSprite,
+                sound: soundEffect,
+                isSuccessful: isSuccessful,
+                attacker: attacker,
+                defender: defender,
+                finalRotation: -90f,
+                cardSize: new Vector2(300f, 300f), // Predpokladaná veľkosť karty
+                imageSize: new Vector2(300f, 300f), // Veľkosť obrázkov
+                duration: 1.5f, // Celková doba trvania animácie
+                moveDurationRatio: 0.5f, // Pomer času pohybu lietadla
+                explosionGrowDurationRatio: 0.2f // Pomer času rastu explózie
+            )
+        );
+    }
+
+    //57
+    public IEnumerator PlayTakeOffAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/takeoff1");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/takeoff1");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(350f, 350f),
+                duration: 0.7f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //57
+    public IEnumerator PlayTakeOffCrashAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/takeoff2");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/takeoff2");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(350f, 350f),
+                duration: 0.7f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //58
+    public IEnumerator PlayAirStrikeAnimation(Transform attacker, Transform defender, int showHitImageCount)
+    {
+        Sprite planeSprite = Resources.Load<Sprite>("Game/Animations/airstrike1");
+        Sprite explosionSprite = Resources.Load<Sprite>("Game/Animations/airstrike2");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/airstrike");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            airStrikeAnimation.StartAnimation(
+                planeSprite: planeSprite,
+                explosionSprite: explosionSprite,
+                sound: soundEffect,
+                attacker: attacker,
+                defender: defender,
+                imageSize: new Vector2(300f, 300f),
+                cardSize: new Vector2(300f, 300f),
+                duration: 1f,
+                showHitImageCount: showHitImageCount, // Príklad hodnoty
+                moveDurationRatio: 0.5f,
+                explosionGrowDurationRatio: 0.2f,
+                rotateTowardsTarget: true,
+                initialRotation: 0f,
+                finalRotation: 0f
+            )
+        );
+    }
+
+    //58
+    public IEnumerator PlayAirStrikeCriticalAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/airstrikecritical");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/airstrikecritical");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(150f, 150f),
+                endSize: new Vector2(250f, 250f),
+                duration: 0.3f,
+                soundEffect: effectSound
+            )
+        );
+    }
 
     //100
     public IEnumerator PlayShieldBashAnimation(Transform attacker, Transform receiver)
@@ -1448,6 +1516,87 @@ public class AttackAnimations : MonoBehaviour
                 endSize: new Vector2(350f, 350f),
                 duration: 0.7f,
                 soundEffect: effectSound
+            )
+        );
+    }
+
+    //12e
+    public IEnumerator PlayBlocadeWaitAnimation(Transform targetCard)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/continentalblocade");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/blocadewait");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            blocadeAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(300f, 300f),
+                duration: 1f,
+                shakeDuration: 0.1f,
+                startRotation: 0f,
+                endRotation: 0f,
+                soundEffect: soundEffect
+            )
+        );
+    }
+
+    //12e
+    public IEnumerator PlayBlocadeEndAnimation(Transform targetCard)
+    {
+        Sprite sprite1 = Resources.Load<Sprite>("Game/Animations/continentalblocade");
+        Sprite sprite2 = Resources.Load<Sprite>("Game/Animations/blocadeend");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/blocadeend");
+
+        yield return StartCoroutine(
+            dualImageAnimation.StartAnimation(
+                sprite1: sprite1,
+                sprite2: sprite2,
+                position: targetCard,
+                imageSize: new Vector2(300f, 300f), // Predpokladaná veľkosť pohára
+                duration: 1f, // Celková doba trvania animácie
+                startSound: startSound,
+                switchRatio: 0.5f // V polovici animácie sa zmení na fľašu vína
+            )
+        );
+    }
+    
+    //13e
+    public IEnumerator PlayDepressionStartAnimation(Transform targetCard)
+    {
+        Sprite sprite = Resources.Load<Sprite>("Game/Animations/depressionstart");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/depressionstart");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: sprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(350f, 350f),
+                duration: 0.7f,
+                soundEffect: soundEffect
+            )
+        );
+    }
+
+    //13e
+    public IEnumerator PlayDepressionEndAnimation(Transform targetCard)
+    {
+        Sprite sprite = Resources.Load<Sprite>("Game/Animations/depressionend");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/depressionend");
+
+        yield return StartCoroutine(
+            blocadeAnimation.StartAnimation(
+                sprite: sprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(300f, 300f),
+                duration: 1f,
+                shakeDuration: 0.2f,
+                startRotation: 0f,
+                endRotation: 0f,
+                soundEffect: soundEffect
             )
         );
     }

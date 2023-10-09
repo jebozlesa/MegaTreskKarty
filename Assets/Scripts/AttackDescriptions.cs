@@ -197,7 +197,7 @@ public class AttackDescriptions : MonoBehaviour
             case 56://Kamikaze
                 count = 1;
                 break;
-            case 57://TookOff
+            case 57://TakeOff
                 count = attacker.knowledge * 2;
                 break;
             case 58://AirStrike
@@ -593,7 +593,7 @@ public class AttackDescriptions : MonoBehaviour
                 dialogText.text = "Kamikaze chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
             case 57:
-                dialogText.text = "Took Off chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                dialogText.text = "Take Off chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
             case 58:
                 dialogText.text = "Air Strike chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
@@ -975,7 +975,7 @@ public class AttackDescriptions : MonoBehaviour
                 Kamikaze(buttonText);
                 break;
             case 57:
-                TookOff(buttonText);
+                TakeOff(buttonText);
                 break;
             case 58:
                 AirStrike(buttonText);
@@ -1511,9 +1511,9 @@ public class AttackDescriptions : MonoBehaviour
 	}
 
     //57
-    public void TookOff(TMP_Text buttonText)
+    public void TakeOff(TMP_Text buttonText)
 	{
-        buttonText.text = "Took Off";
+        buttonText.text = "Take Off";
 	}
 
     //58
