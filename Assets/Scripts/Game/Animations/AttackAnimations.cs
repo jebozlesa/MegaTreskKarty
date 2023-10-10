@@ -59,7 +59,7 @@ public class AttackAnimations : MonoBehaviour
                 imageSize: new Vector2(250f, 250f),
                 duration: 0.7f,
                 startSound: startSound,
-                initialRotation: 180f, // napr. -15 stupňov na začiatku
+                initialRotation: 0f, // napr. -15 stupňov na začiatku
                 finalRotation: 0f     // napr. 15 stupňov na konci
             )
         );
@@ -826,7 +826,7 @@ public class AttackAnimations : MonoBehaviour
                 spawnInterval: 0.4f,
                 startSize: initialSize,
                 endSize: finalSize,
-                imageLifetime: 0.5f,
+                imageLifetime: 1f,
                 soundEffect: effectSound
             )
         );
@@ -1348,20 +1348,23 @@ public class AttackAnimations : MonoBehaviour
         Sprite planeSprite = Resources.Load<Sprite>("Game/Animations/airstrike1");
         Sprite explosionSprite = Resources.Load<Sprite>("Game/Animations/airstrike2");
         AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/airstrike");
+        AudioClip soundEffectHit = Resources.Load<AudioClip>("Sounds/Game/Animations/airstrike2");
 
         // Spustenie animácie
         yield return StartCoroutine(
             airStrikeAnimation.StartAnimation(
                 planeSprite: planeSprite,
                 explosionSprite: explosionSprite,
-                sound: soundEffect,
+                planeSound: soundEffect,
+                explosionSound: soundEffectHit,
                 attacker: attacker,
                 defender: defender,
-                imageSize: new Vector2(300f, 300f),
+                planeImageSize: new Vector2(300f, 300f),
+                explosionImageSize: new Vector2(150f, 150f),
                 cardSize: new Vector2(300f, 300f),
                 duration: 1f,
                 showHitImageCount: showHitImageCount, // Príklad hodnoty
-                moveDurationRatio: 0.5f,
+                moveDurationRatio: 1f,
                 explosionGrowDurationRatio: 0.2f,
                 rotateTowardsTarget: true,
                 initialRotation: 0f,
@@ -1369,6 +1372,7 @@ public class AttackAnimations : MonoBehaviour
             )
         );
     }
+
 
     //58
     public IEnumerator PlayAirStrikeCriticalAnimation(Transform targetCard)
@@ -1384,6 +1388,53 @@ public class AttackAnimations : MonoBehaviour
                 endSize: new Vector2(250f, 250f),
                 duration: 0.3f,
                 soundEffect: effectSound
+            )
+        );
+    }
+
+    //59
+    public IEnumerator PlayJusticeCrusadeAnimation(Transform targetCard)
+    {
+        Sprite[] sprites = new Sprite[5];
+        sprites[0] = Resources.Load<Sprite>("Game/Animations/justicecrusade1");
+        sprites[1] = Resources.Load<Sprite>("Game/Animations/justicecrusade2");
+        sprites[2] = Resources.Load<Sprite>("Game/Animations/justicecrusade3");
+        sprites[3] = Resources.Load<Sprite>("Game/Animations/justicecrusade4");
+        sprites[4] = Resources.Load<Sprite>("Game/Animations/justicecrusade5");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/justicecrusade");
+
+        yield return StartCoroutine(
+            randomImageSpawner.StartRandomSpawnAnimation(
+                sprites: sprites,
+                targetCard: targetCard,
+                cardSize: new Vector2(200f, 400f), // Predpokladaná veľkosť karty + 10%
+                duration: 1f,
+                spawnIntensity: 2,
+                spawnInterval: 0.1f,
+                startSize: new Vector2(200f, 200f),
+                endSize: new Vector2(250f, 250f),
+                imageLifetime: 1f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //111
+    public IEnumerator PlayRapierAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/rapier");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/rapier");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 100f, // napr. -15 stupňov na začiatku
+                finalRotation: -15f     // napr. 15 stupňov na konci
             )
         );
     }

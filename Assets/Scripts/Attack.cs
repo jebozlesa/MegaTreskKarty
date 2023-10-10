@@ -1342,7 +1342,7 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses AirStrike"));
         int hits = Random.Range(attacker.attack, attacker.speed + attacker.attack) - receiver.defense;
         yield return StartCoroutine(attackAnimations.PlayAirStrikeAnimation(attacker.transform, receiver.transform, hits));        //ANIMACIA
-        receiver.TakeDamage(hits);
+        if (hits >= 1) { receiver.TakeDamage(hits); }
         if (Random.value <= (attacker.attack / 30f)) 
         {
             yield return StartCoroutine(attackAnimations.PlayAirStrikeCriticalAnimation(receiver.transform));        //ANIMACIA
@@ -1355,7 +1355,9 @@ public class Attack : MonoBehaviour
     //59
     public IEnumerator JusticeCrusade(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
-        receiver.TakeDamage(((2 + attacker.knowledge + attacker.charisma)/2) - receiver.knowledge);
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Justice Crusade"));
+        yield return StartCoroutine(attackAnimations.PlayJusticeCrusadeAnimation(attacker.transform));        //ANIMACIA
+        receiver.TakeDamage(Random.Range((receiver.strength + receiver.attack)/4 , (receiver.strength + receiver.attack)/2));
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " fights enemy for justice"));
         Debug.Log(attacker.cardName + " -> JusticeCrusade => " + receiver.cardName);
     }
@@ -1363,6 +1365,8 @@ public class Attack : MonoBehaviour
     //60
     public IEnumerator Rapier(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Rapier"));
+        yield return StartCoroutine(attackAnimations.PlayRapierAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(2 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " cuts with Rapier"));
         if (Random.value <= 0.2f) receiver.TakeDamage(3);//critical hit

@@ -6,11 +6,11 @@ public class AirStrikeAnimation : MonoBehaviour
 {
     public Canvas canvas;
 
-    public IEnumerator StartAnimation(Sprite planeSprite, Sprite explosionSprite, AudioClip sound, Transform attacker, Transform defender, Vector2 imageSize, Vector2 cardSize, float duration, int showHitImageCount, float moveDurationRatio = 0.5f, float explosionGrowDurationRatio = 0.2f, bool rotateTowardsTarget = true, float initialRotation = 0f, float finalRotation = 0f)
+    public IEnumerator StartAnimation(Sprite planeSprite, Sprite explosionSprite, AudioClip planeSound, AudioClip explosionSound, Transform attacker, Transform defender, Vector2 planeImageSize, Vector2 explosionImageSize, Vector2 cardSize, float duration, int showHitImageCount, float moveDurationRatio = 0.5f, float explosionGrowDurationRatio = 0.2f, bool rotateTowardsTarget = true, float initialRotation = 0f, float finalRotation = 0f)
     {
-        if (sound != null)
+        if (planeSound != null)
         {
-            AudioSource.PlayClipAtPoint(sound, Camera.main.transform.position);
+            AudioSource.PlayClipAtPoint(planeSound, Camera.main.transform.position);
         }
 
         GameObject planeObject = new GameObject("PlaneSprite");
@@ -19,10 +19,10 @@ public class AirStrikeAnimation : MonoBehaviour
         planeImg.sprite = planeSprite;
 
         RectTransform planeRect = planeObject.GetComponent<RectTransform>();
-        planeRect.sizeDelta = imageSize;
+        planeRect.sizeDelta = planeImageSize;
         planeObject.transform.position = attacker.position;
 
-        Vector3 targetPosition = defender.position - (defender.position - attacker.position) / 2; // Midpoint
+        Vector3 targetPosition = defender.position + (defender.position - attacker.position) / 2; // Midpoint
 
         if (rotateTowardsTarget)
         {
@@ -44,10 +44,16 @@ public class AirStrikeAnimation : MonoBehaviour
             explosionImg.color = new Color(1, 1, 1, 0);
 
             RectTransform explosionRect = explosionObject.GetComponent<RectTransform>();
-            explosionRect.sizeDelta = imageSize;
+            explosionRect.sizeDelta = explosionImageSize;
             explosionObject.transform.position = GetRandomPosition(defender.position, cardSize);
 
-            yield return StartCoroutine(AnimateExplosion(explosionObject, imageSize, explosionGrowDurationRatio));
+            // Play explosion sound
+            if (explosionSound != null)
+            {
+                AudioSource.PlayClipAtPoint(explosionSound, Camera.main.transform.position);
+            }
+
+            yield return StartCoroutine(AnimateExplosion(explosionObject, explosionImageSize, explosionGrowDurationRatio));
 
             yield return new WaitForSeconds(timeBetweenHits - explosionGrowDurationRatio);
 
