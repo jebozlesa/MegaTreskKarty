@@ -441,7 +441,7 @@ public class Effects : MonoBehaviour
     //15
     public IEnumerator Autoportrait(Kard card, TMP_Text dialogText, int iteration)
 	{
-        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " uses Autoportrait"));
+        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is painting Autoportrait"));
         if (card.effects[iteration][1] == 0)
         {
             card.state = CardState.ATTACK;
@@ -465,37 +465,37 @@ public class Effects : MonoBehaviour
     //16
     public IEnumerator Burn(Kard card, TMP_Text dialogText, int iteration)
 	{
+        yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is on fire"));
+        yield return StartCoroutine(attackAnimations.PlayBurnContinueAnimation(card.transform));        //ANIMACIA
         card.TakeDamage(1);
-        dialogText.text = card.cardName + " is on fire";
-
         Debug.Log(card.cardName + " => Burn");
-        yield return new WaitForSeconds(2);
 	}
     //17
     public IEnumerator Confusion(Kard card, TMP_Text dialogText, int iteration)
 	{
+        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is confused"));
         if (card.effects[iteration][1] == 0)
         {
             card.state = CardState.ATTACK;
+            yield return StartCoroutine(attackAnimations.PlayConfusionEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            dialogText.text = card.cardName + " is out of confussion";
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is out of confussion"));
             yield break;
         }
         else
         {
             if (UnityEngine.Random.value <= 0.33f)
             {
-                dialogText.text = card.cardName + " hurt itself in confusion";
                 card.state = CardState.MAYBE;
+                yield return StartCoroutine(attackAnimations.PlayConfusionHurtItselfAnimation(card.transform));        //ANIMACIA
                 card.TakeDamage(UnityEngine.Random.Range(1, 3));
-                yield return new WaitForSeconds(2);
+                yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " hurt itself in confusion"));
             }
             else if (UnityEngine.Random.value <= 0.33f)
             {
-                dialogText.text = card.cardName + " forget to attack in confusion";
-                yield return new WaitForSeconds(2);
                 card.state = CardState.MAYBE;
+                yield return StartCoroutine(attackAnimations.PlayConfusionForgetAnimation(card.transform));        //ANIMACIA
+                yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " forget to attack in confusion"));
             }
             card.effects[iteration][1] -= 1;
         }

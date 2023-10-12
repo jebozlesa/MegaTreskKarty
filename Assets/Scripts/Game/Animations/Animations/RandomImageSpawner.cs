@@ -4,24 +4,28 @@ using UnityEngine.UI;
 
 public class RandomImageSpawner : MonoBehaviour
 {
-    public Canvas canvas; // Reference na váš Canvas
+    public Canvas canvas;
 
-    public IEnumerator StartRandomSpawnAnimation(Sprite[] sprites, Transform targetCard, Vector2 cardSize, float duration, int spawnIntensity = 3, float spawnInterval = 0.1f, Vector2 startSize = default, Vector2 endSize = default, float imageLifetime = 0.2f, AudioClip soundEffect = null)
+    public IEnumerator StartRandomSpawnAnimation(Sprite[] sprites, Transform targetCard, Vector2 cardSize, float duration, int totalImages, int spawnIntensity = 3, Vector2 startSize = default, Vector2 endSize = default, float imageLifetime = 0.2f, AudioClip soundEffect = null)
     {
         if (soundEffect)
         {
             AudioSource.PlayClipAtPoint(soundEffect, Camera.main.transform.position);
         }
-        
+
+        float spawnInterval = duration / (totalImages / (float)spawnIntensity);
         float elapsedTime = 0;
 
-        while (elapsedTime < duration)
+        int spawnedImages = 0;
+
+        while (elapsedTime < duration && spawnedImages < totalImages)
         {
-            for (int i = 0; i < spawnIntensity; i++)
+            for (int i = 0; i < spawnIntensity && spawnedImages < totalImages; i++)
             {
                 Sprite randomSprite = sprites[Random.Range(0, sprites.Length)];
                 Vector3 randomPosition = GetRandomPosition(targetCard.position, cardSize);
                 StartCoroutine(SpawnAndEnlargeImage(randomSprite, randomPosition, startSize, endSize, imageLifetime, soundEffect));
+                spawnedImages++;
             }
 
             elapsedTime += spawnInterval;
@@ -45,7 +49,7 @@ public class RandomImageSpawner : MonoBehaviour
         img.sprite = sprite;
 
         RectTransform rectTransform = imageObject.GetComponent<RectTransform>();
-        rectTransform.sizeDelta = startSize; // Start size
+        rectTransform.sizeDelta = startSize;
 
         imageObject.transform.position = position;
 
