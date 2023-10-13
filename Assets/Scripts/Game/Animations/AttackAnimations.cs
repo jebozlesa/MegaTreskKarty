@@ -25,6 +25,8 @@ public class AttackAnimations : MonoBehaviour
     public AirStrikeAnimation airStrikeAnimation;
     public RotatingEnlargeAnimation rotatingEnlargeAnimation;
     public RisingEnlargeImage risingEnlargeImageAnimation;
+    public AmbushAnimation ambushAnimation;
+    public RocketLaunchAnimation rocketLaunchAnimation;
 
 
     //1
@@ -1576,6 +1578,7 @@ public class AttackAnimations : MonoBehaviour
                 imageSize: new Vector2(250f, 250f),
                 duration: 0.7f,
                 startSound: startSound,
+                rotateTowardsTarget: false,
                 initialRotation: 0f, 
                 finalRotation: 0f     
             )
@@ -1598,6 +1601,135 @@ public class AttackAnimations : MonoBehaviour
                 duration: 1f, // Celková doba trvania animácie
                 startSound: startSound,
                 switchRatio: 0.5f // V polovici animácie sa zmení na fľašu vína
+            )
+        );
+    }
+
+    //65
+    public IEnumerator PlayIllusionAnimation(Transform attacker, int variantIndex)
+    {
+        Sprite[] sprites = new Sprite[]
+        {
+            Resources.Load<Sprite>("Game/Animations/illusionbigfoot"),
+            Resources.Load<Sprite>("Game/Animations/illusionnessie"),
+            Resources.Load<Sprite>("Game/Animations/illusionufo"),
+            Resources.Load<Sprite>("Game/Animations/illusion1"),
+            Resources.Load<Sprite>("Game/Animations/illusion2"),
+        };
+        AudioClip[] sounds = new AudioClip[]
+        {
+            Resources.Load<AudioClip>("Sounds/Game/Animations/illusionbigfoot"),
+            Resources.Load<AudioClip>("Sounds/Game/Animations/illusionnessie"),
+            Resources.Load<AudioClip>("Sounds/Game/Animations/illusionufo"),
+            Resources.Load<AudioClip>("Sounds/Game/Animations/illusion"),
+            Resources.Load<AudioClip>("Sounds/Game/Animations/illusion"),
+        };
+
+        yield return StartCoroutine(
+            wirelessChargerAnimation.StartAnimation(
+                sprite1: sprites[variantIndex],
+                sprite2: sprites[variantIndex],
+                position: attacker,
+                imageSize: new Vector2(300f, 300f),
+                duration: 1f,
+                startSound: sounds[variantIndex],
+                switchRatio: 0.3f,
+                fadeDurationRatio: 0.4f
+            )
+        );
+
+    }
+
+    //66
+    public IEnumerator PlayCarcanoAnimation(Transform shooterCard, Transform targetCard, bool hit)
+    {
+        Sprite shooterSprite = Resources.Load<Sprite>("Game/Animations/carcano1");
+        Sprite hitSprite = Resources.Load<Sprite>("Game/Animations/carcano2");
+        AudioClip shootSound = Resources.Load<AudioClip>("Sounds/Game/Animations/carcano");
+
+        yield return StartCoroutine(
+            shootAnimation.StartShootAnimation(
+                shooterSprite: shooterSprite,
+                hitSprite: hitSprite,
+                shooterCard: shooterCard,
+                targetCard: targetCard,
+                imageSize: new Vector2(350f, 350f),
+                hitImageSize: new Vector2(100f, 100f),
+                duration: 1f,
+                shootRatio: 0.5f,
+                shootSound: shootSound,
+                recoilAngle: 10f,
+                showHitImage: hit
+            )
+        );
+    }
+
+    //67
+    public IEnumerator PlayWinchesterAnimation(Transform shooterCard, Transform targetCard, bool hit)
+    {
+        Sprite shooterSprite = Resources.Load<Sprite>("Game/Animations/winchester1");
+        Sprite hitSprite = Resources.Load<Sprite>("Game/Animations/winchester2");
+        AudioClip shootSound = Resources.Load<AudioClip>("Sounds/Game/Animations/winchester");
+
+        yield return StartCoroutine(
+            shootAnimation.StartShootAnimation(
+                shooterSprite: shooterSprite,
+                hitSprite: hitSprite,
+                shooterCard: shooterCard,
+                targetCard: targetCard,
+                imageSize: new Vector2(350f, 350f),
+                hitImageSize: new Vector2(100f, 100f),
+                duration: 1f,
+                shootRatio: 0.5f,
+                shootSound: shootSound,
+                recoilAngle: 10f,
+                showHitImage: hit
+            )
+        );
+    }
+
+    //68
+    public IEnumerator PlayAmbushAnimation(Transform targetCard)
+    {
+        Sprite[] sprites = new Sprite[3];
+        sprites[0] = Resources.Load<Sprite>("Game/Animations/ambush1");
+        sprites[1] = Resources.Load<Sprite>("Game/Animations/ambush2");
+        sprites[2] = Resources.Load<Sprite>("Game/Animations/ambush3");
+        AudioClip ambushSound = Resources.Load<AudioClip>("Sounds/Game/Animations/ambush");
+
+        yield return StartCoroutine(
+            ambushAnimation.StartAnimation(
+                sprites: sprites,
+                targetCard: targetCard,
+                cardSize: new Vector2(300f, 500f), // Predpokladaná veľkosť karty + 10%
+                duration: 1f,
+                numberOfImages: 3,
+                imageSize: new Vector2(200f, 200f),
+                soundEffect: ambushSound,
+                gatherSpeed: 300f,
+                maxRotationAngle: 30f
+            )
+        );
+    }
+
+    //69
+    public IEnumerator PlaySpaceRocketAnimation(Transform playerCard, bool isSuccessfulLaunch)
+    {
+        Sprite rocketSprite = Resources.Load<Sprite>("Path/To/spacerocket");
+        Sprite explosionSprite = Resources.Load<Sprite>("Path/To/spacerocketfail");
+        AudioClip successSound = Resources.Load<AudioClip>("Path/To/spacerocket");
+        AudioClip failureSound = Resources.Load<AudioClip>("Path/To/spacerocketfail");
+
+        yield return StartCoroutine(
+            rocketLaunchAnimation.StartRocketAnimation(
+                rocketSprite: rocketSprite,
+                explosionSprite: explosionSprite,
+                playerCard: playerCard,
+                imageSize: new Vector2(300f, 300f),
+                successSound: successSound,
+                failureSound: failureSound,
+                isSuccessfulLaunch: isSuccessfulLaunch,
+                duration: 1f
             )
         );
     }
@@ -2004,9 +2136,9 @@ public class AttackAnimations : MonoBehaviour
                 sprite: animationImageSprite,
                 targetCard: attacker,
                 startSize: new Vector2(250f, 250f),
-                endSize: new Vector2(300f, 300f),
-                duration: 1f,
-                rotationSpeed: 90f,
+                endSize: new Vector2(250f, 250f),
+                duration: 0.4f,
+                rotationSpeed: 180f,
                 soundEffect: startSound
             )
         );

@@ -484,6 +484,7 @@ public class Effects : MonoBehaviour
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayConfusionForgetAnimation(card.transform));        //ANIMACIA
             if (UnityEngine.Random.value <= 0.33f)
             {
                 card.state = CardState.MAYBE;
@@ -494,7 +495,6 @@ public class Effects : MonoBehaviour
             else if (UnityEngine.Random.value <= 0.33f)
             {
                 card.state = CardState.MAYBE;
-                yield return StartCoroutine(attackAnimations.PlayConfusionForgetAnimation(card.transform));        //ANIMACIA
                 yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " forget to attack in confusion"));
             }
             card.effects[iteration][1] -= 1;

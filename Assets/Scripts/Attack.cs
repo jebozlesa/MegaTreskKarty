@@ -1444,9 +1444,8 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(attackAnimations.PlayHandcuffEscapeAnimation(attacker.transform));        //ANIMACIA
         int[] idsToRemove = { 3, 8, 9, 12, 16 };
         attacker.RemoveEffectsById(idsToRemove);
-        attacker.HandleCharisma(1);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " slips outta trouble"));
-        if (Random.value <= 0.5f)
+        if (Random.value <= 0.2f)
         {
             StartCoroutine(attackAnimations.PlayConfusionStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(17,2));//confusion
@@ -1458,22 +1457,31 @@ public class Attack : MonoBehaviour
     //65
     public IEnumerator Illusion(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
-        yield return StartCoroutine(receiver.AddEffect(17,Random.Range(2, 5)));//confusion
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Illusion"));
+        yield return StartCoroutine(attackAnimations.PlayIllusionAnimation(attacker.transform, Random.Range(0, 5)));        //ANIMACIA
         attacker.HandleCharisma(1);
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s illusion confuses the enemy"));
+        if (receiver.CheckEffect(17) == false)
+        {
+            StartCoroutine(attackAnimations.PlayConfusionStartAnimation(receiver.transform));        //ANIMACIA
+            yield return StartCoroutine(receiver.AddEffect(17,Random.Range(2, 5)));//confusion
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s illusion confuses the enemy"));
+        }
         Debug.Log(attacker.cardName + " -> Illusion => " + receiver.cardName);
     }
 
     //66
     public IEnumerator CarcanoM91(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Carcano M91"));
         if (Random.value <= ((20 + attacker.attack) / 37f))
         {
+            yield return StartCoroutine(attackAnimations.PlayCarcanoAnimation(attacker.transform, receiver.transform, true));        //ANIMACIA
             receiver.TakeDamage(Random.Range(6, 9));
             yield return StartCoroutine(ShowDialog(dialogText, "Bang! " + attacker.cardName + " shoots"));
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayCarcanoAnimation(attacker.transform, receiver.transform, false));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, "Bang! aaaand miss"));
         }
         Debug.Log(attacker.cardName + " -> CarcanoM91 => " + receiver.cardName);
@@ -1482,13 +1490,16 @@ public class Attack : MonoBehaviour
     //67
     public IEnumerator Winchester(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Winchester"));
         if (Random.value <= ((20 + attacker.attack) / 40f))
         {
+            yield return StartCoroutine(attackAnimations.PlayWinchesterAnimation(attacker.transform, receiver.transform, true));        //ANIMACIA
             receiver.TakeDamage(Random.Range(6, 9));
             yield return StartCoroutine(ShowDialog(dialogText, "Bang! " + attacker.cardName + " shoots"));
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayWinchesterAnimation(attacker.transform, receiver.transform, false));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, "Bang! aaaand miss"));
         }
         Debug.Log(attacker.cardName + " -> Winchester => " + receiver.cardName);
@@ -1497,6 +1508,8 @@ public class Attack : MonoBehaviour
     //68
     public IEnumerator Ambush(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Ambush"));
+        yield return StartCoroutine(attackAnimations.PlayAmbushAnimation(receiver.transform));        //ANIMACIA
         receiver.TakeDamage(2);
         receiver.HandleCharisma(-1);
         attacker.HandleCharisma(1);
@@ -1507,8 +1520,10 @@ public class Attack : MonoBehaviour
     //69
     public IEnumerator JupiterC(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
-        if (Random.value <= 0.9f)
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Space Rocket"));
+        if (Random.value <= 0.7f)
         {
+            yield return StartCoroutine(attackAnimations.PlaySpaceRocketAnimation(attacker.transform, true));        //ANIMACIA
             attacker.HandleAttack(1);
             attacker.HandleDefense(1);
             yield return StartCoroutine(attacker.AddEffect(18,0));//Satellite
@@ -1516,7 +1531,9 @@ public class Attack : MonoBehaviour
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlaySpaceRocketAnimation(attacker.transform, false));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, "Rocket exploded"));
+            attacker.HandleCharisma(-2);
         }
         Debug.Log(attacker.cardName + " -> JupiterC => " + receiver.cardName);
     }
