@@ -6,7 +6,7 @@ public class RisingEnlargeImage : MonoBehaviour
 {
     public Canvas canvas;
 
-    public IEnumerator StartRisingEnlargeAnimation(Sprite sprite, Transform targetCard, Vector2 startSize, Vector2 endSize, float duration, float riseSpeed, float startRotation = 0f, float endRotation = 0f, AudioClip soundEffect = null)
+    public IEnumerator StartRisingEnlargeAnimation(Sprite sprite, Transform targetCard, Vector2 startSize, Vector2 endSize, float duration, float startVerticalOffset, float endVerticalOffset, float startRotation = 0f, float endRotation = 0f, AudioClip soundEffect = null)
     {
         if (soundEffect)
         {
@@ -22,20 +22,20 @@ public class RisingEnlargeImage : MonoBehaviour
         rectTransform.sizeDelta = startSize;
 
         imageObject.transform.eulerAngles = new Vector3(0, 0, startRotation);
-        imageObject.transform.position = targetCard.position;
+        imageObject.transform.position = targetCard.position + new Vector3(0, startVerticalOffset, 0);
 
-        yield return StartCoroutine(AnimateRisingEnlarge(imageObject, startSize, endSize, riseSpeed, startRotation, endRotation, duration));
+        yield return StartCoroutine(AnimateRisingEnlarge(imageObject, startSize, endSize, startVerticalOffset, endVerticalOffset, startRotation, endRotation, duration));
 
         Destroy(imageObject, 0.1f);
     }
 
-    private IEnumerator AnimateRisingEnlarge(GameObject image, Vector2 startSize, Vector2 endSize, float riseSpeed, float startRotation, float endRotation, float duration)
+    private IEnumerator AnimateRisingEnlarge(GameObject image, Vector2 startSize, Vector2 endSize, float startVerticalOffset, float endVerticalOffset, float startRotation, float endRotation, float duration)
     {
         float elapsedTime = 0;
         RectTransform rectTransform = image.GetComponent<RectTransform>();
 
         Vector3 startPosition = image.transform.position;
-        Vector3 endPosition = startPosition + new Vector3(0, riseSpeed * duration, 0);
+        Vector3 endPosition = startPosition + new Vector3(0, endVerticalOffset - startVerticalOffset, 0);
 
         while (elapsedTime < duration)
         {
@@ -54,3 +54,4 @@ public class RisingEnlargeImage : MonoBehaviour
         image.transform.eulerAngles = new Vector3(0, 0, endRotation);
     }
 }
+

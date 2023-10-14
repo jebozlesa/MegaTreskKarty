@@ -1541,13 +1541,16 @@ public class Attack : MonoBehaviour
     //70
     public IEnumerator V2(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses V-2"));
         if (Random.value <= 0.25f)
         {
+            yield return StartCoroutine(attackAnimations.PlayV2Animation(attacker.transform, receiver.transform, true));        //ANIMACIA
             receiver.TakeDamage(Random.Range(15, 20));
             yield return StartCoroutine(ShowDialog(dialogText, "V2 hits target"));
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayV2Animation(attacker.transform, receiver.transform, false));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, "Missile missed"));
         }
         Debug.Log(attacker.cardName + " -> V2 => " + receiver.cardName);
@@ -1556,6 +1559,7 @@ public class Attack : MonoBehaviour
     //71
     public IEnumerator BattleCry(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses BattleCry"));
         yield return StartCoroutine(attackAnimations.PlayBattleCryAnimation(attacker.transform));        //ANIMACIA
         attacker.HandleStrength((int)System.Math.Ceiling((double)receiver.charisma / 5));
         attacker.HandleAttack((int)System.Math.Ceiling((double)receiver.charisma / 10));
@@ -1566,6 +1570,14 @@ public class Attack : MonoBehaviour
     //72
     public IEnumerator Revelation(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Revelation"));
+        int variantIndex = 0;
+        if (attacker.cardId == 6) { variantIndex = 2; }
+        if (attacker.cardId == 12) { variantIndex = 4; }
+        if (attacker.cardId == 43) { variantIndex = 3; }
+        if (attacker.cardId == 46) { variantIndex = 5; }
+
+        yield return StartCoroutine(attackAnimations.PlayRevelationAnimation(attacker.transform, variantIndex));        //ANIMACIA
         attacker.HandleCharisma(2);
         attacker.HandleKnowledge(2);
         yield return StartCoroutine(ShowDialog(dialogText, "God is with " + attacker.cardName));

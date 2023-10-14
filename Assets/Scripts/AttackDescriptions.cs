@@ -629,7 +629,7 @@ public class AttackDescriptions : MonoBehaviour
                 dialogText.text = "Ambush heist chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
             case 69:
-                dialogText.text = "Jupiter C chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                dialogText.text = "Space Rocket chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
             case 70:
                 dialogText.text = "Vergeltungswaffe 2 chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
@@ -1584,7 +1584,7 @@ public class AttackDescriptions : MonoBehaviour
     //69
     public void JupiterC(TMP_Text buttonText)
 	{
-        buttonText.text = "Jupiter C";
+        buttonText.text = "Space Rocket";
 	}
     //70
     public void V2(TMP_Text buttonText)

@@ -6,7 +6,7 @@ public class RocketLaunchAnimation : MonoBehaviour
 {
     public Canvas canvas;
 
-    public IEnumerator StartRocketAnimation(Sprite rocketSprite, Sprite explosionSprite, Transform playerCard, Vector2 imageSize, AudioClip successSound, AudioClip failureSound, bool isSuccessfulLaunch = true, float duration = 1f)
+    public IEnumerator StartRocketAnimation(Sprite rocketSprite, Sprite explosionSprite, Transform playerCard, Vector2 imageSize, Vector2 explosionStartSize, Vector2 explosionEndSize, AudioClip successSound, AudioClip failureSound, bool isSuccessfulLaunch = true, float duration = 1f)
     {
         GameObject rocketImageObject = new GameObject("RocketImage");
         rocketImageObject.transform.SetParent(canvas.transform, false);
@@ -17,22 +17,18 @@ public class RocketLaunchAnimation : MonoBehaviour
         rocketRectTransform.sizeDelta = imageSize;
         rocketImageObject.transform.position = playerCard.position;
 
-        // Play sound based on launch success at the start of the animation
         AudioSource.PlayClipAtPoint(isSuccessfulLaunch ? successSound : failureSound, Camera.main.transform.position);
 
-        // Phase 1: Shake
         yield return StartCoroutine(ShakeImage(rocketImageObject, duration * 0.5f));
 
         if (isSuccessfulLaunch)
         {
-            // Phase 2: Successful Launch
             yield return StartCoroutine(LaunchRocket(rocketImageObject, duration * 0.5f));
         }
         else
         {
-            // Phase 2: Explosion
             rocketImg.sprite = explosionSprite;
-            yield return StartCoroutine(ExpandExplosion(rocketImageObject, duration * 0.5f));
+            yield return StartCoroutine(ExpandExplosion(rocketImageObject, explosionStartSize, explosionEndSize, duration * 0.5f));
         }
 
         Destroy(rocketImageObject);
@@ -71,11 +67,10 @@ public class RocketLaunchAnimation : MonoBehaviour
         }
     }
 
-    private IEnumerator ExpandExplosion(GameObject explosion, float duration)
+    private IEnumerator ExpandExplosion(GameObject explosion, Vector2 startSize, Vector2 endSize, float duration)
     {
         RectTransform rectTransform = explosion.GetComponent<RectTransform>();
-        Vector2 startSize = rectTransform.sizeDelta;
-        Vector2 endSize = startSize * 3f; // 3 times bigger
+        rectTransform.sizeDelta = startSize;
 
         float elapsedTime = 0;
 

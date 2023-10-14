@@ -27,6 +27,8 @@ public class AttackAnimations : MonoBehaviour
     public RisingEnlargeImage risingEnlargeImageAnimation;
     public AmbushAnimation ambushAnimation;
     public RocketLaunchAnimation rocketLaunchAnimation;
+    public SatelliteFlyoverAnimation satelliteFlyoverAnimation;
+    public FlagWaveAnimation flagWaveAnimation;
 
 
     //1
@@ -1715,10 +1717,10 @@ public class AttackAnimations : MonoBehaviour
     //69
     public IEnumerator PlaySpaceRocketAnimation(Transform playerCard, bool isSuccessfulLaunch)
     {
-        Sprite rocketSprite = Resources.Load<Sprite>("Path/To/spacerocket");
-        Sprite explosionSprite = Resources.Load<Sprite>("Path/To/spacerocketfail");
-        AudioClip successSound = Resources.Load<AudioClip>("Path/To/spacerocket");
-        AudioClip failureSound = Resources.Load<AudioClip>("Path/To/spacerocketfail");
+        Sprite rocketSprite = Resources.Load<Sprite>("Game/Animations/spacerocket");
+        Sprite explosionSprite = Resources.Load<Sprite>("Game/Animations/spacerocketfail");
+        AudioClip successSound = Resources.Load<AudioClip>("Sounds/Game/Animations/spacerocket");
+        AudioClip failureSound = Resources.Load<AudioClip>("Sounds/Game/Animations/spacerocketfail");
 
         yield return StartCoroutine(
             rocketLaunchAnimation.StartRocketAnimation(
@@ -1726,10 +1728,117 @@ public class AttackAnimations : MonoBehaviour
                 explosionSprite: explosionSprite,
                 playerCard: playerCard,
                 imageSize: new Vector2(300f, 300f),
+                explosionStartSize: new Vector2(250f, 250f), // Pridané veľkosti pre explóziu
+                explosionEndSize: new Vector2(350f, 350f),   // Pridané veľkosti pre explóziu
                 successSound: successSound,
                 failureSound: failureSound,
                 isSuccessfulLaunch: isSuccessfulLaunch,
                 duration: 1f
+            )
+        );
+    }
+
+    //70
+    public IEnumerator PlayV2Animation(Transform attacker, Transform defender, bool isSuccessful)
+    {
+        // Načítanie obrázkov a zvukov
+        Sprite planeSprite = Resources.Load<Sprite>("Game/Animations/v2");
+        Sprite explosionSprite = Resources.Load<Sprite>("Game/Animations/v2explosion");
+
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/v2");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            kamikazeAnimation.StartAnimation(
+                planeSprite: planeSprite,
+                explosionSprite: explosionSprite,
+                sound: soundEffect,
+                isSuccessful: isSuccessful,
+                attacker: attacker,
+                defender: defender,
+                finalRotation: 0f,
+                cardSize: new Vector2(300f, 300f), // Predpokladaná veľkosť karty
+                imageSize: new Vector2(300f, 300f), // Veľkosť obrázkov
+                duration: 1.5f, // Celková doba trvania animácie
+                moveDurationRatio: 0.5f, // Pomer času pohybu lietadla
+                explosionGrowDurationRatio: 0.2f // Pomer času rastu explózie
+            )
+        );
+    }
+
+    //71
+    public IEnumerator PlayBattleCryAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/battlecry");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/battlecry");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(350f, 350f),
+                duration: 0.7f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //72
+    public IEnumerator PlayRevelationAnimation(Transform targetCard, int variantIndex)
+    {
+        Sprite[] sprites = new Sprite[]
+        {
+            Resources.Load<Sprite>("Game/Animations/revelation"),
+            Resources.Load<Sprite>("Game/Animations/revelationbush"),
+            Resources.Load<Sprite>("Game/Animations/revelationlion"),
+            Resources.Load<Sprite>("Game/Animations/revelationlotos"),
+            Resources.Load<Sprite>("Game/Animations/revelationwolf"),
+            Resources.Load<Sprite>("Game/Animations/revelationaztec"),
+        };
+        AudioClip[] sounds = new AudioClip[]
+        {
+            Resources.Load<AudioClip>("Sounds/Game/Animations/revelation"),
+            Resources.Load<AudioClip>("Sounds/Game/Animations/revelationbush"),
+            Resources.Load<AudioClip>("Sounds/Game/Animations/revelationlion"),
+            Resources.Load<AudioClip>("Sounds/Game/Animations/revelationlotos"),
+            Resources.Load<AudioClip>("Sounds/Game/Animations/revelationwolf"),
+            Resources.Load<AudioClip>("Sounds/Game/Animations/revelationaztec"),
+        };
+
+        yield return StartCoroutine(
+            risingEnlargeImageAnimation.StartRisingEnlargeAnimation(
+                sprite: sprites[variantIndex],
+                targetCard: targetCard,
+                startSize: new Vector2(200f, 200f),
+                endSize: new Vector2(300f, 300f),
+                duration: 1f,
+                startVerticalOffset: 100f, // Počiatočný vertikálny posun
+                endVerticalOffset: 0f, // Konečný vertikálny posun
+                startRotation: 0f,
+                endRotation: 0f, 
+                soundEffect: sounds[variantIndex]
+            )
+        );
+    }
+
+    //73
+    public IEnumerator PlayFlagWaveAnimation(Transform targetCard)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/flagwave");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/flagwave");
+
+        yield return StartCoroutine(
+            flagWaveAnimation.StartFlagWaveAnimation(
+                sprite: animationImageSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(200f, 200f),
+                endSize: new Vector2(300f, 300f),
+                duration: 2f,
+                minRotation: -30f,
+                maxRotation: 30f,
+                waveSpeed: 2f,
+                soundEffect: startSound
             )
         );
     }
@@ -1771,23 +1880,6 @@ public class AttackAnimations : MonoBehaviour
                 startSound: startSound,
                 initialRotation: 100f, // napr. -15 stupňov na začiatku
                 finalRotation: -15f     // napr. 15 stupňov na konci
-            )
-        );
-    }
-
-    public IEnumerator PlayBattleCryAnimation(Transform targetCard)
-    {
-        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/battlecry");
-        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/battlecry");
-
-        yield return StartCoroutine(
-            enlargeImageAnimation.StartEnlargeAnimation(
-                sprite: effectSprite,
-                targetCard: targetCard,
-                startSize: new Vector2(250f, 250f),
-                endSize: new Vector2(350f, 350f),
-                duration: 0.7f,
-                soundEffect: effectSound
             )
         );
     }
@@ -2071,7 +2163,8 @@ public class AttackAnimations : MonoBehaviour
                 startSize: new Vector2(200f, 200f),
                 endSize: new Vector2(300f, 300f),
                 duration: 0.5f,
-                riseSpeed: 100f, // Rýchlosť, s akou sa obrázok pohybuje smerom hore
+                startVerticalOffset: 0f, // Počiatočný vertikálny posun
+                endVerticalOffset: 100f, // Konečný vertikálny posun
                 startRotation: 0f,
                 endRotation: 0f, 
                 soundEffect: startSound
@@ -2179,6 +2272,25 @@ public class AttackAnimations : MonoBehaviour
                 duration: 1f, // Celková doba trvania animácie
                 startSound: startSound,
                 switchRatio: 0.5f // V polovici animácie sa zmení na fľašu vína
+            )
+        );
+    }
+
+    //18e
+    public IEnumerator PlaySatelliteAnimation(Transform playerCard)
+    {
+        Sprite satelliteSprite = Resources.Load<Sprite>("Game/Animations/satellite");
+        AudioClip flyoverSound = Resources.Load<AudioClip>("Sounds/Game/Animations/satellite");
+        
+        yield return StartCoroutine(
+            satelliteFlyoverAnimation.StartAnimation(
+                satelliteSprite: satelliteSprite,
+                playerCard: playerCard,
+                imageSize: new Vector2(200f, 200f),
+                duration: 1f,
+                flyoverSound: flyoverSound,
+                distanceAboveCard: 250f,
+                travelDistance: 200f
             )
         );
     }

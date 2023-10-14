@@ -504,9 +504,11 @@ public class Effects : MonoBehaviour
     //18
     public IEnumerator Satellite(Kard card, TMP_Text dialogText, int iteration)
 	{
+        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " has satellite"));
+        yield return StartCoroutine(attackAnimations.PlaySatelliteAnimation(card.transform));        //ANIMACIA
         card.HandleKnowledge(1);
+        yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " gets informations"));
         Debug.Log(card.cardName + " => Satellite");
-        yield return new WaitForSeconds(0.5f);
 	}
     //19
     public IEnumerator Fear(Kard card, TMP_Text dialogText, int iteration)
