@@ -1587,23 +1587,34 @@ public class Attack : MonoBehaviour
     //73
     public IEnumerator Standard(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Standard"));
+        yield return StartCoroutine(attackAnimations.PlayStandardAnimation(attacker.transform));        //ANIMACIA
         receiver.TakeDamage(2);
         if (Random.value <= 0.5f)
         {
-            attacker.HandleCharisma(1);
+            attacker.HandleCharisma(2);
         }
         else
         {
-            attacker.HandleStrength(1);
+            attacker.HandleStrength(2);
         }
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s Banner Ignites Valor"));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s Banner Raised Morale"));
         Debug.Log(attacker.cardName + " -> Standard => " + receiver.cardName);
     }
+
     //74
     public IEnumerator Pen(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
-        receiver.TakeDamage(2 + ((attacker.knowledge + attacker.charisma + attacker.attack) / 3) - (receiver.defense));
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Pen"));
+        yield return StartCoroutine(attackAnimations.PlayPenAnimation(attacker.transform, receiver.transform));        //ANIMACIA
+        receiver.TakeDamage(2 + ((attacker.knowledge + attacker.charisma + attacker.attack) / 3) - receiver.defense);
         receiver.HandleStrength(-1);
+        if (Random.value <= 0.6f && receiver.CheckEffect(24) == false) 
+        {
+            StartCoroutine(attackAnimations.PlayPoisonStartAnimation(receiver.transform));        //ANIMACIA
+            yield return StartCoroutine(receiver.AddEffect(24,0)); //Poison
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
+        }
         yield return StartCoroutine(ShowDialog(dialogText, "The pen is mightier than the sword"));
         Debug.Log(attacker.cardName + " -> Pen => " + receiver.cardName);
     }
@@ -1611,20 +1622,46 @@ public class Attack : MonoBehaviour
     //75
     public IEnumerator IambicPentameter(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
-        if (Random.value <= 0.7f) yield return StartCoroutine(receiver.AddEffect(17,Random.Range(2, 5)));//confusion
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Iambic Pentameter"));
+        yield return StartCoroutine(attackAnimations.PlayIambicPentameterAnimation(attacker.transform, receiver.transform));        //ANIMACIA
+        if (Random.value <= 0.7f && receiver.CheckEffect(17) == false) 
+        {
+            StartCoroutine(attackAnimations.PlayConfusionStartAnimation(receiver.transform));        //ANIMACIA
+            yield return StartCoroutine(receiver.AddEffect(17,Random.Range(2, 5)));//confusion
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s poetry confuses the enemy"));
+        }
+        else if (receiver.charisma <= 7)
+        {
         receiver.HandleKnowledge(-1);
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s poetry confuses the enemy"));
+        yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " does not understand"));
+        }
+        else
+        {
+            receiver.Heal(1);
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " likes this poetry"));
+        }
         Debug.Log(attacker.cardName + " -> IambicPentameter => " + receiver.cardName);
     }
 
     //76
     public IEnumerator Ghost(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
-        StartCoroutine(receiver.AddEffect(19,2));//fear
-        receiver.HandleStrength(-6);
-        receiver.HandleAttack(-5);
-        receiver.HandleDefense(3);
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " summons ghost, enemy fears"));
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Ghost"));
+        yield return StartCoroutine(attackAnimations.PlayGhostAnimation(attacker.transform, receiver.transform));        //ANIMACIA
+        if (receiver.CheckEffect(19) == false)
+        {
+            
+            StartCoroutine(attackAnimations.PlayFearStartAnimation(receiver.transform));        //ANIMACIA
+            StartCoroutine(receiver.AddEffect(19,2));//fear
+            receiver.HandleStrength(-6);
+            receiver.HandleAttack(-5);
+            receiver.HandleDefense(3);
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " summons ghost, enemy fears"));
+        }
+        else
+        {
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " summons ghost, no effect"));
+        }
         Debug.Log(attacker.cardName + " -> Ghost => " + receiver.cardName);
     }
 

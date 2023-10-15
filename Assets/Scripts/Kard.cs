@@ -570,7 +570,6 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
             effects[effects.Count - 1].Add(id);
             effects[effects.Count - 1].Add(param);
             attackCount[id] = param;
-            StartCoroutine(ShakeCard(0.2f));
             Debug.Log(Time.time + "  " + cardName + " pridal efekt " + id + ", " + param);
             yield return new WaitForSeconds(0.1f);
         }

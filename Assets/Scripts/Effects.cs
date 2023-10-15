@@ -515,19 +515,19 @@ public class Effects : MonoBehaviour
 	{
         if (card.effects[iteration][1] == 0)
         {
+            yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is affected by fear"));
+            yield return StartCoroutine(attackAnimations.PlayFearEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            dialogText.text = card.cardName + " fears no men no more";
             card.HandleStrength(5);
             card.HandleAttack(5);
             card.HandleDefense(-3);
-            yield return new WaitForSeconds(2);
-            yield break;
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + "'s bravery is back"));
         }
         else
         {
             card.effects[iteration][1] -= 1;
         }
-        Debug.Log(card.cardName + " => Fury");
+        Debug.Log(card.cardName + " => Fear");
 	}
     //20
     public IEnumerator Horns(Kard card, TMP_Text dialogText, int iteration, Kard target)
@@ -628,9 +628,11 @@ public class Effects : MonoBehaviour
     //24
     public IEnumerator Poison(Kard card, TMP_Text dialogText, int iteration)
 	{
+        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is poisoned"));
+        yield return StartCoroutine(attackAnimations.PlayPoisonContinueAnimation(card.transform));        //ANIMACIA
         if (UnityEngine.Random.value <= 0.33f) card.HandleStrength(-1);
         card.TakeDamage(1);
-        dialogText.text = card.cardName + " is poisoned";
+        dialogText.text = card.cardName + " is suffering of poison";
 
         yield return new WaitForSeconds(2);
         Debug.Log(card.cardName + " => Poison");
