@@ -1668,6 +1668,8 @@ public class Attack : MonoBehaviour
     //77
     public IEnumerator BuffaloHorns(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Buffalo Horns"));
+        yield return StartCoroutine(attackAnimations.PlayBuffaloHornsAnimation(attacker.transform));        //ANIMACIA
         StartCoroutine(attacker.AddEffect(20,1));//Horns
         attacker.state = CardState.STAY;
         receiver.HandleAttack(2);
@@ -1679,13 +1681,23 @@ public class Attack : MonoBehaviour
     //78
     public IEnumerator Iklwa(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
-        receiver.TakeDamage(((attacker.strength + attacker.attack) / 2) - receiver.defense );
-        if (Random.value <= 0.3f) receiver.TakeDamage(5);//critical hit
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " attacks wit Iklwa"));
-        if (Random.value <= 0.3f) 
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Iklwa"));
+        if (Random.value <= (attacker.strength / 10f))
         {
-            yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 6)));//bleed
-            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
+            yield return StartCoroutine(attackAnimations.PlayIklwaAnimation(attacker.transform, receiver.transform, true));        //ANIMACIA
+            receiver.TakeDamage(5);
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " throws Iklwa"));
+            if (Random.value <= 0.3f) 
+            {
+                StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
+                yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 5)));                              //bleed
+                yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
+            }
+        }
+        else
+        {
+            yield return StartCoroutine(attackAnimations.PlayIklwaAnimation(attacker.transform, receiver.transform, false));        //ANIMACIA
+            yield return StartCoroutine(ShowDialog(dialogText, "throw missed"));
         }
         Debug.Log(attacker.cardName + " -> Iklwa => " + receiver.cardName);
     }
@@ -1693,19 +1705,16 @@ public class Attack : MonoBehaviour
     //79
     public IEnumerator Iwisa(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
-        if (Random.value <= (attacker.strength / 10f))
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Iwisa"));
+        yield return StartCoroutine(attackAnimations.PlayIwisaAnimation(attacker.transform, receiver.transform));        //ANIMACIA
+        receiver.TakeDamage(((attacker.strength + attacker.attack) / 2) - receiver.defense );
+        if (Random.value <= 0.3f) receiver.TakeDamage(5);                                                               //critical hit
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " attacks with Iwisa"));
+        if (Random.value <= 0.3f) 
         {
-            receiver.TakeDamage(5);
-            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " throws Iwisa"));
-            if (Random.value <= 0.3f) 
-            {
-                yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 5)));//bleed
-                yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
-            }
-        }
-        else
-        {
-            yield return StartCoroutine(ShowDialog(dialogText, "throw missed"));
+            yield return StartCoroutine(attackAnimations.PlayKnockoutAnimation(receiver.transform));        //ANIMACIA
+            yield return StartCoroutine(receiver.AddEffect(3,Random.Range(1, 3)));                                      //sleep
+            yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " falls asleep"));
         }
         Debug.Log(attacker.cardName + " -> Iwisa => " + receiver.cardName);
     }

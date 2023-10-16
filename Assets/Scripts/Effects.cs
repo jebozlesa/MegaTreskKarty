@@ -136,10 +136,10 @@ public class Effects : MonoBehaviour
         }
         else
         {
-            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " Bleeds"));
-            yield return StartCoroutine(attackAnimations.PlayBleedContinueAnimation(card.transform));        //ANIMACIA
+            StartCoroutine(attackAnimations.PlayBleedContinueAnimation(card.transform, card.effects[iteration][1]));        //ANIMACIA
+            card.TakeDamage(card.effects[iteration][1]);
             card.effects[iteration][1] -= 1;
-            card.TakeDamage(1);
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " Bleeds"));
         }
         Debug.Log(card.cardName + " => Bleed");
 	}
@@ -169,21 +169,20 @@ public class Effects : MonoBehaviour
     public IEnumerator Sleep(Kard card, TMP_Text dialogText, int iteration)
 	{
         if (card.state != CardState.STAY) card.state = CardState.MAYBE;
-        //StartCoroutine(textBubble.ShowForSeconds("ZZZZZ!", Resources.Load<Sprite>("oblacik"), 2.5f));
         if (card.effects[iteration][1] == 0)
         {
+            yield return StartCoroutine(attackAnimations.PlaySleepAnimation(card.transform));        //ANIMACIA
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " wokes up"));
             card.RemoveEffect(iteration);
             card.state = CardState.ATTACK;
-            dialogText.text = card.cardName + " wokes up";
-            yield return new WaitForSeconds(2);
             yield break;
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlaySleepAnimation(card.transform));        //ANIMACIA
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " Sleeps"));
             card.effects[iteration][1] -= 1;
             card.state = CardState.MAYBE;
-            dialogText.text = card.cardName + " sleeps";
-            yield return new WaitForSeconds(2);
         }
         Debug.Log(card.cardName + " => Sleep");
 	}
@@ -532,26 +531,25 @@ public class Effects : MonoBehaviour
     //20
     public IEnumerator Horns(Kard card, TMP_Text dialogText, int iteration, Kard target)
 	{
+        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " uses horns"));
         card.state = CardState.STAY;
-        //StartCoroutine(textBubble.ShowForSeconds("surrender!", Resources.Load<Sprite>("oblacik"), 2.5f));
         if (card.effects[iteration][1] == 0)
         {
+            yield return StartCoroutine(attackAnimations.PlayBuffaloHornsEndAnimation(card.transform, target.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
             card.state = CardState.ATTACK;
             card.HandleDefense(1);
             card.HandleAttack(-2);
             target.TakeDamage(UnityEngine.Random.Range(1, Math.Max(4, 3 + card.speed + card.attack + card.strength + card.knowledge - target.defense - target.speed)));
-            dialogText.text = card.cardName + "'s Horns strike";
-            yield return new WaitForSeconds(2);
-            yield break;
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + "'s Horns strike"));
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayBuffaloHornsContinueAnimation(card.transform));        //ANIMACIA
             card.TakeDamage(1);
             target.TakeDamage(1);
             card.effects[iteration][1] -= 1;
-            dialogText.text = "buffalo's head keeps strong";
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, "buffalo's head keeps strong"));
         }
         Debug.Log(card.cardName + " => Horns");
 	}

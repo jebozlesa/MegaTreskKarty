@@ -857,7 +857,7 @@ public class AttackAnimations : MonoBehaviour
                 duration: 1f, // Trvanie animácie
                 shootSound: shootSound,
                 showHitImage: true, // Zobrazenie šípu
-                rotateToTarget: true, // Otočenie smerom k cieľu
+                rotateToTarget: false, // Otočenie smerom k cieľu
                 arrowImageSize: new Vector2(250f, 250f), // Veľkosť obrázka šípu
                 arrowCount: 10, // Počet šípov
                 arrowInterval: 0.1f, // Interval medzi šípmi
@@ -1759,7 +1759,7 @@ public class AttackAnimations : MonoBehaviour
                 finalRotation: 0f,
                 cardSize: new Vector2(300f, 300f), // Predpokladaná veľkosť karty
                 imageSize: new Vector2(300f, 300f), // Veľkosť obrázkov
-                duration: 1.5f, // Celková doba trvania animácie
+                duration: 1f, // Celková doba trvania animácie
                 moveDurationRatio: 0.5f, // Pomer času pohybu lietadla
                 explosionGrowDurationRatio: 0.2f // Pomer času rastu explózie
             )
@@ -1910,6 +1910,69 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
+    //77
+    public IEnumerator PlayBuffaloHornsAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/buffalohorns");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/buffalohorns");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(300f, 300f),
+                duration: 1f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //78
+    public IEnumerator PlayIklwaAnimation(Transform attacker, Transform receiver, bool isSuccessful)
+    {
+        Sprite sprite = Resources.Load<Sprite>("Game/Animations/iklwa");
+        AudioClip sound = Resources.Load<AudioClip>("Sounds/Game/Animations/iklwa");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            kamikazeAnimation.StartAnimation(
+                planeSprite: sprite,
+                explosionSprite: null,
+                sound: sound,
+                isSuccessful: isSuccessful,
+                attacker: attacker,
+                defender: receiver,
+                finalRotation: 0f,
+                cardSize: new Vector2(300f, 300f), // Predpokladaná veľkosť karty
+                imageSize: new Vector2(300f, 300f), // Veľkosť obrázkov
+                duration: 0.5f, // Celková doba trvania animácie
+                moveDurationRatio: 1f, // Pomer času pohybu lietadla
+                explosionGrowDurationRatio: 0f // Pomer času rastu explózie
+            )
+        );
+    }
+
+    //79
+    public IEnumerator PlayIwisaAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/iwisa");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/iwisa");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.7f,
+                startSound: startSound,
+                initialRotation: 100f, 
+                finalRotation: 0f   
+            )
+        );
+    }
+
 
     //100
     public IEnumerator PlayShieldBashAnimation(Transform attacker, Transform receiver)
@@ -1987,7 +2050,7 @@ public class AttackAnimations : MonoBehaviour
     }
 
     //1e
-    public IEnumerator PlayBleedContinueAnimation(Transform targetCard)
+    public IEnumerator PlayBleedContinueAnimation(Transform targetCard, int drops)
     {
         Sprite[] sprites = new Sprite[]
         {
@@ -2002,17 +2065,36 @@ public class AttackAnimations : MonoBehaviour
                 targetCard: targetCard,
                 cardSize: new Vector2(300f, 300f), // Predpokladaná veľkosť karty
                 duration: 0.5f, // Celková doba trvania animácie
-                numberOfImages: 3, // Number of images you want to spawn
+                numberOfImages: drops, // Number of images you want to spawn
                 imageSize: new Vector2(100f, 100f), // Size of the generated images
                 scatterSpeed: 400f // Speed at which the images scatter
             )
         );
     }
 
+    //3e
+    public IEnumerator PlayKnockoutAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/knockout");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/knockout");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(0f, 0f),
+                endSize: new Vector2(350f, 350f),
+                duration: 1f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //3e
     public IEnumerator PlaySleepAnimation(Transform targetCard)
     {
-        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/battlecry");
-        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/battlecry");
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/sleep");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/sleep");
 
         yield return StartCoroutine(
             enlargeImageAnimation.StartEnlargeAnimation(
@@ -2020,8 +2102,30 @@ public class AttackAnimations : MonoBehaviour
                 targetCard: targetCard,
                 startSize: new Vector2(250f, 250f),
                 endSize: new Vector2(350f, 350f),
-                duration: 0.7f,
+                duration: 1f,
                 soundEffect: effectSound
+            )
+        );
+    }
+
+    //3e
+    public IEnumerator PlaySleepEndAnimation(Transform targetCard)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/sleepend");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/sleepend");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            blocadeAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(300f, 300f),
+                duration: 1f,
+                shakeDuration: 0.5f,
+                startRotation: 0f,
+                endRotation: 0f,
+                soundEffect: soundEffect
             )
         );
     }
@@ -2362,6 +2466,48 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
+    //20e
+    public IEnumerator PlayBuffaloHornsContinueAnimation(Transform targetCard)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/buffalohorns");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/buffalocontinue");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            blocadeAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(300f, 300f),
+                duration: 1f,
+                shakeDuration: 0.1f,
+                startRotation: 0f,
+                endRotation: 0f,
+                soundEffect: soundEffect
+            )
+        );
+    }
+
+    //20e
+    public IEnumerator PlayBuffaloHornsEndAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/buffalostrike");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/buffalostrike");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(300f, 300f),
+                duration: 0.7f,
+                startSound: startSound,
+                initialRotation: 0f, 
+                finalRotation: 0f    
+            )
+        );
+    }
+
     //24e
     public IEnumerator PlayPoisonStartAnimation(Transform attacker)
     {
@@ -2403,7 +2549,7 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
-    //24e
+    //25e
     public IEnumerator PlayFearStartAnimation(Transform attacker)
     {
         Sprite sprite = Resources.Load<Sprite>("Game/Animations/fear");
@@ -2421,7 +2567,7 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
-    //24e
+    //25e
     public IEnumerator PlayFearEndAnimation(Transform attacker)
     {
         Sprite sprite = Resources.Load<Sprite>("Game/Animations/fearend");
