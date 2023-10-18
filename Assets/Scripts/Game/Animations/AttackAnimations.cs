@@ -526,7 +526,7 @@ public class AttackAnimations : MonoBehaviour
                 startPoint: attacker,
                 endPoint: receiver,
                 imageSize: new Vector2(300f, 300f),
-                duration: 1f,
+                duration: 0.7f,
                 startSound: startSound,
                 initialRotation: 90f, // napr. -15 stupňov na začiatku
                 finalRotation: 0f     // napr. 15 stupňov na konci
@@ -1969,6 +1969,149 @@ public class AttackAnimations : MonoBehaviour
                 startSound: startSound,
                 initialRotation: 100f, 
                 finalRotation: 0f   
+            )
+        );
+    }
+
+    //80
+    public IEnumerator PlayNitenIchiRyuKatanaAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/katana");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/ichiryu");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(300f, 300f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 90f, 
+                finalRotation: 0f    
+            )
+        );
+    }
+
+    //80
+    public IEnumerator PlayNitenIchiRyuWakizashiAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/wakizashi");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/ichiryu");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(300f, 300f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: -90f, 
+                finalRotation: 0f   
+            )
+        );
+    }
+
+    //81
+    public IEnumerator PlayTessenjutsuAnimation(Transform attacker)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/tessenjutsu");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/tessenjutsu");
+
+        yield return StartCoroutine(
+            rotatingEnlargeAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                targetCard: attacker,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(300f, 300f),
+                duration: 0.7f,
+                rotationSpeed: -180f,
+                initialRotation: 90f,
+                soundEffect: startSound
+            )
+        );
+    }
+
+    //82
+    public IEnumerator PlayIaijutsuAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/wakizashi");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/iaijutsu");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(300f, 300f),
+                duration: 0.3f,
+                startSound: startSound,
+                initialRotation: -90f, 
+                finalRotation: 0f   
+            )
+        );
+    }
+
+    //83
+    public IEnumerator PlayKatanaAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/katana");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/katana");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 100f, // napr. -15 stupňov na začiatku
+                finalRotation: -15f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    //84
+    public IEnumerator PlayNodachiAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/nodachi");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/nodachi");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(300f, 300f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 100f, // napr. -15 stupňov na začiatku
+                finalRotation: -15f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    //34
+    public IEnumerator PlayYumiAnimation(Transform shooterCard, Transform targetCard,  bool hit)
+    {
+        Sprite bowSprite = Resources.Load<Sprite>("Game/Animations/yumi");
+        Sprite arrowSprite = Resources.Load<Sprite>("Game/Animations/yumiarrow");
+        AudioClip shootSound = Resources.Load<AudioClip>("Sounds/Game/Animations/yumi");
+
+        yield return StartCoroutine(
+            bowShootAnimation.StartShootAnimation(
+                bowSprite: bowSprite,
+                arrowSprite: arrowSprite,
+                shooterCard: shooterCard,
+                targetCard: targetCard,
+                imageSize: new Vector2(350f, 350f), // Veľkosť obrázka luku
+                duration: 1f, // Trvanie animácie
+                shootSound: shootSound,
+                showHitImage: hit, // Zobrazenie šípu
+                rotateToTarget: true, // Otočenie smerom k cieľu
+                arrowImageSize: new Vector2(250f, 250f) // Veľkosť obrázka šípu
             )
         );
     }

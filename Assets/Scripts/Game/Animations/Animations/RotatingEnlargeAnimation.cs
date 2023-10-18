@@ -6,7 +6,8 @@ public class RotatingEnlargeAnimation : MonoBehaviour
 {
     public Canvas canvas;
 
-    public IEnumerator StartAnimation(Sprite sprite, Transform targetCard, Vector2 startSize, Vector2 endSize, float duration, float rotationSpeed, AudioClip soundEffect = null)
+    // Pridanie nového parametra 'initialRotation'
+    public IEnumerator StartAnimation(Sprite sprite, Transform targetCard, Vector2 startSize, Vector2 endSize, float duration, float rotationSpeed, float initialRotation = 0f, AudioClip soundEffect = null)
     {
         // Ak existuje zvukový efekt, prehrať ho
         if (soundEffect != null)
@@ -26,6 +27,9 @@ public class RotatingEnlargeAnimation : MonoBehaviour
 
         // Nastavenie pozície obrázka na cieľovú kartu
         imageObject.transform.position = targetCard.position;
+
+        // Nastavenie počiatočnej rotácie obrázka
+        imageObject.transform.eulerAngles = new Vector3(0, 0, initialRotation);
 
         // Spustenie animácie zväčšenia a rotácie
         yield return StartCoroutine(AnimateEnlargeAndRotate(imageObject, startSize, endSize, duration, rotationSpeed));

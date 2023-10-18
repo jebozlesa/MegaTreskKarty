@@ -99,45 +99,45 @@ public class KamikazeAnimation : MonoBehaviour
     }
 
     private IEnumerator AnimateMove(GameObject image, Vector3 startPoint, Vector3 endPoint, float duration, bool rotateTowardsTarget, float initialRotation, float finalRotation)
-{
-    float elapsedTime = 0;
-    Vector3 startingPos = startPoint;
-
-    // Ak je požadované otáčanie smerom k cieľu, nastavíme počiatočnú orientáciu.
-    if (rotateTowardsTarget)
     {
-        Vector3 direction = endPoint - startPoint;
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        image.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 90)); // Otočíme obrázok smerom k cieľu
-    }
-    else
-    {
-        // Ak otáčanie nie je požadované, môžeme nastaviť špecifickú počiatočnú rotáciu.
-        image.transform.rotation = Quaternion.Euler(0, 0, initialRotation);
-    }
+        float elapsedTime = 0;
+        Vector3 startingPos = startPoint;
 
-    while (elapsedTime < duration)
-    {
-        image.transform.position = Vector3.Lerp(startingPos, endPoint, (elapsedTime / duration));
-
-        // Ak je otáčanie požadované a máme špecifickú cieľovú rotáciu, aktualizujeme rotáciu obrázka počas jeho pohybu.
-        if (rotateTowardsTarget && finalRotation != initialRotation)
+        // Ak je požadované otáčanie smerom k cieľu, nastavíme počiatočnú orientáciu.
+        if (rotateTowardsTarget)
         {
-            float currentRotationAngle = Mathf.Lerp(initialRotation, finalRotation, (elapsedTime / duration));
-            image.transform.eulerAngles = new Vector3(0, 0, currentRotationAngle);
+            Vector3 direction = endPoint - startPoint;
+            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+            image.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 90)); // Otočíme obrázok smerom k cieľu
+        }
+        else
+        {
+            // Ak otáčanie nie je požadované, môžeme nastaviť špecifickú počiatočnú rotáciu.
+            image.transform.rotation = Quaternion.Euler(0, 0, initialRotation);
         }
 
-        elapsedTime += Time.deltaTime;
-        yield return null;
-    }
+        while (elapsedTime < duration)
+        {
+            image.transform.position = Vector3.Lerp(startingPos, endPoint, (elapsedTime / duration));
 
-    // Na konci animácie explicitne nastavíme koncovú pozíciu a rotáciu, aby sme zabezpečili presnosť.
-    image.transform.position = endPoint;
-    if (rotateTowardsTarget && finalRotation != initialRotation)
-    {
-        image.transform.eulerAngles = new Vector3(0, 0, finalRotation);
+            // Ak je otáčanie požadované a máme špecifickú cieľovú rotáciu, aktualizujeme rotáciu obrázka počas jeho pohybu.
+            if (rotateTowardsTarget && finalRotation != initialRotation)
+            {
+                float currentRotationAngle = Mathf.Lerp(initialRotation, finalRotation, (elapsedTime / duration));
+                image.transform.eulerAngles = new Vector3(0, 0, currentRotationAngle);
+            }
+
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // Na konci animácie explicitne nastavíme koncovú pozíciu a rotáciu, aby sme zabezpečili presnosť.
+        image.transform.position = endPoint;
+        if (rotateTowardsTarget && finalRotation != initialRotation)
+        {
+            image.transform.eulerAngles = new Vector3(0, 0, finalRotation);
+        }
     }
-}
 
 
     private IEnumerator AnimateExplosion(GameObject explosion, Vector2 imageSize, float duration)
