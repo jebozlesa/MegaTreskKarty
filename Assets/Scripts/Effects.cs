@@ -171,7 +171,7 @@ public class Effects : MonoBehaviour
         if (card.state != CardState.STAY) card.state = CardState.MAYBE;
         if (card.effects[iteration][1] == 0)
         {
-            yield return StartCoroutine(attackAnimations.PlaySleepAnimation(card.transform));        //ANIMACIA
+            yield return StartCoroutine(attackAnimations.PlaySleepEndAnimation(card.transform));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " wokes up"));
             card.RemoveEffect(iteration);
             card.state = CardState.ATTACK;

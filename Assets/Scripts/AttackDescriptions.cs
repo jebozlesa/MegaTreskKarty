@@ -674,7 +674,7 @@ public class AttackDescriptions : MonoBehaviour
                 dialogText.text = "Katana chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
             case 84:
-                dialogText.text = "Nodachi Horns chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                dialogText.text = "Nodachi chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
             case 85:
                 dialogText.text = "Yumi chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";

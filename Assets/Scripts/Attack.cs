@@ -1805,6 +1805,8 @@ public class Attack : MonoBehaviour
     //86
     public IEnumerator Jujutsu(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Jujutsu"));
+        yield return StartCoroutine(attackAnimations.PlayJujutsuAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(attacker.attack + attacker.knowledge - (receiver.defense + 3));
         if (Random.value <= 0.3f) receiver.HandleDefense(2);//critical hit
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s Jujutsu Takedown"));

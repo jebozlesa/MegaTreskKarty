@@ -29,6 +29,7 @@ public class AttackAnimations : MonoBehaviour
     public RocketLaunchAnimation rocketLaunchAnimation;
     public SatelliteFlyoverAnimation satelliteFlyoverAnimation;
     public FlagWaveAnimation flagWaveAnimation;
+    public MidpointRotatingEnlargeAnimation midpointRotatingEnlargeAnimation;
 
 
     //1
@@ -2093,7 +2094,7 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
-    //34
+    //85
     public IEnumerator PlayYumiAnimation(Transform shooterCard, Transform targetCard,  bool hit)
     {
         Sprite bowSprite = Resources.Load<Sprite>("Game/Animations/yumi");
@@ -2112,6 +2113,26 @@ public class AttackAnimations : MonoBehaviour
                 showHitImage: hit, // Zobrazenie šípu
                 rotateToTarget: true, // Otočenie smerom k cieľu
                 arrowImageSize: new Vector2(250f, 250f) // Veľkosť obrázka šípu
+            )
+        );
+    }
+
+    //86
+    public IEnumerator PlayJujutsuAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite sprite = Resources.Load<Sprite>("Game/Animations/jujutsu");
+        AudioClip sound = Resources.Load<AudioClip>("Sounds/Game/Animations/jujutsu");
+
+        yield return StartCoroutine(
+            midpointRotatingEnlargeAnimation.StartAnimation(
+                sprite: sprite,
+                attacker: attacker,
+                defender: receiver,
+                startSize: new Vector2(300f, 300f),
+                endSize: new Vector2(350f, 350f),
+                duration: 0.7f,
+                rotationSpeed: 90f,
+                soundEffect: sound
             )
         );
     }

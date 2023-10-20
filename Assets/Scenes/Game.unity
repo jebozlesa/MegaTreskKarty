@@ -176,6 +176,7 @@ Transform:
   - {fileID: 170126699}
   - {fileID: 1002723490}
   - {fileID: 274353110}
+  - {fileID: 246434307}
   m_Father: {fileID: 0}
   m_RootOrder: 11
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -845,6 +846,51 @@ Transform:
   m_Children: []
   m_Father: {fileID: 52333100}
   m_RootOrder: 14
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &246434305
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 246434307}
+  - component: {fileID: 246434306}
+  m_Layer: 0
+  m_Name: MidpointRotatingEnlargeAnimation
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &246434306
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 246434305}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a506e1ad14c6b74f8bcfb61d3883d26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  canvas: {fileID: 575752764}
+--- !u!4 &246434307
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 246434305}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 52333100}
+  m_RootOrder: 25
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &274353108
 GameObject:
@@ -4172,6 +4218,7 @@ MonoBehaviour:
   rocketLaunchAnimation: {fileID: 170126698}
   satelliteFlyoverAnimation: {fileID: 1002723489}
   flagWaveAnimation: {fileID: 274353109}
+  midpointRotatingEnlargeAnimation: {fileID: 246434306}
 --- !u!4 &1860959065
 Transform:
   m_ObjectHideFlags: 0
@@ -4726,7 +4773,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 5e9702fa43c61244bb8f3b175423a56c, type: 3}
+  m_Sprite: {fileID: 21300000, guid: e4b3200ed6109cd45a1a006394abc4fb, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

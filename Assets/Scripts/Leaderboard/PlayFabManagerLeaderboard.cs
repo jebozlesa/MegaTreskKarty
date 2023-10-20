@@ -4,28 +4,29 @@ using UnityEngine;
 using PlayFab;
 using PlayFab.ClientModels;
 
-public class PlayFabManager : MonoBehaviour
+public class PlayFabManagerLeaderboard : MonoBehaviour
 {
-    public static PlayFabManager Instance { get; private set; }
+    
+    public static PlayFabManagerLeaderboard Instance { get; private set; }
 
     // public GameObject loadingImage;
     // public GameObject errorImage;
 
     public event Action<List<PlayerLeaderboardEntry>> OnLeaderboardLoaded;
 
-    // private void Awake()
-    // {
-    //     if (Instance == null)
-    //     {
-    //         Instance = this;
-    //         DontDestroyOnLoad(gameObject);
-    //         Login();
-    //     }
-    //     else
-    //     {
-    //         Destroy(gameObject);
-    //     }
-    // }
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            Login();
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
 
     void Login()
     {
@@ -103,6 +104,4 @@ public class PlayFabManager : MonoBehaviour
             OnLeaderboardLoaded?.Invoke(result.Leaderboard);
         }
     }
-
-
 }

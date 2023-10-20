@@ -7,7 +7,7 @@ using PlayFab.ClientModels;
 
 public class RecordsLoader : MonoBehaviour
 {
-    public PlayFabManager playFabManager;
+    public PlayFabManagerLeaderboard playFabManager;
     public GameObject rowPrefab; // Prefab pre záznam
     public Transform rowsParent; // Zoznam záznamov
 
