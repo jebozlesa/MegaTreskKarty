@@ -2137,6 +2137,145 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
+    //87
+    public IEnumerator PlayEspionageAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite1 = Resources.Load<Sprite>("Game/Animations/espionage1");
+        Sprite animationImageSprite2 = Resources.Load<Sprite>("Game/Animations/espionage2");
+        Sprite animationImageSprite3 = Resources.Load<Sprite>("Game/Animations/espionage3");
+        Sprite animationImageSprite4 = Resources.Load<Sprite>("Game/Animations/espionage1");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/espionage");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite1,
+                startPoint: attacker,
+                endPoint: receiver,
+                rotateTowardsTarget: false,
+                imageSize: new Vector2(300f, 300f),
+                duration: 0.4f,
+                startSound: startSound
+            )
+        );
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite2,
+                startPoint: receiver,
+                endPoint: attacker,
+                rotateTowardsTarget: false,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.2f
+            )
+        );
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite3,
+                startPoint: receiver,
+                endPoint: attacker,
+                rotateTowardsTarget: false,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.2f
+            )
+        );
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite4,
+                startPoint: receiver,
+                endPoint: attacker,
+                rotateTowardsTarget: false,
+                imageSize: new Vector2(300f, 300f),
+                duration: 0.4f
+            )
+        );
+    }
+
+    //88
+    public IEnumerator PlaySabreAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/sabre");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/sabre");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 90f, // napr. -15 stupňov na začiatku
+                finalRotation: 0f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    //89
+    public IEnumerator PlayGambleAnimation(Transform attacker, Transform receiver, bool win)
+    {
+        Sprite animationImageSprite1 = Resources.Load<Sprite>("Game/Animations/gamblechips1");
+        Sprite animationImageSprite2 = Resources.Load<Sprite>("Game/Animations/gamblechips2");
+        Sprite animationImageSprite3 = Resources.Load<Sprite>("Game/Animations/gamblecoin1");
+        Sprite animationImageSprite4 = Resources.Load<Sprite>("Game/Animations/gamblecoin2");
+        AudioClip chipsSound = Resources.Load<AudioClip>("Sounds/Game/Animations/gamblechips");
+        AudioClip coinSound = Resources.Load<AudioClip>("Sounds/Game/Animations/gamblecoin");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite1,
+                startPoint: receiver,
+                endPoint: attacker,
+                rotateTowardsTarget: false,
+                imageSize: new Vector2(300f, 300f),
+                duration: 0.3f,
+                startSound: chipsSound
+            )
+        );
+        if (win)
+        {
+            yield return StartCoroutine(
+            blocadeAnimation.StartAnimation(
+                sprite: animationImageSprite3,
+                targetCard: attacker,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(300f, 300f),
+                duration: 0.6f,
+                shakeDuration: 0.3f,
+                startRotation: 0f,
+                endRotation: 0f,
+                soundEffect: coinSound
+            )
+        );
+        }
+        else
+        {
+            yield return StartCoroutine(
+            blocadeAnimation.StartAnimation(
+                sprite: animationImageSprite4,
+                targetCard: attacker,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(300f, 300f),
+                duration: 0.6f,
+                shakeDuration: 0.3f,
+                startRotation: 0f,
+                endRotation: 0f,
+                soundEffect: coinSound
+            )
+        );
+            yield return StartCoroutine(
+                moveImageAnimation.StartAnimation(
+                    sprite: animationImageSprite2,
+                    startPoint: attacker,
+                    endPoint: receiver,
+                    rotateTowardsTarget: false,
+                    imageSize: new Vector2(300f, 300f),
+                    duration: 0.3f,
+                    startSound: chipsSound
+                )
+            );
+        }
+    }
+
+
 
     //100
     public IEnumerator PlayShieldBashAnimation(Transform attacker, Transform receiver)

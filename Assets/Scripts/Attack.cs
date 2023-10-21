@@ -1816,6 +1816,8 @@ public class Attack : MonoBehaviour
     //87
     public IEnumerator Espionage(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Espionage"));
+        yield return StartCoroutine(attackAnimations.PlayEspionageAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.HandleDefense(-((attacker.knowledge + attacker.charisma) / 7));
         receiver.HandleSpeed(-((attacker.knowledge + attacker.charisma) / 7));
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " spies on enemy"));
@@ -1825,11 +1827,14 @@ public class Attack : MonoBehaviour
     //88
     public IEnumerator Sabre(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Sabre"));
+        yield return StartCoroutine(attackAnimations.PlaySabreAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(3 + ((attacker.attack + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
         if (Random.value <= 0.2f) receiver.TakeDamage(3);//critical hit
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " cuts with Sabre "));
         if (Random.value <= 0.3f) 
         {
+            StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(1,Random.Range(2, 5)));//bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
@@ -1839,16 +1844,19 @@ public class Attack : MonoBehaviour
     //89
     public IEnumerator Gamble(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Gamble"));
         int bet = Random.Range(1, 3);
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is raising bets"));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is taking bets"));
         if (Random.value <= 0.66f)
         {
+            yield return StartCoroutine(attackAnimations.PlayGambleAnimation(attacker.transform, receiver.transform, true));        //ANIMACIA
             attacker.HandleCharisma(bet);
             receiver.HandleCharisma(-bet);
             yield return StartCoroutine(ShowDialog(dialogText, "And wins"));
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayGambleAnimation(attacker.transform, receiver.transform, false));        //ANIMACIA
             attacker.HandleCharisma(-bet);
             receiver.HandleCharisma(bet);
             yield return StartCoroutine(ShowDialog(dialogText, "And loses"));
