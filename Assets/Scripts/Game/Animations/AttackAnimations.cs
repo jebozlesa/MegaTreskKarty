@@ -2275,6 +2275,145 @@ public class AttackAnimations : MonoBehaviour
         }
     }
 
+    //90
+    public IEnumerator PlayPhilosophyAnimation(Transform targetCard)
+    {
+        Sprite[] sprites = new Sprite[5];
+        sprites[0] = Resources.Load<Sprite>("Game/Animations/philosophy1");
+        sprites[1] = Resources.Load<Sprite>("Game/Animations/philosophy2");
+        sprites[2] = Resources.Load<Sprite>("Game/Animations/philosophy3");
+        sprites[3] = Resources.Load<Sprite>("Game/Animations/philosophy4");
+        sprites[4] = Resources.Load<Sprite>("Game/Animations/philosophy5");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/philosophy");
+
+        Vector2 initialSize = new Vector2(50f, 50f); // Počiatočná veľkosť obrázka
+        Vector2 finalSize = new Vector2(300f, 300f);   // Konečná veľkosť obrázka
+
+        yield return StartCoroutine(
+            randomImageSpawner.StartRandomSpawnAnimation(
+                sprites: sprites,
+                targetCard: targetCard,
+                cardSize: new Vector2(300f, 500f), // Predpokladaná veľkosť karty + 10%
+                duration: 1f,
+                spawnIntensity: 1,
+                totalImages: 3,
+                startSize: initialSize,
+                endSize: finalSize,
+                imageLifetime: 0.5f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //91
+    public IEnumerator PlayCalmAnimation(Transform targetCard)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/calm");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/calm");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            blocadeAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(300f, 300f),
+                duration: 1f,
+                shakeDuration: 0f,
+                startRotation: 0f,
+                endRotation: 0f,
+                soundEffect: soundEffect
+            )
+        );
+    }
+
+    //92
+    public IEnumerator PlayHonestyAnimation(Transform targetCard)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/honesty");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/honesty");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            blocadeAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(300f, 300f),
+                endSize: new Vector2(300f, 300f),
+                duration: 1f,
+                shakeDuration: 0.5f,
+                startRotation: 0f,
+                endRotation: 0f,
+                soundEffect: soundEffect
+            )
+        );
+    }
+
+    //93
+    public IEnumerator PlayValaskaAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/valaska");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/valaska");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 100f, // napr. -15 stupňov na začiatku
+                finalRotation: -15f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    //94
+    public IEnumerator PlayMoonshineAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/moonshine");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/moonshine");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(400f, 400f),
+                endSize: new Vector2(400f, 400f),
+                duration: 1f,
+                endRotation: 90f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //95
+    public IEnumerator PlayOutlawBandAnimation(Transform targetCard)
+    {
+        Sprite[] sprites = new Sprite[6];
+        sprites[0] = Resources.Load<Sprite>("Game/Animations/outlawband1");
+        sprites[1] = Resources.Load<Sprite>("Game/Animations/outlawband2");
+        sprites[2] = Resources.Load<Sprite>("Game/Animations/outlawband3");
+        sprites[3] = Resources.Load<Sprite>("Game/Animations/outlawband4");
+        sprites[4] = Resources.Load<Sprite>("Game/Animations/outlawband5");
+        sprites[5] = Resources.Load<Sprite>("Game/Animations/outlawband6");
+        AudioClip ambushSound = Resources.Load<AudioClip>("Sounds/Game/Animations/outlawband");
+
+        yield return StartCoroutine(
+            ambushAnimation.StartAnimation(
+                sprites: sprites,
+                targetCard: targetCard,
+                cardSize: new Vector2(300f, 500f), // Predpokladaná veľkosť karty + 10%
+                duration: 1f,
+                numberOfImages: 6,
+                imageSize: new Vector2(200f, 200f),
+                soundEffect: ambushSound,
+                gatherSpeed: 300f,
+                maxRotationAngle: 30f
+            )
+        );
+    }
 
 
     //100
@@ -2333,6 +2472,40 @@ public class AttackAnimations : MonoBehaviour
             )
         );
     }
+
+    public IEnumerator PlayAnimationImpressed(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/impressed");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/impressed");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(400f, 400f),
+                duration: 1f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    public IEnumerator PlayAnimationNotEffective(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/pokerface");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/pokerface");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(300f, 300f),
+                endSize: new Vector2(300f, 300f),
+                duration: 0.7f,
+                soundEffect: effectSound
+            )
+        );
+    }
     
     //1e
     public IEnumerator PlayBleedStartAnimation(Transform targetCard)
@@ -2376,6 +2549,32 @@ public class AttackAnimations : MonoBehaviour
     }
 
     //3e
+    public IEnumerator PlayDrunkAnimation(Transform targetCard)
+    {
+        Sprite[] sprites = new Sprite[1];
+        sprites[0] = Resources.Load<Sprite>("Game/Animations/drunk");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/drunk");
+
+        Vector2 initialSize = new Vector2(50f, 50f); // Počiatočná veľkosť obrázka
+        Vector2 finalSize = new Vector2(300f, 300f);   // Konečná veľkosť obrázka
+
+        yield return StartCoroutine(
+            randomImageSpawner.StartRandomSpawnAnimation(
+                sprites: sprites,
+                targetCard: targetCard,
+                cardSize: new Vector2(300f, 500f), // Predpokladaná veľkosť karty + 10%
+                duration: 1f,
+                spawnIntensity: 1,
+                totalImages: 10,
+                startSize: initialSize,
+                endSize: finalSize,
+                imageLifetime: 0.5f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //3e
     public IEnumerator PlayKnockoutAnimation(Transform targetCard)
     {
         Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/knockout");
@@ -2386,6 +2585,24 @@ public class AttackAnimations : MonoBehaviour
                 sprite: effectSprite,
                 targetCard: targetCard,
                 startSize: new Vector2(0f, 0f),
+                endSize: new Vector2(350f, 350f),
+                duration: 1f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //3e
+    public IEnumerator PlayBoredomAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/boredom");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/boredom");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
                 endSize: new Vector2(350f, 350f),
                 duration: 1f,
                 soundEffect: effectSound
@@ -2807,6 +3024,42 @@ public class AttackAnimations : MonoBehaviour
                 startSound: startSound,
                 initialRotation: 0f, 
                 finalRotation: 0f    
+            )
+        );
+    }
+
+    //21e
+    public IEnumerator PlayCalmStartAnimation(Transform attacker)
+    {
+        Sprite sprite = Resources.Load<Sprite>("Game/Animations/calmstart");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/calmstart");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: sprite,
+                targetCard: attacker,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(350f, 350f),
+                duration: 1f,
+                soundEffect: soundEffect
+            )
+        );
+    }
+
+    //21e
+    public IEnumerator PlayCalmEndAnimation(Transform attacker)
+    {
+        Sprite sprite = Resources.Load<Sprite>("Game/Animations/calmend");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/calmend");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: sprite,
+                targetCard: attacker,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(350f, 350f),
+                duration: 1f,
+                soundEffect: soundEffect
             )
         );
     }

@@ -558,18 +558,17 @@ public class Effects : MonoBehaviour
 	{
         if (card.effects[iteration][1] == 0)
         {
+            yield return StartCoroutine(attackAnimations.PlayCalmEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            dialogText.text = card.cardName + " is sharp again";
             card.HandleStrength(3);
             card.HandleAttack(3);
-            yield return new WaitForSeconds(2);
-            yield break;
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is sharp again"));
         }
         else
         {
             card.effects[iteration][1] -= 1;
         }
-        Debug.Log(card.cardName + " => Fury");
+        Debug.Log(card.cardName + " => Calm");
 	}
     //22
     public IEnumerator Reloading(Kard card, TMP_Text dialogText, int iteration, Kard target)
