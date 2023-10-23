@@ -512,9 +512,9 @@ public class Effects : MonoBehaviour
     //19
     public IEnumerator Fear(Kard card, TMP_Text dialogText, int iteration)
 	{
+        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is affected by fear"));
         if (card.effects[iteration][1] == 0)
         {
-            yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is affected by fear"));
             yield return StartCoroutine(attackAnimations.PlayFearEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
             card.HandleStrength(5);
@@ -556,6 +556,7 @@ public class Effects : MonoBehaviour
     //21
     public IEnumerator Calm(Kard card, TMP_Text dialogText, int iteration)
 	{
+        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is affected by Calm"));
         if (card.effects[iteration][1] == 0)
         {
             yield return StartCoroutine(attackAnimations.PlayCalmEndAnimation(card.transform));        //ANIMACIA
@@ -574,7 +575,6 @@ public class Effects : MonoBehaviour
     public IEnumerator Reloading(Kard card, TMP_Text dialogText, int iteration, Kard target)
 	{
         card.state = CardState.STAY;
-        //StartCoroutine(textBubble.ShowForSeconds("surrender!", Resources.Load<Sprite>("oblacik"), 2.5f));
         if (card.effects[iteration][1] == 0)
         {
             card.RemoveEffect(iteration);
@@ -582,23 +582,24 @@ public class Effects : MonoBehaviour
             card.HandleDefense(1);
             if (UnityEngine.Random.value <= ((20 + card.attack) / 40f))
             {
-                dialogText.text = "Bang! " + card.cardName + " shoots";
+                yield return StartCoroutine(attackAnimations.PlayFlintlockPistolShotAnimation(card.transform, target.transform, true));        //ANIMACIA
                 target.TakeDamage(UnityEngine.Random.Range(10, 22));
+                yield return StartCoroutine(ShowDialog(dialogText, "Bang! " + card.cardName + " shoots"));
             }
             else
             {
-                dialogText.text = "Bang! aaaand miss";
+                yield return StartCoroutine(attackAnimations.PlayFlintlockPistolShotAnimation(card.transform, target.transform, false));        //ANIMACIA
+                yield return StartCoroutine(ShowDialog(dialogText, "Bang! aaaand miss"));
             }
-            yield return new WaitForSeconds(2);
-            yield break;
         }
         else
         {
+
             card.effects[iteration][1] -= 1;
-            dialogText.text = card.cardName + " is still reloading";
+            yield return StartCoroutine(attackAnimations.PlayFlintlockPistolLoadingAnimation(card.transform));        //ANIMACIA
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is still reloading"));
         }
         Debug.Log(card.cardName + " => Reloading");
-        yield return new WaitForSeconds(2);
 	}
     //23
     public IEnumerator DelayedDmg(Kard card, TMP_Text dialogText, int iteration, Kard target)

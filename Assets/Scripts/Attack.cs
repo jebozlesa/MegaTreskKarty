@@ -1988,22 +1988,23 @@ public class Attack : MonoBehaviour
     }
 
     //95
-    public IEnumerator OutlawBand(Kard attacker, Kard receiver, TMP_Text dialogText)
+    public IEnumerator OutlawBand(Kard attacker, Kard receiver, TMP_Text dialogText)                            //dajak toto zmenit treba, somarina to je? rovnake ako ambush
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Outlaw Band"));
         yield return StartCoroutine(attackAnimations.PlayOutlawBandAnimation(receiver.transform));        //ANIMACIA
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s Band Attacks"));
         int loot = Random.Range(1,3);
         if (receiver.charisma > receiver.strength) 
         {
             receiver.TakeDamage(Random.Range(5, 10));
             attacker.HandleCharisma(loot);
             receiver.HandleCharisma(-loot);
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s Band Attacks"));
         }
         else
         {
-            yield return StartCoroutine(ShowDialog(dialogText, "The outlaw band stumbled"));
+            yield return StartCoroutine(attackAnimations.PlayOutlawBandFailAnimation(receiver.transform));        //ANIMACIA
             attacker.TakeDamage(Random.Range(3, 7));
+            yield return StartCoroutine(ShowDialog(dialogText, "The outlaw band run in fear"));
         }
         Debug.Log(attacker.cardName + " -> OutlawBand => " + receiver.cardName);
     }
@@ -2011,7 +2012,9 @@ public class Attack : MonoBehaviour
     //96
     public IEnumerator FlintlockPistol(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is cleaning his flintlock"));
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Flintlock Pistol"));
+        yield return StartCoroutine(attackAnimations.PlayFlintlockPistolLoadingAnimation(attacker.transform));        //ANIMACIA
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is loading his pistol"));
         StartCoroutine(attacker.AddEffect(22,Random.Range(1, 2)));//Reloading
         attacker.state = CardState.STAY;
         attacker.HandleDefense(-1);
@@ -2021,6 +2024,8 @@ public class Attack : MonoBehaviour
     //97
     public IEnumerator PassiveResistance(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Passive Resistance"));
+        yield return StartCoroutine(attackAnimations.PlayPassiveResistanceAnimation(attacker.transform));        //ANIMACIA
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is resisting passively!!!"));
         receiver.HandleAttack(-1);
         attacker.HandleDefense(2);
@@ -2030,10 +2035,13 @@ public class Attack : MonoBehaviour
     //98
     public IEnumerator HungerStrike(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " refuses to eat"));
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Hunger Strike"));
+        yield return StartCoroutine(attackAnimations.PlayHungerStrikeAnimation(attacker.transform));        //ANIMACIA
         attacker.TakeDamage(5);
-        if (Random.value <= ((40 - receiver.strength) / 30f))
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " refuses to eat"));
+        if (Random.value <= ((40 - receiver.strength) / 30f) && !receiver.CheckEffect(13))
         {
+            yield return StartCoroutine(attackAnimations.PlayDepressionStartAnimation(receiver.transform));        //ANIMACIA
             receiver.HandleStrength(Random.Range(-3,0));
             receiver.HandleSpeed(Random.Range(-3,0));
             receiver.HandleAttack(Random.Range(-3,0));
@@ -2044,6 +2052,7 @@ public class Attack : MonoBehaviour
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayAnimationNotEffective(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " doesn't care"));
         }
         Debug.Log(attacker.cardName + " -> HungerStrike => " + receiver.cardName);
@@ -2052,34 +2061,40 @@ public class Attack : MonoBehaviour
     //99
     public IEnumerator Gladius(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Gladius"));
+        yield return StartCoroutine(attackAnimations.PlayGladiusAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(2 + ((attacker.attack + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " attacks with gladius"));
         if (Random.value <= 0.5f) receiver.TakeDamage(4);//critical hit
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " attacks with gladius"));
         Debug.Log(attacker.cardName + " -> Gladius => " + receiver.cardName);
     }
 
     //100
     public IEnumerator ShieldBash(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Shield Bash"));
         yield return StartCoroutine(attackAnimations.PlayShieldBashAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(2);
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " smashes with his shield"));
         if (Random.value <= 0.5f) attacker.HandleDefense(2);//critical hit
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " smashes with his shield"));
         Debug.Log(attacker.cardName + " -> ShieldBash => " + receiver.cardName);
     }
 
     //101
     public IEnumerator Yperit(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Yperit"));
         if (Random.value <= 0.9f) 
         {
-            yield return StartCoroutine(ShowDialog(dialogText, "Yperit strikes"));
+            yield return StartCoroutine(attackAnimations.PlayYperitSuccessAnimation(attacker.transform, receiver.transform));        //ANIMACIA
             receiver.TakeDamage(Random.Range(5, 10));
+            yield return StartCoroutine(ShowDialog(dialogText, "Yperit strikes"));
         }
         else
         {
-            yield return StartCoroutine(ShowDialog(dialogText, "A breeze blows"));
+            yield return StartCoroutine(attackAnimations.PlayYperitFailAnimation(receiver.transform));        //ANIMACIA
             attacker.TakeDamage(Random.Range(3, 7));
+            yield return StartCoroutine(ShowDialog(dialogText, "A breeze blows"));
         }
         Debug.Log(attacker.cardName + " -> Yperit => " + receiver.cardName);
     }
@@ -2087,15 +2102,18 @@ public class Attack : MonoBehaviour
     //102
     public IEnumerator Blitzkrieg(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Blitzkrieg"));
         if (attacker.speed < receiver.speed)
         {
-            yield return StartCoroutine(ShowDialog(dialogText, "Too slow, buddy"));
+            yield return StartCoroutine(attackAnimations.PlayAnimationNotEffective(receiver.transform));        //ANIMACIA
             attacker.TakeDamage(receiver.speed - attacker.speed);
+            yield return StartCoroutine(ShowDialog(dialogText, "Too slow"));
         }
         else
         {
-            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " uses Blitzkrieg tactics"));
+            yield return StartCoroutine(attackAnimations.PlayBlitzkriegAnimation(attacker.transform, receiver.transform));        //ANIMACIA
             receiver.TakeDamage(3 + attacker.speed - receiver.speed);
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " uses Blitzkrieg tactics"));
         }
         Debug.Log(attacker.cardName + " -> Blitzkrieg => " + receiver.cardName);
     }
@@ -2103,9 +2121,11 @@ public class Attack : MonoBehaviour
     //103
     public IEnumerator Propaganda(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " uses propaganda"));
+        yield return StartCoroutine(ShowAttackDialog(dialogText,attacker.cardName + " uses Propaganda"));
+        yield return StartCoroutine(attackAnimations.PlayPropagandaAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.HandleAttack(-((attacker.knowledge + attacker.charisma) / 7));
         receiver.HandleKnowledge(-((attacker.knowledge + attacker.charisma) / 7));
+        yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " was hit by propaganda"));
         Debug.Log(attacker.cardName + " -> Propaganda => " + receiver.cardName);
     }
 

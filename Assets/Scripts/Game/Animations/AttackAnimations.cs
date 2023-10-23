@@ -2415,6 +2415,138 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
+    //95
+    public IEnumerator PlayOutlawBandFailAnimation(Transform targetCard)
+    {
+        Sprite[] sprites = new Sprite[6];
+        sprites[0] = Resources.Load<Sprite>("Game/Animations/outlawband1");
+        sprites[1] = Resources.Load<Sprite>("Game/Animations/outlawband2");
+        sprites[2] = Resources.Load<Sprite>("Game/Animations/outlawband3");
+        sprites[3] = Resources.Load<Sprite>("Game/Animations/outlawband4");
+        sprites[4] = Resources.Load<Sprite>("Game/Animations/outlawband5");
+        sprites[5] = Resources.Load<Sprite>("Game/Animations/outlawband6");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/outlawbandfail");
+
+        yield return StartCoroutine(
+            corruptionAnimation.StartAnimation(
+                sprites: sprites,
+                soundEffect: soundEffect,
+                targetCard: targetCard,
+                cardSize: new Vector2(300f, 300f), // Predpokladaná veľkosť karty
+                duration: 0.7f, // Celková doba trvania animácie
+                numberOfImages: 6, // Number of images you want to spawn
+                imageSize: new Vector2(200f, 200f), // Size of the generated images
+                scatterSpeed: 300f // Speed at which the images scatter
+            )
+        );
+    }
+
+    //96
+    public IEnumerator PlayFlintlockPistolLoadingAnimation(Transform targetCard)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/flintlockloading");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/flintlockloading");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            blocadeAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(300f, 300f),
+                duration: 0.7f,
+                shakeDuration: 0.2f,
+                startRotation: 0f,
+                endRotation: 0f,
+                soundEffect: soundEffect
+            )
+        );
+    }
+
+    //96
+    public IEnumerator PlayFlintlockPistolShotAnimation(Transform shooterCard, Transform targetCard, bool hit)
+    {
+        Sprite shooterSprite = Resources.Load<Sprite>("Game/Animations/flintlockshot");
+        Sprite hitSprite = Resources.Load<Sprite>("Game/Animations/flintlockbullet");
+        AudioClip shootSound = Resources.Load<AudioClip>("Sounds/Game/Animations/flintlockshot");
+
+        yield return StartCoroutine(
+            shootAnimation.StartShootAnimation(
+                shooterSprite: shooterSprite,
+                hitSprite: hitSprite,
+                shooterCard: shooterCard,
+                targetCard: targetCard,
+                imageSize: new Vector2(350f, 350f),
+                hitImageSize: new Vector2(100f, 100f),
+                duration: 1f,
+                shootRatio: 0.5f,
+                shootSound: shootSound,
+                recoilAngle: 10f,
+                showHitImage: hit
+            )
+        );
+    }
+
+    //97
+    public IEnumerator PlayPassiveResistanceAnimation(Transform targetCard)
+    {
+        Sprite waterSprite = Resources.Load<Sprite>("Game/Animations/passiveresistance1");
+        Sprite wineSprite = Resources.Load<Sprite>("Game/Animations/passiveresistance2");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/passiveresistance");
+
+        yield return StartCoroutine(
+            dualImageAnimation.StartAnimation(
+                sprite1: waterSprite,
+                sprite2: wineSprite,
+                position: targetCard,
+                imageSize: new Vector2(300f, 300f), // Predpokladaná veľkosť pohára
+                duration: 1f, // Celková doba trvania animácie
+                startSound: startSound,
+                switchRatio: 0.5f // V polovici animácie sa zmení na fľašu vína
+            )
+        );
+    }
+
+    //98
+    public IEnumerator PlayHungerStrikeAnimation(Transform targetCard)
+    {
+        Sprite waterSprite = Resources.Load<Sprite>("Game/Animations/hungerstike1");
+        Sprite wineSprite = Resources.Load<Sprite>("Game/Animations/hungerstike2");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/hungerstike");
+
+        yield return StartCoroutine(
+            dualImageAnimation.StartAnimation(
+                sprite1: waterSprite,
+                sprite2: wineSprite,
+                position: targetCard,
+                imageSize: new Vector2(300f, 300f), // Predpokladaná veľkosť pohára
+                duration: 1f, // Celková doba trvania animácie
+                startSound: startSound,
+                switchRatio: 0.5f // V polovici animácie sa zmení na fľašu vína
+            )
+        );
+    }
+
+    //99
+    public IEnumerator PlayGladiusAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/gladius");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/gladius");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(300f, 300f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 100f, 
+                finalRotation: 0f     
+            )
+        );
+    }
+
 
     //100
     public IEnumerator PlayShieldBashAnimation(Transform attacker, Transform receiver)
@@ -2430,8 +2562,118 @@ public class AttackAnimations : MonoBehaviour
                 imageSize: new Vector2(250f, 250f),
                 duration: 0.5f,
                 startSound: startSound,
-                initialRotation: 15f, // napr. -15 stupňov na začiatku
-                finalRotation: -15f     // napr. 15 stupňov na konci
+                initialRotation: 15f, 
+                finalRotation: -15f    
+            )
+        );
+    }
+
+    //101
+    public IEnumerator PlayYperitSuccessAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/yperit");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/yperit");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250f, 250f),
+                duration: 1f,
+                startSound: startSound,
+                initialRotation: 0f, 
+                finalRotation: 0f    
+            )
+        );
+    }
+
+    //101
+    public IEnumerator PlayYperitFailAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/yperit");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/yperit");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(400f, 400f),
+                duration: 1f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //102
+    public IEnumerator PlayBlitzkriegAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/blitzkrieg");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/blitzkrieg");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250f, 250f),
+                duration: 1f,
+                startSound: startSound,
+                initialRotation: 0f, 
+                finalRotation: 0f    
+            )
+        );
+    }
+
+    //103
+    public IEnumerator PlayPropagandaAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite1 = Resources.Load<Sprite>("Game/Animations/propaganda1");
+        Sprite animationImageSprite2 = Resources.Load<Sprite>("Game/Animations/propaganda2");
+        Sprite animationImageSprite3 = Resources.Load<Sprite>("Game/Animations/propaganda3");
+        Sprite animationImageSprite4 = Resources.Load<Sprite>("Game/Animations/propaganda4");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/propaganda");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite1,
+                startPoint: attacker,
+                endPoint: receiver,
+                rotateTowardsTarget: false,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.3f,
+                startSound: startSound
+            )
+        );
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite2,
+                startPoint: attacker,
+                endPoint: receiver,
+                rotateTowardsTarget: false,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.3f
+            )
+        );
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite3,
+                startPoint: attacker,
+                endPoint: receiver,
+                rotateTowardsTarget: false,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.3f
+            )
+        );
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite4,
+                startPoint: attacker,
+                endPoint: receiver,
+                rotateTowardsTarget: false,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.3f
             )
         );
     }
