@@ -2678,6 +2678,135 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
+    //104
+    public IEnumerator PlayRetiariusAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/retiarius");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/retiarius");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250f, 250f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 100f, // napr. -15 stupňov na začiatku
+                finalRotation: -180f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    //105
+    public IEnumerator PlayShurikenAnimation(Transform attacker, Transform receiver, bool isSuccessful)
+    {
+        Sprite sprite = Resources.Load<Sprite>("Game/Animations/shuriken");
+        AudioClip sound = Resources.Load<AudioClip>("Sounds/Game/Animations/shuriken");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            kamikazeAnimation.StartAnimation(
+                planeSprite: sprite,
+                explosionSprite: null,
+                sound: sound,
+                isSuccessful: isSuccessful,
+                attacker: attacker,
+                defender: receiver,
+                finalRotation: 450f,
+                cardSize: new Vector2(300f, 300f), // Predpokladaná veľkosť karty
+                imageSize: new Vector2(250f, 250f), // Veľkosť obrázkov
+                duration: 0.7f, // Celková doba trvania animácie
+                moveDurationRatio: 1f, // Pomer času pohybu lietadla
+                explosionGrowDurationRatio: 0f // Pomer času rastu explózie
+            )
+        );
+    }
+
+    //106
+    public IEnumerator PlayKusarigamaAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/kusarigama");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/kusarigama");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(300f, 300f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 90f, 
+                finalRotation: 0f   
+            )
+        );
+    }
+
+    //107
+    public IEnumerator PlayOrientalSpiceAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/orientalspices");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/orientalspices");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(300f, 300f),
+                duration: 0.7f,
+                startSound: startSound,
+                initialRotation: 0f, 
+                finalRotation: 0f   
+            )
+        );
+    }
+
+    //108
+    public IEnumerator PlayArquebusExplosionAnimation(Transform targetCard)
+    {
+        Sprite sprite1 = Resources.Load<Sprite>("Game/Animations/arquebus");
+        Sprite sprite2 = Resources.Load<Sprite>("Game/Animations/arquebusexpl");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/arquebus");
+
+        yield return StartCoroutine(
+            dualImageAnimation.StartAnimation(
+                sprite1: sprite1,
+                sprite2: sprite2,
+                position: targetCard,
+                imageSize: new Vector2(300f, 300f), // Predpokladaná veľkosť pohára
+                duration: 1f, // Celková doba trvania animácie
+                startSound: startSound,
+                switchRatio: 0.5f // V polovici animácie sa zmení na fľašu vína
+            )
+        );
+    }
+
+    //96
+    public IEnumerator PlayArquebusShotAnimation(Transform shooterCard, Transform targetCard, bool hit)
+    {
+        Sprite shooterSprite = Resources.Load<Sprite>("Game/Animations/arquebus");
+        Sprite hitSprite = Resources.Load<Sprite>("Game/Animations/arquebusbullet");
+        AudioClip shootSound = Resources.Load<AudioClip>("Sounds/Game/Animations/arquebus");
+
+        yield return StartCoroutine(
+            shootAnimation.StartShootAnimation(
+                shooterSprite: shooterSprite,
+                hitSprite: hitSprite,
+                shooterCard: shooterCard,
+                targetCard: targetCard,
+                imageSize: new Vector2(350f, 350f),
+                hitImageSize: new Vector2(100f, 100f),
+                duration: 1f,
+                shootRatio: 0.5f,
+                shootSound: shootSound,
+                recoilAngle: 10f,
+                showHitImage: hit
+            )
+        );
+    }
+
     //111
     public IEnumerator PlayAxeAnimation(Transform attacker, Transform receiver)
     {
@@ -3302,6 +3431,48 @@ public class AttackAnimations : MonoBehaviour
                 endSize: new Vector2(350f, 350f),
                 duration: 1f,
                 soundEffect: soundEffect
+            )
+        );
+    }
+
+    //23e
+    public IEnumerator PlayTridentAimAnimation(Transform targetCard)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/trident");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/tridentaim");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            blocadeAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(300f, 300f),
+                endSize: new Vector2(300f, 300f),
+                duration: 0.6f,
+                shakeDuration: 0.3f,
+                startRotation: 0f,
+                endRotation: 0f,
+                soundEffect: soundEffect
+            )
+        );
+    }
+
+    //23e
+    public IEnumerator PlayTridentHitAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/trident");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/tridenthit");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(350f, 350f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 0f, // napr. -15 stupňov na začiatku
+                finalRotation: 0f     // napr. 15 stupňov na konci
             )
         );
     }

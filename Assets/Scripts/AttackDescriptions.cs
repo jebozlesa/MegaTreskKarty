@@ -749,7 +749,7 @@ public class AttackDescriptions : MonoBehaviour
                 dialogText.text = "Oriental Spice chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
             case 109:
-                dialogText.text = "Fiery Arquebus chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                dialogText.text = "Arquebus chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
             case 110:
                 dialogText.text = "Pirate Raid chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
@@ -1784,7 +1784,7 @@ public class AttackDescriptions : MonoBehaviour
     //109
     public void FieryArquebus(TMP_Text buttonText)
 	{
-        buttonText.text = "Fiery Arquebus";
+        buttonText.text = "Arquebus";
 	}
     //110
     public void PirateRaid(TMP_Text buttonText)

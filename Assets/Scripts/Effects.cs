@@ -116,7 +116,7 @@ public class Effects : MonoBehaviour
                 yield return StartCoroutine(Reloading(card, dialogText, iteration, target));
                 break;
             case 23:
-                yield return StartCoroutine(DelayedDmg(card, dialogText, iteration, target));
+                yield return StartCoroutine(Trident(card, dialogText, iteration, target));
                 break;
             case 24:
                 yield return StartCoroutine(Poison(card, dialogText, iteration));
@@ -602,26 +602,25 @@ public class Effects : MonoBehaviour
         Debug.Log(card.cardName + " => Reloading");
 	}
     //23
-    public IEnumerator DelayedDmg(Kard card, TMP_Text dialogText, int iteration, Kard target)
+    public IEnumerator Trident(Kard card, TMP_Text dialogText, int iteration, Kard target)
 	{
+        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " uses Retiarius"));
         card.state = CardState.STAY;
-        //StartCoroutine(textBubble.ShowForSeconds("surrender!", Resources.Load<Sprite>("oblacik"), 2.5f));
         if (card.effects[iteration][1] == 0)
         {
+            yield return StartCoroutine(attackAnimations.PlayTridentHitAnimation(card.transform, target.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
             card.state = CardState.ATTACK;
             target.TakeDamage(card.attack - target.defense);
-            dialogText.text = card.cardName + "attacks with trident";
-            yield return new WaitForSeconds(2);
-            yield break;
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + "attacks with trident"));
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayTridentAimAnimation(card.transform));        //ANIMACIA
             card.effects[iteration][1] -= 1;
-            dialogText.text = card.cardName + " is aiming";
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is aiming"));
         }
         Debug.Log(card.cardName + " => DelayedDmg");
-        yield return new WaitForSeconds(2);
 	}
     //24
     public IEnumerator Poison(Kard card, TMP_Text dialogText, int iteration)
