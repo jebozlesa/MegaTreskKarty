@@ -20,7 +20,7 @@ public class CardGenerator : MonoBehaviour
     private void Start()
     {
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
- //       PlayFabLogin();
+        //       PlayFabLogin();
     }
 
     void PlayFabLogin()
@@ -30,24 +30,24 @@ public class CardGenerator : MonoBehaviour
         string email = PlayerPrefs.GetString("email");
         string password = PlayerPrefs.GetString("password");
 
-        var request = new LoginWithEmailAddressRequest 
-            {
-                Email = email,
-                Password = password
-            };
-            PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
+        var request = new LoginWithEmailAddressRequest
+        {
+            Email = email,
+            Password = password
+        };
+        PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
     }
 
     void OnSuccess(LoginResult result)
     {
         Debug.Log("Sicko dobre");
-    //    loadingImage.SetActive(false);
+        //    loadingImage.SetActive(false);
     }
 
     void OnError(PlayFabError error)
     {
         Debug.Log("Daco nahovno");
-   //     errorImage.SetActive(true);
+        //     errorImage.SetActive(true);
         Debug.Log(error.GenerateErrorReport());
     }
 
@@ -84,13 +84,13 @@ public class CardGenerator : MonoBehaviour
         foreach (int cardId in cardIds)
         {
             yield return StartCoroutine(AddCardById(cardId));
-           // yield return new WaitForSeconds(1.7f);
+            // yield return new WaitForSeconds(1.7f);
         }
     }
 
     private IEnumerator ShowCardOnScreen(int id, string cardName, string image, Color32 color, int level)
     {
-        Debug.Log("ShowCardOnScreen("+id+","+cardName+","+level+")");
+        Debug.Log("ShowCardOnScreen(" + id + "," + cardName + "," + level + ")");
         // Vytvorte inštanciu karty
         GameObject cardInstance = Instantiate(cardPrefab);
         cardInstance.transform.SetParent(canvas.transform, false);
@@ -190,15 +190,15 @@ public class CardGenerator : MonoBehaviour
         int randomIndex = UnityEngine.Random.Range(1, cardCount + 1);
         dbCommand.Dispose();
 
-        randomIndex = 49;  // docasne - vymazat resp. zakomentovat ked netreeba                                         <============  RANDOM INDEX
-        yield return StartCoroutine(AddCardById(randomIndex)); 
+        randomIndex = 48;  // docasne - vymazat resp. zakomentovat ked netreeba                                         <============  RANDOM INDEX
+        yield return StartCoroutine(AddCardById(randomIndex));
 
         dbConnection.Close();
     }
 
     public IEnumerator AddCardById(int id)
     {
-        Debug.Log("AddCardById("+id+")");
+        Debug.Log("AddCardById(" + id + ")");
         IDbConnection dbConnection = new SqliteConnection(connectionString);
         dbConnection.Open();
 

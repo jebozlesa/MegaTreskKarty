@@ -16,7 +16,7 @@ public class ShowCard : MonoBehaviour
 
     public TMP_Text nameText;
     public TMP_Text levelText;
-    
+
 
     public Image cardImage;
     public Sprite cardSprite;
@@ -34,14 +34,14 @@ public class ShowCard : MonoBehaviour
 
         nameText.text = cardName;
         levelText.text = "lvl " + level;
-        cardImage.sprite = Resources.Load<Sprite>(image);
+        cardImage.sprite = Resources.Load<Sprite>("Cards/" + image);
         background.GetComponent<Image>().color = color;
         nameText.color = color;
         levelText.color = color;
 
         labelText.color = color;
-        
+
     }
 
-    
+
 }
