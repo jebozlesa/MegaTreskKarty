@@ -176,6 +176,26 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
+    //8
+    public IEnumerator PlayMonkeyWrenchAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/monkeywrench");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/monkeywrench");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(300f, 300f),
+                duration: 0.5f,
+                startSound: startSound,
+                initialRotation: 100f,
+                finalRotation: 0f
+            )
+        );
+    }
+
     //9
     public IEnumerator PlayRadioactivityAnimation(Transform targetCard)
     {
@@ -1902,6 +1922,7 @@ public class AttackAnimations : MonoBehaviour
                 sprite: animationImageSprite,
                 startPoint: attacker,
                 endPoint: receiver,
+                rotateTowardsTarget: false,
                 imageSize: new Vector2(300f, 300f),
                 duration: 1f,
                 startSound: startSound,
@@ -2933,7 +2954,7 @@ public class AttackAnimations : MonoBehaviour
                 sprite: animationImageSprite,
                 startPoint: attacker,
                 endPoint: receiver,
-                imageSize: new Vector2(250f, 250f),
+                imageSize: new Vector2(300f, 300f),
                 duration: 0.5f,
                 startSound: startSound,
                 initialRotation: 70f, // napr. -15 stupňov na začiatku
@@ -3187,6 +3208,42 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
+    //2e
+    public IEnumerator PlayAscetismStartAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/ascetismstart");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/ascetismstart");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(350f, 350f),
+                duration: 1f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //2e
+    public IEnumerator PlayAscetismEndAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/ascetismend");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/ascetismend");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(350f, 350f),
+                duration: 1f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
     //3e
     public IEnumerator PlayDrunkAnimation(Transform targetCard)
     {
@@ -3285,6 +3342,70 @@ public class AttackAnimations : MonoBehaviour
                 startRotation: 0f,
                 endRotation: 0f,
                 soundEffect: soundEffect
+            )
+        );
+    }
+
+    //4e
+    public IEnumerator PlayExposureStartAnimation(Transform targetCard)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/exposure");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/exposurestart");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            blocadeAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(300f, 300f),
+                duration: 1f,
+                shakeDuration: 0.5f,
+                startRotation: 0f,
+                endRotation: 0f,
+                soundEffect: soundEffect
+            )
+        );
+    }
+
+    //4e
+    public IEnumerator PlayExposureAnimation(Transform position)
+    {
+        Sprite sprite = Resources.Load<Sprite>("Game/Animations/exposure");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/exposure");
+
+        yield return StartCoroutine(
+            wirelessChargerAnimation.StartAnimation(
+                sprite1: sprite,
+                sprite2: sprite,
+                position: position,
+                imageSize: new Vector2(300f, 300f),
+                duration: 1f,
+                startSound: startSound,
+                switchRatio: 0.3f,
+                fadeDurationRatio: 0.4f
+            )
+        );
+    }
+
+    //119
+    public IEnumerator PlayExposureEndAnimation(Transform targetCard)
+    {
+        Sprite sprite = Resources.Load<Sprite>("Game/Animations/exposureend");
+        AudioClip sound = Resources.Load<AudioClip>("Sounds/Game/Animations/exposureend");
+
+        yield return StartCoroutine(
+            risingEnlargeImageAnimation.StartRisingEnlargeAnimation(
+                sprite: sprite,
+                targetCard: targetCard,
+                startSize: new Vector2(200f, 200f),
+                endSize: new Vector2(300f, 300f),
+                duration: 1f,
+                startVerticalOffset: -200f, // Počiatočný vertikálny posun
+                endVerticalOffset: 200f, // Konečný vertikálny posun
+                startRotation: 0f,
+                endRotation: 0f,
+                soundEffect: sound
             )
         );
     }

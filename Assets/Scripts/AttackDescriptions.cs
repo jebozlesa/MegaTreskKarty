@@ -50,7 +50,7 @@ public class AttackDescriptions : MonoBehaviour
             case 7://Car Hit
                 count = attacker.knowledge;
                 break;
-            case 8://Steam Gun
+            case 8://MonkeyWrench
                 count = attacker.knowledge / 2;
                 break;
             case 9://Radiation
@@ -80,7 +80,7 @@ public class AttackDescriptions : MonoBehaviour
             case 17://Heavy Artillery
                 count = (int)System.Math.Ceiling((double)attacker.charisma / 5);
                 break;
-            case 18://Blood Sucking
+            case 18://Bloodthirst
                 count = attacker.attack;
                 break;
             case 19://Sword
@@ -153,7 +153,7 @@ public class AttackDescriptions : MonoBehaviour
                 count = attacker.knowledge * 10;
                 break;
             case 42://TommyGun
-                count = new int[] {2, 3, 5, 10}[UnityEngine.Random.Range(0, 4)];
+                count = new int[] { 2, 3, 5, 10 }[UnityEngine.Random.Range(0, 4)];
                 break;
             case 43://TieUp
                 count = 10;
@@ -300,7 +300,7 @@ public class AttackDescriptions : MonoBehaviour
                 count = 10;
                 break;
             case 91://Calm
-                count = attacker.charisma;;
+                count = attacker.charisma; ;
                 break;
             case 92://Honesty
                 count = attacker.knowledge * 2;
@@ -446,7 +446,7 @@ public class AttackDescriptions : MonoBehaviour
                 dialogText.text = "Car Hit chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
             case 8:
-                dialogText.text = "Steam Gun chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                dialogText.text = "Monkey Wrench chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
             case 9:
                 dialogText.text = "Radiation chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
@@ -476,7 +476,7 @@ public class AttackDescriptions : MonoBehaviour
                 dialogText.text = "1st Minnesota Heavy Artillery Regiment chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
             case 18:
-                dialogText.text = "Blood Sucking chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                dialogText.text = "Bloodthirst chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
             case 19:
                 dialogText.text = "Sword chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
@@ -795,12 +795,12 @@ public class AttackDescriptions : MonoBehaviour
 
 
     public void ShowDescription(Kard card)
-	{
-        ShowDescriptionButton(card.attack1,button1Text,button1);
-        ShowDescriptionButton(card.attack2,button2Text,button2);
-        ShowDescriptionButton(card.attack3,button3Text,button3);
-        ShowDescriptionButton(card.attack4,button4Text,button4);
-	}
+    {
+        ShowDescriptionButton(card.attack1, button1Text, button1);
+        ShowDescriptionButton(card.attack2, button2Text, button2);
+        ShowDescriptionButton(card.attack3, button3Text, button3);
+        ShowDescriptionButton(card.attack4, button4Text, button4);
+    }
 
     public void ShowDescriptionButton(int attackType, TMP_Text buttonText, Button button)
     {
@@ -828,7 +828,7 @@ public class AttackDescriptions : MonoBehaviour
                 CarHit(buttonText);
                 break;
             case 8:
-                SteamGun(buttonText);
+                MonkeyWrench(buttonText);
                 break;
             case 9:
                 Radiation(buttonText);
@@ -858,7 +858,7 @@ public class AttackDescriptions : MonoBehaviour
                 ArtilleryRegiment(buttonText);
                 break;
             case 18:
-                BloodSucking(buttonText);
+                Bloodthirst(buttonText);
                 break;
             case 19:
                 Sword(buttonText);
@@ -1176,674 +1176,674 @@ public class AttackDescriptions : MonoBehaviour
     }
     //1
     public void Punch(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Punch";
-	}
+    }
 
     //2
     public void Kick(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Kick";
-	}
+    }
 
     //3
     public void Heal(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Heal";
-	}
+    }
 
     //4
     public void Forgiveness(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Forgiveness";
-	}
+    }
 
     //5
     public void Crusade(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Crusade";
-	}
+    }
 
     //6
     public void WaterToWine(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Water To Wine";
-	}
+    }
 
     //7
     public void CarHit(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Car Hit";
-	}
+    }
 
     //8
-    public void SteamGun(TMP_Text buttonText)
-	{
-        buttonText.text = "Steam Gun";
-	}
+    public void MonkeyWrench(TMP_Text buttonText)
+    {
+        buttonText.text = "Monkey Wrench";
+    }
 
     //9
     public void Radiation(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Radiation";
-	}
+    }
 
     //10
     public void Scratch(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Scratch";
-	}
+    }
 
     //11
     public void ScientificLecture(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Scientific Lecture";
-	}
+    }
 
     //12
     public void ChiSau(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Chi Sau";
-	}
+    }
 
     //13
     public void OneInchPunch(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "One Inch Punch";
-	}
+    }
 
     //14
     public void UpInSmoke(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Up In Smoke";
-	}
+    }
 
     //15
     public void Sing(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Sing";
-	}
+    }
 
     //16
     public void Revolver(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Revolver";
-	}
+    }
 
     //17
     public void ArtilleryRegiment(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Artillery Regiment";
-	}
+    }
 
     //18
-    public void BloodSucking(TMP_Text buttonText)
-	{
-        buttonText.text = "Blood Sucking";
-	}
+    public void Bloodthirst(TMP_Text buttonText)
+    {
+        buttonText.text = "Bloodthirst";
+    }
 
     //19
     public void Sword(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Sword";
-	}
+    }
 
     //20
     public void Pike(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Pike";
-	}
+    }
 
     //21
     public void Terrify(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Terrify";
-	}
+    }
 
     //22
     public void DrinkWine(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Drink Wine";
-	}
+    }
 
     //23
     public void FlamingGun(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Flaming Gun";
-	}
+    }
 
     //24
     public void Cleaver(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Cleaver";
-	}
+    }
 
     //25
     public void Pan(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Pan";
-	}
+    }
 
     //26
     public void Boost(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Boost";
-	}
+    }
 
     //27
     public void Temptation(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Temptation";
-	}
+    }
 
     //28
     public void Shamshir(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Shamshir";
-	}
+    }
 
     //29
     public void Diplomacy(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Diplomacy";
-	}
+    }
 
     //30
     public void Siege(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Siege";
-	}
+    }
 
     //31
     public void TreeStratagem(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Tree Stratagem";
-	}
+    }
 
     //32
     public void Tomahawk(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Tomahawk";
-	}
+    }
 
     //33
     public void PeacePipe(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Peace Pipe";
-	}
+    }
 
     //34
     public void RecurveBow(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Recurve Bow";
-	}
+    }
 
     //35
     public void Fury(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Fury";
-	}
+    }
 
     //36
     public void Guerilla(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Guerilla";
-	}
+    }
 
     //37
     public void Famine(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Famine";
-	}
+    }
 
     //38
     public void Marxism(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Marxism";
-	}
+    }
 
     //39
     public void TeslaCoil(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Tesla Coil";
-	}
+    }
 
     //40
     public void WirelessCharger(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Wireless Charger";
-	}
+    }
 
     //41
     public void Experiment(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Experiment";
-	}
+    }
 
     //42
     public void TommyGun(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Tommy Gun";
-	}
+    }
 
     //43
     public void TieUp(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Tie Up";
-	}
+    }
 
     //44
     public void Corruption(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Corruption";
-	}
+    }
 
     //45
     public void Colt1911(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Colt 1911";
-	}
+    }
 
     //46
     public void Mortar(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Mortar";
-	}
+    }
 
     //47
     public void GreatArmy(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Great Army";
-	}
+    }
 
     //48
     public void ScorchedEarth(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Scorched Earth";
-	}
+    }
 
     //49
     public void DoubleEnvelopment(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Double Envelopment";
-	}
+    }
 
     //50
     public void ContinentalBlockade(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Continental Blockade";
-	}
+    }
 
     //51
     public void Depression(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Depression";
-	}
+    }
 
     //52
     public void SelfIsolation(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Self-Isolation";
-	}
+    }
 
     //53
     public void Knife(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Knife";
-	}
+    }
 
     //54
     public void Autoportrait(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Autoportrait";
-	}
+    }
 
     //55
     public void GravityPull(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Gravity Pull";
-	}
+    }
 
     //56
     public void Kamikaze(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Kamikaze";
-	}
+    }
 
     //57
     public void TakeOff(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Take Off";
-	}
+    }
 
     //58
     public void AirStrike(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Air Strike";
-	}
+    }
 
     //59
     public void JusticeCrusade(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Justice Crusade";
-	}
+    }
 
     //60
     public void Rapier(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Rapier";
-	}
+    }
 
     //61
     public void ExpeditionaryAssault(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Expeditionary Assault";
-	}
+    }
 
     //62
     public void Culverin(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Culverin";
-	}
+    }
 
     //63
     public void FireShip(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Fire Ship";
-	}
+    }
 
     //64
     public void HandcuffEscape(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Handcuff Escape";
-	}
+    }
 
     //65
     public void Illusion(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Illusion";
-	}
+    }
 
     //66
     public void CarcanoM91(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Carcano M91";
-	}
+    }
 
     //67
     public void Winchester(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Winchester";
-	}
+    }
 
     //68
     public void Ambush(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Ambush";
-	}
+    }
     //69
     public void JupiterC(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Space Rocket";
-	}
+    }
     //70
     public void V2(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "V2";
-	}
+    }
     //71
     public void BattleCry(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Battle Cry";
-	}
+    }
     //72
     public void Revelation(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Revelation";
-	}
+    }
     //73
     public void Standard(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Standard";
-	}
+    }
     //74
     public void Pen(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Pen";
-	}
+    }
     //75
     public void IambicPentameter(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Iambic Pentameter";
-	}
+    }
     //76
     public void Ghost(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Ghost";
-	}
+    }
     //77
     public void BuffaloHorns(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Buffalo Horns";
-	}
+    }
     //78
     public void Iklwa(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Iklwa";
-	}
+    }
     //79
     public void Iwisa(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Iwisa";
-	}
+    }
     //80
     public void NitenIchiRyu(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Niten Ichi-Ryu";
-	}
+    }
     //81
     public void Tessenjutsu(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Tessenjutsu";
-	}
+    }
     //82
     public void Iaijutsu(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Iaijutsu";
-	}
+    }
     //83
     public void Katana(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Katana";
-	}
+    }
     //84
     public void Nodachi(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Nodachi";
-	}
+    }
     //85
     public void Yumi(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Yumi";
-	}
+    }
     //86
     public void Jujutsu(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Jujutsu";
-	}
+    }
     //87
     public void Espionage(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Espionage";
-	}
+    }
     //88
     public void Sabre(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Sabre";
-	}
+    }
     //89
     public void Gamble(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Gamble";
-	}
+    }
     //90
     public void Philosophy(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Philosophy";
-	}
+    }
     //91
     public void Calm(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Calm";
-	}
+    }
     //92
     public void Honesty(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Honesty";
-	}
+    }
     //93
     public void Valaska(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Valaska";
-	}
+    }
     //94
     public void Moonshine(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Moonshine";
-	}
+    }
     //95
     public void OutlawBand(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Outlaw Band";
-	}
+    }
     //96
     public void FlintlockPistol(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Flintlock Pistol";
-	}
+    }
     //97
     public void PassiveResistance(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Passive Resistance";
-	}
+    }
     //98
     public void HungerStrike(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Hunger Strike";
-	}
+    }
     //99
     public void Gladius(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Gladius";
-	}
+    }
     //100
     public void ShieldBash(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Shield Bash";
-	}
+    }
     //101
     public void Yperit(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Yperit";
-	}
+    }
     //102
     public void Blitzkrieg(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Blitzkrieg";
-	}
+    }
     //103
     public void Propaganda(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Propaganda";
-	}
+    }
     //104
     public void Retiarius(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Retiarius";
-	}
+    }
     //105
     public void Shuriken(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Shuriken";
-	}
+    }
     //106
     public void Kusarigama(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Kusarigama";
-	}
+    }
     //107
     public void Ninjutsu(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Ninjutsu";
-	}
+    }
     //108
     public void OrientalSpice(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Oriental Spice";
-	}
+    }
     //109
     public void FieryArquebus(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Arquebus";
-	}
+    }
     //110
     public void PirateRaid(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Pirate Raid";
-	}
+    }
     //111
     public void Axe(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Axe";
-	}
+    }
     //112
     public void JaguarWarriors(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Jaguar Warriors";
-	}
+    }
     //113
     public void Atlatl(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Atlatl";
-	}
+    }
     //114
     public void Macuahuitl(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Macuahuitl";
-	}
+    }
     //115
     public void Cubism(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Cubism";
-	}
+    }
     //116
     public void CosaNostra(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "La Cosa Nostra";
-	}
+    }
     //117
     public void Act(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Act a fool";
-	}
+    }
     //118
     public void Football(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Football";
-	}
+    }
     //119
     public void BicycleKick(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Bicycle Kick";
-	}
+    }
     //120
     public void WorldChampion(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "World Champion";
-	}
+    }
     //121
     public void ShaolinSoccer(TMP_Text buttonText)
-	{
+    {
         buttonText.text = "Shaolin Soccer";
-	}
+    }
 }

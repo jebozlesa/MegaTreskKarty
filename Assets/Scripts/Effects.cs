@@ -32,21 +32,21 @@ public class Effects : MonoBehaviour
         Debug.Log(card.cardName + " card.effects.Count = " + card.effects.Count);
         if (card.effects.Count == 0)
         {
-//            dialogText.text = "no effects";
+            //            dialogText.text = "no effects";
             yield break;
         }
 
         int dynamickyRozmer = card.effects.Count;
         for (int i = dynamickyRozmer; i > 0; i--)
         {
-            Debug.Log(Time.time + " ExecuteEffect -> count: " + card.effects.Count + "  iter: " + (i) + "  efekt: " + card.effects[i-1][0] + "  kola: " + card.effects[i-1][1]);
-            yield return StartCoroutine(ExecuteEffect(card, card.effects[i-1][1], dialogText, i-1, target));
+            Debug.Log(Time.time + " ExecuteEffect -> count: " + card.effects.Count + "  iter: " + (i) + "  efekt: " + card.effects[i - 1][0] + "  kola: " + card.effects[i - 1][1]);
+            yield return StartCoroutine(ExecuteEffect(card, card.effects[i - 1][1], dialogText, i - 1, target));
         }
-        
+
     }
 
     IEnumerator ExecuteEffect(Kard card, int param, TMP_Text dialogText, int iteration, Kard target = null)
-	{
+    {
         switch (card.effects[iteration][0])
         {
             case 1:
@@ -125,10 +125,10 @@ public class Effects : MonoBehaviour
                 Debug.LogError("Invalid effect type.");
                 break;
         }
-	}
+    }
     //1
     public IEnumerator Bleed(Kard card, TMP_Text dialogText, int iteration)
-	{
+    {
         if (card.effects[iteration][1] == 0)
         {
             card.RemoveEffect(iteration);
@@ -142,32 +142,33 @@ public class Effects : MonoBehaviour
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " Bleeds"));
         }
         Debug.Log(card.cardName + " => Bleed");
-	}
+    }
     //2
     public IEnumerator Asceticism(Kard card, TMP_Text dialogText, int iteration)
-	{
-		card.TakeDamage(1);
+    {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is affected by Asceticism"));
         //if (card.state != CardState.STAY) card.state = CardState.MAYBE;
         if (card.effects[iteration][1] == 0)
         {
+            yield return StartCoroutine(attackAnimations.PlayAscetismEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
             card.state = CardState.ATTACK;
-            dialogText.text = card.cardName + " came to his senses";
-            yield return new WaitForSeconds(2);
-            yield break;
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " feels blessed again"));
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayConfusionHurtItselfAnimation(card.transform));        //ANIMACIA
+            card.TakeDamage(1);
             card.effects[iteration][1] -= 1;
             card.state = CardState.STAY;
-            dialogText.text = card.cardName + " hurts itself practizing asceticism";
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " hurts itself practizing asceticism"));
         }
         Debug.Log(card.cardName + " => Asceticism");
-        yield return new WaitForSeconds(2);
-	}
+    }
     //3
     public IEnumerator Sleep(Kard card, TMP_Text dialogText, int iteration)
-	{
+    {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is affected by Sleep"));
         if (card.state != CardState.STAY) card.state = CardState.MAYBE;
         if (card.effects[iteration][1] == 0)
         {
@@ -185,29 +186,29 @@ public class Effects : MonoBehaviour
             card.state = CardState.MAYBE;
         }
         Debug.Log(card.cardName + " => Sleep");
-	}
+    }
     //4
     public IEnumerator Exposure(Kard card, TMP_Text dialogText, int iteration)
-	{
+    {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is affected by Irradiation"));
         if (UnityEngine.Random.value <= 0.2f)
         {
+            yield return StartCoroutine(attackAnimations.PlayExposureEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            dialogText.text = card.cardName + "'s exposure is gone";
-            yield return new WaitForSeconds(2);
-            yield break;
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + "'s irradiation is gone"));
         }
         else
         {
-            dialogText.text = card.cardName + " is exposured";
+            yield return StartCoroutine(attackAnimations.PlayExposureAnimation(card.transform));        //ANIMACIA
             card.effects[iteration][1] -= 1;
             card.TakeDamage(System.Math.Abs(card.effects[iteration][1]));
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is irradiated"));
         }
         Debug.Log(card.cardName + " => Exposure");
-	}
+    }
     //5
     public IEnumerator Siege(Kard card, TMP_Text dialogText, int iteration, Kard target)
-	{
+    {
         card.state = CardState.STAY;
         //StartCoroutine(textBubble.ShowForSeconds("surrender!", Resources.Load<Sprite>("oblacik"), 2.5f));
         if (card.effects[iteration][1] == 0)
@@ -227,10 +228,10 @@ public class Effects : MonoBehaviour
         }
         Debug.Log(card.cardName + " => Siege");
         yield return new WaitForSeconds(2);
-	}
+    }
     //6
     public IEnumerator Fury(Kard card, TMP_Text dialogText, int iteration)
-	{
+    {
         if (card.effects[iteration][1] == 0)
         {
             card.RemoveEffect(iteration);
@@ -246,10 +247,10 @@ public class Effects : MonoBehaviour
             card.effects[iteration][1] -= 1;
         }
         Debug.Log(card.cardName + " => Fury");
-	}
+    }
     //7
     public IEnumerator Famine(Kard card, TMP_Text dialogText, int iteration)
-	{
+    {
         if (card.effects[iteration][1] == 0)
         {
             card.RemoveEffect(iteration);
@@ -264,10 +265,10 @@ public class Effects : MonoBehaviour
             card.Heal(2);
         }
         Debug.Log(card.cardName + " => Famine");
-	}
+    }
     //8
     public IEnumerator Electicity(Kard card, TMP_Text dialogText, int iteration)
-	{
+    {
         if (card.effects[iteration][1] == 0)
         {
             card.RemoveEffect(iteration);
@@ -290,10 +291,10 @@ public class Effects : MonoBehaviour
             card.effects[iteration][1] -= 1;
         }
         Debug.Log(card.cardName + " => Electicity");
-	}
+    }
     //9
     public IEnumerator Tether(Kard card, TMP_Text dialogText, int iteration)
-	{
+    {
         card.state = CardState.MAYBE;
         //StartCoroutine(textBubble.ShowForSeconds("ZZZZZ!", Resources.Load<Sprite>("oblacik"), 2.5f));
         if (card.effects[iteration][1] == 0)
@@ -311,10 +312,10 @@ public class Effects : MonoBehaviour
             yield return new WaitForSeconds(2);
         }
         Debug.Log(card.cardName + " => Tether");
-	}
+    }
     //10
     public IEnumerator Starving(Kard card, TMP_Text dialogText, int iteration)
-	{
+    {
         //StartCoroutine(textBubble.ShowForSeconds("surrender!", Resources.Load<Sprite>("oblacik"), 2.5f));
         if (card.effects[iteration][1] == 0)
         {
@@ -332,13 +333,13 @@ public class Effects : MonoBehaviour
         }
         Debug.Log(card.cardName + " => Starving");
         yield return new WaitForSeconds(2);
-	}
+    }
     //11
     public IEnumerator Envelop(Kard card, TMP_Text dialogText, int iteration, Kard target)
-	{
+    {
         card.state = CardState.STAY;
-        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " using Double Envelopment"));
-    
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " using Double Envelopment"));
+
         if (card.effects[iteration][1] == 0)
         {
             yield return StartCoroutine(attackAnimations.PlayDoubleEnvelopAttackAnimation(target.transform));        //ANIMACIA
@@ -356,11 +357,11 @@ public class Effects : MonoBehaviour
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is turning direction"));
         }
         Debug.Log(card.cardName + " => Envelop");
-	}
+    }
     //12
     public IEnumerator Blockade(Kard card, TMP_Text dialogText, int iteration)
-	{
-        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is affected by Continental Blockade"));
+    {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is affected by Continental Blockade"));
         if (card.effects[iteration][1] == 0 || (UnityEngine.Random.value <= 0.5f))
         {
             card.state = CardState.ATTACK;
@@ -380,21 +381,21 @@ public class Effects : MonoBehaviour
             yield return StartCoroutine(ShowDialog(dialogText, "The blockade holds strong"));
         }
         Debug.Log(card.cardName + " => Blockade");
-	}
+    }
     //13
     public IEnumerator Depression(Kard card, TMP_Text dialogText, int iteration)
-	{
-        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is affected by Depression"));
+    {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is affected by Depression"));
         //StartCoroutine(textBubble.ShowForSeconds("surrender!", Resources.Load<Sprite>("oblacik"), 2.5f));
         if (card.effects[iteration][1] == 0)
         {
             yield return StartCoroutine(attackAnimations.PlayDepressionEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            card.HandleStrength(UnityEngine.Random.Range(0,3));
-            card.HandleSpeed(UnityEngine.Random.Range(0,3));
-            card.HandleAttack(UnityEngine.Random.Range(0,3));
-            card.HandleDefense(UnityEngine.Random.Range(0,3));
-            card.HandleCharisma(UnityEngine.Random.Range(0,3));
+            card.HandleStrength(UnityEngine.Random.Range(0, 3));
+            card.HandleSpeed(UnityEngine.Random.Range(0, 3));
+            card.HandleAttack(UnityEngine.Random.Range(0, 3));
+            card.HandleDefense(UnityEngine.Random.Range(0, 3));
+            card.HandleCharisma(UnityEngine.Random.Range(0, 3));
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " feels better"));
             yield break;
         }
@@ -404,29 +405,29 @@ public class Effects : MonoBehaviour
             yield return StartCoroutine(attackAnimations.PlayDepressionStartAnimation(card.transform));        //ANIMACIA
         }
         Debug.Log(card.cardName + " => Depression");
-	}
+    }
     //14
     public IEnumerator ArtInspiration(Kard card, TMP_Text dialogText, int iteration, Kard target)
-	{
-        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is affected by Art Inspiration"));
+    {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is affected by Art Inspiration"));
         //StartCoroutine(textBubble.ShowForSeconds("surrender!", Resources.Load<Sprite>("oblacik"), 2.5f));
         if (card.effects[iteration][1] == 0)
         {
             card.state = CardState.ATTACK;
             yield return StartCoroutine(attackAnimations.PlayArtInspirationEndAnimation(card.transform));        //ANIMACIA
-//            StartCoroutine(ShowDialog(dialogText, card.cardName + " finished his creation"));
+                                                                                                                 //            StartCoroutine(ShowDialog(dialogText, card.cardName + " finished his creation"));
             card.RemoveEffect(iteration);
             yield return StartCoroutine(attackAnimations.PlayArtInspirationEndEnemyAnimation(target.transform));        //ANIMACIA
-            target.HandleStrength(UnityEngine.Random.Range(-3,0));
-            target.HandleSpeed(UnityEngine.Random.Range(-3,0));
-            target.HandleAttack(UnityEngine.Random.Range(-3,0));
-            target.HandleDefense(UnityEngine.Random.Range(-3,0));
-            target.HandleKnowledge(UnityEngine.Random.Range(0,3));
+            target.HandleStrength(UnityEngine.Random.Range(-3, 0));
+            target.HandleSpeed(UnityEngine.Random.Range(-3, 0));
+            target.HandleAttack(UnityEngine.Random.Range(-3, 0));
+            target.HandleDefense(UnityEngine.Random.Range(-3, 0));
+            target.HandleKnowledge(UnityEngine.Random.Range(0, 3));
             yield return StartCoroutine(ShowDialog(dialogText, target.cardName + " is impressed by masterpiece"));
             yield return StartCoroutine(attackAnimations.PlayArtInspirationEndAttackAnimation(card.transform, target.transform));        //ANIMACIA
             target.TakeDamage(UnityEngine.Random.Range(1, target.defense * 2));
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " attacks in distruption"));
-        //    yield break;
+            //    yield break;
         }
         else
         {
@@ -436,18 +437,18 @@ public class Effects : MonoBehaviour
             card.effects[iteration][1] -= 1;
         }
         Debug.Log(card.cardName + " => ArtInspiration");
-	}
+    }
     //15
     public IEnumerator Autoportrait(Kard card, TMP_Text dialogText, int iteration)
-	{
-        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is painting Autoportrait"));
+    {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is painting Autoportrait"));
         if (card.effects[iteration][1] == 0)
         {
             card.state = CardState.ATTACK;
             yield return StartCoroutine(attackAnimations.PlayAutoportraitFinishAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " finished"));
-        //    yield break;
+            //    yield break;
         }
         else
         {
@@ -460,19 +461,19 @@ public class Effects : MonoBehaviour
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is still painting"));
         }
         Debug.Log(card.cardName + " => Autoportrait");
-	}
+    }
     //16
     public IEnumerator Burn(Kard card, TMP_Text dialogText, int iteration)
-	{
+    {
         yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is on fire"));
         yield return StartCoroutine(attackAnimations.PlayBurnContinueAnimation(card.transform));        //ANIMACIA
         card.TakeDamage(1);
         Debug.Log(card.cardName + " => Burn");
-	}
+    }
     //17
     public IEnumerator Confusion(Kard card, TMP_Text dialogText, int iteration)
-	{
-        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is confused"));
+    {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is confused"));
         if (card.effects[iteration][1] == 0)
         {
             card.state = CardState.ATTACK;
@@ -499,20 +500,20 @@ public class Effects : MonoBehaviour
             card.effects[iteration][1] -= 1;
         }
         Debug.Log(card.cardName + " => Confusion");
-	}
+    }
     //18
     public IEnumerator Satellite(Kard card, TMP_Text dialogText, int iteration)
-	{
-        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " has satellite"));
+    {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " has satellite"));
         yield return StartCoroutine(attackAnimations.PlaySatelliteAnimation(card.transform));        //ANIMACIA
         card.HandleKnowledge(1);
         yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " gets informations"));
         Debug.Log(card.cardName + " => Satellite");
-	}
+    }
     //19
     public IEnumerator Fear(Kard card, TMP_Text dialogText, int iteration)
-	{
-        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is affected by fear"));
+    {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is affected by fear"));
         if (card.effects[iteration][1] == 0)
         {
             yield return StartCoroutine(attackAnimations.PlayFearEndAnimation(card.transform));        //ANIMACIA
@@ -527,11 +528,11 @@ public class Effects : MonoBehaviour
             card.effects[iteration][1] -= 1;
         }
         Debug.Log(card.cardName + " => Fear");
-	}
+    }
     //20
     public IEnumerator Horns(Kard card, TMP_Text dialogText, int iteration, Kard target)
-	{
-        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " uses horns"));
+    {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " uses horns"));
         card.state = CardState.STAY;
         if (card.effects[iteration][1] == 0)
         {
@@ -552,11 +553,11 @@ public class Effects : MonoBehaviour
             yield return StartCoroutine(ShowDialog(dialogText, "buffalo's head keeps strong"));
         }
         Debug.Log(card.cardName + " => Horns");
-	}
+    }
     //21
     public IEnumerator Calm(Kard card, TMP_Text dialogText, int iteration)
-	{
-        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is affected by Calm"));
+    {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is affected by Calm"));
         if (card.effects[iteration][1] == 0)
         {
             yield return StartCoroutine(attackAnimations.PlayCalmEndAnimation(card.transform));        //ANIMACIA
@@ -570,10 +571,10 @@ public class Effects : MonoBehaviour
             card.effects[iteration][1] -= 1;
         }
         Debug.Log(card.cardName + " => Calm");
-	}
+    }
     //22
     public IEnumerator Reloading(Kard card, TMP_Text dialogText, int iteration, Kard target)
-	{
+    {
         card.state = CardState.STAY;
         if (card.effects[iteration][1] == 0)
         {
@@ -600,11 +601,11 @@ public class Effects : MonoBehaviour
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is still reloading"));
         }
         Debug.Log(card.cardName + " => Reloading");
-	}
+    }
     //23
     public IEnumerator Trident(Kard card, TMP_Text dialogText, int iteration, Kard target)
-	{
-        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " uses Retiarius"));
+    {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " uses Retiarius"));
         card.state = CardState.STAY;
         if (card.effects[iteration][1] == 0)
         {
@@ -621,11 +622,11 @@ public class Effects : MonoBehaviour
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is aiming"));
         }
         Debug.Log(card.cardName + " => DelayedDmg");
-	}
+    }
     //24
     public IEnumerator Poison(Kard card, TMP_Text dialogText, int iteration)
-	{
-        yield return StartCoroutine(ShowAttackDialog(dialogText,card.cardName + " is poisoned"));
+    {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is poisoned"));
         yield return StartCoroutine(attackAnimations.PlayPoisonContinueAnimation(card.transform));        //ANIMACIA
         if (UnityEngine.Random.value <= 0.33f) card.HandleStrength(-1);
         card.TakeDamage(1);
@@ -633,10 +634,10 @@ public class Effects : MonoBehaviour
 
         yield return new WaitForSeconds(2);
         Debug.Log(card.cardName + " => Poison");
-	}
+    }
     //25
     public IEnumerator KnockOut(Kard card, TMP_Text dialogText, int iteration)
-	{
+    {
         if (card.state != CardState.STAY) card.state = CardState.MAYBE;
         //StartCoroutine(textBubble.ShowForSeconds("ZZZZZ!", Resources.Load<Sprite>("oblacik"), 2.5f));
         if (card.effects[iteration][1] == 0)
@@ -655,5 +656,5 @@ public class Effects : MonoBehaviour
             yield return new WaitForSeconds(2);
         }
         Debug.Log(card.cardName + " => KnockOut");
-	}
+    }
 }
