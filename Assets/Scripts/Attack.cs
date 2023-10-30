@@ -650,7 +650,7 @@ public class Attack : MonoBehaviour
 
         if (Random.value <= 0.1f)
         {
-            yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(attacker.transform));        //ANIMACIA
+            yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(1, Random.Range(1, 3))); //bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
@@ -784,7 +784,7 @@ public class Attack : MonoBehaviour
 
         if (Random.value <= 0.4f)
         {
-            yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(attacker.transform));        //ANIMACIA
+            yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(1, Random.Range(1, 6))); //bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
@@ -801,7 +801,7 @@ public class Attack : MonoBehaviour
 
         if (Random.value <= 0.2f)
         {
-            yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(attacker.transform));        //ANIMACIA
+            yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(1, Random.Range(1, 4))); //bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
@@ -869,7 +869,7 @@ public class Attack : MonoBehaviour
 
         if (Random.value <= 0.3f)
         {
-            yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(attacker.transform));        //ANIMACIA
+            yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(1, Random.Range(2, 5))); //bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
@@ -932,7 +932,7 @@ public class Attack : MonoBehaviour
 
         if (Random.value <= 0.5f)
         {
-            yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(attacker.transform));        //ANIMACIA
+            yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(1, Random.Range(2, 6))); //bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
@@ -997,7 +997,7 @@ public class Attack : MonoBehaviour
 
         if (Random.value <= 0.2f)
         {
-            yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(attacker.transform));        //ANIMACIA
+            yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(1, Random.Range(2, 6))); //bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
@@ -1110,6 +1110,7 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " shocks enemy"));
         if (Random.value <= 0.7f)
         {
+            yield return StartCoroutine(attackAnimations.PlayElectricityStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(8, 5)); //shock
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is shocked"));
         }
@@ -1151,6 +1152,7 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(ShowDialog(dialogText, "Ratatata!"));
         if (Random.value <= 0.5f)
         {
+            yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(1, Random.Range(1, 4))); //bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
@@ -1278,10 +1280,10 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Depression"));
         yield return StartCoroutine(attackAnimations.PlayDepressionAnimation(attacker.transform));        //ANIMACIA
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is depressed"));
-        if (receiver.CheckEffect(13))
+        if (receiver.CheckEffect(13) || Random.value <= 0.2f)
         {
-            // StartCoroutine(attackAnimations.PlayAnimationNotImpressed(receiver.transform));        //ANIMACIA
-            // yield return StartCoroutine(ShowDialog(dialogText, "Be a human, " + attacker.cardName + "!"));
+            StartCoroutine(attackAnimations.PlayAnimationNotEffective(receiver.transform));        //ANIMACIA
+            yield return StartCoroutine(ShowDialog(dialogText, "No effect on enemy"));
         }
         else
         {
@@ -1362,6 +1364,7 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(ShowDialog(dialogText, "Gravity pulled " + objects[r] + " to " + receiver.cardName));
         if (Random.value <= 0.1f && r != 3)
         {
+            StartCoroutine(attackAnimations.PlayKnockoutAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(3, Random.Range(1, 3)));//sleep
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " falls asleep"));
         }
@@ -1661,14 +1664,13 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Standard"));
         yield return StartCoroutine(attackAnimations.PlayStandardAnimation(attacker.transform));        //ANIMACIA
-        receiver.TakeDamage(2);
         if (Random.value <= 0.5f)
         {
-            attacker.HandleCharisma(2);
+            attacker.HandleCharisma(3);
         }
         else
         {
-            attacker.HandleStrength(2);
+            attacker.HandleStrength(3);
         }
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s Banner Raised Morale"));
         Debug.Log(attacker.cardName + " -> Standard => " + receiver.cardName);

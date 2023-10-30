@@ -269,20 +269,20 @@ public class Effects : MonoBehaviour
     //8
     public IEnumerator Electicity(Kard card, TMP_Text dialogText, int iteration)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is affected by Electicity"));
         if (card.effects[iteration][1] == 0)
         {
+            yield return StartCoroutine(attackAnimations.PlayElectricityEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            dialogText.text = card.cardName + " is fresh after shock";
-            yield return new WaitForSeconds(2);
-            yield break;
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is fresh after shock"));
         }
         else
         {
             if (UnityEngine.Random.value <= (card.effects[iteration][1] / 5f))//sanca sa zmensuje od poctu tahov
             {
+                yield return StartCoroutine(attackAnimations.PlayElectricityAnimation(card.transform));        //ANIMACIA
                 card.state = CardState.MAYBE;
-                dialogText.text = card.cardName + " cannot move";
-                yield return new WaitForSeconds(2);
+                yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " cannot move"));
             }
             else
             {

@@ -3388,7 +3388,7 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
-    //119
+    //4e
     public IEnumerator PlayExposureEndAnimation(Transform targetCard)
     {
         Sprite sprite = Resources.Load<Sprite>("Game/Animations/exposureend");
@@ -3406,6 +3406,72 @@ public class AttackAnimations : MonoBehaviour
                 startRotation: 0f,
                 endRotation: 0f,
                 soundEffect: sound
+            )
+        );
+    }
+
+    //8e
+    public IEnumerator PlayElectricityStartAnimation(Transform targetCard)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/electricitystart");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/electricitystart");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            blocadeAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(300f, 300f),
+                duration: 1f,
+                shakeDuration: 0.5f,
+                startRotation: 0f,
+                endRotation: 0f,
+                soundEffect: soundEffect
+            )
+        );
+    }
+
+    //8e
+    public IEnumerator PlayElectricityAnimation(Transform targetCard)
+    {
+        Sprite[] sprites = new Sprite[1];
+        sprites[0] = Resources.Load<Sprite>("Game/Animations/electricity");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/electricity");
+
+        yield return StartCoroutine(
+            randomImageSpawner.StartRandomSpawnAnimation(
+                sprites: sprites,
+                targetCard: targetCard,
+                cardSize: new Vector2(300f, 500f), // Predpokladaná veľkosť karty + 10%
+                duration: 1f,
+                spawnIntensity: 3,
+                totalImages: 20,
+                startSize: new Vector2(50f, 50f),
+                endSize: new Vector2(100f, 100f),
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //8e
+    public IEnumerator PlayElectricityEndAnimation(Transform targetCard)
+    {
+        Sprite[] sprites = new Sprite[1];
+        sprites[0] = Resources.Load<Sprite>("Game/Animations/electricity");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/electricityend");
+
+        yield return StartCoroutine(
+            randomImageSpawner.StartRandomSpawnAnimation(
+                sprites: sprites,
+                targetCard: targetCard,
+                cardSize: new Vector2(300f, 500f), // Predpokladaná veľkosť karty + 10%
+                duration: 0.7f,
+                spawnIntensity: 1,
+                totalImages: 3,
+                startSize: new Vector2(50f, 50f),
+                endSize: new Vector2(100f, 100f),
+                soundEffect: effectSound
             )
         );
     }
