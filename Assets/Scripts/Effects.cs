@@ -209,38 +209,36 @@ public class Effects : MonoBehaviour
     //5
     public IEnumerator Siege(Kard card, TMP_Text dialogText, int iteration, Kard target)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " using siege"));
         card.state = CardState.STAY;
-        //StartCoroutine(textBubble.ShowForSeconds("surrender!", Resources.Load<Sprite>("oblacik"), 2.5f));
         if (card.effects[iteration][1] == 0)
         {
+            yield return StartCoroutine(attackAnimations.PlaySiegeEndAnimation(target.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
             card.state = CardState.ATTACK;
             card.HandleDefense(-10);
-            target.TakeDamage(UnityEngine.Random.Range(10, 22));
-            dialogText.text = card.cardName + "'s armies attacks!!";
-            yield return new WaitForSeconds(2);
-            yield break;
+            target.TakeDamage(UnityEngine.Random.Range(8, 15));
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " attacking gates"));
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlaySiegeContinueAnimation(card.transform, target.transform));        //ANIMACIA
             card.effects[iteration][1] -= 1;
-            dialogText.text = card.cardName + " keeps a watch";
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is building siege equipement"));
         }
         Debug.Log(card.cardName + " => Siege");
-        yield return new WaitForSeconds(2);
     }
     //6
     public IEnumerator Fury(Kard card, TMP_Text dialogText, int iteration)
     {
         if (card.effects[iteration][1] == 0)
         {
+            yield return StartCoroutine(attackAnimations.PlayFuryEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            dialogText.text = card.cardName + " has calmed down";
             card.HandleStrength(-5);
             card.HandleAttack(-5);
             card.HandleDefense(3);
-            yield return new WaitForSeconds(2);
-            yield break;
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " has calmed down"));
         }
         else
         {
@@ -253,16 +251,16 @@ public class Effects : MonoBehaviour
     {
         if (card.effects[iteration][1] == 0)
         {
+            yield return StartCoroutine(attackAnimations.PlayFamineEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            dialogText.text = card.cardName + " is starving no more";
-            yield return new WaitForSeconds(2);
-            yield break;
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is starving no more"));
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayFamineContinueAnimation(card.transform));        //ANIMACIA
             card.effects[iteration][1] -= 1;
-            card.HandleDefense(1);
             card.Heal(2);
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is harvesting"));
         }
         Debug.Log(card.cardName + " => Famine");
     }
@@ -296,20 +294,18 @@ public class Effects : MonoBehaviour
     public IEnumerator Tether(Kard card, TMP_Text dialogText, int iteration)
     {
         card.state = CardState.MAYBE;
-        //StartCoroutine(textBubble.ShowForSeconds("ZZZZZ!", Resources.Load<Sprite>("oblacik"), 2.5f));
         if (card.effects[iteration][1] == 0)
         {
+            yield return StartCoroutine(attackAnimations.PlayTetherEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
             card.state = CardState.ATTACK;
-            dialogText.text = card.cardName + " broke loose";
-            yield return new WaitForSeconds(2);
-            yield break;
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " broke loose"));
         }
         else
         {
+            yield return StartCoroutine(attackAnimations.PlayTetherAnimation(card.transform));        //ANIMACIA
             if (UnityEngine.Random.value <= 0.9f) card.effects[iteration][1] -= 1;
-            dialogText.text = card.cardName + " is locked";
-            yield return new WaitForSeconds(2);
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is locked"));
         }
         Debug.Log(card.cardName + " => Tether");
     }
@@ -391,11 +387,11 @@ public class Effects : MonoBehaviour
         {
             yield return StartCoroutine(attackAnimations.PlayDepressionEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            card.HandleStrength(UnityEngine.Random.Range(0, 3));
-            card.HandleSpeed(UnityEngine.Random.Range(0, 3));
-            card.HandleAttack(UnityEngine.Random.Range(0, 3));
-            card.HandleDefense(UnityEngine.Random.Range(0, 3));
-            card.HandleCharisma(UnityEngine.Random.Range(0, 3));
+            card.HandleStrength(3);
+            card.HandleSpeed(3);
+            card.HandleAttack(3);
+            card.HandleDefense(3);
+            card.HandleCharisma(3);
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " feels better"));
             yield break;
         }
@@ -415,7 +411,7 @@ public class Effects : MonoBehaviour
         {
             card.state = CardState.ATTACK;
             yield return StartCoroutine(attackAnimations.PlayArtInspirationEndAnimation(card.transform));        //ANIMACIA
-                                                                                                                 //            StartCoroutine(ShowDialog(dialogText, card.cardName + " finished his creation"));
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " finished his creation"));
             card.RemoveEffect(iteration);
             yield return StartCoroutine(attackAnimations.PlayArtInspirationEndEnemyAnimation(target.transform));        //ANIMACIA
             target.HandleStrength(UnityEngine.Random.Range(-3, 0));

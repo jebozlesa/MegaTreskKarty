@@ -913,10 +913,10 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Temptation"));
         yield return StartCoroutine(attackAnimations.PlayTemptationAnimation(receiver.transform));        //ANIMACIA
-        receiver.HandleAttack(-(attacker.charisma - receiver.charisma));
-        receiver.HandleDefense(-(attacker.charisma - receiver.charisma));
+        receiver.HandleAttack(-(attacker.charisma - receiver.charisma) / 3);
+        receiver.HandleDefense(-(attacker.charisma - receiver.charisma) / 3);
         receiver.HandleCharisma(1);
-        receiver.HandleKnowledge(-((attacker.charisma - receiver.charisma) / 2));
+        receiver.HandleKnowledge(-((attacker.charisma - receiver.charisma) / 3));
         yield return StartCoroutine(ShowDialog(dialogText, "ohhh!!! " + receiver.cardName + " falls in love <3"));
 
         Debug.Log(attacker.cardName + " -> Temptation => " + receiver.cardName);
@@ -954,11 +954,11 @@ public class Attack : MonoBehaviour
     public IEnumerator Siege(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Siege"));
-        yield return StartCoroutine(attackAnimations.PlaySiegeAnimation(receiver.transform));        //ANIMACIA
-        StartCoroutine(attacker.AddEffect(5, 3)); //siege
+        yield return StartCoroutine(attackAnimations.PlaySiegeAnimation(attacker.transform));        //ANIMACIA
+        StartCoroutine(attacker.AddEffect(5, 2)); //siege
         attacker.state = CardState.STAY;
         attacker.HandleDefense(10);
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is building siege equipment"));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is building watch tower"));
 
         Debug.Log(attacker.cardName + " -> Siege => " + receiver.cardName);
     }
@@ -1084,7 +1084,6 @@ public class Attack : MonoBehaviour
             yield return StartCoroutine(attackAnimations.PlayFamineAnimation(receiver.transform));        //ANIMACIA
             int r = Random.Range(5, 10);
             receiver.TakeDamage(2 * r);
-            receiver.HandleDefense(-2 * r);
             StartCoroutine(receiver.AddEffect(7, r));
             yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " caused a famine"));
         }
@@ -1288,11 +1287,11 @@ public class Attack : MonoBehaviour
         else
         {
             yield return StartCoroutine(attackAnimations.PlayDepressionStartAnimation(receiver.transform));        //ANIMACIA
-            receiver.HandleStrength(Random.Range(-3, 0));
-            receiver.HandleSpeed(Random.Range(-3, 0));
-            receiver.HandleAttack(Random.Range(-3, 0));
-            receiver.HandleDefense(Random.Range(-3, 0));
-            receiver.HandleCharisma(Random.Range(-3, 0));
+            receiver.HandleStrength(-3);
+            receiver.HandleSpeed(-3);
+            receiver.HandleAttack(-3);
+            receiver.HandleDefense(-3);
+            receiver.HandleCharisma(-3);
             yield return StartCoroutine(receiver.AddEffect(13, 1));//Depression
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " feels bad for enemy"));
         }
@@ -2007,11 +2006,11 @@ public class Attack : MonoBehaviour
         if ((Random.value <= 0.1f) && (!attacker.CheckEffect(17)))
         {
             yield return StartCoroutine(attackAnimations.PlayDepressionStartAnimation(attacker.transform));        //ANIMACIA
-            attacker.HandleStrength(Random.Range(-3, 0));
-            attacker.HandleSpeed(Random.Range(-3, 0));
-            attacker.HandleAttack(Random.Range(-3, 0));
-            attacker.HandleDefense(Random.Range(-3, 0));
-            attacker.HandleCharisma(Random.Range(-3, 0));
+            receiver.HandleStrength(-3);
+            receiver.HandleSpeed(-3);
+            receiver.HandleAttack(-3);
+            receiver.HandleDefense(-3);
+            receiver.HandleCharisma(-3);
             yield return StartCoroutine(attacker.AddEffect(13, 1));//Depression
             yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " feels bad for enemy"));
         }
@@ -2118,11 +2117,11 @@ public class Attack : MonoBehaviour
         if (Random.value <= ((40 - receiver.strength) / 30f) && !receiver.CheckEffect(13))
         {
             yield return StartCoroutine(attackAnimations.PlayDepressionStartAnimation(receiver.transform));        //ANIMACIA
-            receiver.HandleStrength(Random.Range(-3, 0));
-            receiver.HandleSpeed(Random.Range(-3, 0));
-            receiver.HandleAttack(Random.Range(-3, 0));
-            receiver.HandleDefense(Random.Range(-3, 0));
-            receiver.HandleCharisma(Random.Range(-3, 0));
+            receiver.HandleStrength(-3);
+            receiver.HandleSpeed(-3);
+            receiver.HandleAttack(-3);
+            receiver.HandleDefense(-3);
+            receiver.HandleCharisma(-3);
             yield return StartCoroutine(receiver.AddEffect(13, 1));//Depression
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " feels bad for enemy"));
         }

@@ -678,8 +678,8 @@ public class AttackAnimations : MonoBehaviour
     //30
     public IEnumerator PlaySiegeAnimation(Transform targetCard)
     {
-        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/siege");
-        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/siege");
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/siegetower");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/siegetower");
 
         yield return StartCoroutine(
             enlargeImageAnimation.StartEnlargeAnimation(
@@ -687,7 +687,7 @@ public class AttackAnimations : MonoBehaviour
                 targetCard: targetCard,
                 startSize: new Vector2(250f, 250f),
                 endSize: new Vector2(400f, 400f),
-                duration: 1f,
+                duration: 0.7f,
                 soundEffect: effectSound
             )
         );
@@ -2602,6 +2602,7 @@ public class AttackAnimations : MonoBehaviour
                 endPoint: receiver,
                 imageSize: new Vector2(250f, 250f),
                 duration: 1f,
+                rotateTowardsTarget: false,
                 startSound: startSound,
                 initialRotation: 0f,
                 finalRotation: 0f
@@ -3410,6 +3411,107 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
+    //5e
+    public IEnumerator PlaySiegeContinueAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite sprite = Resources.Load<Sprite>("Game/Animations/siegeequipement");
+        AudioClip sound = Resources.Load<AudioClip>("Sounds/Game/Animations/siegeequipement");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: sprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(300f, 300f),
+                duration: 0.7f,
+                startSound: sound,
+                initialRotation: 5f,
+                finalRotation: -5f
+            )
+        );
+    }
+
+    //5e
+    public IEnumerator PlaySiegeEndAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/siege");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/siege");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(400f, 400f),
+                duration: 1f,
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //6e
+    public IEnumerator PlayFuryEndAnimation(Transform attacker)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/furyend");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/furyend");
+
+        yield return StartCoroutine(
+            rotatingEnlargeAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                targetCard: attacker,
+                startSize: new Vector2(350f, 350f),
+                endSize: new Vector2(100f, 100f),
+                duration: 1f,
+                rotationSpeed: 360f,
+                soundEffect: startSound
+            )
+        );
+    }
+
+    //7e
+    public IEnumerator PlayFamineContinueAnimation(Transform targetCard)
+    {
+        Sprite sprite = Resources.Load<Sprite>("Game/Animations/faminecontinue");
+        AudioClip sound = Resources.Load<AudioClip>("Sounds/Game/Animations/faminecontinue");
+
+        yield return StartCoroutine(
+            risingEnlargeImageAnimation.StartRisingEnlargeAnimation(
+                sprite: sprite,
+                targetCard: targetCard,
+                startSize: new Vector2(200f, 200f),
+                endSize: new Vector2(300f, 300f),
+                duration: 0.5f,
+                startVerticalOffset: -200f, // Počiatočný vertikálny posun
+                endVerticalOffset: 0f, // Konečný vertikálny posun
+                startRotation: 0f,
+                endRotation: 0f,
+                soundEffect: sound
+            )
+        );
+    }
+
+    //7e
+    public IEnumerator PlayFamineEndAnimation(Transform targetCard)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/famineend");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/famineend");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            blocadeAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(300f, 300f),
+                duration: 0.5f,
+                shakeDuration: 0f,
+                startRotation: 0f,
+                endRotation: 0f,
+                soundEffect: soundEffect
+            )
+        );
+    }
+
     //8e
     public IEnumerator PlayElectricityStartAnimation(Transform targetCard)
     {
@@ -3471,6 +3573,46 @@ public class AttackAnimations : MonoBehaviour
                 totalImages: 3,
                 startSize: new Vector2(50f, 50f),
                 endSize: new Vector2(100f, 100f),
+                soundEffect: effectSound
+            )
+        );
+    }
+
+    //9e
+    public IEnumerator PlayTetherAnimation(Transform targetCard)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/tether");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/tether");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            blocadeAnimation.StartAnimation(
+                sprite: animationImageSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(300f, 300f),
+                duration: 1f,
+                shakeDuration: 0.8f,
+                startRotation: 0.3f,
+                endRotation: 0f,
+                soundEffect: soundEffect
+            )
+        );
+    }
+
+    //9e
+    public IEnumerator PlayTetherEndAnimation(Transform targetCard)
+    {
+        Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/tetherend");
+        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/tetherend");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: effectSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(400f, 400f),
+                duration: 0.7f,
                 soundEffect: effectSound
             )
         );
