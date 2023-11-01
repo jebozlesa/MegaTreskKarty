@@ -10,7 +10,7 @@ using System.IO;
 using PlayFab;
 using PlayFab.ClientModels;
 
-public enum FightState {START,TURN,ENDTURN,PLAYERDEATH,ENEMYDEATH,WON,LOST}
+public enum FightState { START, TURN, ENDTURN, PLAYERDEATH, ENEMYDEATH, WON, LOST }
 
 public class FightSystem : MonoBehaviour
 {
@@ -60,7 +60,7 @@ public class FightSystem : MonoBehaviour
     int enemyLevel = 0;
 
     private string connectionString;
-    
+
     public static bool IsLoggedIn = false;
 
     void Start()
@@ -76,34 +76,37 @@ public class FightSystem : MonoBehaviour
     }
 
     void LoginPlayFab()
-    {   Debug.Log("FightSystem.LoginPlayFab  -- Start");
+    {
+        Debug.Log("FightSystem.LoginPlayFab  -- Start");
 
         string username = PlayerPrefs.GetString("username");
         string email = PlayerPrefs.GetString("email");
         string password = PlayerPrefs.GetString("password");
 
-        var request = new LoginWithEmailAddressRequest 
-            {
-                Email = email,
-                Password = password
-            };
-            PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
+        var request = new LoginWithEmailAddressRequest
+        {
+            Email = email,
+            Password = password
+        };
+        PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
     }
 
-        void OnSuccess(LoginResult result)
-    {   Debug.Log("Album.OnSuccess  -- Start");
-    
+    void OnSuccess(LoginResult result)
+    {
+        Debug.Log("Album.OnSuccess  -- Start");
+
         IsLoggedIn = true;
         Debug.Log("Sicko dobre");
-  //      loadingImage.SetActive(false);
-  //      StartCoroutine(VytvorKartyPlayFab());
+        //      loadingImage.SetActive(false);
+        //      StartCoroutine(VytvorKartyPlayFab());
     }
 
     void OnError(PlayFabError error)
-    {   Debug.Log("Album.OnError  -- Start");
+    {
+        Debug.Log("Album.OnError  -- Start");
 
         Debug.Log("Daco nahovno");
-  //      errorImage.SetActive(true);
+        //      errorImage.SetActive(true);
         Debug.Log(error.GenerateErrorReport());
     }
 
@@ -119,7 +122,7 @@ public class FightSystem : MonoBehaviour
         yield return StartCoroutine(VytvorKartyZBalicka(hrac, player));
         yield return new WaitForSeconds(0.5f);
 
-        if(missionID > 0)
+        if (missionID > 0)
             yield return StartCoroutine(VytvorKartyAIMission(nepriatel, enemy, missionID));
         else
             yield return StartCoroutine(VytvorKartyAI(nepriatel, enemy));
@@ -129,7 +132,7 @@ public class FightSystem : MonoBehaviour
         // playerLifeBar.SetBar(player.cardInGame);
         // player.cardInGame.isDragable = false;
 
-        enemy.PlayCard(enemy.hand[0],enemyBoard);
+        enemy.PlayCard(enemy.hand[0], enemyBoard);
         enemyLifeBar.SetBar(enemy.cardInGame);
 
         dialogText.text = "Ohhh s@!t " + enemy.cardInGame.cardName + " !!!";
@@ -139,12 +142,13 @@ public class FightSystem : MonoBehaviour
         playerLifeBar.SetBar(player.cardInGame);
         player.cardInGame.isDragable = false;
 
-       // yield return new WaitForSeconds(1f);
+        // yield return new WaitForSeconds(1f);
         Turn();
     }
 
     void Turn()
     {
+        StartCoroutine(ResetCardPositions());
         state = FightState.TURN;
         playerAttack = 0;
         float timeout = Time.time + 5f; // nastavíme timeout na 5 sekund od začátku cyklu
@@ -179,7 +183,7 @@ public class FightSystem : MonoBehaviour
         if (state != FightState.TURN)
             return;
         playerAttack = attackType;
-        attackDescriptions.DisplayAttack(player.cardInGame,attackType,dialogText);
+        attackDescriptions.DisplayAttack(player.cardInGame, attackType, dialogText);
     }
 
     public void ConfirmAttackButton()
@@ -232,12 +236,12 @@ public class FightSystem : MonoBehaviour
         int playerAttackNumber = attack.GetAttackNumber(player.cardInGame, playerAttack);
         int enemyAttackNumber = attack.GetAttackNumber(enemy.cardInGame, enemyAttack);
 
-        Debug.Log("PLAYER "+playerAttackNumber+" ENEMY "+enemyAttackNumber);
+        Debug.Log("PLAYER " + playerAttackNumber + " ENEMY " + enemyAttackNumber);
 
         bool playerPriority = attack.IsPriorityAttack(playerAttackNumber);
         bool enemyPriority = attack.IsPriorityAttack(enemyAttackNumber);
 
-        Debug.Log("PLAYER "+playerPriority+" ENEMY "+enemyPriority);
+        Debug.Log("PLAYER " + playerPriority + " ENEMY " + enemyPriority);
 
         bool playerGoesFirst = (playerPriority && !enemyPriority) ||
                             (!enemyPriority && player.cardInGame.speed > enemy.cardInGame.speed) ||
@@ -249,29 +253,29 @@ public class FightSystem : MonoBehaviour
             yield return StartCoroutine(effects.ExecuteEffects(player.cardInGame, dialogText, enemy.cardInGame));
             playerLifeBar.SetHP(player.cardInGame.health);
 
-            if ((player.cardInGame.state == CardState.ATTACK || (player.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(playerAttack))) 
-                && player.cardInGame.health > 0 && enemy.cardInGame.health > 0)  
+            if ((player.cardInGame.state == CardState.ATTACK || (player.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(playerAttack)))
+                && player.cardInGame.health > 0 && enemy.cardInGame.health > 0)
             {
                 yield return StartCoroutine(attack.ExecuteAttack(player.cardInGame, enemy.cardInGame, playerAttack, dialogText));
                 playerLifeBar.SetHP(player.cardInGame.health);
                 enemyLifeBar.SetHP(enemy.cardInGame.health);
             }
 
-            if (player.cardInGame.health > 0 && enemy.cardInGame.health > 0) 
+            if (player.cardInGame.health > 0 && enemy.cardInGame.health > 0)
             {
                 dialogText.color = Color.red;
                 yield return StartCoroutine(effects.ExecuteEffects(enemy.cardInGame, dialogText, player.cardInGame));
                 enemyLifeBar.SetHP(enemy.cardInGame.health);
 
-                if ((enemy.cardInGame.state == CardState.ATTACK || (enemy.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(enemyAttack))) 
-                    && player.cardInGame.health > 0 && enemy.cardInGame.health > 0) 
+                if ((enemy.cardInGame.state == CardState.ATTACK || (enemy.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(enemyAttack)))
+                    && player.cardInGame.health > 0 && enemy.cardInGame.health > 0)
                 {
                     yield return StartCoroutine(attack.ExecuteAttack(enemy.cardInGame, player.cardInGame, enemyAttack, dialogText));
                     playerLifeBar.SetHP(player.cardInGame.health);
                     enemyLifeBar.SetHP(enemy.cardInGame.health);
                 }
             }
-    
+
         }
         else
         {
@@ -279,8 +283,8 @@ public class FightSystem : MonoBehaviour
             yield return StartCoroutine(effects.ExecuteEffects(enemy.cardInGame, dialogText, player.cardInGame));
             enemyLifeBar.SetHP(enemy.cardInGame.health);
 
-            if ((enemy.cardInGame.state == CardState.ATTACK || (enemy.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(enemyAttack))) 
-                && player.cardInGame.health > 0 && enemy.cardInGame.health > 0) 
+            if ((enemy.cardInGame.state == CardState.ATTACK || (enemy.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(enemyAttack)))
+                && player.cardInGame.health > 0 && enemy.cardInGame.health > 0)
             {
                 yield return StartCoroutine(attack.ExecuteAttack(enemy.cardInGame, player.cardInGame, enemyAttack, dialogText));
                 playerLifeBar.SetHP(player.cardInGame.health);
@@ -293,15 +297,15 @@ public class FightSystem : MonoBehaviour
                 yield return StartCoroutine(effects.ExecuteEffects(player.cardInGame, dialogText, enemy.cardInGame));
                 playerLifeBar.SetHP(player.cardInGame.health);
 
-                if ((player.cardInGame.state == CardState.ATTACK || (player.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(playerAttack))) 
-                    && player.cardInGame.health > 0 && enemy.cardInGame.health > 0) 
+                if ((player.cardInGame.state == CardState.ATTACK || (player.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(playerAttack)))
+                    && player.cardInGame.health > 0 && enemy.cardInGame.health > 0)
                 {
                     yield return StartCoroutine(attack.ExecuteAttack(player.cardInGame, enemy.cardInGame, playerAttack, dialogText));
                     playerLifeBar.SetHP(player.cardInGame.health);
                     enemyLifeBar.SetHP(enemy.cardInGame.health);
                 }
             }
-            
+
         }
 
         dialogText.color = Color.black;
@@ -322,7 +326,7 @@ public class FightSystem : MonoBehaviour
                 dialogText.text = "You won the game!";
                 yield break;
             }
-            enemy.PlayCard(enemy.hand[0],enemyBoard);
+            enemy.PlayCard(enemy.hand[0], enemyBoard);
             enemyLifeBar.SetBar(enemy.cardInGame);
         }
 
@@ -344,9 +348,44 @@ public class FightSystem : MonoBehaviour
             }
             yield return new WaitUntil(() => state == FightState.TURN);
         }
-    
+
         Turn();
 
+    }
+
+    public IEnumerator ResetCardPositions()
+    {
+        if (player != null && player.cardInGame != null)
+        {
+            yield return StartCoroutine(ResetCardPosition(player.cardInGame.transform, playerBoard.transform.position, Quaternion.identity));
+        }
+
+        if (enemy != null && enemy.cardInGame != null)
+        {
+            yield return StartCoroutine(ResetCardPosition(enemy.cardInGame.transform, enemyBoard.transform.position, Quaternion.identity));
+        }
+    }
+
+    private IEnumerator ResetCardPosition(Transform cardTransform, Vector3 targetPosition, Quaternion targetRotation)
+    {
+        float resetDuration = 0.5f;  // Dĺžka trvania resetovania v sekundách
+
+        float elapsedTime = 0f;
+        Vector3 startingPosition = cardTransform.position;
+        Quaternion startingRotation = cardTransform.rotation;
+
+        while (elapsedTime < resetDuration)
+        {
+            float t = elapsedTime / resetDuration;
+            cardTransform.position = Vector3.Lerp(startingPosition, targetPosition, t);
+            cardTransform.rotation = Quaternion.Lerp(startingRotation, targetRotation, t);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // Uistite sa, že karta dosiahla cieľovú pozíciu a rotáciu
+        cardTransform.position = targetPosition;
+        cardTransform.rotation = targetRotation;
     }
 
     public void PlaceCardInBattleArea(GameObject cardObject)
@@ -364,7 +403,7 @@ public class FightSystem : MonoBehaviour
             player.cardInGame.isDragable = false;
             state = FightState.TURN;
             playerLifeBar.SetBar(player.cardInGame);
-            
+
         }
         else
         {
@@ -418,7 +457,7 @@ public class FightSystem : MonoBehaviour
                     if (existingCard.StyleID == cardStyleID)
                     {
                         GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
-                        
+
                         // Assigning the card properties from the PlayFab data
                         novaKarta.GetComponent<Kard>().cardId = existingCard.StyleID;
                         novaKarta.GetComponent<Kard>().cardName = existingCard.PersonName;
@@ -458,7 +497,7 @@ public class FightSystem : MonoBehaviour
     {
         int[] boost = new int[6];
         int iter = missionID - 1;
-        
+
         IDbConnection dbConnection = new SqliteConnection(connectionString);
         dbConnection.Open();
 
@@ -508,15 +547,15 @@ public class FightSystem : MonoBehaviour
                 novaKarta.GetComponent<Kard>().charisma = int.Parse(kartaHodnoty[8]) + boost[5];
                 novaKarta.GetComponent<Kard>().image = kartaHodnoty[15];
                 novaKarta.GetComponent<Kard>().color = cardColor;
-                novaKarta.GetComponent<Kard>().level = 1  + iter;
+                novaKarta.GetComponent<Kard>().level = 1 + iter;
                 novaKarta.GetComponent<Kard>().attack1 = int.Parse(kartaHodnoty[11]);
-                novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[11]));
+                novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[11]));
                 novaKarta.GetComponent<Kard>().attack2 = int.Parse(kartaHodnoty[12]);
-                novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[12]));
+                novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[12]));
                 novaKarta.GetComponent<Kard>().attack3 = int.Parse(kartaHodnoty[13]);
-                novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[13]));
+                novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[13]));
                 novaKarta.GetComponent<Kard>().attack4 = int.Parse(kartaHodnoty[14]);
-                novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[14]));
+                novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[14]));
 
                 novaKarta.GetComponent<Kard>().isDragable = false;
                 novaKarta.GetComponent<Kard>().battleArea = enemyBoard;
@@ -573,13 +612,13 @@ public class FightSystem : MonoBehaviour
             novaKarta.GetComponent<Kard>().color = cardColor;
             novaKarta.GetComponent<Kard>().level = 1 + iter;
             novaKarta.GetComponent<Kard>().attack1 = int.Parse(kartaHodnoty[11]);
-            novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[11]));
+            novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[11]));
             novaKarta.GetComponent<Kard>().attack2 = int.Parse(kartaHodnoty[12]);
-            novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[12]));
+            novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[12]));
             novaKarta.GetComponent<Kard>().attack3 = int.Parse(kartaHodnoty[13]);
-            novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[13]));
+            novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[13]));
             novaKarta.GetComponent<Kard>().attack4 = int.Parse(kartaHodnoty[14]);
-            novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(),int.Parse(kartaHodnoty[14]));
+            novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[14]));
 
             novaKarta.GetComponent<Kard>().isDragable = false;
             novaKarta.GetComponent<Kard>().battleArea = enemyBoard;

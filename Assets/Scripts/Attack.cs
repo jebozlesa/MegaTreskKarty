@@ -1050,12 +1050,20 @@ public class Attack : MonoBehaviour
     public IEnumerator Fury(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Fury"));
-        yield return StartCoroutine(attackAnimations.PlayFuryAnimation(attacker.transform));        //ANIMACIA
-        StartCoroutine(attacker.AddEffect(6, 3)); //fury
-        attacker.HandleStrength(5);
-        attacker.HandleAttack(5);
-        attacker.HandleDefense(-3);
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is furious!"));
+        if (receiver.CheckEffect(6))
+        {
+            StartCoroutine(attackAnimations.PlayAnimationNotEffective(attacker.transform));        //ANIMACIA
+            yield return StartCoroutine(ShowDialog(dialogText, "No effect on" + attacker.cardName));
+        }
+        else
+        {
+            yield return StartCoroutine(attackAnimations.PlayFuryAnimation(attacker.transform));        //ANIMACIA
+            StartCoroutine(attacker.AddEffect(6, 3)); //fury
+            attacker.HandleStrength(5);
+            attacker.HandleAttack(5);
+            attacker.HandleDefense(-3);
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is furious!"));
+        }
         Debug.Log(attacker.cardName + " -> Fury => " + receiver.cardName);
     }
 
