@@ -9,11 +9,12 @@ using System.Data;
 using Mono.Data.Sqlite;
 using System;
 
-public enum CardState {ATTACK,MAYBE,STAY}
+public enum CardState { ATTACK, MAYBE, STAY }
 
 public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler 
 {
-    public int cardId;
+    public string cardId;
+    public int styleId;
     public string cardName;
 
     public string image;
@@ -79,23 +80,23 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
     public bool priorityAttack;
 
     private PlayFabCardManager playFabManager = new PlayFabCardManager();
-    
+
 
 
     private void Start()
     {
-        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + "Kard.Start => START");
-        
+        //Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + "Kard.Start => START");
+
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
 
         nameText.text = cardName;
         levelText.text = "lvl " + level;
-        maxHP = health; 
+        maxHP = health;
         cardImage.sprite = Resources.Load<Sprite>("Cards/" + image);
         background.GetComponent<Image>().color = color;
         nameText.color = color;
         levelText.color = color;
-        
+
         InitializeAttackCount();
 
         //LoadPlayerCardData();
@@ -308,6 +309,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
                         {
                             StartCoroutine(EffectAnimations(level, "LVL", color_yellow));
                             UpdateRandomStat();
+                            level += 1;
                             LoadCardData();
                         }
                     }
@@ -443,7 +445,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
 
     private void InitializeAttackCount()
-    {   
+    {
         attackCount = new Dictionary<int, int>
         {
             { 1, countAttack1 },
@@ -542,11 +544,11 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
         return idExists;
     }
-    
+
 
     public IEnumerator AddEffect(int id, int param)
     {
-    //    yield return new WaitForSeconds(1f);
+        //    yield return new WaitForSeconds(1f);
         Debug.Log(Time.time + "  " + cardName + " pridava efekt " + id + ", " + param);
 
         bool idExists = false;
@@ -579,7 +581,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         Debug.Log(Time.time + "  " + cardName + " odobera efekt " + index);
         if (index < effects.Count)
         {
-            effects.RemoveAt(index); 
+            effects.RemoveAt(index);
         }
     }
 
@@ -597,7 +599,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
     }
 
     public void RemoveEffectsById(int[] id)
-    {        
+    {
         for (int j = 0; j < id.Length - 1; j++)
         {
             for (int i = effects.Count - 1; i >= 0; i--)
@@ -613,27 +615,27 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
     }
 
     public void TakeDamage(int dmg)
-	{
+    {
         if (dmg <= 0)
-			dmg = 1;
-		health -= dmg;
+            dmg = 1;
+        health -= dmg;
         StartCoroutine(ShakeCard((float)dmg));
         StartCoroutine(EffectAnimations(dmg, "HP", color_red));
-        Debug.Log(Time.time + "  " + cardName+" dostal za "+dmg);
-	}
+        Debug.Log(Time.time + "  " + cardName + " dostal za " + dmg);
+    }
 
     public void Heal(int amount)
-	{
-        Debug.Log(Time.time + "  " + cardName+" sa healuje za "+amount);
-		health += amount;
+    {
+        Debug.Log(Time.time + "  " + cardName + " sa healuje za " + amount);
+        health += amount;
         StartCoroutine(EffectAnimations(amount, "HP", color_green));
-		if (health > maxHP)
-			health = maxHP;
-	}
+        if (health > maxHP)
+            health = maxHP;
+    }
 
     public void HandleStrength(int amount)
-	{
-        Debug.Log(Time.time + "  " + cardName+" nemi silu o "+amount);
+    {
+        Debug.Log(Time.time + "  " + cardName + " nemi silu o " + amount);
         if (amount < 0)
         {
             StartCoroutine(EffectAnimations(amount, "STR", color_red));
@@ -642,14 +644,14 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         {
             StartCoroutine(EffectAnimations(amount, "STR", color_green));
         }
-		strength += amount;
-		if (strength <= 1)
-			strength = 1;
-	}
+        strength += amount;
+        if (strength <= 1)
+            strength = 1;
+    }
 
     public void HandleSpeed(int amount)
-	{
-        Debug.Log(Time.time + "  " + cardName+" meni rychlost o "+amount);
+    {
+        Debug.Log(Time.time + "  " + cardName + " meni rychlost o " + amount);
         if (amount < 0)
         {
             StartCoroutine(EffectAnimations(amount, "SPD", color_red));
@@ -658,15 +660,15 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         {
             StartCoroutine(EffectAnimations(amount, "SPD", color_green));
         }
-		speed += amount;
-		if (speed <= 1)
-			speed = 1;
-	}
+        speed += amount;
+        if (speed <= 1)
+            speed = 1;
+    }
 
     public void HandleAttack(int amount)
-	{
-        Debug.Log(Time.time + "  " + cardName+" meni utok o "+amount);
-		attack += amount;
+    {
+        Debug.Log(Time.time + "  " + cardName + " meni utok o " + amount);
+        attack += amount;
         if (amount < 0)
         {
             StartCoroutine(EffectAnimations(amount, "ATT", color_red));
@@ -675,14 +677,14 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         {
             StartCoroutine(EffectAnimations(amount, "ATT", color_green));
         }
-		if (attack <= 1)
-			attack = 1;
-	}
+        if (attack <= 1)
+            attack = 1;
+    }
 
     public void HandleDefense(int amount)
-	{
-        Debug.Log(Time.time + "  " + cardName+" meni obranu o "+amount);
-		defense += amount;
+    {
+        Debug.Log(Time.time + "  " + cardName + " meni obranu o " + amount);
+        defense += amount;
         if (amount < 0)
         {
             StartCoroutine(EffectAnimations(amount, "DEF", color_red));
@@ -691,14 +693,14 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         {
             StartCoroutine(EffectAnimations(amount, "DEF", color_green));
         }
-		if (defense <= 1)
-			defense = 1;
-	}
+        if (defense <= 1)
+            defense = 1;
+    }
 
     public void HandleKnowledge(int amount)
-	{
-        Debug.Log(Time.time + "  " + cardName+" meni vedomosti o "+amount);
-		knowledge += amount;
+    {
+        Debug.Log(Time.time + "  " + cardName + " meni vedomosti o " + amount);
+        knowledge += amount;
         if (amount < 0)
         {
             StartCoroutine(EffectAnimations(amount, "KNW", color_red));
@@ -707,14 +709,14 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         {
             StartCoroutine(EffectAnimations(amount, "KNW", color_green));
         }
-		if (knowledge <= 1)
-			knowledge = 1;
-	}
+        if (knowledge <= 1)
+            knowledge = 1;
+    }
 
     public void HandleCharisma(int amount)
-	{
-        Debug.Log(Time.time + "  " + cardName+" meni charizmu o "+amount);
-		charisma += amount;
+    {
+        Debug.Log(Time.time + "  " + cardName + " meni charizmu o " + amount);
+        charisma += amount;
         if (amount < 0)
         {
             StartCoroutine(EffectAnimations(amount, "CHA", color_red));
@@ -723,9 +725,9 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         {
             StartCoroutine(EffectAnimations(amount, "CHA", color_green));
         }
-		if (charisma <= 1)
-			charisma = 1;
-	}
+        if (charisma <= 1)
+            charisma = 1;
+    }
 
     // public void OnPointerClick(PointerEventData eventData)
     // {
@@ -734,10 +736,10 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
     //     {
     //         // Vytvorte novú inštanciu karty z prefabrikátu
     //         GameObject newCard = Instantiate(cardPrefab);
-            
+
     //         // Nastavte pozíciu karty
     //         newCard.transform.position = board.position;
-            
+
     //         // Priradte kartu k hracej ploche
     //         newCard.transform.SetParent(board);
     //     }

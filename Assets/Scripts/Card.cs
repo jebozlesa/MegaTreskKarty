@@ -11,7 +11,7 @@ using PlayFab.ClientModels;
 
 public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    public int cardId;
+    public string cardId;
     public int styleId;
     public string cardName;
     public int experience;
@@ -63,7 +63,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     public GameObject cardPrefab;
 
-   // public CardState state = CardState.ATTACK;
+    // public CardState state = CardState.ATTACK;
     private bool isZoomed = false;
     public GameObject zoomedCardHolder;
     private GameObject originalParent;
@@ -95,7 +95,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     public TMP_Text defText;
     public TMP_Text knoText;
     public TMP_Text chaText;
-    
+
     public TMP_Text storyText;
 
     public GameObject notsureGO;//tie kokotiny co vyskakuju ked dostane damage
@@ -150,7 +150,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         nameText.text = cardName;
         levelText.text = "lvl " + level;
 
-        maxHP = health; 
+        maxHP = health;
 
         string imagePath = "Cards/" + image;
 
@@ -217,19 +217,19 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         return attack1 == attackId || attack2 == attackId || attack3 == attackId || attack4 == attackId;
     }
 
-    public void DeselectAllAttacks() 
+    public void DeselectAllAttacks()
     {
-        foreach (AviableAttack attack in GetComponentsInChildren<AviableAttack>()) 
+        foreach (AviableAttack attack in GetComponentsInChildren<AviableAttack>())
         {
             attack.SetSelected(false);
         }
     }
 
-    public void OnChangeAttackClick()
+    public void OnChangeAttackClick()       //TODO  opravit
     {
         if (selectedAttackId != -1 && selectedOriginalAttackId != -1)
         {
-            ChangeAttackInDatabase(selectedAttackId, selectedOriginalAttackId, cardId);
+            //ChangeAttackInDatabase(selectedAttackId, selectedOriginalAttackId, cardId);
             selectedAttackId = -1;
             selectedOriginalAttackId = -1;
             attackListContainer.gameObject.SetActive(false);
@@ -316,7 +316,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     {
         attackListController.ClearAttackList(); // Vymaže všetky predchádzajúce útoky
         Debug.Log("CHange kliknuty ");
-        attackListController.ShowAttackList(styleId,displayedAttack);
+        attackListController.ShowAttackList(styleId, displayedAttack);
         attackListContainer.gameObject.SetActive(true);
     }
 
@@ -327,7 +327,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     public void ChangeAttack(int direction)
     {
-        
+
         if (direction == 1)
         {
             currentAttackIndex++;
@@ -431,7 +431,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     }
 
 
-    private void SwapCardsInPlayFab(int newCardId, int oldCardId)
+    private void SwapCardsInPlayFab(string newCardId, string oldCardId)
     {
         // Získame existujúce údaje o balíčkoch z PlayFab
         PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
@@ -488,7 +488,8 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     }
 
     private void UpdateDeckDataInPlayFab(string updatedJson)
-    {   Debug.Log("UpdateDeckDataInPlayFab ==> Start");
+    {
+        Debug.Log("UpdateDeckDataInPlayFab ==> Start");
 
         var updateRequest = new UpdateUserDataRequest
         {
@@ -710,7 +711,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             // Show the deck panel
             deckPanel.SetActive(true);
 
-            if (PlayerPrefs.GetInt("HasCompletedTutorialCard", 0) == 0) 
+            if (PlayerPrefs.GetInt("HasCompletedTutorialCard", 0) == 0)
             {
                 CardTutorial.instance.gameObject.SetActive(true);
             }
@@ -744,31 +745,31 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     void LoginPlayFab()
     {
-//        loadingImage.SetActive(true);
+        //        loadingImage.SetActive(true);
         string username = PlayerPrefs.GetString("username");
         string email = PlayerPrefs.GetString("email");
         string password = PlayerPrefs.GetString("password");
 
-        var request = new LoginWithEmailAddressRequest 
-            {
-                Email = email,
-                Password = password
-            };
-            PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
-//        loadingImage.SetActive(false);
+        var request = new LoginWithEmailAddressRequest
+        {
+            Email = email,
+            Password = password
+        };
+        PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
+        //        loadingImage.SetActive(false);
     }
 
     void OnSuccess(LoginResult result)
-{
-    Debug.Log("Successfully logged in to PlayFab!");
-    // Store the PlayFabId for later use
-    PlayFabId = result.PlayFabId;
-}
+    {
+        Debug.Log("Successfully logged in to PlayFab!");
+        // Store the PlayFabId for later use
+        PlayFabId = result.PlayFabId;
+    }
 
-void OnError(PlayFabError error)
-{
-    Debug.LogError("Error logging in to PlayFab: " + error.GenerateErrorReport());
-}
+    void OnError(PlayFabError error)
+    {
+        Debug.LogError("Error logging in to PlayFab: " + error.GenerateErrorReport());
+    }
 
 
 

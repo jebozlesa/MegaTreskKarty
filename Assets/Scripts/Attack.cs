@@ -1654,10 +1654,10 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Revelation"));
         int variantIndex = 0;
-        if (attacker.cardId == 6) { variantIndex = 2; }
-        if (attacker.cardId == 12) { variantIndex = 4; }
-        if (attacker.cardId == 43) { variantIndex = 3; }
-        if (attacker.cardId == 46) { variantIndex = 5; }
+        if (attacker.styleId == 6) { variantIndex = 2; }
+        if (attacker.styleId == 12) { variantIndex = 4; }
+        if (attacker.styleId == 43) { variantIndex = 3; }
+        if (attacker.styleId == 46) { variantIndex = 5; }
 
         yield return StartCoroutine(attackAnimations.PlayRevelationAnimation(attacker.transform, variantIndex));        //ANIMACIA
         attacker.HandleCharisma(2);

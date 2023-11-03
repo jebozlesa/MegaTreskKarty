@@ -19,7 +19,7 @@ public class DeckManager : MonoBehaviour
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
         LoadDeckCards();
     }
-    
+
 
     public bool IsCardNameInDeck(string cardNameToCheck)
     {
@@ -83,7 +83,7 @@ public class DeckManager : MonoBehaviour
 
 
 
-    public void AddCardToHand(int cardStyleID)
+    public void AddCardToHand(string cardID)
     {
         PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
         {
@@ -92,16 +92,18 @@ public class DeckManager : MonoBehaviour
             {
                 existingDataJson = result.Data["PlayerCards"].Value;
             }
+            Debug.Log(existingDataJson);
 
             if (!string.IsNullOrEmpty(existingDataJson))
             {
                 CardListWrapper existingCards = JsonUtility.FromJson<CardListWrapper>(existingDataJson);
                 foreach (GeneratedCard existingCard in existingCards.cards)
                 {
-                    if (existingCard.StyleID == cardStyleID)
+                    if (existingCard.CardID == cardID)
                     {
                         GameObject novaKarta = Instantiate(cardPrefab, transform);
-                        novaKarta.GetComponent<Card>().cardId = existingCard.StyleID;
+                        novaKarta.GetComponent<Card>().cardId = existingCard.CardID;
+                        novaKarta.GetComponent<Card>().styleId = existingCard.StyleID;
                         novaKarta.GetComponent<Card>().cardName = existingCard.PersonName;
                         novaKarta.GetComponent<Card>().health = existingCard.Health;
                         novaKarta.GetComponent<Card>().strength = existingCard.Strength;

@@ -12,39 +12,39 @@ public class PlayFabCardManager : MonoBehaviour
     void Awake()
     {
         Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " PlayFabCardManager.Awake => START");
-       // Login();
+        // Login();
     }
 
     void Login()
     {
-//        loadingImage.SetActive(true);
+        //        loadingImage.SetActive(true);
         string username = PlayerPrefs.GetString("username");
         string email = PlayerPrefs.GetString("email");
         string password = PlayerPrefs.GetString("password");
 
-        var request = new LoginWithEmailAddressRequest 
-            {
-                Email = email,
-                Password = password
-            };
-            PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
-//        loadingImage.SetActive(false);
+        var request = new LoginWithEmailAddressRequest
+        {
+            Email = email,
+            Password = password
+        };
+        PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
+        //        loadingImage.SetActive(false);
     }
 
     void OnSuccess(LoginResult result)
     {
         Debug.Log("PlayFabCardManager = Sicko dobre");
-  //      loadingImage.SetActive(false);
+        //      loadingImage.SetActive(false);
     }
 
     void OnError(PlayFabError error)
     {
         Debug.Log("PlayFabCardManager = Daco nahovno");
-  //      errorImage.SetActive(true);
+        //      errorImage.SetActive(true);
         Debug.Log(error.GenerateErrorReport());
     }
 
-    public void GetCardData(int cardId, CardDataCallback callback)
+    public void GetCardData(string cardId, CardDataCallback callback)
     {
         Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " PlayFabCardManager.GetCardData => START " + cardId);
         GetUserDataRequest request = new GetUserDataRequest
@@ -59,7 +59,7 @@ public class PlayFabCardManager : MonoBehaviour
                 var cardsData = JsonUtility.FromJson<CardsContainer>(result.Data["PlayerCards"].Value);  // Deserializujte data s klíčem "PlayerCards"
                 foreach (var card in cardsData.cards)
                 {
-                    if (card.StyleID == cardId)
+                    if (card.CardID == cardId)
                     {
                         callback?.Invoke(ConvertCardDataToDictionary(card));
                         return;
@@ -103,9 +103,9 @@ public class PlayFabCardManager : MonoBehaviour
     }
 
 
-    public void UpdateCardData(int styleID, Dictionary<string, string> updates, UpdateCallback callback)
+    public void UpdateCardData(string cardID, Dictionary<string, string> updates, UpdateCallback callback)
     {
-        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " PlayFabCardManager.UpdateCardData => START " + styleID);
+        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " PlayFabCardManager.UpdateCardData => START " + cardID);
 
         GetUserDataRequest getRequest = new GetUserDataRequest
         {
@@ -122,7 +122,7 @@ public class PlayFabCardManager : MonoBehaviour
 
                 foreach (var card in cardsData.cards)
                 {
-                    if (card.StyleID == styleID)
+                    if (card.CardID == cardID)
                     {
                         // Aktualizujte hodnoty karty dle potřeby
                         foreach (var update in updates)

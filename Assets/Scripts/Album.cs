@@ -29,9 +29,10 @@ public class Album : MonoBehaviour
     public static bool IsLoggedIn = false;
 
     void Start()
-    {   Debug.Log("Album.Start  -- Start");
+    {
+        Debug.Log("Album.Start  -- Start");
 
-        if (PlayerPrefs.GetInt("HasCompletedTutorialAlbum", 0) == 0)  {   tutorial.SetActive(true);   }
+        if (PlayerPrefs.GetInt("HasCompletedTutorialAlbum", 0) == 0) { tutorial.SetActive(true); }
 
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
 
@@ -48,40 +49,44 @@ public class Album : MonoBehaviour
     }
 
     void LoginPlayFab()
-    {   Debug.Log("Album.LoginPlayFab  -- Start");
+    {
+        Debug.Log("Album.LoginPlayFab  -- Start");
 
-//        loadingImage.SetActive(true);
+        //        loadingImage.SetActive(true);
         string username = PlayerPrefs.GetString("username");
         string email = PlayerPrefs.GetString("email");
         string password = PlayerPrefs.GetString("password");
 
-        var request = new LoginWithEmailAddressRequest 
-            {
-                Email = email,
-                Password = password
-            };
-            PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
-//        loadingImage.SetActive(false);
+        var request = new LoginWithEmailAddressRequest
+        {
+            Email = email,
+            Password = password
+        };
+        PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
+        //        loadingImage.SetActive(false);
     }
 
     void OnSuccess(LoginResult result)
-    {   Debug.Log("Album.OnSuccess  -- Start");
-    
+    {
+        Debug.Log("Album.OnSuccess  -- Start");
+
         IsLoggedIn = true;
         Debug.Log("Sicko dobre");
-  //      loadingImage.SetActive(false);
+        //      loadingImage.SetActive(false);
     }
 
     void OnError(PlayFabError error)
-    {   Debug.Log("Album.OnError  -- Start");
+    {
+        Debug.Log("Album.OnError  -- Start");
 
         Debug.Log("Daco nahovno");
-  //      errorImage.SetActive(true);
+        //      errorImage.SetActive(true);
         Debug.Log(error.GenerateErrorReport());
     }
 
     string LoadStory(int cardID)
-    {   Debug.Log("Album.LoadStory  -- Start");
+    {
+        Debug.Log("Album.LoadStory  -- Start");
 
         string cardStory = "";
         IDbConnection dbConnection = new SqliteConnection(connectionString);
@@ -103,7 +108,7 @@ public class Album : MonoBehaviour
         return cardStory;
     }
 
-    
+
 
     private IEnumerator VytvorKartyPlayFab()
     {
@@ -121,8 +126,8 @@ public class Album : MonoBehaviour
                 // Spracovanie údajov o kartách
                 StartCoroutine(SpracujKarty(data.cards));
             }
-        }, 
-        error => 
+        },
+        error =>
         {
             Debug.LogError(error.GenerateErrorReport());
             if (error.Error == PlayFabErrorCode.ConnectionError)
@@ -136,7 +141,8 @@ public class Album : MonoBehaviour
 
 
     private IEnumerator SpracujKarty(List<GeneratedCard> data)
-    {Debug.Log("Album.SpracujKarty  -- Start");
+    {
+        Debug.Log("Album.SpracujKarty  -- Start");
 
         Debug.Log("Number of cards: " + data.Count); // Pridaný výpis
 
@@ -146,7 +152,8 @@ public class Album : MonoBehaviour
             Debug.Log("Hero : " + cardData.PersonName);
 
             GameObject novaKarta = Instantiate(kartaPrefab, transform);
-            novaKarta.GetComponent<Card>().cardId = cardData.StyleID;
+            novaKarta.GetComponent<Card>().cardId = cardData.CardID;
+            novaKarta.GetComponent<Card>().styleId = cardData.StyleID;
             novaKarta.GetComponent<Card>().styleId = cardData.StyleID;
             novaKarta.GetComponent<Card>().level = cardData.Level;
             novaKarta.GetComponent<Card>().experience = cardData.Experience;
@@ -178,6 +185,6 @@ public class Album : MonoBehaviour
             yield return new WaitForSeconds(0.05f);
         }
     }
-        
+
 
 }

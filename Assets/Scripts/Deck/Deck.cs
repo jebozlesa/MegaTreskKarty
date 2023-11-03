@@ -7,11 +7,11 @@ public class Deck
 {
     public string DeckID;
     public string DeckName;
-    public int Card1;
-    public int Card2;
-    public int Card3;
-    public int Card4;
-    public int Card5;
+    public string Card1;
+    public string Card2;
+    public string Card3;
+    public string Card4;
+    public string Card5;
 }
 
 

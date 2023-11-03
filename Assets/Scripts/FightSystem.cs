@@ -439,7 +439,7 @@ public class FightSystem : MonoBehaviour
         yield return null;
     }
 
-    private void LoadCardFromPlayFab(int cardStyleID, GameObject playerGO, Player player)
+    private void LoadCardFromPlayFab(string cardID, GameObject playerGO, Player player)
     {
         PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
         {
@@ -454,12 +454,13 @@ public class FightSystem : MonoBehaviour
                 CardListWrapper existingCards = JsonUtility.FromJson<CardListWrapper>(existingDataJson);
                 foreach (GeneratedCard existingCard in existingCards.cards)
                 {
-                    if (existingCard.StyleID == cardStyleID)
+                    if (existingCard.CardID == cardID)
                     {
                         GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
 
                         // Assigning the card properties from the PlayFab data
-                        novaKarta.GetComponent<Kard>().cardId = existingCard.StyleID;
+                        novaKarta.GetComponent<Kard>().cardId = existingCard.CardID;
+                        novaKarta.GetComponent<Kard>().styleId = existingCard.StyleID;
                         novaKarta.GetComponent<Kard>().cardName = existingCard.PersonName;
                         novaKarta.GetComponent<Kard>().health = existingCard.Health;
                         novaKarta.GetComponent<Kard>().strength = existingCard.Strength;

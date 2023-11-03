@@ -142,7 +142,7 @@ public class CardGenerator : MonoBehaviour
         }
 
         List<int> pack = new List<int>(themedPacks[packIndex]);
-        List<int> generatedCards = new List<int>(); // Nový zoznam pre uchovanie vygenerovaných kariet
+        List<GeneratedCard> generatedCards = new List<GeneratedCard>(); // Zoznam pre uchovanie vygenerovaných objektov kariet
 
         for (int i = 0; i < 6; i++)
         {
@@ -154,23 +154,66 @@ public class CardGenerator : MonoBehaviour
 
             int randomIndex = UnityEngine.Random.Range(0, pack.Count);
             int randomCardID = pack[randomIndex];
-            yield return StartCoroutine(AddCardById(randomCardID)); // Zmenené na korutinu
+            GeneratedCard randomCard = null;
 
-            generatedCards.Add(randomCardID); // Pridajte kartu do zoznamu vygenerovaných kariet
+            // Vygenerujeme kartu a získame objekt karty
+            yield return StartCoroutine(GenerateCard(randomCardID, card => randomCard = card));
+
+            if (randomCard != null)
+            {
+                generatedCards.Add(randomCard); // Pridajte kartu do zoznamu vygenerovaných kariet
+            }
             pack.RemoveAt(randomIndex);
 
-            if (i < 4) // Ak ešte nie je koniec, počkajte pol sekundy medzi kartami
+            if (i < 5) // Ak ešte nie je koniec, počkajte pol sekundy medzi kartami
             {
                 yield return new WaitForSeconds(0.5f);
             }
         }
 
-        // Po vygenerovaní všetkých kariet vytvorte balíček, ak hráč ešte nedokončil tutoriál
         if (PlayerPrefs.GetInt("HasCompletedTutorial", 0) == 0)
         {
-            Debug.Log("Generated cards: " + string.Join(", ", generatedCards));
+            Debug.Log("Generated cards: " + string.Join(", ", generatedCards.Select(c => c.CardID)));
             yield return StartCoroutine(CreateFirstDeck(generatedCards)); // Vytvorte prvý balíček
         }
+    }
+
+    private IEnumerator GenerateCard(int cardId, Action<GeneratedCard> onCardCreated)
+    {
+        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + "CardGenerator.GenerateCard => cardID: " + cardId);
+        IDbConnection dbConnection = new SqliteConnection(connectionString);
+        dbConnection.Open();
+
+        IDbCommand dbCommand = dbConnection.CreateCommand();
+        dbCommand.CommandText = $"SELECT * FROM CardDatabase WHERE StyleID = {cardId}";
+        IDataReader reader = dbCommand.ExecuteReader();
+
+        if (reader.Read())
+        {
+            GeneratedCard card = CreateCardFromDatabase(reader);
+            string json = ConvertCardToJson(card);
+
+            PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
+                {
+                    string existingDataJson = GetExistingDataJson(result);
+                    Dictionary<string, GeneratedCard> data = AddCardToExistingData(existingDataJson, card);
+                    string updatedJson = ConvertUpdatedDataToJson(data);
+
+                    UpdateUserDataInPlayFab(updatedJson);
+                }, error => Debug.LogError(error.GenerateErrorReport()));
+
+            onCardCreated?.Invoke(card);
+
+            yield return StartCoroutine(ShowCardOnScreen(card.StyleID, card.PersonName, card.CardPicture, new Color32((byte)card.Color[0], (byte)card.Color[1], (byte)card.Color[2], 255), card.Level));
+        }
+        else
+        {
+            Debug.LogError("Card with the specified ID not found");
+        }
+
+        reader.Close();
+        dbCommand.Dispose();
+        dbConnection.Close();
     }
 
     public void AddRandomCard()
@@ -313,7 +356,7 @@ public class CardGenerator : MonoBehaviour
         PlayFabClientAPI.UpdateUserData(updateRequest, updateResult => Debug.Log("User data updated successfully"), error => Debug.LogError(error.GenerateErrorReport()));
     }
 
-    public IEnumerator CreateFirstDeck(List<int> generatedCards)
+    public IEnumerator CreateFirstDeck(List<GeneratedCard> generatedCards)
     {
         Debug.Log("CreateFirstDeck ====> START");
 
@@ -322,11 +365,11 @@ public class CardGenerator : MonoBehaviour
         {
             DeckID = Guid.NewGuid().ToString(),
             DeckName = "First Deck",
-            Card1 = generatedCards[0],
-            Card2 = generatedCards[1],
-            Card3 = generatedCards[2],
-            Card4 = generatedCards[3],
-            Card5 = generatedCards[4]
+            Card1 = generatedCards[0].CardID, // Predpokladá sa, že objekt GeneratedCard má vlastnosť CardID
+            Card2 = generatedCards[1].CardID,
+            Card3 = generatedCards[2].CardID,
+            Card4 = generatedCards[3].CardID,
+            Card5 = generatedCards[4].CardID
         };
 
         Debug.Log($"New deck created with ID: {newDeck.DeckID}");
