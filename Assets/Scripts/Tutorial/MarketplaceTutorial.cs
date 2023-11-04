@@ -9,6 +9,7 @@ public class MarketplaceTutorial : MonoBehaviour
 
     public GameObject tutorialPanelHint1;
     public GameObject tutorialPanelHint2;
+    public GameObject tutorialPanelEmpty;
 
 
     // Start is called before the first frame update
@@ -45,7 +46,9 @@ public class MarketplaceTutorial : MonoBehaviour
     // Coroutine to show the second hint after a delay
     private IEnumerator ShowSecondHintAfterDelay()
     {
+        tutorialPanelEmpty.SetActive(true);
         yield return new WaitForSeconds(1f); // Wait for 1 second
+        tutorialPanelEmpty.SetActive(false);
         tutorialPanelHint2.SetActive(true);
     }
 }

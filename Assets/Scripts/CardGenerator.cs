@@ -16,6 +16,7 @@ public class CardGenerator : MonoBehaviour
 
     public Canvas canvas;
     public GameObject cardPrefab;
+    public GameObject displayBlock;
 
     private void Start()
     {
@@ -141,6 +142,8 @@ public class CardGenerator : MonoBehaviour
             yield break;
         }
 
+        displayBlock.SetActive(true);
+
         List<int> pack = new List<int>(themedPacks[packIndex]);
         List<GeneratedCard> generatedCards = new List<GeneratedCard>(); // Zoznam pre uchovanie vygenerovaných objektov kariet
 
@@ -170,6 +173,8 @@ public class CardGenerator : MonoBehaviour
                 yield return new WaitForSeconds(0.5f);
             }
         }
+
+        displayBlock.SetActive(false);
 
         if (PlayerPrefs.GetInt("HasCompletedTutorial", 0) == 0)
         {
@@ -233,7 +238,7 @@ public class CardGenerator : MonoBehaviour
         int randomIndex = UnityEngine.Random.Range(1, cardCount + 1);
         dbCommand.Dispose();
 
-        randomIndex = 48;  // docasne - vymazat resp. zakomentovat ked netreeba                                         <============  RANDOM INDEX
+        //  randomIndex = 48;  // docasne - vymazat resp. zakomentovat ked netreeba                                         <============  RANDOM INDEX
         yield return StartCoroutine(AddCardById(randomIndex));
 
         dbConnection.Close();
@@ -358,38 +363,55 @@ public class CardGenerator : MonoBehaviour
 
     public IEnumerator CreateFirstDeck(List<GeneratedCard> generatedCards)
     {
-        Debug.Log("CreateFirstDeck ====> START");
+        Debug.Log("Skontrolujeme, či je potrebné vytvoriť prvý balíček...");
 
-        // Vytvoríme nový balíček s prvými 5 kartami
-        Deck newDeck = new Deck
+        var checkDeckRequest = new GetUserDataRequest { Keys = new List<string> { "PlayerDecks" } };
+        bool deckExists = false;
+
+        // Požiadavka na PlayFab na získanie údajov používateľa
+        PlayFabClientAPI.GetUserData(checkDeckRequest, result =>
         {
-            DeckID = Guid.NewGuid().ToString(),
-            DeckName = "First Deck",
-            Card1 = generatedCards[0].CardID, // Predpokladá sa, že objekt GeneratedCard má vlastnosť CardID
-            Card2 = generatedCards[1].CardID,
-            Card3 = generatedCards[2].CardID,
-            Card4 = generatedCards[3].CardID,
-            Card5 = generatedCards[4].CardID
-        };
-
-        Debug.Log($"New deck created with ID: {newDeck.DeckID}");
-        Debug.Log($"New deck CardIDs: {newDeck.Card1}, {newDeck.Card2}, {newDeck.Card3}, {newDeck.Card4}, {newDeck.Card5}");
-
-        string json = ConvertDeckToJson(newDeck);
-
-        PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
-        {
-            string existingDataJson = GetExistingDeckDataJson(result);
-            Dictionary<string, Deck> data = AddDeckToExistingData(existingDataJson, newDeck);
-            string updatedJson = ConvertUpdatedDeckDataToJson(data);
-
-            UpdateDeckDataInPlayFab(updatedJson);
+            if (result.Data != null && result.Data.ContainsKey("PlayerDecks") && !string.IsNullOrEmpty(result.Data["PlayerDecks"].Value))
+            {
+                Debug.Log("Balíček už existuje. Vytvorenie balíčka preskočíme.");
+                deckExists = true;
+            }
         }, error => Debug.LogError(error.GenerateErrorReport()));
 
-        SceneManager.LoadScene("Cards");
+        // Počkáme na odpoveď od PlayFab pred pokračovaním
+        yield return new WaitUntil(() => deckExists || PlayFabClientAPI.IsClientLoggedIn());
+
+        // Pokračujeme len v prípade, že neexistuje žiadny balíček
+        if (!deckExists)
+        {
+            Debug.Log("Nebol nájdený žiadny balíček. Vytvárame prvý balíček...");
+
+            // Tu vložte existujúci kód na vytvorenie nového balíčka
+            Deck newDeck = new Deck
+            {
+                DeckID = Guid.NewGuid().ToString(),
+                DeckName = "First Deck",
+                Card1 = generatedCards[0].CardID,
+                Card2 = generatedCards[1].CardID,
+                Card3 = generatedCards[2].CardID,
+                Card4 = generatedCards[3].CardID,
+                Card5 = generatedCards[4].CardID
+            };
+
+            Debug.Log($"Vytvorený nový balíček s ID: {newDeck.DeckID}");
+            Debug.Log($"ID kariet nového balíčka: {newDeck.Card1}, {newDeck.Card2}, {newDeck.Card3}, {newDeck.Card4}, {newDeck.Card5}");
+
+            string json = ConvertDeckToJson(newDeck);
+
+            // Aktualizácia údajov na PlayFab s informáciami o novom balíčku
+            // ...
+
+            SceneManager.LoadScene("Cards");
+        }
 
         yield return null;
     }
+
 
 
     private string ConvertDeckToJson(Deck deck)

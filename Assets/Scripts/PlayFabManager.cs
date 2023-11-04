@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using PlayFab;
 using PlayFab.ClientModels;
+using System.Collections;
 
 public class PlayFabManager : MonoBehaviour
 {
@@ -10,6 +11,9 @@ public class PlayFabManager : MonoBehaviour
 
     // public GameObject loadingImage;
     // public GameObject errorImage;
+
+    public int maxRetryAttempts = 3;
+    public float retryDelaySeconds = 2f;
 
     public event Action<List<PlayerLeaderboardEntry>> OnLeaderboardLoaded;
 
@@ -102,6 +106,51 @@ public class PlayFabManager : MonoBehaviour
             Debug.Log(item.Position + " " + username + " " + item.StatValue);
             OnLeaderboardLoaded?.Invoke(result.Leaderboard);
         }
+    }
+
+    public void GetMyBestScore(string statisticName, Action<int> onScoreReceived, int attempt = 0)
+    {
+        var request = new GetPlayerStatisticsRequest
+        {
+            StatisticNames = new List<string> { statisticName }
+        };
+
+        PlayFabClientAPI.GetPlayerStatistics(request, result =>
+        {
+            // Success
+            int bestScore = 0;
+            foreach (var eachStat in result.Statistics)
+            {
+                if (eachStat.StatisticName == statisticName)
+                {
+                    bestScore = eachStat.Value;
+                    break;
+                }
+            }
+            onScoreReceived?.Invoke(bestScore);
+            Debug.Log("Your best score in " + statisticName + " is " + bestScore);
+
+        }, error =>
+        {
+            // If there's an error and we have retries left, retry after a delay
+            if (attempt < maxRetryAttempts)
+            {
+                Debug.LogWarning($"Attempt {attempt + 1} failed, retrying in {retryDelaySeconds} seconds...");
+                StartCoroutine(RetryAfterDelay(statisticName, onScoreReceived, attempt));
+            }
+            else
+            {
+                // If no more retries are left, invoke the callback with a default value (e.g., 0)
+                onScoreReceived?.Invoke(0);
+                Debug.LogError("Error retrieving player stats after retries: " + error.GenerateErrorReport());
+            }
+        });
+    }
+
+    private IEnumerator RetryAfterDelay(string statisticName, Action<int> onScoreReceived, int attempt)
+    {
+        yield return new WaitForSeconds(retryDelaySeconds);
+        GetMyBestScore(statisticName, onScoreReceived, attempt + 1);
     }
 
 

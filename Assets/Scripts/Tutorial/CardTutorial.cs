@@ -13,6 +13,7 @@ public class CardTutorial : MonoBehaviour
     public GameObject tutorialPanelHint4;
     public GameObject tutorialPanelHint5;
     public GameObject tutorialPanelHint6;
+    public GameObject tutorialPanelEmpty;
 
     private void Awake()
     {
@@ -36,9 +37,9 @@ public class CardTutorial : MonoBehaviour
 
     private GameObject InstantiateAndSetup(GameObject prefab)
     {
-        
+
         GameObject instance = Instantiate(prefab, transform);
-   //     instance.transform.localPosition = Vector3.zero;
+        //     instance.transform.localPosition = Vector3.zero;
         return instance;
     }
 
@@ -88,7 +89,9 @@ public class CardTutorial : MonoBehaviour
     // Coroutine to show the second hint after a delay
     private IEnumerator ShowHintAfterDelay(GameObject hint, float delaySeconds)
     {
-        yield return new WaitForSeconds(delaySeconds); 
+        tutorialPanelEmpty.SetActive(true);
+        yield return new WaitForSeconds(delaySeconds);
+        tutorialPanelEmpty.SetActive(false);
         hint.SetActive(true);
     }
 

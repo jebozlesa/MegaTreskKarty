@@ -18,8 +18,19 @@ public class RecordHandler : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        bestRecord = playerDataHandler.GetPlayerIntData("RRrecord");
-        recordText.text = bestRecord.ToString();
+        GetMyBestScoreFromPlayFab("RoyalRumble", score =>
+        {
+            bestRecord = score;
+            recordText.text = bestRecord.ToString();
+        });
+    }
+
+    private void GetMyBestScoreFromPlayFab(string statisticName, System.Action<int> onScoreReceived)
+    {
+        playFabManager.GetMyBestScore(statisticName, score =>
+        {
+            onScoreReceived?.Invoke(score);
+        });
     }
 
     public IEnumerator UpdateRecord(int enemyLevel)
@@ -31,7 +42,7 @@ public class RecordHandler : MonoBehaviour
             //yield return StartCoroutine(cardGenerator.AddRandomCard());
             bestRecord += 1;
             // Počkajte, kým sa dokončí metóda UpdatePlayerData
-            yield return StartCoroutine(playerDataHandler.UpdatePlayerData("RRrecord", bestRecord));
+            SendNewRecordToPlayFab(enemyLevel);
             recordText.text = bestRecord.ToString();
             if (enemyLevel > 0)
             {

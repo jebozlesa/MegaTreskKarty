@@ -129,6 +129,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     private int selectedAttackId = -1;
     private int selectedOriginalAttackId = -1;
+    public PlayFabAlbumCardManager playFabAlbumCardManager;
 
     string PlayFabId;
 
@@ -168,7 +169,6 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         changeButton.onClick.AddListener(ShowAttackList);
         //attackListContainer.gameObject.SetActive(false);
 
-        //cardTutorialObject = GameObject.Find("CardTutorial"); // Nájdenie objektu s názvom "CardTutorial" na scéne
     }
 
     public void Initialize(GameObject deckPanelReference)
@@ -225,21 +225,72 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         }
     }
 
-    public void OnChangeAttackClick()       //TODO  opravit
+    public void OnChangeAttackClick()
     {
         if (selectedAttackId != -1 && selectedOriginalAttackId != -1)
         {
-            //ChangeAttackInDatabase(selectedAttackId, selectedOriginalAttackId, cardId);
-            selectedAttackId = -1;
-            selectedOriginalAttackId = -1;
+            playFabAlbumCardManager.UpdateCardAttack(cardId, selectedOriginalAttackId, selectedAttackId, (success) =>
+            {
+                if (success)
+                {
+                    Debug.Log("Útok bol zmenený");
+                    UpdateCardUI(selectedOriginalAttackId, selectedAttackId);
+                    selectedAttackId = -1;
+                    selectedOriginalAttackId = -1;
+                }
+                else
+                {
+                    Debug.LogError("Nepodarilo sa zmeniť útok");
+                }
+            });
             attackListContainer.gameObject.SetActive(false);
         }
+    }
+
+    private void UpdateCardUI(int originalAttackID, int newAttackValue)
+    {
+        Debug.Log("UpdateCardUI " + originalAttackID + " " + newAttackValue);
+        // Zistite, ktorý útok sa má aktualizovať na základe ID útoku
+        if (attack1 == originalAttackID)
+        {
+            attack1 = newAttackValue;
+            if (currentAttackIndex == 1)
+                LoadAttackData(newAttackValue);
+            Debug.Log("Bingo 1");
+        }
+        else if (attack2 == originalAttackID)
+        {
+            attack2 = newAttackValue;
+            if (currentAttackIndex == 2)
+                LoadAttackData(newAttackValue);
+            Debug.Log("Bingo 2");
+        }
+        else if (attack3 == originalAttackID)
+        {
+            attack3 = newAttackValue;
+            if (currentAttackIndex == 3)
+                LoadAttackData(newAttackValue);
+            Debug.Log("Bingo 3");
+        }
+        else if (attack4 == originalAttackID)
+        {
+            attack4 = newAttackValue;
+            if (currentAttackIndex == 4)
+                LoadAttackData(newAttackValue);
+            Debug.Log("Bingo 4");
+        }
+        else
+        {
+            Debug.LogWarning("Nebolo možné nájsť útok s daným ID na karte pre aktualizáciu");
+        }
+
     }
 
     public void SelectAttack(int newAttackId, int originalAttackId)
     {
         selectedAttackId = newAttackId;
         selectedOriginalAttackId = originalAttackId;
+        Debug.Log($"SelectAttack: {newAttackId} -> {originalAttackId}");
     }
 
     public void ChangeAttackInDatabase(int newAttackId, int originalAttackId, int cardId)

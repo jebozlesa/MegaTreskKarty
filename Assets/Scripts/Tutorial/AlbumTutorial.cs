@@ -7,6 +7,7 @@ public class AlbumTutorial : MonoBehaviour
 {
     public GameObject tutorialPanelHint1;
     public GameObject tutorialPanelHint2;
+    public GameObject tutorialPanelEmpty;
 
     // Start is called before the first frame update
     void Start()
@@ -41,7 +42,9 @@ public class AlbumTutorial : MonoBehaviour
     // Coroutine to show the second hint after a delay
     private IEnumerator ShowHintAfterDelay(GameObject hint)
     {
+        tutorialPanelEmpty.SetActive(true);
         yield return new WaitForSeconds(1f); // Wait for 1 second
+        tutorialPanelEmpty.SetActive(false);
         hint.SetActive(true);
     }
 }

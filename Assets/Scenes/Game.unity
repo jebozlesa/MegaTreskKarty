@@ -5202,6 +5202,10 @@ PrefabInstance:
       propertyPath: canvas
       value: 
       objectReference: {fileID: 575752764}
+    - target: {fileID: 161529065127599152, guid: 38c98389cc38bf04caf7d3a4b81478ce, type: 3}
+      propertyPath: displayBlock
+      value: 
+      objectReference: {fileID: 3017889297445996947, guid: 99cd38ef5749802439884c9c29ae6576, type: 3}
     - target: {fileID: 161529065127599153, guid: 38c98389cc38bf04caf7d3a4b81478ce, type: 3}
       propertyPath: m_RootOrder
       value: 6

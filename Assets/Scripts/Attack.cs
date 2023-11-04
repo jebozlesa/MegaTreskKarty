@@ -1891,7 +1891,7 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Jujutsu"));
         yield return StartCoroutine(attackAnimations.PlayJujutsuAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(attacker.attack + attacker.knowledge - (receiver.defense + 3));
-        if (Random.value <= 0.3f) receiver.HandleDefense(2);//critical hit
+        if (Random.value <= 0.3f) receiver.HandleDefense(-2);//critical hit
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s Jujutsu Takedown"));
         Debug.Log(attacker.cardName + " -> Jujutsu => " + receiver.cardName);
     }

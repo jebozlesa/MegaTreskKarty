@@ -2788,6 +2788,7 @@ MonoBehaviour:
   attackListContainer: {fileID: 177257748}
   changeButton: {fileID: 5584801138109163951}
   attackListController: {fileID: 3954495145577202541}
+  playFabAlbumCardManager: {fileID: 946231289398239706, guid: 88eaf644aa09f74438d827a5f2207f88, type: 3}
 --- !u!114 &7714274170560113377
 MonoBehaviour:
   m_ObjectHideFlags: 0
