@@ -8,8 +8,6 @@ public class DualMoveImageAnimation : MonoBehaviour
 
     public IEnumerator StartAnimation(Sprite sprite1, Sprite sprite2, Transform startPoint, Transform endPoint, Vector2 imageSize, float duration, AudioClip startSound, float switchRatio = 0.5f, float switchDelay = 0.2f, float initialRotation = 0f, float finalRotation = 0f, bool rotateTowardsTarget = true)
     {
-        
-
         // Ak existuje zvuk pre začiatok, prehrať ho
         if (startSound != null)
         {
@@ -46,23 +44,23 @@ public class DualMoveImageAnimation : MonoBehaviour
             imageObject2.transform.up = endPoint.position - startPoint.position;
         }
 
-        // Pridanie dodatočnej rotácie
-        imageObject1.transform.rotation *= Quaternion.Euler(0, 0, initialRotation);
-        imageObject2.transform.rotation *= Quaternion.Euler(0, 0, initialRotation);
+        // Pridanie počiatočnej rotácie
+        imageObject1.transform.rotation = Quaternion.Euler(0, 0, initialRotation);
+        imageObject2.transform.rotation = Quaternion.Euler(0, 0, initialRotation);
 
         // Spustenie animácie
-        yield return StartCoroutine(AnimateMoveAndSwitch(imageObject1, imageObject2, startPoint, endPoint, duration, switchRatio, switchDelay, finalRotation));
+        yield return StartCoroutine(AnimateMoveAndSwitch(imageObject1, imageObject2, startPoint, endPoint, duration, switchRatio, switchDelay, initialRotation, finalRotation));
 
         // Zničenie obrázkov po skončení animácie
         Destroy(imageObject1);
         Destroy(imageObject2);
     }
 
-    private IEnumerator AnimateMoveAndSwitch(GameObject image1, GameObject image2, Transform startPoint, Transform endPoint, float duration, float switchRatio, float switchDelay, float finalRotation)
+    private IEnumerator AnimateMoveAndSwitch(GameObject image1, GameObject image2, Transform startPoint, Transform endPoint, float duration, float switchRatio, float switchDelay, float initialRotation, float finalRotationDifference)
     {
         float elapsedTime = 0;
         Vector3 startingPos = startPoint.position;
-        float startingRotationAngle = image1.transform.eulerAngles.z;
+        float finalRotation = initialRotation + finalRotationDifference;
 
         float switchStart = duration * (switchRatio - switchDelay);
         float switchEnd = duration * (switchRatio + switchDelay);
@@ -77,7 +75,7 @@ public class DualMoveImageAnimation : MonoBehaviour
             image2.transform.position = currentPos;
 
             // Rotácia obrázkov
-            float currentRotationAngle = Mathf.Lerp(startingRotationAngle, finalRotation, progress);
+            float currentRotationAngle = Mathf.Lerp(initialRotation, finalRotation, progress);
             image1.transform.eulerAngles = new Vector3(0, 0, currentRotationAngle);
             image2.transform.eulerAngles = new Vector3(0, 0, currentRotationAngle);
 
@@ -103,5 +101,4 @@ public class DualMoveImageAnimation : MonoBehaviour
         image1.transform.eulerAngles = new Vector3(0, 0, finalRotation);
         image2.transform.eulerAngles = new Vector3(0, 0, finalRotation);
     }
-
 }

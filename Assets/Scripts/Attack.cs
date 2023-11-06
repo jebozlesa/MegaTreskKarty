@@ -816,7 +816,7 @@ public class Attack : MonoBehaviour
 
         if (Random.value <= (int)System.Math.Ceiling((double)receiver.strength / 20))
         {
-            StartCoroutine(attackAnimations.PlayAnimationTerrified(receiver.transform));        //ANIMACIA
+            yield return StartCoroutine(attackAnimations.PlayAnimationTerrified(receiver.transform));        //ANIMACIA
             receiver.HandleStrength((-1) - (attacker.attack / 7));
             receiver.HandleAttack((-1) - (attacker.attack / 7));
             receiver.HandleDefense(1);
@@ -1733,7 +1733,7 @@ public class Attack : MonoBehaviour
         if (receiver.CheckEffect(19) == false)
         {
 
-            StartCoroutine(attackAnimations.PlayFearStartAnimation(receiver.transform));        //ANIMACIA
+            yield return StartCoroutine(attackAnimations.PlayFearStartAnimation(receiver.transform));        //ANIMACIA
             StartCoroutine(receiver.AddEffect(19, 2));//fear
             receiver.HandleStrength(-6);
             receiver.HandleAttack(-5);

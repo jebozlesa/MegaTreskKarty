@@ -403,8 +403,14 @@ public class CardGenerator : MonoBehaviour
 
             string json = ConvertDeckToJson(newDeck);
 
-            // Aktualizácia údajov na PlayFab s informáciami o novom balíčku
-            // ...
+            PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
+            {
+                string existingDataJson = GetExistingDeckDataJson(result);
+                Dictionary<string, Deck> data = AddDeckToExistingData(existingDataJson, newDeck);
+                string updatedJson = ConvertUpdatedDeckDataToJson(data);
+
+                UpdateDeckDataInPlayFab(updatedJson);
+            }, error => Debug.LogError(error.GenerateErrorReport()));
 
             SceneManager.LoadScene("Cards");
         }
