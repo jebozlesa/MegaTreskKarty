@@ -17,21 +17,20 @@ public class Album : MonoBehaviour
     public GameObject zoomedCardHolder;
     public AttackDescriptions attackDescriptions;
     public GameObject content;
-
     public GameObject tutorial;
-
     public GameObject cardTutorial;
-
     private string connectionString;
-
     public GameObject deckPanel;
-
     public static bool IsLoggedIn = false;
+    private int maxLoginAttempts = 10;
+    private int loginAttemptCount = 0;
+    private float retryDelaySeconds = 0.5f;
 
     void Start()
     {
         Debug.Log("Album.Start  -- Start");
 
+        StartLoginProcess();
         if (PlayerPrefs.GetInt("HasCompletedTutorialAlbum", 0) == 0) { tutorial.SetActive(true); }
 
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
@@ -45,6 +44,48 @@ public class Album : MonoBehaviour
         else
         {
             Debug.LogError("Hráč nie je prihlásený!");
+        }
+    }
+
+    public void StartLoginProcess()
+    {
+        if (!IsLoggedIn)
+        {
+            StartCoroutine(LoginPlayFabWithRetry());
+        }
+    }
+
+    private IEnumerator LoginPlayFabWithRetry()
+    {
+        while (!IsLoggedIn && loginAttemptCount < maxLoginAttempts)
+        {
+            loginAttemptCount++;
+            Debug.Log($"Pokus o přihlášení číslo {loginAttemptCount}.");
+            LoginPlayFab();
+
+            // Počkejte na výsledek přihlášení nebo na vypršení času
+            float startTime = Time.time;
+            while (Time.time - startTime < retryDelaySeconds)
+            {
+                if (IsLoggedIn) yield break;
+                yield return null;
+            }
+
+            if (IsLoggedIn)
+            {
+                Debug.Log("Úspěšně přihlášen do PlayFab!");
+                yield break; // Pokud je přihlášení úspěšné, ukončíme coroutine
+            }
+            else if (loginAttemptCount < maxLoginAttempts)
+            {
+                Debug.LogWarning($"Přihlášení selhalo, zkoušíme znovu za {retryDelaySeconds} sekund...");
+                yield return new WaitForSeconds(retryDelaySeconds);
+            }
+        }
+
+        if (!IsLoggedIn)
+        {
+            Debug.LogError("Nepodařilo se přihlásit do PlayFab po opakovaných pokusech.");
         }
     }
 
