@@ -2006,7 +2006,7 @@ public class AttackAnimations : MonoBehaviour
                 sprite: animationImageSprite,
                 startPoint: attacker,
                 endPoint: receiver,
-                imageSize: new Vector2(300f, 300f),
+                imageSize: new Vector2(350f, 350f),
                 duration: 0.5f,
                 startSound: startSound,
                 initialRotation: 90f,

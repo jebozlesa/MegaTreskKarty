@@ -627,7 +627,7 @@ public class FightSystem : MonoBehaviour
             player.AddCardToHand(novaKarta.GetComponent<Kard>());
 
             iter += 1;
-            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.05f);
         }
     }
 

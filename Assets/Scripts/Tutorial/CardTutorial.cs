@@ -47,7 +47,7 @@ public class CardTutorial : MonoBehaviour
     {
         Debug.Log("CardTutorial.CloseFirstHint() ===> START");
         tutorialPanelHint1.SetActive(false);
-        StartCoroutine(ShowHintAfterDelay(tutorialPanelHint2, 0f));
+        StartCoroutine(ShowHintAfterDelayBlock(tutorialPanelHint2, 0f));
     }
 
     public void CloseSecondHint()
@@ -61,14 +61,14 @@ public class CardTutorial : MonoBehaviour
     {
         Debug.Log("CardTutorial.CloseThirdHint() ===> START");
         tutorialPanelHint3.SetActive(false);
-        StartCoroutine(ShowHintAfterDelay(tutorialPanelHint4, 0f));
+        StartCoroutine(ShowHintAfterDelayBlock(tutorialPanelHint4, 0f));
     }
 
     public void CloseFourthHint()
     {
         Debug.Log("CardTutorial.CloseFourthHint() ===> START");
         tutorialPanelHint4.SetActive(false);
-        StartCoroutine(ShowHintAfterDelay(tutorialPanelHint5, 0f));
+        StartCoroutine(ShowHintAfterDelayBlock(tutorialPanelHint5, 0f));
     }
 
     public void CloseFifthHint()
@@ -87,11 +87,17 @@ public class CardTutorial : MonoBehaviour
     }
 
     // Coroutine to show the second hint after a delay
-    private IEnumerator ShowHintAfterDelay(GameObject hint, float delaySeconds)
+    private IEnumerator ShowHintAfterDelayBlock(GameObject hint, float delaySeconds)
     {
         tutorialPanelEmpty.SetActive(true);
         yield return new WaitForSeconds(delaySeconds);
         tutorialPanelEmpty.SetActive(false);
+        hint.SetActive(true);
+    }
+
+    private IEnumerator ShowHintAfterDelay(GameObject hint, float delaySeconds)
+    {
+        yield return new WaitForSeconds(delaySeconds);
         hint.SetActive(true);
     }
 

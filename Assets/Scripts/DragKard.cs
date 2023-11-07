@@ -68,11 +68,11 @@ public class DragKard : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDrag
     {
         // Získajte kolíder karty
         Collider2D cardCollider = GetComponent<Collider2D>();
-        
+
         // Získajte kolíder bojového poľa
         Collider2D battleAreaCollider = kard.battleArea.GetComponent<Collider2D>();
 
         // Ak sa kolíder karty prekrýva s kolíderom bojového poľa, vráťte true
         return cardCollider.bounds.Intersects(battleAreaCollider.bounds);
     }
-    }
+}
