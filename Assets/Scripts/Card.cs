@@ -8,6 +8,7 @@ using Mono.Data.Sqlite;
 using System.Data;
 using PlayFab;
 using PlayFab.ClientModels;
+using System.Linq;
 
 public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
@@ -56,6 +57,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     public Image cardImage;
     public Image cardImageAttr;
     public Image cardImageDesc;
+    public Image cardImageInfo;
     public Image cardImageAttack;
     public Sprite cardSprite;
 
@@ -85,6 +87,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     public GameObject backSideAttributes;
     public GameObject backSideDescription;
     public GameObject backSideAttack;
+    public GameObject backSideInfo;
 
     public TMP_Text nameTextAttr;
     public TMP_Text expText;
@@ -98,8 +101,13 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     public TMP_Text storyText;
 
-    public GameObject notsureGO;//tie kokotiny co vyskakuju ked dostane damage
-    public TMP_Text notsureText;
+    public TMP_Text cardIdText;
+    public TMP_Text seriesIdText;
+    public TMP_Text styleIdText;
+    public TMP_Text creationDateText;
+
+    public Image recycleButtonImg;
+    public TMP_Text recycleButtonText;
 
     Color32 color_green = new Color32(0, 255, 0, 255);
     Color32 color_red = new Color32(255, 0, 0, 255);
@@ -131,6 +139,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     private int selectedOriginalAttackId = -1;
     public PlayFabAlbumCardManager playFabAlbumCardManager;
 
+
     string PlayFabId;
 
     //public GameObject tutorial;
@@ -158,6 +167,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         cardImage.sprite = Resources.Load<Sprite>(imagePath);
         cardImageAttr.sprite = Resources.Load<Sprite>(imagePath + "_back");
         cardImageDesc.sprite = Resources.Load<Sprite>(imagePath + "_back");
+        cardImageInfo.sprite = Resources.Load<Sprite>(imagePath + "_back");
         cardImageAttack.sprite = Resources.Load<Sprite>(imagePath + "_back");
 
         background.GetComponent<Image>().color = color;
@@ -200,6 +210,18 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         knoText.color = color;
         chaText.color = color;
 
+        cardIdText.text = cardId;
+        styleIdText.text = "Style: " + styleId;
+
+
+        cardIdText.color = color;
+        seriesIdText.color = color;
+        styleIdText.color = color;
+        creationDateText.color = color;
+
+        recycleButtonImg.color = ChangeAlpha(color, 80);
+        recycleButtonText.color = color;
+
         storyText.color = color;
 
         attNameText.color = color;
@@ -210,6 +232,98 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         changeButtonImg.color = ChangeAlpha(color, 80);
         changeButtonText.color = color;
 
+    }
+
+    // Metóda na odstránenie karty
+    public void RemoveCard()
+    {
+        // Najskôr získame údaje o balíčkoch
+        PlayFabClientAPI.GetUserData(new GetUserDataRequest(), deckResult =>
+        {
+            var decksDataJson = GetExistingDeckDataJson(deckResult);
+            var decks = ConvertJsonToDeckData(decksDataJson);
+
+            // Kontrola, či je karta v niektorom z balíčkov
+            bool isCardInDeck = decks.Any(deck => IsCardInDeck(deck.Value, cardId));
+
+            if (!isCardInDeck)
+            {
+                // Karta nie je v balíčku, môžeme ju odstrániť
+                GetPlayerCards(cardsData =>
+                {
+                    if (cardsData != null)
+                    {
+                        cardsData.cards.RemoveAll(card => card.CardID == cardId);
+                        SavePlayerCards(cardsData);
+                    }
+                });
+                Destroy(gameObject);
+                StartCoroutine(AddCurrency(1));
+            }
+            else
+            {
+                Debug.Log("Kartu nie je možné odstrániť, pretože je súčasťou balíčka.");
+                CardTutorial.Instance.ShowBlockSellDeckCard();
+                // Tu by ste mali zvážiť ďalšie kroky, ako napríklad informovať hráča
+            }
+        }, error => Debug.LogError(error.GenerateErrorReport()));
+    }
+
+    private bool IsCardInDeck(Deck deck, string cardId)
+    {
+        return deck.Card1 == cardId || deck.Card2 == cardId || deck.Card3 == cardId ||
+            deck.Card4 == cardId || deck.Card5 == cardId;
+    }
+
+
+    // Načítanie dát hráča
+    private void GetPlayerCards(System.Action<PlayerCardsData> callback)
+    {
+        PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
+        {
+            if (result.Data != null && result.Data.ContainsKey("PlayerCards"))
+            {
+                string jsonData = result.Data["PlayerCards"].Value;
+                PlayerCardsData cardsData = JsonUtility.FromJson<PlayerCardsData>(jsonData);
+                callback(cardsData);
+            }
+        }, error => Debug.LogError(error.GenerateErrorReport()));
+    }
+
+    // Uloženie dát hráča
+    private void SavePlayerCards(PlayerCardsData cardsData)
+    {
+        string jsonData = JsonUtility.ToJson(cardsData);
+        var updateData = new UpdateUserDataRequest
+        {
+            Data = new Dictionary<string, string>
+            {
+                {"PlayerCards", jsonData}
+            }
+        };
+        PlayFabClientAPI.UpdateUserData(updateData, result => Debug.Log("Card data updated successfully."), error => Debug.LogError(error.GenerateErrorReport()));
+    }
+
+    private IEnumerator AddCurrency(int amount)
+    {
+        var request = new AddUserVirtualCurrencyRequest
+        {
+            Amount = amount,
+            VirtualCurrency = "SK"
+        };
+        bool isCompleted = false;
+
+        PlayFabClientAPI.AddUserVirtualCurrency(request, result =>
+        {
+            Debug.Log("Úspešne pridaná mena. Nový zostatok: " + result.Balance);
+            isCompleted = true;
+        }, error =>
+        {
+            Debug.LogError("Chyba pri pridávaní meny: " + error.GenerateErrorReport());
+            isCompleted = true;
+        });
+
+        yield return new WaitUntil(() => isCompleted);
     }
 
     public bool ContainsAttack(int attackId)
@@ -292,76 +406,6 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         selectedOriginalAttackId = originalAttackId;
         Debug.Log($"SelectAttack: {newAttackId} -> {originalAttackId}");
     }
-
-    public void ChangeAttackInDatabase(int newAttackId, int originalAttackId, int cardId)
-    {
-        string connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
-        IDbConnection dbConnection = new SqliteConnection(connectionString);
-        dbConnection.Open();
-
-        Debug.Log($"ChangeAttackInDatabase: {newAttackId} -> {originalAttackId}");
-
-        // Nájdite stĺpec, ktorý treba aktualizovať
-        string columnName = "";
-        for (int i = 1; i <= 4; i++)
-        {
-            IDbCommand dbCommand = dbConnection.CreateCommand();
-            dbCommand.CommandText = $"SELECT Attack{i} FROM PlayerCards WHERE CardID = {cardId}";
-            IDataReader reader = dbCommand.ExecuteReader();
-            if (reader.Read() && reader.GetInt32(0) == originalAttackId)
-            {
-                columnName = $"Attack{i}";
-                reader.Close();
-                dbCommand.Dispose();
-                break;
-            }
-            reader.Close();
-            dbCommand.Dispose();
-        }
-
-        // Aktualizujte stĺpec s novým ID útoku
-        if (!string.IsNullOrEmpty(columnName))
-        {
-            IDbCommand dbCommand = dbConnection.CreateCommand();
-            dbCommand.CommandText = $"UPDATE PlayerCards SET {columnName} = {newAttackId} WHERE CardID = {cardId}";
-            int rowsAffected = dbCommand.ExecuteNonQuery();
-            Debug.Log($"Rows affected: {rowsAffected}");
-            dbCommand.Dispose();
-
-            // Po úspešnej zmene útoku v databáze aktualizujte útok na karte
-            switch (columnName)
-            {
-                case "Attack1":
-                    attack1 = newAttackId;
-                    if (currentAttackIndex == 1)
-                        LoadAttackData(newAttackId);
-                    break;
-                case "Attack2":
-                    attack2 = newAttackId;
-                    if (currentAttackIndex == 2)
-                        LoadAttackData(newAttackId);
-                    break;
-                case "Attack3":
-                    attack3 = newAttackId;
-                    if (currentAttackIndex == 3)
-                        LoadAttackData(newAttackId);
-                    break;
-                case "Attack4":
-                    attack4 = newAttackId;
-                    if (currentAttackIndex == 4)
-                        LoadAttackData(newAttackId);
-                    break;
-            }
-        }
-        else
-        {
-            Debug.LogWarning("Could not find the column to update.");
-        }
-
-        dbConnection.Close();
-    }
-
-
 
     public void ShowAttackList()
     {
@@ -628,21 +672,26 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             if (frontSide.activeSelf)
             {
                 frontSide.SetActive(false);
+                backSideInfo.SetActive(true);
+            }
+            else if (backSideInfo.activeSelf)
+            {
+                backSideInfo.SetActive(false);
                 backSideDescription.SetActive(true);
             }
             else if (backSideDescription.activeSelf)
             {
-                backSideAttributes.SetActive(true);
                 backSideDescription.SetActive(false);
+                backSideAttributes.SetActive(true);
             }
             else if (backSideAttributes.activeSelf)
             {
-                frontSide.SetActive(true);
                 backSideAttributes.SetActive(false);
+                frontSide.SetActive(true);
             }
             if (backSideAttack.activeSelf)
             {
-                ChangeAttack(-1); // Zmena útoku pri swipovaní doľava
+                ChangeAttack(-1);
             }
         }
     }
@@ -664,15 +713,21 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             }
             else if (backSideDescription.activeSelf)
             {
-                frontSide.SetActive(true);
                 backSideDescription.SetActive(false);
+                backSideInfo.SetActive(true);
+            }
+            else if (backSideInfo.activeSelf)
+            {
+                backSideInfo.SetActive(false);
+                frontSide.SetActive(true);
             }
             if (backSideAttack.activeSelf)
             {
-                ChangeAttack(1); // Zmena útoku pri swipovaní doprava
+                ChangeAttack(1);
             }
         }
     }
+
 
 
     public void OnSwipeUp()
@@ -685,6 +740,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             frontSide.SetActive(false);
             backSideAttributes.SetActive(false);
             backSideDescription.SetActive(false);
+            backSideInfo.SetActive(false);
         }
     }
 
@@ -782,6 +838,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             backSideAttributes.SetActive(false);
             backSideDescription.SetActive(false);
             backSideAttack.SetActive(false);
+            backSideInfo.SetActive(false);
             attackListContainer.gameObject.SetActive(false);
 
             // Hide the deck panel

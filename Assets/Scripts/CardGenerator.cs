@@ -176,7 +176,9 @@ public class CardGenerator : MonoBehaviour
 
         displayBlock.SetActive(false);
 
-        if (PlayerPrefs.GetInt("HasCompletedTutorial", 0) == 0)
+        Debug.Log("HasCompletedTutorialMarketplace: " + PlayerPrefs.GetInt("HasCompletedTutorialMarketplace", 0));
+
+        if (PlayerPrefs.GetInt("HasCompletedTutorialMarketplace", 0) == 0)
         {
             Debug.Log("Generated cards: " + string.Join(", ", generatedCards.Select(c => c.CardID)));
             yield return StartCoroutine(CreateFirstDeck(generatedCards)); // Vytvorte prvý balíček

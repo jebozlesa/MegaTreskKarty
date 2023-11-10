@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using PlayFab;
 using PlayFab.ClientModels;
+using TMPro;
 
 public class Album : MonoBehaviour
 {
@@ -25,6 +26,7 @@ public class Album : MonoBehaviour
     private int maxLoginAttempts = 10;
     private int loginAttemptCount = 0;
     private float retryDelaySeconds = 0.5f;
+    public TMP_Text loveValue;
 
     void Start()
     {
@@ -45,6 +47,7 @@ public class Album : MonoBehaviour
         {
             Debug.LogError("Hráč nie je prihlásený!");
         }
+        StartCoroutine(GetPlayerCurrencyBalance());
     }
 
     public void StartLoginProcess()
@@ -107,6 +110,7 @@ public class Album : MonoBehaviour
         //        loadingImage.SetActive(false);
     }
 
+
     void OnSuccess(LoginResult result)
     {
         Debug.Log("Album.OnSuccess  -- Start");
@@ -147,6 +151,32 @@ public class Album : MonoBehaviour
         dbConnection.Close();
 
         return cardStory;
+    }
+
+    private IEnumerator GetPlayerCurrencyBalance()
+    {
+        var request = new GetUserInventoryRequest();
+        bool isCompleted = false;
+
+        PlayFabClientAPI.GetUserInventory(request, result =>
+        {
+            if (result.VirtualCurrency.ContainsKey("SK"))
+            {
+                Debug.Log("Množstvo meny SK: " + result.VirtualCurrency["SK"]);
+                loveValue.text = result.VirtualCurrency["SK"].ToString();
+            }
+            else
+            {
+                Debug.Log("Hráč nemá žiadnu menu SK na účte.");
+            }
+            isCompleted = true;
+        }, error =>
+        {
+            Debug.LogError("Chyba pri získavaní zostatku meny: " + error.GenerateErrorReport());
+            isCompleted = true;
+        });
+
+        yield return new WaitUntil(() => isCompleted);
     }
 
 

@@ -15,9 +15,21 @@ public class CardTutorial : MonoBehaviour
     public GameObject tutorialPanelHint6;
     public GameObject tutorialPanelEmpty;
 
+    public GameObject blockSellDeckCard;
+
+    public static CardTutorial Instance { get; private set; }
+
     private void Awake()
     {
-        instance = this;
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
         gameObject.SetActive(false); // Deaktivuje tento GameObject hneď po inicializácii
     }
 
@@ -41,6 +53,15 @@ public class CardTutorial : MonoBehaviour
         GameObject instance = Instantiate(prefab, transform);
         //     instance.transform.localPosition = Vector3.zero;
         return instance;
+    }
+
+    public void ShowBlockSellDeckCard()
+    {
+        blockSellDeckCard.SetActive(true);
+    }
+    public void HideBlockSellDeckCard()
+    {
+        blockSellDeckCard.SetActive(false);
     }
 
     public void CloseFirstHint()

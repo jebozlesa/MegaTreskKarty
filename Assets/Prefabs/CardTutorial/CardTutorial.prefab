@@ -50,18 +50,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96c7c1ef2f8a16468289dab947a8468, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tutorialPanelHint1: {fileID: 6123634181461667561, guid: 1a4273cc04b99e844917b6c05cd111db, type: 3}
-  tutorialPanelHint2: {fileID: 7886852760007016984, guid: d0d72fde0dc9c4c46ae4a478e11743d9, type: 3}
-  tutorialPanelHint3: {fileID: 7217924873163998880, guid: b92665d3494ffae4485f39a12f5d83d1, type: 3}
-  tutorialPanelHint4: {fileID: 837727569528965767, guid: f6b49228910855743a08cf63e917de91, type: 3}
-  tutorialPanelHint5: {fileID: 2262456143519159777, guid: 05871fac819fb984193cd938474dbaff, type: 3}
-  tutorialPanelHint6: {fileID: 8938701209917185066, guid: faad676889f510e40ab22097506ce20c, type: 3}
-  tutorialPanelHint1Object: {fileID: 0}
-  tutorialPanelHint2Object: {fileID: 0}
-  tutorialPanelHint3Object: {fileID: 0}
-  tutorialPanelHint4Object: {fileID: 0}
-  tutorialPanelHint5Object: {fileID: 0}
-  tutorialPanelHint6Object: {fileID: 0}
+  tutorialPanelHint1: {fileID: 0}
+  tutorialPanelHint2: {fileID: 0}
+  tutorialPanelHint3: {fileID: 0}
+  tutorialPanelHint4: {fileID: 0}
+  tutorialPanelHint5: {fileID: 0}
+  tutorialPanelHint6: {fileID: 0}
+  tutorialPanelEmpty: {fileID: 0}
+  blockSellDeckCard: {fileID: 0}
 --- !u!222 &3592284724824367551
 CanvasRenderer:
   m_ObjectHideFlags: 0
