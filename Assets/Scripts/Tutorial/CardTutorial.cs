@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -122,4 +123,8 @@ public class CardTutorial : MonoBehaviour
         hint.SetActive(true);
     }
 
+    public static implicit operator CardTutorial(AlbumLoveValue v)
+    {
+        throw new NotImplementedException();
+    }
 }

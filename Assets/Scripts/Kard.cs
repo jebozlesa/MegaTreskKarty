@@ -141,7 +141,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
     private void LoadCardData()
     {
-        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.LoadCardData => START");
+        //Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.LoadCardData => START");
 
         levelText.text = "lvl " + level;
     }
@@ -326,7 +326,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
     private PlayFabCardManager.CardData ConvertDictionaryToCardData(Dictionary<string, object> cardDataDictionary)
     {
-        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.PlayFabCardManager.CardData => START ");
+        //Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.PlayFabCardManager.CardData => START ");
 
         PlayFabCardManager.CardData cardData = new PlayFabCardManager.CardData();
         cardData.CardID = cardDataDictionary["StyleID"].ToString();

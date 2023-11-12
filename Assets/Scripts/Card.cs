@@ -257,8 +257,9 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
                         SavePlayerCards(cardsData);
                     }
                 });
-                Destroy(gameObject);
                 StartCoroutine(AddCurrency(1));
+                StartCoroutine(AlbumLoveValue.Instance.GetPlayerCurrencyBalance());
+                Destroy(gameObject);
             }
             else
             {
@@ -323,7 +324,10 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             isCompleted = true;
         });
 
+
         yield return new WaitUntil(() => isCompleted);
+
+        yield return StartCoroutine(AlbumLoveValue.Instance.GetPlayerCurrencyBalance());
     }
 
     public bool ContainsAttack(int attackId)

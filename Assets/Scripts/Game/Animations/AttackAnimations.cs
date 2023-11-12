@@ -67,7 +67,7 @@ public class AttackAnimations : MonoBehaviour
                 duration: 0.7f,
                 startSound: startSound,
                 initialRotation: 0f, // napr. -15 stupňov na začiatku
-                finalRotation: 0f     // napr. 15 stupňov na konci
+                finalRotation: 180f     // napr. 15 stupňov na konci
             )
         );
     }

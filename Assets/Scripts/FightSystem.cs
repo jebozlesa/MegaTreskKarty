@@ -63,6 +63,10 @@ public class FightSystem : MonoBehaviour
 
     public static bool IsLoggedIn = false;
 
+    private bool campaign = false;
+    private int plyerCardsUsage = 0;
+    int missionID = 0;
+
     void Start()
     {
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
@@ -115,22 +119,24 @@ public class FightSystem : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
-    IEnumerator SetupBattle(int missionID = 0)
+    IEnumerator SetupBattle(int missionIDinput = 0)
     {
+        missionID = missionIDinput;
         dialogText.text = "lets get ready for rumble!";
 
         yield return StartCoroutine(VytvorKartyZBalicka(hrac, player));
         yield return new WaitForSeconds(0.5f);
 
         if (missionID > 0)
+        {
+            campaign = true;
+            plyerCardsUsage = 2;
             yield return StartCoroutine(VytvorKartyAIMission(nepriatel, enemy, missionID));
+        }
         else
             yield return StartCoroutine(VytvorKartyAI(nepriatel, enemy));
 
         yield return new WaitForSeconds(1);
-        // player.PlayCard(player.hand[0],playerBoard);
-        // playerLifeBar.SetBar(player.cardInGame);
-        // player.cardInGame.isDragable = false;
 
         enemy.PlayCard(enemy.hand[0], enemyBoard);
         enemyLifeBar.SetBar(enemy.cardInGame);
@@ -142,7 +148,6 @@ public class FightSystem : MonoBehaviour
         playerLifeBar.SetBar(player.cardInGame);
         player.cardInGame.isDragable = false;
 
-        // yield return new WaitForSeconds(1f);
         Turn();
     }
 
@@ -313,8 +318,11 @@ public class FightSystem : MonoBehaviour
         if (enemy.cardInGame.health <= 0)
         {
             player.cardInGame.AddExperience(enemy.cardInGame.level);//exp
-            enemyLevel += 1;
-            yield return StartCoroutine(recordHandler.UpdateRecord(enemyLevel));
+            if (missionID == 0)
+            {
+                enemyLevel += 1;
+                yield return StartCoroutine(recordHandler.UpdateRecord(enemyLevel));
+            }
 
             enemy.RemoveCardFromBoard(enemy.cardInGame);
             state = FightState.ENEMYDEATH;
@@ -324,6 +332,10 @@ public class FightSystem : MonoBehaviour
             {
                 state = FightState.WON;
                 dialogText.text = "You won the game!";
+                if (missionID > 0)
+                {
+                    CampaignManager.Instance.IncreaseMission("bushido");
+                }
                 yield break;
             }
             enemy.PlayCard(enemy.hand[0], enemyBoard);
@@ -335,7 +347,7 @@ public class FightSystem : MonoBehaviour
             player.RemoveCardFromBoard(player.cardInGame);
             state = FightState.PLAYERDEATH;
             yield return new WaitForSeconds(0.5f);
-            if (player.hand.Count == 0)
+            if (player.hand.Count == plyerCardsUsage)
             {
                 state = FightState.LOST;
                 dialogText.text = "Loser you are!";
