@@ -176,13 +176,15 @@ public class CardGenerator : MonoBehaviour
 
         displayBlock.SetActive(false);
 
-        Debug.Log("HasCompletedTutorialMarketplace: " + PlayerPrefs.GetInt("HasCompletedTutorialMarketplace", 0));
+        Debug.Log("HasCompletedTutorialMarketplace pico: " + PlayerPrefs.GetInt("HasCompletedTutorialMarketplace", 0));
 
-        if (PlayerPrefs.GetInt("HasCompletedTutorialMarketplace", 0) == 0)
-        {
-            Debug.Log("Generated cards: " + string.Join(", ", generatedCards.Select(c => c.CardID)));
-            yield return StartCoroutine(CreateFirstDeck(generatedCards)); // Vytvorte prvý balíček
-        }
+
+        Debug.Log("Generated cards: " + string.Join(", ", generatedCards.Select(c => c.CardID)));
+        yield return StartCoroutine(CreateFirstDeck(generatedCards)); // Vytvorte prvý balíček
+
+
+        // PlayerPrefs.SetInt("HasCompletedTutorialMarketplace", 1);
+        // PlayerPrefs.Save();
     }
 
     private IEnumerator GenerateCard(int cardId, Action<GeneratedCard> onCardCreated)
@@ -282,7 +284,7 @@ public class CardGenerator : MonoBehaviour
         dbConnection.Close();
     }
 
-    private GeneratedCard CreateCardFromDatabase(IDataReader reader)
+    private GeneratedCard CreateCardFromDatabaseOriginal(IDataReader reader)
     {
         string[] colorComponents = reader.GetString(10).Split(';');
         Color32 color = new Color32(byte.Parse(colorComponents[0]), byte.Parse(colorComponents[1]), byte.Parse(colorComponents[2]), 255);
@@ -311,6 +313,90 @@ public class CardGenerator : MonoBehaviour
 
         return card;
     }
+
+    private GeneratedCard CreateCardFromDatabase(IDataReader reader)
+    {
+        string[] colorComponents = reader.GetString(10).Split(';');
+        Color32 color = new Color32(byte.Parse(colorComponents[0]), byte.Parse(colorComponents[1]), byte.Parse(colorComponents[2]), 255);
+
+        GeneratedCard card = new GeneratedCard
+        {
+            CardID = Guid.NewGuid().ToString(),
+            StyleID = reader.GetInt32(0),
+            PersonName = reader.GetString(1),
+            Level = 1,
+            Experience = 0,
+            Health = reader.GetInt32(2),
+            Strength = reader.GetInt32(3),
+            Speed = reader.GetInt32(4),
+            Attack = reader.GetInt32(5),
+            Defense = reader.GetInt32(6),
+            Knowledge = reader.GetInt32(7),
+            Charisma = reader.GetInt32(8),
+            Color = Array.ConvertAll(reader.GetString(10).Split(';'), int.Parse),
+            CardPicture = reader.GetString(15)
+        };
+
+        List<int> availableAttacks = GetAttacksForCharacter(card.StyleID);
+        List<int> selectedAttacks = SelectRandomAttacks(availableAttacks, 4);
+
+        card.Attack1 = selectedAttacks[0];
+        card.Attack2 = selectedAttacks[1];
+        card.Attack3 = selectedAttacks[2];
+        card.Attack4 = selectedAttacks[3];
+
+        return card;
+    }
+
+    private List<int> GetAttacksForCharacter(int styleID)
+    {
+        List<int> attacks = new List<int>();
+        IDbConnection dbConnection = new SqliteConnection(connectionString);
+        dbConnection.Open();
+
+        try
+        {
+            IDbCommand dbCommand = dbConnection.CreateCommand();
+            dbCommand.CommandText = $"SELECT AttackID FROM CharacterAttacks WHERE CharacterID = {styleID}";
+            IDataReader reader = dbCommand.ExecuteReader();
+
+            while (reader.Read())
+            {
+                attacks.Add(reader.GetInt32(0));
+            }
+
+            reader.Close();
+            dbCommand.Dispose();
+        }
+        finally
+        {
+            dbConnection.Close();
+        }
+
+        return attacks;
+    }
+
+
+    private List<int> SelectRandomAttacks(List<int> attacks, int count)
+    {
+        List<int> selectedAttacks = new List<int>();
+        System.Random random = new System.Random();
+
+        while (selectedAttacks.Count < count)
+        {
+            int randomIndex = random.Next(attacks.Count);
+            int selectedAttack = attacks[randomIndex];
+
+            if (!selectedAttacks.Contains(selectedAttack))
+            {
+                selectedAttacks.Add(selectedAttack);
+            }
+        }
+
+        return selectedAttacks;
+    }
+
+
 
     private string ConvertCardToJson(GeneratedCard card)
     {

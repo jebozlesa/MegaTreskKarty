@@ -810,6 +810,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         Debug.Log("Card.ZoomIn() ===> START");
         if (!isZoomed)
         {
+            Debug.Log("Card.ZoomIn() ===> 1");
             originalParent = transform.parent.gameObject;
             originalSiblingIndex = transform.GetSiblingIndex();
             transform.SetParent(zoomedCardHolder.transform);
@@ -818,15 +819,20 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             transform.SetSiblingIndex(transform.parent.childCount - 1);
             currentZoomedCard = this;
             isZoomed = true;
+            Debug.Log("Card.ZoomIn() ===> 2");
 
             // Show the deck panel
             deckPanel.SetActive(true);
 
+            Debug.Log("Card.ZoomIn() ===> 3");
             if (PlayerPrefs.GetInt("HasCompletedTutorialCard", 0) == 0)
             {
+                Debug.Log("Card.ZoomIn() ===> 4");
                 CardTutorial.instance.gameObject.SetActive(true);
             }
+            Debug.Log("Card.ZoomIn() ===> 5");
         }
+        Debug.Log("Card.ZoomIn() ===> KONEC");
     }
 
     public void ZoomOut()

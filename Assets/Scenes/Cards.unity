@@ -1021,7 +1021,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseThirdHint
         m_Mode: 1
@@ -1248,7 +1248,7 @@ MonoBehaviour:
   attackDescriptions: {fileID: 372354989}
   content: {fileID: 1725803853}
   tutorial: {fileID: 1074998130}
-  cardTutorial: {fileID: 1832640061}
+  cardTutorial: {fileID: 988837063977566641}
   deckPanel: {fileID: 964759638}
   loveValue: {fileID: 751983039}
 --- !u!1 &469561675
@@ -1401,7 +1401,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseFifthHint
         m_Mode: 1
@@ -1534,7 +1534,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseFourthHint
         m_Mode: 1
@@ -1705,7 +1705,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseFifthHint
         m_Mode: 1
@@ -1909,7 +1909,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseFirstHint
         m_Mode: 1
@@ -2448,7 +2448,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseFourthHint
         m_Mode: 1
@@ -2843,17 +2843,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 885430074}
   m_CullTransparentMesh: 1
---- !u!114 &910838159 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8760653179643815726, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-  m_PrefabInstance: {fileID: 1832640060}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1832640061}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e96c7c1ef2f8a16468289dab947a8468, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &964759638
 GameObject:
   m_ObjectHideFlags: 0
@@ -3075,7 +3064,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseSixthHint
         m_Mode: 1
@@ -3653,7 +3642,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseFirstHint
         m_Mode: 1
@@ -4469,140 +4458,6 @@ MonoBehaviour:
   onButtonClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!1001 &1832640060
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 988837065773047693, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_Name
-      value: CardTutorial
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_Pivot.x
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_Pivot.y
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_RootOrder
-      value: 7
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_AnchorMax.x
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_AnchorMin.x
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_AnchorMin.y
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -15.447566
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4924064134755572609, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8760653179643815726, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: blockSellDeckCard
-      value: 
-      objectReference: {fileID: 4853700087339883771}
-    - target: {fileID: 8760653179643815726, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: tutorialPanelEmpty
-      value: 
-      objectReference: {fileID: 330694076}
-    - target: {fileID: 8760653179643815726, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: tutorialPanelHint1
-      value: 
-      objectReference: {fileID: 6123634180816365164}
-    - target: {fileID: 8760653179643815726, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: tutorialPanelHint2
-      value: 
-      objectReference: {fileID: 7886852761879228078}
-    - target: {fileID: 8760653179643815726, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: tutorialPanelHint3
-      value: 
-      objectReference: {fileID: 7217924874990008482}
-    - target: {fileID: 8760653179643815726, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: tutorialPanelHint4
-      value: 
-      objectReference: {fileID: 837727568869246930}
-    - target: {fileID: 8760653179643815726, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: tutorialPanelHint5
-      value: 
-      objectReference: {fileID: 2262456142988038597}
-    - target: {fileID: 8760653179643815726, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-      propertyPath: tutorialPanelHint6
-      value: 
-      objectReference: {fileID: 8938701210394975726}
-    m_RemovedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
---- !u!1 &1832640061 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 988837065773047693, guid: c6343c8cb3521fa4998cfa6bf525f20c, type: 3}
-  m_PrefabInstance: {fileID: 1832640060}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &1834597892
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4647,7 +4502,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseThirdHint
         m_Mode: 1
@@ -4878,7 +4733,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseThirdHint
         m_Mode: 1
@@ -5011,7 +4866,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseSecondHint
         m_Mode: 1
@@ -5240,7 +5095,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseSecondHint
         m_Mode: 1
@@ -6173,6 +6028,24 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5454020172987132886}
   m_CullTransparentMesh: 1
+--- !u!1 &988837063977566641
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4924064133330175421}
+  - component: {fileID: 8760653180232743186}
+  - component: {fileID: 3592284725274492803}
+  m_Layer: 0
+  m_Name: CardTutorial
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!1 &1052413423920571006
 GameObject:
   m_ObjectHideFlags: 0
@@ -6436,7 +6309,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseFifthHint
         m_Mode: 1
@@ -6966,7 +6839,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseSecondHint
         m_Mode: 1
@@ -7387,6 +7260,14 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8864367836054403807}
   m_CullTransparentMesh: 1
+--- !u!222 &3592284725274492803
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 988837063977566641}
+  m_CullTransparentMesh: 1
 --- !u!1 &3618852902778951056
 GameObject:
   m_ObjectHideFlags: 0
@@ -7490,7 +7371,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseSixthHint
         m_Mode: 1
@@ -8106,7 +7987,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: HideBlockSellDeckCard
         m_Mode: 1
@@ -8943,6 +8824,26 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!224 &4924064133330175421
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 988837063977566641}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -15.447566}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 7
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &4983384105161559300
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9524,7 +9425,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseFourthHint
         m_Mode: 1
@@ -10191,7 +10092,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseThirdHint
         m_Mode: 1
@@ -11248,6 +11149,26 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &8760653180232743186
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 988837063977566641}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e96c7c1ef2f8a16468289dab947a8468, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  tutorialPanelHint1: {fileID: 6123634180816365164}
+  tutorialPanelHint2: {fileID: 7886852761879228078}
+  tutorialPanelHint3: {fileID: 7217924874990008482}
+  tutorialPanelHint4: {fileID: 837727568869246930}
+  tutorialPanelHint5: {fileID: 2262456142988038597}
+  tutorialPanelHint6: {fileID: 8938701210394975726}
+  tutorialPanelEmpty: {fileID: 330694076}
+  blockSellDeckCard: {fileID: 4853700087339883771}
 --- !u!114 &8818360274627515069
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11292,7 +11213,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseFirstHint
         m_Mode: 1
@@ -11374,7 +11295,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 910838159}
+      - m_Target: {fileID: 8760653180232743186}
         m_TargetAssemblyTypeName: CardTutorial, Assembly-CSharp
         m_MethodName: CloseSixthHint
         m_Mode: 1
