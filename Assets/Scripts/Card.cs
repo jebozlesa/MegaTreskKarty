@@ -264,7 +264,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             else
             {
                 Debug.Log("Kartu nie je možné odstrániť, pretože je súčasťou balíčka.");
-                CardTutorial.Instance.ShowBlockSellDeckCard();
+                CardTutorial.instance.ShowBlockSellDeckCard();
                 // Tu by ste mali zvážiť ďalšie kroky, ako napríklad informovať hráča
             }
         }, error => Debug.LogError(error.GenerateErrorReport()));

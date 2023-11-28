@@ -18,20 +18,26 @@ public class CardTutorial : MonoBehaviour
 
     public GameObject blockSellDeckCard;
 
-    public static CardTutorial Instance { get; private set; }
+    // public static CardTutorial Instance { get; private set; }
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        Debug.Log("CardTutorial.Awake() ===> START");
+        instance = this;
+        // if (Instance == null)
+        // {
+
+        //     Debug.Log("CardTutorial.Awake() ===> existuje");
+        //     instance = this;
+        //     DontDestroyOnLoad(gameObject);
+        // }
+        // else
+        // {
+        //     Debug.Log("CardTutorial.Awake() ===> existuje");
+        //     Destroy(gameObject);
+        // }
         gameObject.SetActive(false); // Deaktivuje tento GameObject hneď po inicializácii
+        tutorialPanelHint1.SetActive(true);
     }
 
     // Start is called before the first frame update
