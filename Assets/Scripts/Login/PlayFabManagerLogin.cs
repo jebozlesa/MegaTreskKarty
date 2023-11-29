@@ -56,7 +56,7 @@ public class PlayFabManagerLogin : MonoBehaviour
         // Ak sú prihlasovacie údaje uložené, prihlás užívateľa
         if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(password))
         {
-            var request = new LoginWithEmailAddressRequest 
+            var request = new LoginWithEmailAddressRequest
             {
                 Email = email,
                 Password = password
@@ -74,6 +74,7 @@ public class PlayFabManagerLogin : MonoBehaviour
 
     public void RegisterButton()
     {
+        AudioManager.Instance.PlayButtonClickSound();
         messageGandhiBubble.SetActive(false);
         messageStalinBubble.SetActive(false);
         controlPanel.SetActive(false);
@@ -86,7 +87,7 @@ public class PlayFabManagerLogin : MonoBehaviour
             return;
         }
 
-        var request = new RegisterPlayFabUserRequest 
+        var request = new RegisterPlayFabUserRequest
         {
             Email = emailInput.text,
             Username = usernameInput.text,
@@ -135,13 +136,14 @@ public class PlayFabManagerLogin : MonoBehaviour
 
     public void LoginButton()
     {
+        AudioManager.Instance.PlayButtonClickSound();
         messageGandhiBubble.SetActive(false);
         messageStalinBubble.SetActive(false);
         controlPanel.SetActive(false);
 
         loadingImage.SetActive(true);
 
-        var request = new LoginWithEmailAddressRequest 
+        var request = new LoginWithEmailAddressRequest
         {
             Email = emailInput.text,
             Password = passwordInput.text
@@ -203,6 +205,7 @@ public class PlayFabManagerLogin : MonoBehaviour
 
     public void ResetPasswordButton()
     {
+        AudioManager.Instance.PlayButtonClickSound();
         var request = new SendAccountRecoveryEmailRequest
         {
             Email = emailInput.text,

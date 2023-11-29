@@ -454,9 +454,9 @@ public class CardGenerator : MonoBehaviour
         Debug.Log("Skontrolujeme, či je potrebné vytvoriť prvý balíček...");
 
         var checkDeckRequest = new GetUserDataRequest { Keys = new List<string> { "PlayerDecks" } };
+        bool isRequestComplete = false;
         bool deckExists = false;
 
-        // Požiadavka na PlayFab na získanie údajov používateľa
         PlayFabClientAPI.GetUserData(checkDeckRequest, result =>
         {
             if (result.Data != null && result.Data.ContainsKey("PlayerDecks") && !string.IsNullOrEmpty(result.Data["PlayerDecks"].Value))
@@ -464,54 +464,162 @@ public class CardGenerator : MonoBehaviour
                 Debug.Log("Balíček už existuje. Vytvorenie balíčka preskočíme.");
                 deckExists = true;
             }
-        }, error => Debug.LogError(error.GenerateErrorReport()));
+            isRequestComplete = true;
+        }, error =>
+        {
+            Debug.LogError(error.GenerateErrorReport());
+            isRequestComplete = true;
+        });
 
-        // Počkáme na odpoveď od PlayFab pred pokračovaním
-        yield return new WaitUntil(() => deckExists || PlayFabClientAPI.IsClientLoggedIn());
+        yield return new WaitUntil(() => isRequestComplete);
 
-        // Pokračujeme len v prípade, že neexistuje žiadny balíček
         if (!deckExists)
         {
-            Debug.Log("Nebol nájdený žiadny balíček. Vytvárame prvý balíček...");
-
-            // Tu vložte existujúci kód na vytvorenie nového balíčka
-            Deck newDeck = new Deck
-            {
-                DeckID = Guid.NewGuid().ToString(),
-                DeckName = "First Deck",
-                Card1 = generatedCards[0].CardID,
-                Card2 = generatedCards[1].CardID,
-                Card3 = generatedCards[2].CardID,
-                Card4 = generatedCards[3].CardID,
-                Card5 = generatedCards[4].CardID
-            };
-
-            Debug.Log($"Vytvorený nový balíček s ID: {newDeck.DeckID}");
-            Debug.Log($"ID kariet nového balíčka: {newDeck.Card1}, {newDeck.Card2}, {newDeck.Card3}, {newDeck.Card4}, {newDeck.Card5}");
-
-            string json = ConvertDeckToJson(newDeck);
-
-            PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
-            {
-                string existingDataJson = GetExistingDeckDataJson(result);
-                Dictionary<string, Deck> data = AddDeckToExistingData(existingDataJson, newDeck);
-                string updatedJson = ConvertUpdatedDeckDataToJson(data);
-
-                UpdateDeckDataInPlayFab(updatedJson);
-            }, error => Debug.LogError(error.GenerateErrorReport()));
-
+            yield return StartCoroutine(CreateAndSaveDeck("First Deck", generatedCards));
             SceneManager.LoadScene("Cards");
         }
-
-        yield return null;
     }
 
-
-
-    private string ConvertDeckToJson(Deck deck)
+    public IEnumerator CreateAndSaveDeck(string deckName, List<GeneratedCard> cards)
     {
-        return JsonUtility.ToJson(deck);
+        Deck newDeck = new Deck
+        {
+            DeckID = Guid.NewGuid().ToString(),
+            DeckName = deckName,
+            Card1 = cards[0].CardID,
+            Card2 = cards[1].CardID,
+            Card3 = cards[2].CardID,
+            Card4 = cards[3].CardID,
+            Card5 = cards[4].CardID
+        };
+
+        bool isRequestComplete = false;
+        bool isDeckSaved = false;
+
+        // Získanie existujúcich údajov o balíčkoch
+        PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
+        {
+            string existingDataJson = result.Data != null && result.Data.ContainsKey("PlayerDecks") ? result.Data["PlayerDecks"].Value : "{}";
+            string json = ConvertDeckToJson(newDeck, existingDataJson);
+
+            var updateUserDataRequest = new UpdateUserDataRequest
+            {
+                Data = new Dictionary<string, string> { { "PlayerDecks", json } }
+            };
+
+            // Aktualizácia údajov o balíčkoch
+            PlayFabClientAPI.UpdateUserData(updateUserDataRequest, updateResult =>
+            {
+                Debug.Log("Nový balíček bol úspešne uložený.");
+                isDeckSaved = true;
+            }, error =>
+            {
+                Debug.LogError("Chyba pri ukladaní nového balíčka: " + error.GenerateErrorReport());
+            });
+
+            isRequestComplete = true;
+        }, error =>
+        {
+            Debug.LogError("Chyba pri získavaní existujúcich údajov o balíčkoch: " + error.GenerateErrorReport());
+            isRequestComplete = true;
+        });
+
+        // Čakanie na dokončenie oboch požiadaviek
+        yield return new WaitUntil(() => isRequestComplete && isDeckSaved);
     }
+
+
+
+
+    // public IEnumerator CreateFirstDeck(List<GeneratedCard> generatedCards)
+    // {
+    //     Debug.Log("Skontrolujeme, či je potrebné vytvoriť prvý balíček...");
+
+    //     var checkDeckRequest = new GetUserDataRequest { Keys = new List<string> { "PlayerDecks" } };
+    //     bool isRequestComplete = false;
+    //     bool deckExists = false;
+
+    //     // Požiadavka na PlayFab na získanie údajov používateľa
+    //     PlayFabClientAPI.GetUserData(checkDeckRequest, result =>
+    //     {
+    //         if (result.Data != null && result.Data.ContainsKey("PlayerDecks") && !string.IsNullOrEmpty(result.Data["PlayerDecks"].Value))
+    //         {
+    //             Debug.Log("Balíček už existuje. Vytvorenie balíčka preskočíme.");
+    //             deckExists = true;
+    //         }
+    //         isRequestComplete = true;
+    //     }, error =>
+    //     {
+    //         Debug.LogError(error.GenerateErrorReport());
+    //         isRequestComplete = true;
+    //     });
+
+    //     // Počkáme na odpoveď od PlayFab pred pokračovaním
+    //     yield return new WaitUntil(() => isRequestComplete);
+
+    //     // Pokračujeme len v prípade, že neexistuje žiadny balíček
+    //     if (!deckExists)
+    //     {
+    //         Debug.Log("Nebol nájdený žiadny balíček. Vytvárame prvý balíček...");
+
+    //         Deck newDeck = new Deck
+    //         {
+    //             DeckID = Guid.NewGuid().ToString(),
+    //             DeckName = "First Deck",
+    //             Card1 = generatedCards[0].CardID,
+    //             Card2 = generatedCards[1].CardID,
+    //             Card3 = generatedCards[2].CardID,
+    //             Card4 = generatedCards[3].CardID,
+    //             Card5 = generatedCards[4].CardID
+    //         };
+
+    //         Debug.Log($"Vytvorený nový balíček s ID: {newDeck.DeckID}");
+    //         Debug.Log($"ID kariet nového balíčka: {newDeck.Card1}, {newDeck.Card2}, {newDeck.Card3}, {newDeck.Card4}, {newDeck.Card5}");
+
+    //         string json = ConvertDeckToJson(newDeck);
+
+    //         var updateUserDataRequest = new UpdateUserDataRequest
+    //         {
+    //             Data = new Dictionary<string, string> { { "PlayerDecks", json } }
+    //         };
+
+    //         PlayFabClientAPI.UpdateUserData(updateUserDataRequest, result =>
+    //         {
+    //             Debug.Log("Údaje o balíčku úspešne aktualizované v PlayFab.");
+    //         }, error =>
+    //         {
+    //             Debug.LogError("Chyba pri aktualizácii údajov o balíčku: " + error.GenerateErrorReport());
+    //         });
+
+    //         // Tu môžete pridať prípadný kód pre ďalšie kroky po vytvorení balíčka
+    //     }
+    //     else
+    //     {
+    //         Debug.Log("Balíček už existuje, nevytvárame nový.");
+    //     }
+
+    //     yield return null;
+    // }
+
+    private string ConvertDeckToJson(Deck newDeck, string existingDataJson)
+    {
+        DeckListWrapper existingDecks = JsonUtility.FromJson<DeckListWrapper>(existingDataJson);
+        if (existingDecks == null)
+        {
+            existingDecks = new DeckListWrapper();
+            existingDecks.Decks = new List<Deck>();
+        }
+
+        existingDecks.Decks.Add(newDeck);
+
+        return JsonUtility.ToJson(existingDecks);
+    }
+
+
+    // private string ConvertDeckToJson(Deck deck)
+    // {
+    //     return JsonUtility.ToJson(deck);
+    // }
 
     private string GetExistingDeckDataJson(GetUserDataResult result)
     {

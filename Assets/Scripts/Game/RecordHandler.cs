@@ -42,7 +42,7 @@ public class RecordHandler : MonoBehaviour
             //yield return StartCoroutine(cardGenerator.AddRandomCard());
             bestRecord += 1;
             // Počkajte, kým sa dokončí metóda UpdatePlayerData
-            SendNewRecordToPlayFab(enemyLevel);
+            yield return SendNewRecordToPlayFab(enemyLevel);
             recordText.text = bestRecord.ToString();
             if (enemyLevel > 0)
             {
@@ -52,9 +52,10 @@ public class RecordHandler : MonoBehaviour
         }
     }
 
-    public void SendNewRecordToPlayFab(int enemyLevel)
+    public IEnumerator SendNewRecordToPlayFab(int enemyLevel)
     {
         playFabManager.SendLeaderboard(enemyLevel);
+        yield break;
     }
 
 }
