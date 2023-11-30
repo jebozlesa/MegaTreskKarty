@@ -148,6 +148,7 @@ GameObject:
   - component: {fileID: 3305102565303497522}
   - component: {fileID: 7329723206647792674}
   - component: {fileID: 6781960581273301257}
+  - component: {fileID: 6863361547228968546}
   m_Layer: 5
   m_Name: BackButton
   m_TagString: Untagged
@@ -162,7 +163,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6081180683356325395}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.5625, y: 0.5625, z: 0.5625}
   m_ConstrainProportionsScale: 0
@@ -258,19 +259,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 3305102565303497522}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 6781960581273301257}
-        m_TargetAssemblyTypeName: PlayButton, Assembly-CSharp
-        m_MethodName: LoadScene
-        m_Mode: 5
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: Main
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &6781960581273301257
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -286,6 +275,37 @@ MonoBehaviour:
   onButtonClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6863361547228968546
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6081180683356325395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6709565a3468a284ba9ce31c3a081877, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  soundEffectType: 0
+  pressedColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  innerImage: {fileID: 3637725937850930276}
+  delay: 0.7
+  onDelayedClick:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 6781960581273301257}
+        m_TargetAssemblyTypeName: PlayButton, Assembly-CSharp
+        m_MethodName: LoadScene
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: Main
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8232290276841057088
 GameObject:
   m_ObjectHideFlags: 0

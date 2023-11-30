@@ -1,58 +1,65 @@
 using UnityEngine;
-using UnityEngine.SceneManagement; // Potrebné pre prácu so scénami
+using UnityEngine.SceneManagement;
 
 public class MusicManager : MonoBehaviour
 {
     public static MusicManager Instance;
+    private AudioSource audioSource;
 
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // Udrží tento objekt pri prechode medzi scénami
-            SetupMusic();
-
-            // Prihlásenie na udalosť sceneLoaded
+            DontDestroyOnLoad(gameObject);
             SceneManager.sceneLoaded += OnSceneLoaded;
+
+            audioSource = GetComponent<AudioSource>();
+            audioSource.loop = true;
+
+            UpdateMusicStateBasedOnScene(SceneManager.GetActiveScene().name);
         }
         else if (Instance != this)
         {
-            Destroy(gameObject); // Zničí duplicitné inštancie
+            Destroy(gameObject);
         }
     }
 
-    private void SetupMusic()
+    private void UpdateMusicStateBasedOnScene(string sceneName)
     {
-        AudioSource audioSource = GetComponent<AudioSource>();
-        if (audioSource != null)
+        bool isMusicMuted = PlayerPrefs.GetInt("isMusicMuted", 0) == 1;
+        audioSource.mute = isMusicMuted;
+
+        if (isMusicMuted)
         {
-            audioSource.loop = true; // Nastaví hudbu na prehrávanie v slučke
+            StopMusic();
+        }
+        else
+        {
+            if (sceneName == "Login" || sceneName == "Game")
+            {
+                StopMusic();
+            }
+            else if (sceneName == "Main" || sceneName == "Marketplace")
+            {
+                PlayMusic();
+            }
         }
     }
 
-    // Táto metóda sa zavolá vždy, keď sa načíta nová scéna
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        if (scene.name == "Login")
-        {
-            StopMusic();
-        }
-        else if (scene.name == "Main")
-        {
-            PlayMusic();
-        }
-        else if (scene.name == "Game")
-        {
-            StopMusic();
-        }
-        // Tento kód môžete rozšíriť pre ďalšie scény podľa potreby
+        UpdateMusicStateBasedOnScene(scene.name);
+    }
+
+    public void RefreshMusicState()
+    {
+        UpdateMusicStateBasedOnScene(SceneManager.GetActiveScene().name);
     }
 
     public void PlayMusic()
     {
-        AudioSource audioSource = GetComponent<AudioSource>();
-        if (audioSource != null && !audioSource.isPlaying)
+        if (!audioSource.isPlaying)
         {
             audioSource.Play();
         }
@@ -60,8 +67,7 @@ public class MusicManager : MonoBehaviour
 
     public void StopMusic()
     {
-        AudioSource audioSource = GetComponent<AudioSource>();
-        if (audioSource != null)
+        if (audioSource.isPlaying)
         {
             audioSource.Stop();
         }
@@ -69,7 +75,6 @@ public class MusicManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Odhlásenie z udalosti sceneLoaded pri zničení objektu
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 }

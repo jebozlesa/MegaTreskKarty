@@ -5,10 +5,11 @@ public class AudioManager : MonoBehaviour
     public static AudioManager Instance;
 
     public AudioClip buttonClickSound;
-    // public AudioClip purchaseSound;
+    public AudioClip purchaseSound;
     // public AudioClip moneyAddedSound;
-    // public AudioClip cardAcquiredSound;
-    // ... pridajte ďalšie zvuky podľa potreby
+    public AudioClip cardAcquiredSound;
+    public AudioClip cardZoomInSound;
+    public AudioClip cardZoomOutSound;
 
     private AudioSource audioSource;
 
@@ -40,20 +41,27 @@ public class AudioManager : MonoBehaviour
         PlaySound(buttonClickSound);
     }
 
-    // public void PlayPurchaseSound()
-    // {
-    //     PlaySound(purchaseSound);
-    // }
+    public void PlayPurchaseSound()
+    {
+        PlaySound(purchaseSound);
+    }
 
     // public void PlayMoneyAddedSound()
     // {
     //     PlaySound(moneyAddedSound);
     // }
 
-    // public void PlayCardAcquiredSound()
-    // {
-    //     PlaySound(cardAcquiredSound);
-    // }
+    public void PlayCardAcquiredSound()
+    {
+        PlaySound(cardAcquiredSound);
+    }
 
-    // ... pridajte ďalšie metódy pre špecifické zvuky
+    public void PlayCardZoomInSound()
+    {
+        PlaySound(cardZoomInSound);
+    }
+    public void PlayCardZoomOutSound()
+    {
+        PlaySound(cardZoomOutSound);
+    }
 }

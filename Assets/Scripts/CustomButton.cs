@@ -2,46 +2,74 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 
 [RequireComponent(typeof(Button))]
-public class CustomButton : MonoBehaviour
+public class CustomButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
+    public enum SoundEffectType
+    {
+        ButtonClick,
+        Purchase,
+        // MoneyAdded,
+        // CardAcquired,
+        // ... pridajte ďalšie typy zvukových efektov
+    }
+
+    public SoundEffectType soundEffectType = SoundEffectType.ButtonClick;
     public Color pressedColor = Color.yellow;
     public Image innerImage;
-    public float delay = 0.7f;
+    public float delay = 0f;
     public UnityEvent onDelayedClick;
 
     private Button button;
-    private Color originalColor = Color.white;
+    private Color originalColor;
 
     private void Awake()
     {
         button = GetComponent<Button>();
-
-        button.onClick.AddListener(OnButtonClicked);
+        if (innerImage != null)
+        {
+            originalColor = innerImage.color; // Uloženie pôvodnej farby
+        }
     }
 
-    private void OnButtonClicked()
-    {
-        StartCoroutine(ButtonClickEffect());
-    }
-
-    private IEnumerator ButtonClickEffect()
+    public void OnPointerDown(PointerEventData eventData)
     {
         if (innerImage != null)
         {
             innerImage.color = pressedColor;
         }
+        PlaySoundEffect();
+    }
 
-        AudioManager.Instance.PlayButtonClickSound();
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        StartCoroutine(ExecuteActionAfterDelay());
+    }
 
+    private IEnumerator ExecuteActionAfterDelay()
+    {
         yield return new WaitForSeconds(delay);
-
-        onDelayedClick.Invoke(); // Vykoná akciu priradenú v Unity Editori
+        onDelayedClick.Invoke();
 
         if (innerImage != null)
         {
             innerImage.color = originalColor;
+        }
+    }
+
+    private void PlaySoundEffect()
+    {
+        switch (soundEffectType)
+        {
+            case SoundEffectType.ButtonClick:
+                AudioManager.Instance.PlayButtonClickSound();
+                break;
+            case SoundEffectType.Purchase:
+                AudioManager.Instance.PlayPurchaseSound();
+                break;
+                // ... pridajte ďalšie prípady
         }
     }
 }

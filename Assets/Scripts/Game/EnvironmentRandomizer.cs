@@ -1,59 +1,70 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class EnvironmentRandomizer : MonoBehaviour
 {
-    public Image backgroundImage; // A reference to the Image component for the background
-    private AudioSource audioSource; // A reference to the AudioSource component for the background sound
+    public Image backgroundImage; // Referencia na komponent Image pre pozadie
+    private AudioSource audioSource; // Referencia na komponent AudioSource pre zvuk pozadia
 
     void Start()
     {
-        // Ensure that there's an AudioSource component
+        // Zabezpečíme, že existuje komponent AudioSource
         audioSource = gameObject.AddComponent<AudioSource>();
 
-        // Load and apply a random environment
+        audioSource.volume = 0.5f;
+
+        // Načítame a aplikujeme náhodné prostredie
         ApplyRandomEnvironment();
+
+        // Aktualizujeme stav zvuku
+        UpdateAudioState();
     }
 
     void ApplyRandomEnvironment()
     {
-        // Load all background images
+        // Načítame všetky obrázky pozadia
         Sprite[] backgrounds = Resources.LoadAll<Sprite>("Backgrounds");
         Dictionary<string, AudioClip> backgroundSounds = new Dictionary<string, AudioClip>();
 
-        // Load all background sounds into a dictionary
+        // Načítame všetky zvuky pozadia do slovníka
         foreach (var sound in Resources.LoadAll<AudioClip>("BackgroundSound"))
         {
             backgroundSounds[sound.name] = sound;
         }
 
-        // Make sure we have at least one background to choose from
+        // Uistíme sa, že máme aspoň jedno pozadie na výber
         if (backgrounds.Length > 0)
         {
-            // Randomly select an index
+            // Náhodne vyberieme index
             int randomIndex = Random.Range(0, backgrounds.Length);
 
-            // Set the background image
+            // Nastavíme obrázok pozadia
             backgroundImage.sprite = backgrounds[randomIndex];
 
-            // Try to find a matching background sound
+            // Pokúsime sa nájsť zodpovedajúci zvuk pozadia
             if (backgroundSounds.TryGetValue(backgrounds[randomIndex].name, out AudioClip matchingSound))
             {
-                // Set the background sound if found
+                // Nastavíme zvuk pozadia, ak bol nájdený
                 audioSource.clip = matchingSound;
-                audioSource.loop = true; // Set the audio to loop
+                audioSource.loop = true; // Nastavíme audio na opakovanie
                 audioSource.Play();
             }
             else
             {
-                Debug.LogWarning($"No matching sound found for {backgrounds[randomIndex].name}");
+                Debug.LogWarning($"Nebol nájdený zvuk zodpovedajúci obrázku {backgrounds[randomIndex].name}");
             }
         }
         else
         {
-            Debug.LogWarning("No backgrounds found. Please make sure they are placed in the Resources folder.");
+            Debug.LogWarning("Neboli nájdené žiadne obrázky pozadia. Uistite sa, že sú umiestnené v priečinku Resources.");
         }
+    }
+
+    void UpdateAudioState()
+    {
+        // Kontrolujeme, či je hudba zapnutá alebo vypnutá
+        bool isMusicMuted = PlayerPrefs.GetInt("isMusicMuted", 0) == 1;
+        audioSource.mute = isMusicMuted;
     }
 }

@@ -213,6 +213,8 @@ public class CardGenerator : MonoBehaviour
 
             onCardCreated?.Invoke(card);
 
+            AudioManager.Instance.PlayCardAcquiredSound();
+
             yield return StartCoroutine(ShowCardOnScreen(card.StyleID, card.PersonName, card.CardPicture, new Color32((byte)card.Color[0], (byte)card.Color[1], (byte)card.Color[2], 255), card.Level));
         }
         else

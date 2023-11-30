@@ -6,7 +6,7 @@ using PlayFab.ClientModels;
 
 public class PlayFabManagerLeaderboard : MonoBehaviour
 {
-    
+
     public static PlayFabManagerLeaderboard Instance { get; private set; }
 
     // public GameObject loadingImage;
@@ -30,31 +30,31 @@ public class PlayFabManagerLeaderboard : MonoBehaviour
 
     void Login()
     {
-//        loadingImage.SetActive(true);
+        //        loadingImage.SetActive(true);
         string username = PlayerPrefs.GetString("username");
         string email = PlayerPrefs.GetString("email");
         string password = PlayerPrefs.GetString("password");
 
-        var request = new LoginWithEmailAddressRequest 
-            {
-                Email = email,
-                Password = password
-            };
-            PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
-//        loadingImage.SetActive(false);
+        var request = new LoginWithEmailAddressRequest
+        {
+            Email = email,
+            Password = password
+        };
+        PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
+        //        loadingImage.SetActive(false);
     }
 
     void OnSuccess(LoginResult result)
     {
         Debug.Log("PlayFabManager = Sicko dobre");
-  //      loadingImage.SetActive(false);
+        //      loadingImage.SetActive(false);
         GetLeaderboard();
     }
 
     void OnError(PlayFabError error)
     {
         Debug.Log("PlayFabManager = Daco nahovno");
-  //      errorImage.SetActive(true);
+        //      errorImage.SetActive(true);
         Debug.Log(error.GenerateErrorReport());
     }
 
@@ -64,7 +64,7 @@ public class PlayFabManagerLeaderboard : MonoBehaviour
         {
             Statistics = new List<StatisticUpdate>
             {
-                new StatisticUpdate 
+                new StatisticUpdate
                 {
                     StatisticName = "RoyalRumble",
                     Value = score
@@ -81,7 +81,7 @@ public class PlayFabManagerLeaderboard : MonoBehaviour
 
     public void GetLeaderboard()
     {
-  //      loadingImage.SetActive(true);
+        //      loadingImage.SetActive(true);
         var request = new GetLeaderboardRequest
         {
             StatisticName = "RoyalRumble",

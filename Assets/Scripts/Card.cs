@@ -673,6 +673,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         Debug.Log("Swipe Right");
         if (isZoomed)
         {
+            AudioManager.Instance.PlayCardZoomInSound();
             if (frontSide.activeSelf)
             {
                 frontSide.SetActive(false);
@@ -705,6 +706,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         Debug.Log("Swipe Left");
         if (isZoomed)
         {
+            AudioManager.Instance.PlayCardZoomInSound();
             if (frontSide.activeSelf)
             {
                 frontSide.SetActive(false);
@@ -738,6 +740,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     {
         if (isZoomed)
         {
+            AudioManager.Instance.PlayCardZoomOutSound();
             LoadAttackData(attack1); // Načítajte údaje o prvom útoku hráča podľa ID útoku
             displayedAttack = attack1;
             backSideAttack.SetActive(true);
@@ -752,6 +755,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     {
         if (isZoomed)
         {
+            AudioManager.Instance.PlayCardZoomOutSound();
             backSideAttack.SetActive(false);
             frontSide.SetActive(true);
         }
@@ -798,10 +802,12 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         if (isZoomed)
         {
             ZoomOut();
+            AudioManager.Instance.PlayCardZoomOutSound();
         }
         else if (currentZoomedCard == null)
         {
             ZoomIn();
+            AudioManager.Instance.PlayCardZoomInSound();
         }
     }
 

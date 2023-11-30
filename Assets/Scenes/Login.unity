@@ -236,6 +236,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   buttonClickSound: {fileID: 8300000, guid: f5c125b384731e74289d23151a1dd8f3, type: 3}
+  purchaseSound: {fileID: 8300000, guid: 769ebff1d50a8144daaa097987bceb57, type: 3}
+  cardAcquiredSound: {fileID: 8300000, guid: aa3434c8a1aeaaa4b95c899798ee9aa8, type: 3}
+  cardZoomInSound: {fileID: 8300000, guid: 258a1b1e37dbd9e40b73402356534229, type: 3}
+  cardZoomOutSound: {fileID: 8300000, guid: d8dbce17e8dd0504ab2600cab9bc796e, type: 3}
 --- !u!4 &461118671
 Transform:
   m_ObjectHideFlags: 0
