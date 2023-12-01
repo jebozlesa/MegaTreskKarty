@@ -4,6 +4,7 @@ using UnityEngine;
 using TMPro;
 using PlayFab;
 using PlayFab.ClientModels;
+using UnityEngine.UI;
 
 public class RecordsLoader : MonoBehaviour
 {
@@ -22,22 +23,29 @@ public class RecordsLoader : MonoBehaviour
 
     void UpdateRecordList(List<PlayerLeaderboardEntry> records)
     {
-        // Odstránime existujúce záznamy
         foreach (Transform child in rowsParent)
         {
             Destroy(child.gameObject);
         }
-        // Prejdeme všetky záznamy
+
         foreach (var record in records)
         {
-            // Vytvoríme novú inštanciu prefabu pre záznam
             GameObject rowInstance = Instantiate(rowPrefab, rowsParent);
-
-            // Nastavíme textové polia v zázname
             TextMeshProUGUI[] texts = rowInstance.GetComponentsInChildren<TextMeshProUGUI>();
             texts[0].text = (record.Position + 1).ToString() + ".";
             texts[1].text = string.IsNullOrEmpty(record.DisplayName) ? "Noname" : record.DisplayName;
             texts[2].text = record.StatValue.ToString();
+
+            // Získame vnútorný Image komponent, ktorý chceme zafarbiť
+            Image innerImage = rowInstance.transform.GetChild(0).GetComponent<Image>(); // Predpokladáme, že vnútorný Image je druhým dieťaťom
+
+            // Ak sa jedná o záznam prihláseného hráča, zmeníme farbu vnútorného obrázka
+            if (record.PlayFabId == PlayFabManagerLeaderboard.Instance.loggedInPlayerId)
+            {
+                innerImage.color = Color.yellow; // Zmena farby na žltú
+            }
         }
     }
+
+
 }

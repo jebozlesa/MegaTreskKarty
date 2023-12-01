@@ -13,6 +13,7 @@ public class PlayFabManagerLeaderboard : MonoBehaviour
     // public GameObject errorImage;
 
     public event Action<List<PlayerLeaderboardEntry>> OnLeaderboardLoaded;
+    public string loggedInPlayerId;
 
     private void Awake()
     {
@@ -48,6 +49,7 @@ public class PlayFabManagerLeaderboard : MonoBehaviour
     {
         Debug.Log("PlayFabManager = Sicko dobre");
         //      loadingImage.SetActive(false);
+        loggedInPlayerId = result.PlayFabId;
         GetLeaderboard();
     }
 
@@ -86,7 +88,7 @@ public class PlayFabManagerLeaderboard : MonoBehaviour
         {
             StatisticName = "RoyalRumble",
             StartPosition = 0,
-            MaxResultsCount = 10,
+            MaxResultsCount = 100,
             ProfileConstraints = new PlayerProfileViewConstraints
             {
                 ShowDisplayName = true

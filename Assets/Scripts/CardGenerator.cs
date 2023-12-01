@@ -274,6 +274,8 @@ public class CardGenerator : MonoBehaviour
                 UpdateUserDataInPlayFab(updatedJson);
             }, error => Debug.LogError(error.GenerateErrorReport()));
 
+            AudioManager.Instance.PlayCardAcquiredSound();
+
             yield return StartCoroutine(ShowCardOnScreen(card.StyleID, card.PersonName, card.CardPicture, new Color32((byte)card.Color[0], (byte)card.Color[1], (byte)card.Color[2], 255), card.Level));
         }
         else
@@ -421,12 +423,15 @@ public class CardGenerator : MonoBehaviour
         if (!string.IsNullOrEmpty(existingDataJson))
         {
             CardListWrapper existingCards = JsonUtility.FromJson<CardListWrapper>(existingDataJson);
-            foreach (GeneratedCard existingCard in existingCards.cards)
+            if (existingCards != null && existingCards.cards != null)
             {
-                data.Add(existingCard.CardID, existingCard);
+                foreach (GeneratedCard existingCard in existingCards.cards)
+                {
+                    data.Add(existingCard.CardID, existingCard);
+                }
             }
         }
-        data.Add(card.CardID, card);
+        data[card.CardID] = card; // Aktualizujte alebo pridajte novú kartu
 
         return data;
     }
@@ -530,78 +535,6 @@ public class CardGenerator : MonoBehaviour
         yield return new WaitUntil(() => isRequestComplete && isDeckSaved);
     }
 
-
-
-
-    // public IEnumerator CreateFirstDeck(List<GeneratedCard> generatedCards)
-    // {
-    //     Debug.Log("Skontrolujeme, či je potrebné vytvoriť prvý balíček...");
-
-    //     var checkDeckRequest = new GetUserDataRequest { Keys = new List<string> { "PlayerDecks" } };
-    //     bool isRequestComplete = false;
-    //     bool deckExists = false;
-
-    //     // Požiadavka na PlayFab na získanie údajov používateľa
-    //     PlayFabClientAPI.GetUserData(checkDeckRequest, result =>
-    //     {
-    //         if (result.Data != null && result.Data.ContainsKey("PlayerDecks") && !string.IsNullOrEmpty(result.Data["PlayerDecks"].Value))
-    //         {
-    //             Debug.Log("Balíček už existuje. Vytvorenie balíčka preskočíme.");
-    //             deckExists = true;
-    //         }
-    //         isRequestComplete = true;
-    //     }, error =>
-    //     {
-    //         Debug.LogError(error.GenerateErrorReport());
-    //         isRequestComplete = true;
-    //     });
-
-    //     // Počkáme na odpoveď od PlayFab pred pokračovaním
-    //     yield return new WaitUntil(() => isRequestComplete);
-
-    //     // Pokračujeme len v prípade, že neexistuje žiadny balíček
-    //     if (!deckExists)
-    //     {
-    //         Debug.Log("Nebol nájdený žiadny balíček. Vytvárame prvý balíček...");
-
-    //         Deck newDeck = new Deck
-    //         {
-    //             DeckID = Guid.NewGuid().ToString(),
-    //             DeckName = "First Deck",
-    //             Card1 = generatedCards[0].CardID,
-    //             Card2 = generatedCards[1].CardID,
-    //             Card3 = generatedCards[2].CardID,
-    //             Card4 = generatedCards[3].CardID,
-    //             Card5 = generatedCards[4].CardID
-    //         };
-
-    //         Debug.Log($"Vytvorený nový balíček s ID: {newDeck.DeckID}");
-    //         Debug.Log($"ID kariet nového balíčka: {newDeck.Card1}, {newDeck.Card2}, {newDeck.Card3}, {newDeck.Card4}, {newDeck.Card5}");
-
-    //         string json = ConvertDeckToJson(newDeck);
-
-    //         var updateUserDataRequest = new UpdateUserDataRequest
-    //         {
-    //             Data = new Dictionary<string, string> { { "PlayerDecks", json } }
-    //         };
-
-    //         PlayFabClientAPI.UpdateUserData(updateUserDataRequest, result =>
-    //         {
-    //             Debug.Log("Údaje o balíčku úspešne aktualizované v PlayFab.");
-    //         }, error =>
-    //         {
-    //             Debug.LogError("Chyba pri aktualizácii údajov o balíčku: " + error.GenerateErrorReport());
-    //         });
-
-    //         // Tu môžete pridať prípadný kód pre ďalšie kroky po vytvorení balíčka
-    //     }
-    //     else
-    //     {
-    //         Debug.Log("Balíček už existuje, nevytvárame nový.");
-    //     }
-
-    //     yield return null;
-    // }
 
     private string ConvertDeckToJson(Deck newDeck, string existingDataJson)
     {
