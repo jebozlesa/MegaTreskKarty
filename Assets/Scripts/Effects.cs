@@ -121,6 +121,9 @@ public class Effects : MonoBehaviour
             case 24:
                 yield return StartCoroutine(Poison(card, dialogText, iteration));
                 break;
+            case 26:
+                yield return StartCoroutine(Curse(card, dialogText, iteration));
+                break;
             default:
                 Debug.LogError("Invalid effect type.");
                 break;
@@ -480,7 +483,6 @@ public class Effects : MonoBehaviour
         }
         else
         {
-            yield return StartCoroutine(attackAnimations.PlayConfusionForgetAnimation(card.transform));        //ANIMACIA
             if (UnityEngine.Random.value <= 0.33f)
             {
                 card.state = CardState.MAYBE;
@@ -490,6 +492,7 @@ public class Effects : MonoBehaviour
             }
             else if (UnityEngine.Random.value <= 0.33f)
             {
+                yield return StartCoroutine(attackAnimations.PlayConfusionForgetAnimation(card.transform));        //ANIMACIA
                 card.state = CardState.MAYBE;
                 yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " forget to attack in confusion"));
             }
@@ -652,5 +655,30 @@ public class Effects : MonoBehaviour
             yield return new WaitForSeconds(2);
         }
         Debug.Log(card.cardName + " => KnockOut");
+    }
+
+    //26
+    public IEnumerator Curse(Kard card, TMP_Text dialogText, int iteration)
+    {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is cursed"));
+        if (card.effects[iteration][1] == 0)
+        {
+            card.state = CardState.ATTACK;
+            //yield return StartCoroutine(attackAnimations.PlayConfusionEndAnimation(card.transform));        //ANIMACIA
+            card.RemoveEffect(iteration);
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is out of curse"));
+            yield break;
+        }
+        else
+        {
+            if (UnityEngine.Random.value <= 0.25f)
+            {
+                card.state = CardState.MAYBE;
+                //yield return StartCoroutine(attackAnimations.PlayConfusionHurtItselfAnimation(card.transform));        //ANIMACIA
+                yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " has bad luck attacking"));
+            }
+            card.effects[iteration][1] -= 1;
+        }
+        Debug.Log(card.cardName + " => Confusion");
     }
 }

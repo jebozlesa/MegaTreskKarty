@@ -392,6 +392,9 @@ public class AttackDescriptions : MonoBehaviour
             case 121://ShaolinSoccer
                 count = 3;
                 break;
+            case 123://Curse
+                count = 5;
+                break;
             default:
                 Debug.LogError("Invalid attack type.");
                 break;
@@ -787,6 +790,9 @@ public class AttackDescriptions : MonoBehaviour
             case 121:
                 dialogText.text = "Shaolin soccer chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
                 break;
+            case 123:
+                dialogText.text = "Curse chosen \nLaunch here !!! " + attacker.attackCount[attackType] + " remaining";
+                break;
             default:
                 Debug.LogError("Invalid attack type.");
                 break;
@@ -1168,6 +1174,9 @@ public class AttackDescriptions : MonoBehaviour
                 break;
             case 121:
                 ShaolinSoccer(buttonText);
+                break;
+            case 123:
+                Curse(buttonText);
                 break;
             default:
                 Debug.LogError("Invalid attack type.");
@@ -1845,5 +1854,10 @@ public class AttackDescriptions : MonoBehaviour
     public void ShaolinSoccer(TMP_Text buttonText)
     {
         buttonText.text = "Shaolin Soccer";
+    }
+    //121
+    public void Curse(TMP_Text buttonText)
+    {
+        buttonText.text = "Curse";
     }
 }

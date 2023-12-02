@@ -461,6 +461,9 @@ public class Attack : MonoBehaviour
             case 121:
                 yield return StartCoroutine(ShaolinSoccer(attacker, receiver, dialogText));
                 break;
+            case 123:
+                yield return StartCoroutine(Curse(attacker, receiver, dialogText));
+                break;
             default:
                 Debug.LogError("Invalid attack type.");
                 break;
@@ -2553,6 +2556,7 @@ public class Attack : MonoBehaviour
     //121
     public IEnumerator ShaolinSoccer(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Shaolin Soccer"));
         List<AttackDelegate> attacks = new List<AttackDelegate> { Kick, Punch, BicycleKick, Act, Honesty, Jujutsu, Fury, Corruption, Scratch };
         System.Random rnd = new System.Random();
         attacks = attacks.OrderBy(x => rnd.Next()).ToList();
@@ -2563,7 +2567,7 @@ public class Attack : MonoBehaviour
         Debug.Log(attacker.cardName + " -> ShaolinSoccer => " + receiver.cardName);
     }
 
-    //118
+    //122
     public IEnumerator SportSkills(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
         receiver.HandleSpeed(1);
@@ -2586,6 +2590,20 @@ public class Attack : MonoBehaviour
         }
 
         Debug.Log(attacker.cardName + " -> Football => " + receiver.cardName);
+    }
+    //123
+    public IEnumerator Curse(Kard attacker, Kard receiver, TMP_Text dialogText)
+    {
+        yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Curse"));
+        //yield return StartCoroutine(attackAnimations.PlayIllusionAnimation(attacker.transform, Random.Range(0, 5)));        //ANIMACIA
+        attacker.HandleCharisma(1);
+        if (receiver.CheckEffect(26) == false)
+        {
+            StartCoroutine(attackAnimations.PlayConfusionStartAnimation(receiver.transform));        //ANIMACIA
+            yield return StartCoroutine(receiver.AddEffect(26, Random.Range(5, 10)));//curse
+            yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " send curse to enemy"));
+        }
+        Debug.Log(attacker.cardName + " -> Curse => " + receiver.cardName);
     }
 
 
