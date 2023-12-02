@@ -9,54 +9,25 @@ public class PlayFabCardManager : MonoBehaviour
     public delegate void CardDataCallback(Dictionary<string, object> cardData);
     public delegate void UpdateCallback(bool success);
 
-    void Awake()
-    {
-        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " PlayFabCardManager.Awake => START");
-        // Login();
-    }
-
-    void Login()
-    {
-        //        loadingImage.SetActive(true);
-        string username = PlayerPrefs.GetString("username");
-        string email = PlayerPrefs.GetString("email");
-        string password = PlayerPrefs.GetString("password");
-
-        var request = new LoginWithEmailAddressRequest
-        {
-            Email = email,
-            Password = password
-        };
-        PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
-        //        loadingImage.SetActive(false);
-    }
-
-    void OnSuccess(LoginResult result)
-    {
-        Debug.Log("PlayFabCardManager = Sicko dobre");
-        //      loadingImage.SetActive(false);
-    }
-
-    void OnError(PlayFabError error)
-    {
-        Debug.Log("PlayFabCardManager = Daco nahovno");
-        //      errorImage.SetActive(true);
-        Debug.Log(error.GenerateErrorReport());
-    }
-
     public void GetCardData(string cardId, CardDataCallback callback)
     {
+        if (!PlayFabManagerLogin.IsLoggedIn)
+        {
+            Debug.LogError("Hráč nie je prihlásený.");
+            return;
+        }
+
         Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " PlayFabCardManager.GetCardData => START " + cardId);
         GetUserDataRequest request = new GetUserDataRequest
         {
-            Keys = new List<string> { "PlayerCards" }  // Změna klíče na "PlayerCards"
+            Keys = new List<string> { "PlayerCards" }
         };
 
         PlayFabClientAPI.GetUserData(request, result =>
         {
-            if (result.Data != null && result.Data.ContainsKey("PlayerCards"))  // Zkontrolujte, zda data obsahují klíč "PlayerCards"
+            if (result.Data != null && result.Data.ContainsKey("PlayerCards"))
             {
-                var cardsData = JsonUtility.FromJson<CardsContainer>(result.Data["PlayerCards"].Value);  // Deserializujte data s klíčem "PlayerCards"
+                var cardsData = JsonUtility.FromJson<CardsContainer>(result.Data["PlayerCards"].Value);
                 foreach (var card in cardsData.cards)
                 {
                     if (card.CardID == cardId)
@@ -73,7 +44,6 @@ public class PlayFabCardManager : MonoBehaviour
             callback?.Invoke(null);
         });
     }
-
 
     public Dictionary<string, object> ConvertCardDataToDictionary(CardData cardData)
     {
@@ -102,9 +72,14 @@ public class PlayFabCardManager : MonoBehaviour
         return cardDataDict;
     }
 
-
     public void UpdateCardData(string cardID, Dictionary<string, string> updates, UpdateCallback callback)
     {
+        if (!PlayFabManagerLogin.IsLoggedIn)
+        {
+            Debug.LogError("Hráč nie je prihlásený.");
+            return;
+        }
+
         Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " PlayFabCardManager.UpdateCardData => START " + cardID);
 
         GetUserDataRequest getRequest = new GetUserDataRequest
@@ -116,47 +91,31 @@ public class PlayFabCardManager : MonoBehaviour
         {
             if (result.Data != null && result.Data.ContainsKey("PlayerCards"))
             {
-                Debug.Log("Data from PlayFab: " + result.Data["PlayerCards"].Value);
                 var cardsData = JsonUtility.FromJson<CardsContainer>(result.Data["PlayerCards"].Value);
-                Debug.Log("Number of cards: " + cardsData.cards.Count);
 
                 foreach (var card in cardsData.cards)
                 {
                     if (card.CardID == cardID)
                     {
-                        // Aktualizujte hodnoty karty dle potřeby
                         foreach (var update in updates)
                         {
-                            Debug.Log("Checking card with StyleID: " + card.StyleID);
-
                             var field = card.GetType().GetField(update.Key);
                             var property = card.GetType().GetProperty(update.Key);
 
                             if (field != null)
                             {
-                                Debug.Log($"Updating {update.Key} from {field.GetValue(card)} to {update.Value}");
                                 field.SetValue(card, Convert.ChangeType(update.Value, field.FieldType));
-                                Debug.Log($"Updated {update.Key} to {field.GetValue(card)}");
                             }
                             else if (property != null)
                             {
-                                Debug.Log($"Updating {update.Key} from {property.GetValue(card)} to {update.Value}");
                                 property.SetValue(card, Convert.ChangeType(update.Value, property.PropertyType));
-                                Debug.Log($"Updated {update.Key} to {property.GetValue(card)}");
                             }
-                            else
-                            {
-                                Debug.Log("Neither field nor property found for " + update.Key);
-                            }
-
                         }
                         break;
                     }
                 }
 
-                // Serializujte aktualizovaný seznam karet zpět do formátu JSON
                 string updatedData = JsonUtility.ToJson(cardsData);
-                Debug.Log(updatedData);
 
                 UpdateUserDataRequest updateRequest = new UpdateUserDataRequest
                 {
@@ -174,7 +133,6 @@ public class PlayFabCardManager : MonoBehaviour
             }
             else
             {
-                Debug.LogError("Daco tu chyba");
                 callback?.Invoke(false);
             }
         }, error =>
@@ -183,7 +141,6 @@ public class PlayFabCardManager : MonoBehaviour
             callback?.Invoke(false);
         });
     }
-
 
     [System.Serializable]
     public class CardsContainer

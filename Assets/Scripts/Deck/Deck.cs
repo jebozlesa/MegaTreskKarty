@@ -1,6 +1,4 @@
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
 [System.Serializable]
 public class Deck
@@ -12,6 +10,10 @@ public class Deck
     public string Card3;
     public string Card4;
     public string Card5;
+
+    // Metóda na získanie ID všetkých kariet v balíčku
+    public List<string> GetCardIDs()
+    {
+        return new List<string> { Card1, Card2, Card3, Card4, Card5 };
+    }
 }
-
-

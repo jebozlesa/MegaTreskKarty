@@ -6,11 +6,7 @@ using PlayFab.ClientModels;
 
 public class PlayFabManagerLeaderboard : MonoBehaviour
 {
-
     public static PlayFabManagerLeaderboard Instance { get; private set; }
-
-    // public GameObject loadingImage;
-    // public GameObject errorImage;
 
     public event Action<List<PlayerLeaderboardEntry>> OnLeaderboardLoaded;
     public string loggedInPlayerId;
@@ -21,47 +17,31 @@ public class PlayFabManagerLeaderboard : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            Login();
         }
         else
         {
             Destroy(gameObject);
         }
-    }
 
-    void Login()
-    {
-        //        loadingImage.SetActive(true);
-        string username = PlayerPrefs.GetString("username");
-        string email = PlayerPrefs.GetString("email");
-        string password = PlayerPrefs.GetString("password");
-
-        var request = new LoginWithEmailAddressRequest
+        if (PlayFabManagerLogin.Instance != null)
         {
-            Email = email,
-            Password = password
-        };
-        PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
-        //        loadingImage.SetActive(false);
-    }
-
-    void OnSuccess(LoginResult result)
-    {
-        Debug.Log("PlayFabManager = Sicko dobre");
-        //      loadingImage.SetActive(false);
-        loggedInPlayerId = result.PlayFabId;
-        GetLeaderboard();
-    }
-
-    void OnError(PlayFabError error)
-    {
-        Debug.Log("PlayFabManager = Daco nahovno");
-        //      errorImage.SetActive(true);
-        Debug.Log(error.GenerateErrorReport());
+            Debug.Log("PlayFabManagerLeaderboard: Logged in player ID: " + PlayFabManagerLogin.Instance.LoggedInPlayerId);
+            GetLeaderboard();
+        }
+        else
+        {
+            Debug.LogError("PlayFabManagerLeaderboard: PlayFabManagerLogin instance is null.");
+        }
     }
 
     public void SendLeaderboard(int score)
     {
+        if (string.IsNullOrEmpty(loggedInPlayerId))
+        {
+            Debug.LogError("Player is not logged in.");
+            return;
+        }
+
         var request = new UpdatePlayerStatisticsRequest
         {
             Statistics = new List<StatisticUpdate>
@@ -78,12 +58,11 @@ public class PlayFabManagerLeaderboard : MonoBehaviour
 
     void OnLeaderboardUpdate(UpdatePlayerStatisticsResult result)
     {
-        Debug.Log("Rekordy poslane");
+        Debug.Log("Leaderboard updated successfully.");
     }
 
     public void GetLeaderboard()
     {
-        //      loadingImage.SetActive(true);
         var request = new GetLeaderboardRequest
         {
             StatisticName = "RoyalRumble",
@@ -99,11 +78,11 @@ public class PlayFabManagerLeaderboard : MonoBehaviour
 
     void OnLeaderboardGet(GetLeaderboardResult result)
     {
-        foreach (var item in result.Leaderboard)
-        {
-            string username = string.IsNullOrEmpty(item.DisplayName) ? "Noname" : item.DisplayName;
-            Debug.Log(item.Position + " " + username + " " + item.StatValue);
-            OnLeaderboardLoaded?.Invoke(result.Leaderboard);
-        }
+        OnLeaderboardLoaded?.Invoke(result.Leaderboard);
+    }
+
+    void OnError(PlayFabError error)
+    {
+        Debug.LogError("Error with PlayFab leaderboard: " + error.GenerateErrorReport());
     }
 }

@@ -9,6 +9,7 @@ using Mono.Data.Sqlite;
 using System.IO;
 using PlayFab;
 using PlayFab.ClientModels;
+using System.Linq;
 
 public enum FightState { START, TURN, ENDTURN, PLAYERDEATH, ENEMYDEATH, WON, LOST }
 
@@ -411,6 +412,7 @@ public class FightSystem : MonoBehaviour
         // Vykonajte akciu pre premiestnenie karty do bojového priestoru
         if (state == FightState.PLAYERDEATH || state == FightState.START)
         {
+            AudioManager.Instance.PlayCardZoomInSound();
             player.PlayCard(kard, playerBoard);
             player.cardInGame.isDragable = false;
             state = FightState.TURN;
@@ -419,36 +421,94 @@ public class FightSystem : MonoBehaviour
         }
         else
         {
+            AudioManager.Instance.PlayCardZoomOutSound();
             // Vráťte kartu do ruky, ak nie je splnená podmienka
             player.ReturnCardToHand(kard, dragKard.originalHandPosition);
         }
     }
 
-    private IEnumerator VytvorKartyZBalicka(GameObject playerGO, Player player)
+    private IEnumerator VytvorKartyZBalicka(GameObject playerGO, Player player, string deckName = "First Deck")
     {
+        bool isCompleted = false;
+
         PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
         {
-            if (result.Data.ContainsKey("PlayerDecks"))
+            if (result.Data.ContainsKey("PlayerDecks") && result.Data.ContainsKey("PlayerCards"))
             {
                 string deckDataJson = result.Data["PlayerDecks"].Value;
-                DeckListWrapper deckList = JsonUtility.FromJson<DeckListWrapper>(deckDataJson);
+                string cardsDataJson = result.Data["PlayerCards"].Value;
 
-                foreach (Deck deck in deckList.Decks)
+                DeckListWrapper deckList = JsonUtility.FromJson<DeckListWrapper>(deckDataJson);
+                CardListWrapper cardList = JsonUtility.FromJson<CardListWrapper>(cardsDataJson);
+
+                Deck deckToLoad = deckList.Decks.FirstOrDefault(deck => deck.DeckName == deckName);
+                if (deckToLoad != null)
                 {
-                    LoadCardFromPlayFab(deck.Card1, playerGO, player);
-                    LoadCardFromPlayFab(deck.Card2, playerGO, player);
-                    LoadCardFromPlayFab(deck.Card3, playerGO, player);
-                    LoadCardFromPlayFab(deck.Card4, playerGO, player);
-                    LoadCardFromPlayFab(deck.Card5, playerGO, player);
+                    // Načítanie kariet z vybraného balíčka
+                    foreach (var cardID in deckToLoad.GetCardIDs())
+                    {
+                        var cardData = cardList.cards.FirstOrDefault(card => card.CardID == cardID);
+                        if (cardData != null)
+                        {
+                            // Tu vytvoríte kartu na základe cardData
+                            CreateCardInGame(cardData, playerGO, player);
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning("Deck with the specified name not found.");
                 }
             }
             else
             {
-                Debug.LogWarning("No rows found in the PlayerDecks table for the specified DeckID.");
+                Debug.LogWarning("No decks or cards found in the player's data.");
             }
-        }, error => Debug.LogError(error.GenerateErrorReport()));
+            isCompleted = true;
 
-        yield return null;
+        }, error =>
+        {
+            Debug.LogError(error.GenerateErrorReport());
+            isCompleted = true;
+        });
+
+        // Čakajte, kým sa nevykoná callback
+        yield return new WaitUntil(() => isCompleted);
+    }
+
+    private void CreateCardInGame(GeneratedCard cardData, GameObject playerGO, Player player)
+    {
+        GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
+
+        // Assigning the card properties from the PlayFab data
+        novaKarta.GetComponent<Kard>().cardId = cardData.CardID;
+        novaKarta.GetComponent<Kard>().styleId = cardData.StyleID;
+        novaKarta.GetComponent<Kard>().cardName = cardData.PersonName;
+        novaKarta.GetComponent<Kard>().health = cardData.Health;
+        novaKarta.GetComponent<Kard>().strength = cardData.Strength;
+        novaKarta.GetComponent<Kard>().speed = cardData.Speed;
+        novaKarta.GetComponent<Kard>().attack = cardData.Attack;
+        novaKarta.GetComponent<Kard>().defense = cardData.Defense;
+        novaKarta.GetComponent<Kard>().knowledge = cardData.Knowledge;
+        novaKarta.GetComponent<Kard>().charisma = cardData.Charisma;
+        Color32 cardColor = new Color32((byte)cardData.Color[0], (byte)cardData.Color[1], (byte)cardData.Color[2], 255);
+        novaKarta.GetComponent<Kard>().color = cardColor;
+        novaKarta.GetComponent<Kard>().level = cardData.Level;
+        novaKarta.GetComponent<Kard>().experience = cardData.Experience;
+        novaKarta.GetComponent<Kard>().attack1 = cardData.Attack1;
+        novaKarta.GetComponent<Kard>().attack2 = cardData.Attack2;
+        novaKarta.GetComponent<Kard>().attack3 = cardData.Attack3;
+        novaKarta.GetComponent<Kard>().attack4 = cardData.Attack4;
+        novaKarta.GetComponent<Kard>().image = cardData.CardPicture;
+
+        // Additional properties from the original function
+        novaKarta.GetComponent<Kard>().battleArea = playerBoard;
+        novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), cardData.Attack1);
+        novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), cardData.Attack2);
+        novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), cardData.Attack3);
+        novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), cardData.Attack4);
+
+        player.AddCardToHand(novaKarta.GetComponent<Kard>());
     }
 
     private void LoadCardFromPlayFab(string cardID, GameObject playerGO, Player player)

@@ -9,60 +9,32 @@ public class PlayFabManager : MonoBehaviour
 {
     public static PlayFabManager Instance { get; private set; }
 
-    // public GameObject loadingImage;
-    // public GameObject errorImage;
-
     public int maxRetryAttempts = 3;
     public float retryDelaySeconds = 2f;
 
     public event Action<List<PlayerLeaderboardEntry>> OnLeaderboardLoaded;
 
-    // private void Awake()
-    // {
-    //     if (Instance == null)
-    //     {
-    //         Instance = this;
-    //         DontDestroyOnLoad(gameObject);
-    //         Login();
-    //     }
-    //     else
-    //     {
-    //         Destroy(gameObject);
-    //     }
-    // }
-
-    void Login()
+    private void Awake()
     {
-        //        loadingImage.SetActive(true);
-        string username = PlayerPrefs.GetString("username");
-        string email = PlayerPrefs.GetString("email");
-        string password = PlayerPrefs.GetString("password");
-
-        var request = new LoginWithEmailAddressRequest
+        if (Instance == null)
         {
-            Email = email,
-            Password = password
-        };
-        PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
-        //        loadingImage.SetActive(false);
-    }
-
-    void OnSuccess(LoginResult result)
-    {
-        Debug.Log("PlayFabManager = Sicko dobre");
-        //      loadingImage.SetActive(false);
-        GetLeaderboard();
-    }
-
-    void OnError(PlayFabError error)
-    {
-        Debug.Log("PlayFabManager = Daco nahovno");
-        //      errorImage.SetActive(true);
-        Debug.Log(error.GenerateErrorReport());
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
     public void SendLeaderboard(int score)
     {
+        if (!PlayFabManagerLogin.IsLoggedIn)
+        {
+            Debug.LogError("Hráč nie je prihlásený.");
+            return;
+        }
+
         var request = new UpdatePlayerStatisticsRequest
         {
             Statistics = new List<StatisticUpdate>
@@ -82,9 +54,13 @@ public class PlayFabManager : MonoBehaviour
         Debug.Log("Rekordy poslane");
     }
 
+    void OnError(PlayFabError error)
+    {
+        Debug.LogError("Chyba: " + error.GenerateErrorReport());
+    }
+
     public void GetLeaderboard()
     {
-        //      loadingImage.SetActive(true);
         var request = new GetLeaderboardRequest
         {
             StatisticName = "RoyalRumble",
@@ -100,12 +76,7 @@ public class PlayFabManager : MonoBehaviour
 
     void OnLeaderboardGet(GetLeaderboardResult result)
     {
-        foreach (var item in result.Leaderboard)
-        {
-            string username = string.IsNullOrEmpty(item.DisplayName) ? "Noname" : item.DisplayName;
-            Debug.Log(item.Position + " " + username + " " + item.StatValue);
-            OnLeaderboardLoaded?.Invoke(result.Leaderboard);
-        }
+        OnLeaderboardLoaded?.Invoke(result.Leaderboard);
     }
 
     public void GetMyBestScore(string statisticName, Action<int> onScoreReceived, int attempt = 0)
@@ -117,7 +88,6 @@ public class PlayFabManager : MonoBehaviour
 
         PlayFabClientAPI.GetPlayerStatistics(request, result =>
         {
-            // Success
             int bestScore = 0;
             foreach (var eachStat in result.Statistics)
             {
@@ -128,11 +98,8 @@ public class PlayFabManager : MonoBehaviour
                 }
             }
             onScoreReceived?.Invoke(bestScore);
-            Debug.Log("Your best score in " + statisticName + " is " + bestScore);
-
         }, error =>
         {
-            // If there's an error and we have retries left, retry after a delay
             if (attempt < maxRetryAttempts)
             {
                 Debug.LogWarning($"Attempt {attempt + 1} failed, retrying in {retryDelaySeconds} seconds...");
@@ -140,7 +107,6 @@ public class PlayFabManager : MonoBehaviour
             }
             else
             {
-                // If no more retries are left, invoke the callback with a default value (e.g., 0)
                 onScoreReceived?.Invoke(0);
                 Debug.LogError("Error retrieving player stats after retries: " + error.GenerateErrorReport());
             }
@@ -152,6 +118,4 @@ public class PlayFabManager : MonoBehaviour
         yield return new WaitForSeconds(retryDelaySeconds);
         GetMyBestScore(statisticName, onScoreReceived, attempt + 1);
     }
-
-
 }

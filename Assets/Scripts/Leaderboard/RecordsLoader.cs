@@ -16,9 +16,6 @@ public class RecordsLoader : MonoBehaviour
     {
         // Sledujeme udalosť
         playFabManager.OnLeaderboardLoaded += UpdateRecordList;
-
-        // Načítame záznamy
-        //playFabManager.GetLeaderboard();
     }
 
     void UpdateRecordList(List<PlayerLeaderboardEntry> records)
@@ -28,6 +25,8 @@ public class RecordsLoader : MonoBehaviour
             Destroy(child.gameObject);
         }
 
+        string loggedInPlayerId = PlayFabManagerLogin.Instance != null ? PlayFabManagerLogin.Instance.LoggedInPlayerId : "";
+
         foreach (var record in records)
         {
             GameObject rowInstance = Instantiate(rowPrefab, rowsParent);
@@ -36,16 +35,12 @@ public class RecordsLoader : MonoBehaviour
             texts[1].text = string.IsNullOrEmpty(record.DisplayName) ? "Noname" : record.DisplayName;
             texts[2].text = record.StatValue.ToString();
 
-            // Získame vnútorný Image komponent, ktorý chceme zafarbiť
-            Image innerImage = rowInstance.transform.GetChild(0).GetComponent<Image>(); // Predpokladáme, že vnútorný Image je druhým dieťaťom
+            Image innerImage = rowInstance.transform.GetChild(0).GetComponent<Image>();
 
-            // Ak sa jedná o záznam prihláseného hráča, zmeníme farbu vnútorného obrázka
-            if (record.PlayFabId == PlayFabManagerLeaderboard.Instance.loggedInPlayerId)
+            if (record.PlayFabId == loggedInPlayerId)
             {
-                innerImage.color = Color.yellow; // Zmena farby na žltú
+                innerImage.color = Color.yellow;
             }
         }
     }
-
-
 }

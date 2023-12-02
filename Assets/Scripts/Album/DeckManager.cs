@@ -60,28 +60,65 @@ public class DeckManager : MonoBehaviour
     {
         PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
         {
-            if (result.Data.ContainsKey("PlayerDecks"))
+            if (result.Data.ContainsKey("PlayerDecks") && result.Data.ContainsKey("PlayerCards"))
             {
                 string deckDataJson = result.Data["PlayerDecks"].Value;
                 DeckListWrapper deckList = JsonUtility.FromJson<DeckListWrapper>(deckDataJson);
 
+                string playerCardsJson = result.Data["PlayerCards"].Value;
+                CardListWrapper playerCards = JsonUtility.FromJson<CardListWrapper>(playerCardsJson);
+
                 foreach (Deck deck in deckList.Decks)
                 {
-                    AddCardToHand(deck.Card1);
-                    AddCardToHand(deck.Card2);
-                    AddCardToHand(deck.Card3);
-                    AddCardToHand(deck.Card4);
-                    AddCardToHand(deck.Card5);
+                    CreateCardInDeck(deck.Card1, playerCards);
+                    CreateCardInDeck(deck.Card2, playerCards);
+                    CreateCardInDeck(deck.Card3, playerCards);
+                    CreateCardInDeck(deck.Card4, playerCards);
+                    CreateCardInDeck(deck.Card5, playerCards);
                 }
             }
             else
             {
-                Debug.LogWarning("No rows found in the PlayerDecks table for the specified DeckID.");
+                Debug.LogWarning("No rows found in the PlayerDecks or PlayerCards table.");
             }
         }, error => Debug.LogError(error.GenerateErrorReport()));
     }
 
-
+    private void CreateCardInDeck(string cardID, CardListWrapper playerCards)
+    {
+        foreach (GeneratedCard existingCard in playerCards.cards)
+        {
+            if (existingCard.CardID == cardID)
+            {
+                GameObject novaKarta = Instantiate(cardPrefab, transform);
+                novaKarta.GetComponent<Card>().cardId = existingCard.CardID;
+                novaKarta.GetComponent<Card>().styleId = existingCard.StyleID;
+                novaKarta.GetComponent<Card>().cardName = existingCard.PersonName;
+                novaKarta.GetComponent<Card>().health = existingCard.Health;
+                novaKarta.GetComponent<Card>().strength = existingCard.Strength;
+                novaKarta.GetComponent<Card>().speed = existingCard.Speed;
+                novaKarta.GetComponent<Card>().attack = existingCard.Attack;
+                novaKarta.GetComponent<Card>().defense = existingCard.Defense;
+                novaKarta.GetComponent<Card>().knowledge = existingCard.Knowledge;
+                novaKarta.GetComponent<Card>().charisma = existingCard.Charisma;
+                novaKarta.GetComponent<Card>().image = existingCard.CardPicture;
+                Color32 cardColor = new Color32((byte)existingCard.Color[0], (byte)existingCard.Color[1], (byte)existingCard.Color[2], 255);
+                novaKarta.GetComponent<Card>().color = cardColor;
+                novaKarta.GetComponent<Card>().level = existingCard.Level;
+                novaKarta.GetComponent<Card>().attack1 = existingCard.Attack1;
+                novaKarta.GetComponent<Card>().attack2 = existingCard.Attack2;
+                novaKarta.GetComponent<Card>().attack3 = existingCard.Attack3;
+                novaKarta.GetComponent<Card>().attack4 = existingCard.Attack4;
+                novaKarta.GetComponent<Card>().story = LoadStory(existingCard.StyleID);
+                novaKarta.GetComponent<Card>().zoomedCardHolder = zoomedCardHolder;
+                novaKarta.GetComponent<Card>().transform.SetParent(deckPanel.transform);
+                novaKarta.GetComponent<Card>().transform.localScale = Vector3.one;
+                novaKarta.GetComponent<Card>().deckPanel = deckPanel;
+                novaKarta.GetComponent<Card>().deckCard = true;
+                novaKarta.GetComponent<Card>().deckManager = this;
+            }
+        }
+    }
 
     public void AddCardToHand(string cardID)
     {

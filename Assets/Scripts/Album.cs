@@ -12,7 +12,6 @@ using TMPro;
 
 public class Album : MonoBehaviour
 {
-
     public GameObject kartaPrefab;
     public GameObject album;
     public GameObject zoomedCardHolder;
@@ -22,24 +21,13 @@ public class Album : MonoBehaviour
     public GameObject cardTutorial;
     private string connectionString;
     public GameObject deckPanel;
-    public static bool IsLoggedIn = false;
-    private int maxLoginAttempts = 10;
-    private int loginAttemptCount = 0;
-    private float retryDelaySeconds = 0.5f;
     public TMP_Text loveValue;
 
     void Start()
     {
-        Debug.Log("Album.Start  -- Start");
+        Debug.Log("Album.Start -- Start");
 
-        StartLoginProcess();
-        if (PlayerPrefs.GetInt("HasCompletedTutorialAlbum", 0) == 0) { tutorial.SetActive(true); }
-
-        connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
-
-        deckPanel.SetActive(false);
-
-        if (PlayFabManagerLogin.IsLoggedIn)
+        if (PlayFabManagerLogin.Instance != null && PlayFabManagerLogin.IsLoggedIn)
         {
             StartCoroutine(VytvorKartyPlayFab());
         }
@@ -47,92 +35,21 @@ public class Album : MonoBehaviour
         {
             Debug.LogError("Hráč nie je prihlásený!");
         }
+
+        connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
+
+        deckPanel.SetActive(false);
+
+        if (PlayerPrefs.GetInt("HasCompletedTutorialAlbum", 0) == 0)
+        {
+            tutorial.SetActive(true);
+        }
+
         StartCoroutine(GetPlayerCurrencyBalance());
-    }
-
-    public void StartLoginProcess()
-    {
-        if (!IsLoggedIn)
-        {
-            StartCoroutine(LoginPlayFabWithRetry());
-        }
-    }
-
-    private IEnumerator LoginPlayFabWithRetry()
-    {
-        while (!IsLoggedIn && loginAttemptCount < maxLoginAttempts)
-        {
-            loginAttemptCount++;
-            Debug.Log($"Pokus o přihlášení číslo {loginAttemptCount}.");
-            LoginPlayFab();
-
-            // Počkejte na výsledek přihlášení nebo na vypršení času
-            float startTime = Time.time;
-            while (Time.time - startTime < retryDelaySeconds)
-            {
-                if (IsLoggedIn) yield break;
-                yield return null;
-            }
-
-            if (IsLoggedIn)
-            {
-                Debug.Log("Úspěšně přihlášen do PlayFab!");
-                yield break; // Pokud je přihlášení úspěšné, ukončíme coroutine
-            }
-            else if (loginAttemptCount < maxLoginAttempts)
-            {
-                Debug.LogWarning($"Přihlášení selhalo, zkoušíme znovu za {retryDelaySeconds} sekund...");
-                yield return new WaitForSeconds(retryDelaySeconds);
-            }
-        }
-
-        if (!IsLoggedIn)
-        {
-            Debug.LogError("Nepodařilo se přihlásit do PlayFab po opakovaných pokusech.");
-        }
-    }
-
-    void LoginPlayFab()
-    {
-        Debug.Log("Album.LoginPlayFab  -- Start");
-
-        //        loadingImage.SetActive(true);
-        string username = PlayerPrefs.GetString("username");
-        string email = PlayerPrefs.GetString("email");
-        string password = PlayerPrefs.GetString("password");
-
-        var request = new LoginWithEmailAddressRequest
-        {
-            Email = email,
-            Password = password
-        };
-        PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
-        //        loadingImage.SetActive(false);
-    }
-
-
-    void OnSuccess(LoginResult result)
-    {
-        Debug.Log("Album.OnSuccess  -- Start");
-
-        IsLoggedIn = true;
-        Debug.Log("Sicko dobre");
-        //      loadingImage.SetActive(false);
-    }
-
-    void OnError(PlayFabError error)
-    {
-        Debug.Log("Album.OnError  -- Start");
-
-        Debug.Log("Daco nahovno");
-        //      errorImage.SetActive(true);
-        Debug.Log(error.GenerateErrorReport());
     }
 
     string LoadStory(int cardID)
     {
-        Debug.Log("Album.LoadStory  -- Start");
-
         string cardStory = "";
         IDbConnection dbConnection = new SqliteConnection(connectionString);
         dbConnection.Open();
@@ -179,37 +96,23 @@ public class Album : MonoBehaviour
         yield return new WaitUntil(() => isCompleted);
     }
 
-
-
     private IEnumerator VytvorKartyPlayFab()
     {
-        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Album.VytvorKartyPlayFab => START ");
-        // Získanie údajov z PlayFab
         PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
         {
             if (result.Data.ContainsKey("PlayerCards"))
             {
-                Debug.Log("PlayerCards data: " + result.Data["PlayerCards"].Value); // Pridaný výpis
-
-                // Prevod údajov z formátu JSON do objektov PlayerCardsData
                 PlayerCardsData data = JsonUtility.FromJson<PlayerCardsData>(result.Data["PlayerCards"].Value);
-
-                // Spracovanie údajov o kartách
                 StartCoroutine(SpracujKarty(data.cards));
             }
         },
         error =>
         {
             Debug.LogError(error.GenerateErrorReport());
-            if (error.Error == PlayFabErrorCode.ConnectionError)
-            {
-                // Zobrazte chybové hlásenie alebo vráťte hráča do hlavného menu
-            }
         });
 
         yield return null;
     }
-
 
     private IEnumerator SpracujKarty(List<GeneratedCard> data)
     {

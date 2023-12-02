@@ -25,6 +25,7 @@ public class PlayFabManagerLogin : MonoBehaviour
     public static PlayFabManagerLogin Instance { get; private set; }
 
     public static bool IsLoggedIn { get; private set; } = false;
+    public string LoggedInPlayerId { get; private set; }
 
     private void Awake()
     {
@@ -113,6 +114,8 @@ public class PlayFabManagerLogin : MonoBehaviour
         PlayerPrefs.SetInt("HasCompletedTutorialRoyal", 0);
         PlayerPrefs.Save();
 
+        LoggedInPlayerId = result.PlayFabId;
+
         // Nastavenie DisplayName na užívateľské meno
         UpdateUserTitleDisplayName(usernameInput.text);
 
@@ -172,6 +175,8 @@ public class PlayFabManagerLogin : MonoBehaviour
             IsLoggedIn = true;
             StartCoroutine(LoadMainSceneAfterDelay(2));
         }, error => { Debug.LogError(error.GenerateErrorReport()); });
+
+        LoggedInPlayerId = result.PlayFabId;
     }
 
     private void SaveEmailAndPasswordToPlayerPrefs(string email, string password)
