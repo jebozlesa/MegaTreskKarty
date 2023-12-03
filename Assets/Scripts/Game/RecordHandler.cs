@@ -44,6 +44,7 @@ public class RecordHandler : MonoBehaviour
             // Počkajte, kým sa dokončí metóda UpdatePlayerData
             yield return SendNewRecordToPlayFab(enemyLevel);
             recordText.text = bestRecord.ToString();
+            yield return new WaitForSeconds(0.5f);
             if (enemyLevel > 0)
             {
                 // Počkajte, kým sa dokončí druhá metóda AddRandomCard

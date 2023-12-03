@@ -244,7 +244,7 @@ public class CardGenerator : MonoBehaviour
         int randomIndex = UnityEngine.Random.Range(1, cardCount + 1);
         dbCommand.Dispose();
 
-        //  randomIndex = 48;  // docasne - vymazat resp. zakomentovat ked netreeba                                         <============  RANDOM INDEX
+        randomIndex = 50;  // docasne - vymazat resp. zakomentovat ked netreeba                                         <============  RANDOM INDEX
         yield return StartCoroutine(AddCardById(randomIndex));
 
         dbConnection.Close();
@@ -270,8 +270,8 @@ public class CardGenerator : MonoBehaviour
                 string existingDataJson = GetExistingDataJson(result);
                 Dictionary<string, GeneratedCard> data = AddCardToExistingData(existingDataJson, card);
                 string updatedJson = ConvertUpdatedDataToJson(data);
-
                 UpdateUserDataInPlayFab(updatedJson);
+
             }, error => Debug.LogError(error.GenerateErrorReport()));
 
             AudioManager.Instance.PlayCardAcquiredSound();
@@ -448,6 +448,7 @@ public class CardGenerator : MonoBehaviour
 
     private void UpdateUserDataInPlayFab(string updatedJson)
     {
+        Debug.Log("Updating JSON card ");
         var updateRequest = new UpdateUserDataRequest
         {
             Data = new Dictionary<string, string> { { "PlayerCards", updatedJson } }

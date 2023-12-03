@@ -33,7 +33,7 @@ public class Album : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Hráč nie je prihlásený!");
+            Debug.LogError("Album.Start -- Hráč nie je prihlásený!");
         }
 
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
