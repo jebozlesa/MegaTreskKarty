@@ -3117,6 +3117,36 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
+    //123
+    public IEnumerator PlayCurseAnimation(Transform attacker, Transform defender)
+    {
+        // Načítanie obrázkov a zvukov
+        Sprite planeSprite = Resources.Load<Sprite>("Game/Animations/cursecat");
+        Sprite explosionSprite = Resources.Load<Sprite>("Game/Animations/cursemirror");
+
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/curse");
+
+        // Spustenie animácie
+        yield return StartCoroutine(
+            kamikazeAnimation.StartAnimation(
+                planeSprite: planeSprite,
+                explosionSprite: explosionSprite,
+                sound: soundEffect,
+                isSuccessful: true,
+                attacker: attacker,
+                defender: defender,
+                finalRotation: 180f,
+                cardSize: new Vector2(300f, 300f), // Predpokladaná veľkosť karty
+                imageSize: new Vector2(300f, 300f), // Veľkosť obrázkov
+                duration: 1f, // Celková doba trvania animácie
+                moveDurationRatio: 0.5f, // Pomer času pohybu lietadla
+                explosionGrowDurationRatio: 0.2f // Pomer času rastu explózie
+            )
+        );
+    }
+
+    ///////////////----------------------------------------------------------------------------------------------------------------------------BASIC-----------------------------------------------------------------------------------------------------------------------------------------------------
+
     public IEnumerator PlayAnimationNotImpressed(Transform targetCard)
     {
         Sprite effectSprite = Resources.Load<Sprite>("Game/Animations/notimpressed");
@@ -3167,6 +3197,10 @@ public class AttackAnimations : MonoBehaviour
             )
         );
     }
+
+    ///////////////----------------------------------------------------------------------------------------------------------------------------EFECTS-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 
     //1e
     public IEnumerator PlayBleedStartAnimation(Transform targetCard)
@@ -4147,6 +4181,46 @@ public class AttackAnimations : MonoBehaviour
                 endSize: new Vector2(350f, 350f),
                 duration: 1f,
                 soundEffect: soundEffect
+            )
+        );
+    }
+
+    //26e
+    public IEnumerator PlayCurseStartAnimation(Transform attacker)
+    {
+        Sprite sprite = Resources.Load<Sprite>("Game/Animations/cursestorm");
+        AudioClip soundEffect = Resources.Load<AudioClip>("Sounds/Game/Animations/cursestorm");
+
+        yield return StartCoroutine(
+            enlargeImageAnimation.StartEnlargeAnimation(
+                sprite: sprite,
+                targetCard: attacker,
+                startSize: new Vector2(250f, 250f),
+                endSize: new Vector2(350f, 350f),
+                duration: 1f,
+                soundEffect: soundEffect
+            )
+        );
+    }
+
+    //16e
+    public IEnumerator PlayCurseEndAnimation(Transform targetCard)
+    {
+        Sprite animationImageSprite = Resources.Load<Sprite>("Game/Animations/curseend");
+        AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/curseend");
+
+        yield return StartCoroutine(
+            risingEnlargeImageAnimation.StartRisingEnlargeAnimation(
+                sprite: animationImageSprite,
+                targetCard: targetCard,
+                startSize: new Vector2(200f, 200f),
+                endSize: new Vector2(300f, 300f),
+                duration: 0.5f,
+                startVerticalOffset: 200f, // Počiatočný vertikálny posun
+                endVerticalOffset: -100f, // Konečný vertikálny posun
+                startRotation: 0f,
+                endRotation: 0f,
+                soundEffect: startSound
             )
         );
     }

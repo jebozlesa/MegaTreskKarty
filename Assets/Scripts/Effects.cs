@@ -664,7 +664,7 @@ public class Effects : MonoBehaviour
         if (card.effects[iteration][1] == 0)
         {
             card.state = CardState.ATTACK;
-            //yield return StartCoroutine(attackAnimations.PlayConfusionEndAnimation(card.transform));        //ANIMACIA
+            yield return StartCoroutine(attackAnimations.PlayCurseEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is out of curse"));
             yield break;
@@ -674,8 +674,12 @@ public class Effects : MonoBehaviour
             if (UnityEngine.Random.value <= 0.25f)
             {
                 card.state = CardState.MAYBE;
-                //yield return StartCoroutine(attackAnimations.PlayConfusionHurtItselfAnimation(card.transform));        //ANIMACIA
+                yield return StartCoroutine(attackAnimations.PlayCurseStartAnimation(card.transform));        //ANIMACIA
                 yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " has bad luck attacking"));
+            }
+            else
+            {
+                card.state = CardState.ATTACK;
             }
             card.effects[iteration][1] -= 1;
         }

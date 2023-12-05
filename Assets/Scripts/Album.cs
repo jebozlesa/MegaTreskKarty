@@ -27,25 +27,55 @@ public class Album : MonoBehaviour
     {
         Debug.Log("Album.Start -- Start");
 
+        connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
+        deckPanel.SetActive(false);
+        if (PlayerPrefs.GetInt("HasCompletedTutorialAlbum", 0) == 0)
+        {
+            tutorial.SetActive(true);
+        }
+
         if (PlayFabManagerLogin.Instance != null && PlayFabManagerLogin.IsLoggedIn)
         {
             StartCoroutine(VytvorKartyPlayFab());
         }
         else
         {
-            Debug.LogError("Album.Start -- Hráč nie je prihlásený!");
-        }
-
-        connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
-
-        deckPanel.SetActive(false);
-
-        if (PlayerPrefs.GetInt("HasCompletedTutorialAlbum", 0) == 0)
-        {
-            tutorial.SetActive(true);
+            TryLoginAgain();
         }
 
         StartCoroutine(GetPlayerCurrencyBalance());
+    }
+
+    void TryLoginAgain()
+    {
+        string email = PlayerPrefs.GetString("email");
+        string password = PlayerPrefs.GetString("password");
+
+        if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(password))
+        {
+            var request = new LoginWithEmailAddressRequest
+            {
+                Email = email,
+                Password = password
+            };
+
+            PlayFabClientAPI.LoginWithEmailAddress(request, OnLoginSuccess, OnLoginError);
+        }
+        else
+        {
+            Debug.LogError("Album.Start -- Prihlasovacie údaje nie sú dostupné!");
+        }
+    }
+
+    void OnLoginSuccess(LoginResult result)
+    {
+        Debug.Log("Album.Start -- Prihlásenie úspešné");
+        StartCoroutine(VytvorKartyPlayFab());
+    }
+
+    void OnLoginError(PlayFabError error)
+    {
+        Debug.LogError("Album.Start -- Chyba pri prihlásení: " + error.GenerateErrorReport());
     }
 
     string LoadStory(int cardID)

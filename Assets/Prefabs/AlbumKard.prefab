@@ -1163,13 +1163,15 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\"...In 1958, in Sweden's Rasunda Stadium, the World Cup finals saw the
-    rise of a new hero. Brazil faced off against the host nation, Sweden. Among them
-    was a young 17-year-old named Pele. The crowd buzzed with anticipation. As the
-    ball came flying towards him, Pele skillfully trapped it with his chest. With
-    quick thinking, he then lifted the ball over a nearby defender's head. Racing
-    forward, he smashed a volley, catching the goalkeeper off-guard.\r\n\rAs the
-    ball hit the net, the world watched in awe, realizing a star was born...\"\n"
+  m_text: "\"...In 1679, La Voisin, a feared poisoner, entered a secret Parisian
+    chamber for a covert meeting with a wealthy noblewoman. The noblewoman, desperate
+    and vengeful, sought La Voisin's services to eliminate a rival at court. With
+    her deep knowledge of lethal concoctions, La Voisin selected potent herbs and
+    deadly toxins. She expertly crafted a clear, odorless potion, perfect for secretly
+    adding to the rival\u2019s wine. The noblewoman watched intently, unaware that
+    this sinister plot would soon lead to La Voisin's capture. This night's dark
+    deed was a crucial part of the scandalous web that would later rock the French
+    aristocracy...\""
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 125cb55b44b24c4393181402bc6200e6, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 125cb55b44b24c4393181402bc6200e6, type: 2}

@@ -13,7 +13,7 @@ public class PlayFabCardManager : MonoBehaviour
     {
         if (!PlayFabManagerLogin.IsLoggedIn)
         {
-            Debug.LogError("Hráč nie je prihlásený.");
+            Debug.LogError("PlayFabCardManager.GetCardData ==> Hráč nie je prihlásený.");
             return;
         }
 
@@ -76,7 +76,7 @@ public class PlayFabCardManager : MonoBehaviour
     {
         if (!PlayFabManagerLogin.IsLoggedIn)
         {
-            Debug.LogError("Hráč nie je prihlásený.");
+            Debug.LogError("PlayFabCardManager.UpdateCardData ==> Hráč nie je prihlásený.");
             return;
         }
 

@@ -2368,12 +2368,8 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Axe"));
         yield return StartCoroutine(attackAnimations.PlayAxeAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(((attacker.attack + (attacker.strength * 2)) / 3) - ((receiver.defense - receiver.speed) / 2));
+        if (Random.value <= 0.5f) { receiver.TakeDamage(6); } //critical hit
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " attacks with axe"));
-
-        if (Random.value <= 0.5f)
-        {
-            receiver.TakeDamage(6); //critical hit
-        }
 
         Debug.Log(attacker.cardName + " -> Axe => " + receiver.cardName);
     }
@@ -2595,13 +2591,17 @@ public class Attack : MonoBehaviour
     public IEnumerator Curse(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Curse"));
-        //yield return StartCoroutine(attackAnimations.PlayIllusionAnimation(attacker.transform, Random.Range(0, 5)));        //ANIMACIA
-        attacker.HandleCharisma(1);
+        yield return StartCoroutine(attackAnimations.PlayCurseAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         if (receiver.CheckEffect(26) == false)
         {
-            StartCoroutine(attackAnimations.PlayConfusionStartAnimation(receiver.transform));        //ANIMACIA
+            //StartCoroutine(attackAnimations.PlayCurseStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(26, Random.Range(5, 10)));//curse
             yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " send curse to enemy"));
+        }
+        else
+        {
+            yield return StartCoroutine(attackAnimations.PlayAnimationNotEffective(receiver.transform));        //ANIMACIA
+            yield return StartCoroutine(ShowDialog(dialogText, "Curse has no effect"));
         }
         Debug.Log(attacker.cardName + " -> Curse => " + receiver.cardName);
     }

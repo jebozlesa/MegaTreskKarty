@@ -30,6 +30,11 @@ public class FightSystem : MonoBehaviour
     public TMP_Text button3Text;
     public TMP_Text button4Text;
 
+    public TMP_Text button1CountText;
+    public TMP_Text button2CountText;
+    public TMP_Text button3CountText;
+    public TMP_Text button4CountText;
+
     public Button button1;
     public Button button2;
     public Button button3;
@@ -175,6 +180,10 @@ public class FightSystem : MonoBehaviour
         {
             dialogText.text = "Choose an attack";
             attackDescriptions.ShowDescription(player.cardInGame);
+            button1CountText.text = player.cardInGame.attackCount[1].ToString();
+            button2CountText.text = player.cardInGame.attackCount[2].ToString();
+            button3CountText.text = player.cardInGame.attackCount[3].ToString();
+            button4CountText.text = player.cardInGame.attackCount[4].ToString();
         }
         else
         {
@@ -196,6 +205,7 @@ public class FightSystem : MonoBehaviour
     {
         if (state != FightState.TURN || (playerAttack == 0 && player.cardInGame.state == CardState.ATTACK) || player.cardInGame.attackCount[playerAttack] == 0)
             return;
+
         state = FightState.ENDTURN;
         StartCoroutine(Fight());
     }

@@ -20,6 +20,12 @@ public class PlayFabManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+
+            // Pokús sa o prihlásenie, ak užívateľ nie je prihlásený
+            if (!PlayFabManagerLogin.IsLoggedIn)
+            {
+                TryLoginAgain();
+            }
         }
         else
         {
@@ -27,14 +33,82 @@ public class PlayFabManager : MonoBehaviour
         }
     }
 
+    private void TryLoginAgain()
+    {
+        string email = PlayerPrefs.GetString("email");
+        string password = PlayerPrefs.GetString("password");
+
+        if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(password))
+        {
+            var request = new LoginWithEmailAddressRequest
+            {
+                Email = email,
+                Password = password
+            };
+
+            PlayFabClientAPI.LoginWithEmailAddress(request, OnLoginSuccess, OnLoginError);
+        }
+        else
+        {
+            Debug.LogError("PlayFabManager: Prihlasovacie údaje nie sú dostupné!");
+        }
+    }
+
+    private void OnLoginSuccess(LoginResult result)
+    {
+        Debug.Log("PlayFabManager: Prihlásenie úspešné");
+        // Tu môžete pridať akékoľvek ďalšie kroky po úspešnom prihlásení.
+    }
+
+    private void OnLoginError(PlayFabError error)
+    {
+        Debug.LogError("PlayFabManager: Chyba pri prihlásení: " + error.GenerateErrorReport());
+    }
+
     public void SendLeaderboard(int score)
     {
         if (!PlayFabManagerLogin.IsLoggedIn)
         {
-            Debug.LogError("Hráč nie je prihlásený.");
+            Debug.Log("SendLeaderboard ==> Hráč nie je prihlásený, pokúšam sa o prihlásenie.");
+            TryLoginAndSendLeaderboard(score);
             return;
         }
 
+        UpdateLeaderboard(score);
+    }
+
+    private void TryLoginAndSendLeaderboard(int score)
+    {
+        string email = PlayerPrefs.GetString("email");
+        string password = PlayerPrefs.GetString("password");
+
+        if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(password))
+        {
+            var request = new LoginWithEmailAddressRequest
+            {
+                Email = email,
+                Password = password
+            };
+
+            PlayFabClientAPI.LoginWithEmailAddress(request,
+                result =>
+                {
+                    Debug.Log("SendLeaderboard ==> Prihlásenie úspešné, aktualizujem leaderboard.");
+                    UpdateLeaderboard(score);
+                },
+                error =>
+                {
+                    Debug.LogError("SendLeaderboard ==> Chyba pri prihlásení: " + error.GenerateErrorReport());
+                });
+        }
+        else
+        {
+            Debug.LogError("SendLeaderboard ==> Prihlasovacie údaje nie sú dostupné!");
+        }
+    }
+
+    private void UpdateLeaderboard(int score)
+    {
         var request = new UpdatePlayerStatisticsRequest
         {
             Statistics = new List<StatisticUpdate>
@@ -49,14 +123,14 @@ public class PlayFabManager : MonoBehaviour
         PlayFabClientAPI.UpdatePlayerStatistics(request, OnLeaderboardUpdate, OnError);
     }
 
-    void OnLeaderboardUpdate(UpdatePlayerStatisticsResult result)
+    private void OnLeaderboardUpdate(UpdatePlayerStatisticsResult result)
     {
-        Debug.Log("Rekordy poslane");
+        Debug.Log("SendLeaderboard ==> Rekordy úspešne poslané.");
     }
 
-    void OnError(PlayFabError error)
+    private void OnError(PlayFabError error)
     {
-        Debug.LogError("Chyba: " + error.GenerateErrorReport());
+        Debug.LogError("SendLeaderboard ==> Chyba: " + error.GenerateErrorReport());
     }
 
     public void GetLeaderboard()
