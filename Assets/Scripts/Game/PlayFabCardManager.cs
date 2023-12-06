@@ -3,25 +3,28 @@ using PlayFab.ClientModels;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using System.Collections;
 
 public class PlayFabCardManager : MonoBehaviour
 {
     public delegate void CardDataCallback(Dictionary<string, object> cardData);
     public delegate void UpdateCallback(bool success);
 
-    public void GetCardData(string cardId, CardDataCallback callback)
+    public IEnumerator GetCardData(string cardId, CardDataCallback callback)
     {
         if (!PlayFabManagerLogin.IsLoggedIn)
         {
-            Debug.LogError("PlayFabCardManager.GetCardData ==> Hráč nie je prihlásený.");
-            return;
+            Debug.LogError("PlayFabCardManager.GetCardDataCoroutine ==> Hráč nie je prihlásený.");
+            yield break;
         }
 
-        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " PlayFabCardManager.GetCardData => START " + cardId);
+        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " PlayFabCardManager.GetCardDataCoroutine => START " + cardId);
         GetUserDataRequest request = new GetUserDataRequest
         {
             Keys = new List<string> { "PlayerCards" }
         };
+
+        bool isCompleted = false;
 
         PlayFabClientAPI.GetUserData(request, result =>
         {
@@ -33,16 +36,21 @@ public class PlayFabCardManager : MonoBehaviour
                     if (card.CardID == cardId)
                     {
                         callback?.Invoke(ConvertCardDataToDictionary(card));
+                        isCompleted = true;
                         return;
                     }
                 }
             }
             callback?.Invoke(null);
+            isCompleted = true;
         }, error =>
         {
             Debug.LogError(error.GenerateErrorReport());
             callback?.Invoke(null);
+            isCompleted = true;
         });
+
+        yield return new WaitUntil(() => isCompleted);
     }
 
     public Dictionary<string, object> ConvertCardDataToDictionary(CardData cardData)
@@ -72,20 +80,22 @@ public class PlayFabCardManager : MonoBehaviour
         return cardDataDict;
     }
 
-    public void UpdateCardData(string cardID, Dictionary<string, string> updates, UpdateCallback callback)
+    public IEnumerator UpdateCardData(string cardID, Dictionary<string, string> updates, UpdateCallback callback)
     {
         if (!PlayFabManagerLogin.IsLoggedIn)
         {
-            Debug.LogError("PlayFabCardManager.UpdateCardData ==> Hráč nie je prihlásený.");
-            return;
+            Debug.LogError("PlayFabCardManager.UpdateCardDataCoroutine ==> Hráč nie je prihlásený.");
+            yield break;
         }
 
-        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " PlayFabCardManager.UpdateCardData => START " + cardID);
+        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " PlayFabCardManager.UpdateCardDataCoroutine => START " + cardID);
 
         GetUserDataRequest getRequest = new GetUserDataRequest
         {
             Keys = new List<string> { "PlayerCards" }
         };
+
+        bool isCompleted = false;
 
         PlayFabClientAPI.GetUserData(getRequest, result =>
         {
@@ -124,23 +134,30 @@ public class PlayFabCardManager : MonoBehaviour
 
                 PlayFabClientAPI.UpdateUserData(updateRequest, updateResult =>
                 {
+                    isCompleted = true;
                     callback?.Invoke(true);
                 }, error =>
                 {
+                    isCompleted = true;
                     Debug.LogError(error.GenerateErrorReport());
                     callback?.Invoke(false);
                 });
             }
             else
             {
+                isCompleted = true;
                 callback?.Invoke(false);
             }
         }, error =>
         {
             Debug.LogError(error.GenerateErrorReport());
+            isCompleted = true;
             callback?.Invoke(false);
         });
+
+        yield return new WaitUntil(() => isCompleted);
     }
+
 
     [System.Serializable]
     public class CardsContainer

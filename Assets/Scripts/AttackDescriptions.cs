@@ -30,13 +30,13 @@ public class AttackDescriptions : MonoBehaviour
         switch (attack)
         {
             case 1://Punch
-                count = attacker.strength * 5;
+                count = 20 + attacker.strength;
                 break;
             case 2://Kick
-                count = attacker.strength * 5;
+                count = 20 + attacker.strength;
                 break;
             case 3://Heal
-                count = attacker.knowledge;
+                count = 5;
                 break;
             case 4://Forgiveness
                 count = attacker.charisma / 2;

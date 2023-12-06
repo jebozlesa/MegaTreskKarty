@@ -114,6 +114,8 @@ public class PlayFabManagerLogin : MonoBehaviour
         PlayerPrefs.SetInt("HasCompletedTutorialRoyal", 0);
         PlayerPrefs.Save();
 
+        IsLoggedIn = true;
+
         LoggedInPlayerId = result.PlayFabId;
 
         // Nastavenie DisplayName na užívateľské meno

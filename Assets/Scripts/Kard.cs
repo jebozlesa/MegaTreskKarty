@@ -270,56 +270,65 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
     // }
 
-    public void AddExperience(int increase)
+    public IEnumerator AddExperience(int increase)
     {
         Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.AddExperience => START " + increase);
-        playFabManager.GetCardData(cardId, cardDataDictionary =>
+
+        Dictionary<string, object> cardDataDictionary = null;
+        bool updateSuccess = false;
+
+        // Získanie údajov o karte
+        yield return StartCoroutine(playFabManager.GetCardData(cardId, data =>
         {
-            if (cardDataDictionary != null)
+            cardDataDictionary = data;
+        }));
+
+        if (cardDataDictionary != null)
+        {
+            // Konvertujte slovník na objekt CardData
+            PlayFabCardManager.CardData cardData = ConvertDictionaryToCardData(cardDataDictionary);
+
+            int currentExperience = cardData.Experience;
+            int currentLevel = cardData.Level;
+            int newExperience = currentExperience + increase;
+
+            Dictionary<string, string> updates = new Dictionary<string, string>
+        {
+            { "Experience", newExperience.ToString() }
+        };
+
+            bool leveledUp = false;
+            // Check if player leveled up
+            if (currentLevel * (10 * (currentLevel)) <= newExperience)
             {
-                // Konvertujte slovník na objekt CardData
-                PlayFabCardManager.CardData cardData = ConvertDictionaryToCardData(cardDataDictionary);
+                updates.Add("Level", (currentLevel + 1).ToString());
+                leveledUp = true;
+            }
 
-                int currentExperience = cardData.Experience;
-                int currentLevel = cardData.Level;
-                int newExperience = currentExperience + increase;
+            // Aktualizujte údaje o karte
+            yield return StartCoroutine(playFabManager.UpdateCardData(cardId, updates, success =>
+            {
+                updateSuccess = success;
+            }));
 
-                Dictionary<string, string> updates = new Dictionary<string, string>
+            if (updateSuccess)
+            {
+                StartCoroutine(EffectAnimations(increase, "XP", color_purple));
+                experience = newExperience;
+
+                if (leveledUp)
                 {
-                    { "Experience", newExperience.ToString() }
-                };
-
-                bool leveledUp = false;
-                // Check if player leveled up
-                if (currentLevel * (10 * (currentLevel)) <= newExperience)
-                {
-                    cardData.Level = currentLevel + 1;
-                    updates.Add("Level", (currentLevel + 1).ToString());
-                    leveledUp = true;
+                    StartCoroutine(EffectAnimations(level, "LVL", color_yellow));
+                    UpdateRandomStat();
+                    level += 1;
+                    LoadCardData();
                 }
-
-                playFabManager.UpdateCardData(cardId, updates, success =>
-                {
-                    if (success)
-                    {
-                        StartCoroutine(EffectAnimations(increase, "XP", color_purple));
-                        experience = newExperience;
-
-                        if (leveledUp)
-                        {
-                            StartCoroutine(EffectAnimations(level, "LVL", color_yellow));
-                            UpdateRandomStat();
-                            level += 1;
-                            LoadCardData();
-                        }
-                    }
-                });
             }
-            else
-            {
-                Debug.Log("ERROR: cardDataDictionary == null");
-            }
-        });
+        }
+        else
+        {
+            Debug.LogError("ERROR: cardDataDictionary == null");
+        }
     }
 
 

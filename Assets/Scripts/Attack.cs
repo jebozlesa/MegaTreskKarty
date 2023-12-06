@@ -517,10 +517,8 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Forgiveness"));
         yield return StartCoroutine(attackAnimations.PlayForgivenessAnimation(attacker.transform));        //ANIMACIA
-        receiver.HandleAttack(-(int)System.Math.Ceiling((double)attacker.charisma / 5));
-        receiver.HandleAttack(-(int)System.Math.Ceiling((double)attacker.charisma / 5));
+        receiver.HandleAttack(-1);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " forgives your heresy"));
-
         if (Random.value <= 0.5f)
         {
             yield return StartCoroutine(attackAnimations.PlayAscetismStartAnimation(receiver.transform));        //ANIMACIA

@@ -328,7 +328,7 @@ public class FightSystem : MonoBehaviour
 
         if (enemy.cardInGame.health <= 0)
         {
-            player.cardInGame.AddExperience(enemy.cardInGame.level);//exp
+            yield return StartCoroutine(player.cardInGame.AddExperience(enemy.cardInGame.level));//exp
             if (missionID == 0)
             {
                 enemyLevel += 1;
