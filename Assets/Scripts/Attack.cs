@@ -546,7 +546,7 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Water To Wine"));
         yield return StartCoroutine(attackAnimations.PlayWaterToWineAnimation(attacker.transform));        //ANIMACIA
         attacker.HandleAttack(2);
-        attacker.HandleStrength(2);
+        attacker.HandleStrength(1);
         attacker.HandleDefense(-1);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " changes his water to wine"));
 
@@ -605,13 +605,13 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Monkey Wrench"));
         yield return StartCoroutine(attackAnimations.PlayMonkeyWrenchAnimation(attacker.transform, receiver.transform));        //ANIMACIA
-        receiver.TakeDamage(((attacker.strength + attacker.attack) / 2) - receiver.defense);
-        if (Random.value <= 0.3f) receiver.TakeDamage(5);                                                               //critical hit
+        receiver.TakeDamage(3 + (attacker.strength / 2) - (receiver.defense / 2));
+        if (Random.value <= Mathf.Min(1f, attacker.speed / 35)) receiver.TakeDamage(3);                                                               //critical hit
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " hits with Monkey Wrench"));
-        if (Random.value <= 0.3f)
+        if (Random.value <= Mathf.Min(1f, attacker.knowledge / 30f) && !attacker.CheckEffect(3))
         {
             yield return StartCoroutine(attackAnimations.PlayKnockoutAnimation(receiver.transform));        //ANIMACIA
-            yield return StartCoroutine(receiver.AddEffect(3, Random.Range(1, 3)));                                      //sleep
+            yield return StartCoroutine(receiver.AddEffect(3, 2));                                      //sleep
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " falls asleep"));
         }
         Debug.Log(attacker.cardName + " -> MonkeyWrench => " + receiver.cardName);
@@ -780,13 +780,13 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Sword"));
         yield return StartCoroutine(attackAnimations.PlaySwordAnimation(attacker.transform, receiver.transform));        //ANIMACIA
-        receiver.TakeDamage(3 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
+        receiver.TakeDamage(5 + (attacker.speed / 4) - (receiver.defense / 2));
+        if (Random.value <= Mathf.Min(1f, attacker.attack / 50f)) receiver.TakeDamage(5);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " cuts enemy with sword"));
-
-        if (Random.value <= 0.4f)
+        if (Random.value <= (attacker.strength / 50f))
         {
             yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
-            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(1, 6))); //bleed
+            yield return StartCoroutine(receiver.AddEffect(1, 4)); //bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
 
@@ -797,13 +797,13 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Pike"));
         yield return StartCoroutine(attackAnimations.PlayPikeAnimation(attacker.transform, receiver.transform));        //ANIMACIA
-        receiver.TakeDamage(((attacker.strength + attacker.speed + attacker.attack) / 2) - receiver.defense);
+        receiver.TakeDamage(4 + (attacker.speed / 4) - (receiver.defense / 2));
+        if (Random.value <= Mathf.Min(1f, attacker.attack / 50f)) receiver.TakeDamage(6);
         yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is impaled on a pike"));
-
-        if (Random.value <= 0.2f)
+        if (Random.value <= (attacker.strength / 40f))
         {
             yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
-            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(1, 4))); //bleed
+            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(1, 2))); //bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
 
@@ -865,13 +865,13 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Cleaver"));
         yield return StartCoroutine(attackAnimations.PlayCleaverAnimation(attacker.transform, receiver.transform));        //ANIMACIA
-        receiver.TakeDamage(1 + ((attacker.strength + attacker.attack) / 2) - ((receiver.defense - receiver.strength) / 2));
+        receiver.TakeDamage(1 + (attacker.strength / 3) - (receiver.defense / 2));
+        if (Random.value <= Mathf.Min(1f, attacker.attack / 50f)) receiver.TakeDamage(4);
         yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " gets chopped by cleaver"));
-
-        if (Random.value <= 0.3f)
+        if (Random.value <= (attacker.knowledge / 30f))
         {
             yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
-            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(2, 5))); //bleed
+            yield return StartCoroutine(receiver.AddEffect(1, 6)); //bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
 
@@ -882,13 +882,13 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Pan"));
         yield return StartCoroutine(attackAnimations.PlayPanAnimation(attacker.transform, receiver.transform));        //ANIMACIA
-        receiver.TakeDamage(1 + attacker.strength - receiver.defense);
+        receiver.TakeDamage(3 + (attacker.strength / 2) - (receiver.defense / 2));
+        if (Random.value <= Mathf.Min(1f, attacker.speed / 50f)) receiver.TakeDamage(3);
         yield return StartCoroutine(ShowDialog(dialogText, "Tongggg!!! " + receiver.cardName + " gets hit by the pan"));
-
-        if (Random.value <= 0.3f)
+        if (Random.value <= Mathf.Min(1f, attacker.attack / 40f) && !attacker.CheckEffect(3))
         {
-            yield return StartCoroutine(attackAnimations.PlayKnockoutAnimation(attacker.transform));  // KO ANIMATION
-            yield return StartCoroutine(receiver.AddEffect(3, Random.Range(2, 4))); //sleep
+            yield return StartCoroutine(attackAnimations.PlayKnockoutAnimation(receiver.transform));  // KO ANIMATION
+            yield return StartCoroutine(receiver.AddEffect(3, Random.Range(2, 2))); //sleep
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " falls asleep"));
         }
 
@@ -2296,7 +2296,7 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Oriental Spice"));
         yield return StartCoroutine(attackAnimations.PlayOrientalSpiceAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " offers some spices to enemy"));
-        if (Random.value <= 0.9f)
+        if (Random.value <= 0.9f && receiver.CheckEffect(24) == false)
         {
             StartCoroutine(attackAnimations.PlayPoisonStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(24, 0)); //Poison

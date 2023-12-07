@@ -1,0 +1,88 @@
+
+Útok "Monkeywrench"
+Základní Poškození
+
+Základní hodnota: 3
+Vliv útočníka: Poškození je zvýšeno o polovinu hodnoty STR útočníka.
+Odečtení obrany obránce: Odečítá se polovina hodnoty DEF obránce.
+Kritický Úder
+
+Pravděpodobnost: (SPE útočníka / 35).
+Extra poškození: Pevně dané extra poškození 3.
+Speciální Efekt: Sleep
+
+Pravděpodobnost: (KNO útočníka / 30).
+Trvání: 2 kola.
+Efekt: Obránce trpí efektem sleep, což způsobuje 4 dmg na kolo.
+Výpočet Průměrného Poškození na Kolo
+Nejvyšší průměrné poškození na kolo: 6.85 dmg (pro bojovníka "Auguste Escoffier")
+Nejnižší průměrné poškození na kolo: 3.67 dmg (pro bojovníka "Adolf Hitler")
+Celkové průměrné poškození na kolo: 5.17 dmg (pro průměrného útočníka)
+
+Upravený Útok "Sword" 20
+Základní Poškození
+
+Základní hodnota: 5
+Vliv útočníka: Poškození je zvýšeno o čtvrtinu hodnoty SPE útočníka.
+Odečtení obrany obránce: Odečítá se polovina hodnoty DEF obránce.
+Kritický Úder
+
+Pravděpodobnost: (ATT útočníka / 40).
+Extra poškození: Pevně dané extra poškození 4.
+Speciální Efekt: Krvácení
+
+Pravděpodobnost: (STR útočníka / 50).
+Efekt: Obránce trpí krvácením, což způsobuje další poškození v průběhu čtyř kol (4 dmg v prvním kole, 3 dmg ve druhém kole, 2 dmg ve třetím kole, 1 dmg ve čtvrtém kole).
+Výpočet Průměrného Poškození na Kolo
+Nejvyšší průměrné poškození na kolo: 5.95 (pro nejsilnějšího útočníka)
+Nejnižší průměrné poškození na kolo: 4.00 (pro nejslabšího útočníka)
+Celkové průměrné poškození na kolo: 5.125 (pro průměrného útočníka)
+
+Útok "Pike"
+Základní Poškození: 4 + (SPE útočníka / 4) - (DEF obránce / 2)
+Kritický Úder:
+Pravděpodobnost: ATT útočníka / 50
+Extra poškození: 6
+Speciální Efekt: Bleed:
+Pravděpodobnost: STR útočníka / 40
+Trvání: 2 kola
+Poškození za kolo: 2 dmg během bleed
+Výpočet Průměrného Poškození na Kolo
+Nejvyšší průměrné poškození na kolo: 5.51 dmg (pro bojovníka Vlad Dracula)
+Nejnižší průměrné poškození na kolo: 3.09 dmg (pro bojovníka Adolf Hitler)
+Celkové průměrné poškození na kolo: 4.52 dmg
+
+
+Útok "Cleaver"
+Základní Poškození
+
+Základní hodnota: 1
+Vliv útočníka: Poškození je zvýšeno o třetinu hodnoty STR útočníka.
+Odečtení obrany obránce: Odečítá se polovina hodnoty DEF obránce.
+Kritický Úder
+
+Pravděpodobnost: (ATT útočníka / 50).
+Extra poškození: Pevně dané extra poškození 4.
+Speciální Efekt: Bleed
+
+Pravděpodobnost: (KNO útočníka / 30).
+Trvání: 6 kol.
+Celkové poškození během bleed: 6-5-4-3-2-1 (postupně klesající dmg každé kolo).
+Výpočet Průměrného Poškození na Kolo (DPR)
+Nejvyšší průměrné poškození na kolo: 5.64 dmg
+Nejnižší průměrné poškození na kolo: 3.02 dmg
+Celkové průměrné poškození na kolo: 4.64 dmg
+
+Útok "Pan"
+Základní Poškození: 3 + (STR útočníka / 2) - (DEF obránce / 2)
+Kritický Úder:
+Pravděpodobnost: SPE útočníka / 50
+Extra poškození: 3
+Speciální Efekt: Sleep:
+Pravděpodobnost: ATT útočníka / 40
+Trvání: 2 kola
+Poškození za kolo: 4 dmg během sleep
+Výpočet Průměrného Poškození na Kolo (DPR)
+Nejvyšší průměrné poškození na kolo: 6.96 dmg (pro bojovníka "Auguste Escoffier" - ID 9)
+Nejnižší průměrné poškození na kolo: 1.7 dmg (pro bojovníka "Adolf Hitler" - ID 1)
+Celkové průměrné poškození na kolo: 4.88 dmg

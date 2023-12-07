@@ -51,7 +51,7 @@ public class AttackDescriptions : MonoBehaviour
                 count = attacker.knowledge;
                 break;
             case 8://MonkeyWrench
-                count = attacker.knowledge / 2;
+                count = 10 + attacker.charisma;
                 break;
             case 9://Radiation
                 count = attacker.knowledge / 2;
@@ -84,7 +84,7 @@ public class AttackDescriptions : MonoBehaviour
                 count = attacker.attack;
                 break;
             case 19://Sword
-                count = attacker.strength * 5;
+                count = 10 + attacker.strength;
                 break;
             case 20://Pike
                 count = attacker.strength * 5;

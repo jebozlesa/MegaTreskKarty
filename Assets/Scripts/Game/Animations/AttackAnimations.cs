@@ -2780,7 +2780,8 @@ public class AttackAnimations : MonoBehaviour
                 duration: 0.7f,
                 startSound: startSound,
                 initialRotation: 0f,
-                finalRotation: 0f
+                finalRotation: 0f,
+                rotateTowardsTarget: false
             )
         );
     }
