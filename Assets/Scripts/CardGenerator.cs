@@ -155,12 +155,18 @@ public class CardGenerator : MonoBehaviour
                 break;
             }
 
+            int series = 1;
+            if (i == 5) // Ak ešte nie je koniec, počkajte pol sekundy medzi kartami
+            {
+                series = 2;
+            }
+
             int randomIndex = UnityEngine.Random.Range(0, pack.Count);
             int randomCardID = pack[randomIndex];
             GeneratedCard randomCard = null;
 
             // Vygenerujeme kartu a získame objekt karty
-            yield return StartCoroutine(GenerateCard(randomCardID, card => randomCard = card));
+            yield return StartCoroutine(GenerateCard(randomCardID, card => randomCard = card, series));
 
             if (randomCard != null)
             {
@@ -187,7 +193,7 @@ public class CardGenerator : MonoBehaviour
         // PlayerPrefs.Save();
     }
 
-    private IEnumerator GenerateCard(int cardId, Action<GeneratedCard> onCardCreated)
+    private IEnumerator GenerateCard(int cardId, Action<GeneratedCard> onCardCreated, int series)
     {
         Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + "CardGenerator.GenerateCard => cardID: " + cardId);
         IDbConnection dbConnection = new SqliteConnection(connectionString);
@@ -199,7 +205,7 @@ public class CardGenerator : MonoBehaviour
 
         if (reader.Read())
         {
-            GeneratedCard card = CreateCardFromDatabase(reader);
+            GeneratedCard card = CreateCardFromDatabase(reader, series);
             string json = ConvertCardToJson(card);
 
             PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
@@ -288,7 +294,7 @@ public class CardGenerator : MonoBehaviour
         dbConnection.Close();
     }
 
-    private GeneratedCard CreateCardFromDatabaseOriginal(IDataReader reader)
+    private GeneratedCard CreateCardFromDatabase(IDataReader reader, int series = 1)
     {
         string[] colorComponents = reader.GetString(10).Split(';');
         Color32 color = new Color32(byte.Parse(colorComponents[0]), byte.Parse(colorComponents[1]), byte.Parse(colorComponents[2]), 255);
@@ -306,41 +312,17 @@ public class CardGenerator : MonoBehaviour
             Attack = reader.GetInt32(5),
             Defense = reader.GetInt32(6),
             Knowledge = reader.GetInt32(7),
-            Charisma = reader.GetInt32(8),
-            Color = Array.ConvertAll(reader.GetString(10).Split(';'), int.Parse),
-            Attack1 = reader.GetInt32(11),
-            Attack2 = reader.GetInt32(12),
-            Attack3 = reader.GetInt32(13),
-            Attack4 = reader.GetInt32(14),
-            CardPicture = reader.GetString(15)
+            Charisma = reader.GetInt32(8)
+            // Color = Array.ConvertAll(reader.GetString(10).Split(';'), int.Parse),
+            // CardPicture = reader.GetString(15)
+
+            // Attack1 = 1,
+            // Attack2 = 2,
+            // Attack3 = 3,
+            // Attack4 = 4
         };
 
-        return card;
-    }
-
-    private GeneratedCard CreateCardFromDatabase(IDataReader reader)
-    {
-        string[] colorComponents = reader.GetString(10).Split(';');
-        Color32 color = new Color32(byte.Parse(colorComponents[0]), byte.Parse(colorComponents[1]), byte.Parse(colorComponents[2]), 255);
-
-        GeneratedCard card = new GeneratedCard
-        {
-            CardID = Guid.NewGuid().ToString(),
-            StyleID = reader.GetInt32(0),
-            PersonName = reader.GetString(1),
-            Level = 1,
-            Experience = 0,
-            Health = reader.GetInt32(2),
-            Strength = reader.GetInt32(3),
-            Speed = reader.GetInt32(4),
-            Attack = reader.GetInt32(5),
-            Defense = reader.GetInt32(6),
-            Knowledge = reader.GetInt32(7),
-            Charisma = reader.GetInt32(8),
-            Color = Array.ConvertAll(reader.GetString(10).Split(';'), int.Parse),
-            CardPicture = reader.GetString(15)
-        };
-
+        List<string> characterSeries = GetVisualForCharacter(card.StyleID, series);
         List<int> availableAttacks = GetAttacksForCharacter(card.StyleID);
         List<int> selectedAttacks = SelectRandomAttacks(availableAttacks, 4);
 
@@ -349,7 +331,41 @@ public class CardGenerator : MonoBehaviour
         card.Attack3 = selectedAttacks[2];
         card.Attack4 = selectedAttacks[3];
 
+        card.Color = Array.ConvertAll(characterSeries[0].Split(';'), int.Parse);
+        card.CardPicture = characterSeries[1];
+
         return card;
+    }
+
+    private List<string> GetVisualForCharacter(int styleID, int series)
+    {
+        List<string> visual = new List<string>();
+        IDbConnection dbConnection = new SqliteConnection(connectionString);
+        dbConnection.Open();
+
+        try
+        {
+            IDbCommand dbCommand = dbConnection.CreateCommand();
+            dbCommand.CommandText = $"SELECT Color, Image FROM CardVisuals WHERE CharacterID = {styleID} AND Series = {series}";
+            // Debug.Log($"SQL Query: {dbCommand.CommandText}");
+            IDataReader reader = dbCommand.ExecuteReader();
+
+            while (reader.Read())
+            {
+                // Add Color to the list
+                visual.Add(reader.GetString(0));
+                // Add Image to the list
+                visual.Add(reader.GetString(1));
+            }
+            reader.Close();
+            dbCommand.Dispose();
+        }
+        finally
+        {
+            dbConnection.Close();
+        }
+
+        return visual;
     }
 
     private List<int> GetAttacksForCharacter(int styleID)
@@ -362,6 +378,7 @@ public class CardGenerator : MonoBehaviour
         {
             IDbCommand dbCommand = dbConnection.CreateCommand();
             dbCommand.CommandText = $"SELECT AttackID FROM CharacterAttacks WHERE CharacterID = {styleID}";
+            Debug.Log($"SELECT AttackID FROM CharacterAttacks WHERE CharacterID = {styleID}");
             IDataReader reader = dbCommand.ExecuteReader();
 
             while (reader.Read())

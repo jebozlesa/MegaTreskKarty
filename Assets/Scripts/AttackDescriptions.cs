@@ -60,7 +60,7 @@ public class AttackDescriptions : MonoBehaviour
                 count = attacker.attack * 5;
                 break;
             case 11://Scientific Lecture
-                count = attacker.knowledge;
+                count = 5 + (attacker.knowledge / 2);
                 break;
             case 12://Chi Sau
                 count = attacker.attack;
@@ -234,10 +234,10 @@ public class AttackDescriptions : MonoBehaviour
                 count = attacker.speed;
                 break;
             case 69://JupiterC
-                count = 20;
+                count = 3;
                 break;
             case 70://V2
-                count = 3;
+                count = 5 + attacker.charisma / 3;
                 break;
             case 71://BattleCry
                 count = attacker.charisma;

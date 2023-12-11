@@ -162,6 +162,11 @@ public class PlayFabManagerLogin : MonoBehaviour
         {
             PlayerPrefs.SetString("email", emailInput.text);
             PlayerPrefs.SetString("password", passwordInput.text);
+
+            PlayerPrefs.SetInt("HasCompletedTutorialMarketplace", 1);
+            PlayerPrefs.SetInt("HasCompletedTutorialAlbum", 1);
+            PlayerPrefs.SetInt("HasCompletedTutorialCard", 1);
+            PlayerPrefs.SetInt("HasCompletedTutorialRoyal", 1);
         }
 
         // Get the username

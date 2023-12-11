@@ -2842,7 +2842,7 @@ public class AttackAnimations : MonoBehaviour
                 startPoint: attacker,
                 endPoint: receiver,
                 imageSize: new Vector2(250f, 250f),
-                duration: 0.5f,
+                duration: 1f,
                 startSound: startSound,
                 rotateTowardsTarget: false,
                 initialRotation: 0f,
