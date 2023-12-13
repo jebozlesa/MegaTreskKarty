@@ -939,7 +939,7 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Shamshir"));
         yield return StartCoroutine(attackAnimations.PlayShamshirAnimation(attacker.transform, receiver.transform));        //ANIMACIA
-        receiver.TakeDamage(5 + (attacker.speed / 2) - (receiver.defense / 2));
+        receiver.TakeDamage(4 + (attacker.speed / 4) - (receiver.defense / 4));
         if (Random.value <= Mathf.Min(1f, attacker.strength / 50f)) receiver.TakeDamage(3);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " cuts with shamshir"));
         if (Random.value <= Mathf.Min(1f, attacker.attack / 50f))
@@ -999,13 +999,13 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Tomahawk"));
         yield return StartCoroutine(attackAnimations.PlayTomahawkAnimation(attacker.transform, receiver.transform));        //ANIMACIA
-        receiver.TakeDamage(4 + (attacker.speed / 2) - (receiver.defense / 2));
-        if (Random.value <= Mathf.Min(1f, attacker.strength / 30f)) receiver.TakeDamage(2);
+        receiver.TakeDamage(Random.Range(2, 3) + (attacker.attack / 4) - (receiver.defense / 4));
+        if (Random.value <= Mathf.Min(1f, attacker.strength / 20f)) receiver.TakeDamage(4);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " hits with tomahawk"));
-        if (Random.value <= Mathf.Min(1f, attacker.attack / 30f))
+        if (Random.value <= Mathf.Min(1f, attacker.knowledge / 20f))
         {
             yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
-            yield return StartCoroutine(receiver.AddEffect(1, 4)); //bleed
+            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(1, 6))); //bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
 
@@ -1342,9 +1342,10 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Knife"));
         yield return StartCoroutine(attackAnimations.PlayKnifeAnimation(attacker.transform, receiver.transform));        //ANIMACIA
-        receiver.TakeDamage(1 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
+        receiver.TakeDamage(Random.Range(3, 4) + (attacker.attack / 4) - (receiver.defense / 4));
+        if (Random.value <= Mathf.Min(1f, attacker.knowledge / 50f)) receiver.TakeDamage(4);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " cuts enemy with knife"));
-        if (Random.value <= 0.3f)
+        if (Random.value <= Mathf.Min(1f, attacker.speed / 50f))
         {
             StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(1, Random.Range(1, 3)));//bleed
@@ -1456,10 +1457,10 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Rapier"));
         yield return StartCoroutine(attackAnimations.PlayRapierAnimation(attacker.transform, receiver.transform));        //ANIMACIA
-        receiver.TakeDamage(2 + ((attacker.strength + attacker.speed + attacker.attack) / 3) - ((receiver.defense - receiver.strength) / 2));
+        receiver.TakeDamage(Random.Range(3, 4) + (attacker.speed / 4) - (receiver.defense / 4));
+        if (Random.value <= Mathf.Min(1f, attacker.attack / 50f)) receiver.TakeDamage(4);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " cuts with Rapier"));
-        if (Random.value <= 0.2f) receiver.TakeDamage(3);//critical hit
-        if (Random.value <= 0.6f)
+        if (Random.value <= Mathf.Min(1f, attacker.strength / 50f))
         {
             StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(1, Random.Range(2, 7)));//bleed
@@ -1695,10 +1696,10 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Pen"));
         yield return StartCoroutine(attackAnimations.PlayPenAnimation(attacker.transform, receiver.transform));        //ANIMACIA
-        receiver.TakeDamage(2 + ((attacker.knowledge + attacker.charisma + attacker.attack) / 3) - receiver.defense);
-        receiver.HandleStrength(-1);
+        receiver.TakeDamage(Random.Range(2, 4) + (attacker.knowledge / 4) - (receiver.defense / 4));
+        if (Random.value <= Mathf.Min(1f, attacker.charisma / 30f)) receiver.HandleStrength(-2);
         yield return StartCoroutine(ShowDialog(dialogText, "The pen is mightier than the sword"));
-        if (Random.value <= 0.6f && receiver.CheckEffect(24) == false)
+        if ((Random.value <= Mathf.Min(1f, attacker.attack / 20f)) && receiver.CheckEffect(24) == false)
         {
             StartCoroutine(attackAnimations.PlayPoisonStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(receiver.AddEffect(24, 0)); //Poison
@@ -1846,13 +1847,13 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Katana"));
         yield return StartCoroutine(attackAnimations.PlayKatanaAnimation(attacker.transform, receiver.transform));        //ANIMACIA
-        receiver.TakeDamage(3 + ((attacker.knowledge + attacker.attack + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+        receiver.TakeDamage(Random.Range(2, 5) + (attacker.attack / 4) - (receiver.defense / 4));
+        if (Random.value <= Mathf.Min(1f, attacker.knowledge / 30f)) receiver.TakeDamage(4);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " slashes with katana "));
-        if (Random.value <= 0.2f) receiver.TakeDamage(3);//critical hit
-        if (Random.value <= 0.3f)
+        if (Random.value <= Mathf.Min(1f, attacker.speed / 30f))
         {
             StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
-            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(2, 5)));//bleed
+            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(4, 7)));//bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
         Debug.Log(attacker.cardName + " -> Katana => " + receiver.cardName);
@@ -1862,10 +1863,10 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Nodachi"));
         yield return StartCoroutine(attackAnimations.PlayNodachiAnimation(attacker.transform, receiver.transform));        //ANIMACIA
-        receiver.TakeDamage(3 + ((attacker.knowledge + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
+        receiver.TakeDamage(Random.Range(2, 5) + (attacker.strength / 4) - (receiver.defense / 4));
+        if (Random.value <= Mathf.Min(1f, attacker.attack / 30f)) receiver.TakeDamage(4);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " slashes with Nodachi "));
-        if (Random.value <= 0.2f) receiver.TakeDamage(3);//critical hit
-        if (Random.value <= 0.3f)
+        if (Random.value <= Mathf.Min(1f, attacker.speed / 30f))
         {
             StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
@@ -1919,13 +1920,13 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Sabre"));
         yield return StartCoroutine(attackAnimations.PlaySabreAnimation(attacker.transform, receiver.transform));        //ANIMACIA
-        receiver.TakeDamage(3 + ((attacker.attack + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
-        if (Random.value <= 0.2f) receiver.TakeDamage(3);//critical hit
+        receiver.TakeDamage(4 + (attacker.attack / 4) - (receiver.defense / 4));
+        if (Random.value <= Mathf.Min(1f, attacker.strength / 40f)) receiver.TakeDamage(4);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " cuts with Sabre "));
-        if (Random.value <= 0.3f)
+        if (Random.value <= Mathf.Min(1f, attacker.speed / 40f))
         {
             StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
-            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(2, 5)));//bleed
+            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(3, 5)));//bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
         Debug.Log(attacker.cardName + " -> Sabre => " + receiver.cardName);
@@ -2037,13 +2038,13 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Valaska"));
         yield return StartCoroutine(attackAnimations.PlayValaskaAnimation(attacker.transform, receiver.transform));        //ANIMACIA
-        receiver.TakeDamage(3 + ((attacker.attack + attacker.strength + attacker.speed) / 3) - ((receiver.defense - receiver.speed) / 2));
-        if (Random.value <= 0.5f) receiver.TakeDamage(2);//critical hit
+        receiver.TakeDamage(Random.Range(2, 4) + (attacker.strength / 4) - (receiver.defense / 4));
+        if (Random.value <= Mathf.Min(1f, attacker.speed / 40f)) receiver.TakeDamage(6);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s valaska strikes"));
-        if (Random.value <= 0.1f)
+        if (Random.value <= Mathf.Min(1f, attacker.attack / 40f))
         {
             StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
-            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(2, 4)));//bleed
+            yield return StartCoroutine(receiver.AddEffect(1, Random.Range(5, 7)));//bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
         Debug.Log(attacker.cardName + " -> Valaska => " + receiver.cardName);
