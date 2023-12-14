@@ -265,23 +265,42 @@ public class AttackAnimations : MonoBehaviour
     //12
     public IEnumerator PlayChiSauAnimation(Transform sourceCard, Transform targetCard, int numberOfAttacks)
     {
-        Sprite attackSprite = Resources.Load<Sprite>("Game/Animations/chisau");
+        Sprite bowSprite = Resources.Load<Sprite>("Game/Animations/chisau");
+        Sprite arrowSprite = Resources.Load<Sprite>("Game/Animations/chisau");
         AudioClip attackSound = Resources.Load<AudioClip>("Sounds/Game/Animations/chisau");
 
         //int numberOfAttacks = Random.Range(1, 6); // Generuje náhodné číslo medzi 1 a 5 vrátane.
 
         yield return StartCoroutine(
-            randomMoveImageAnimation.StartRandomMoveAnimation(
-                sprite: attackSprite,
-                sourceCard: sourceCard,
+            bowShootAnimation.StartShootAnimation(
+                bowSprite: bowSprite,
+                arrowSprite: arrowSprite,
+                shooterCard: sourceCard,
                 targetCard: targetCard,
-                cardSize: new Vector2(300f, 500f), // Predpokladaná veľkosť karty
-                numberOfAttacks: numberOfAttacks,
-                imageSize: new Vector2(250f, 250f),  // Veľkosť obrázka útoku
-                duration: 1f,
-                startSound: attackSound
+                imageSize: new Vector2(0f, 0f), // Veľkosť obrázka luku
+                duration: 1f, // Trvanie animácie
+                shootSound: attackSound,
+                showHitImage: true, // Zobrazenie šípu
+                rotateToTarget: false, // Otočenie smerom k cieľu
+                arrowImageSize: new Vector2(250f, 250f), // Veľkosť obrázka šípu
+                arrowCount: numberOfAttacks, // Počet šípov
+                arrowInterval: 0.1f, // Interval medzi šípmi
+                arrowFlightDuration: 0.3f // Čas letu šípu
             )
         );
+
+        // yield return StartCoroutine(
+        //     randomMoveImageAnimation.StartRandomMoveAnimation(
+        //         sprite: attackSprite,
+        //         sourceCard: sourceCard,
+        //         targetCard: targetCard,
+        //         cardSize: new Vector2(300f, 500f), // Predpokladaná veľkosť karty
+        //         numberOfAttacks: numberOfAttacks,
+        //         imageSize: new Vector2(250f, 250f),  // Veľkosť obrázka útoku
+        //         duration: 1f,
+        //         startSound: attackSound
+        //     )
+        // );
     }
 
     //13
@@ -296,10 +315,10 @@ public class AttackAnimations : MonoBehaviour
                 startPoint: attacker,
                 endPoint: receiver,
                 imageSize: new Vector2(250, 250),
-                duration: 0.7f,
+                duration: 0.5f,
                 startSound: startSound,
-                initialRotation: 0f, // napr. -15 stupňov na začiatku
-                finalRotation: 0f     // napr. 15 stupňov na konci
+                initialRotation: 0f,
+                finalRotation: 0f
             )
         );
     }
@@ -2221,7 +2240,7 @@ public class AttackAnimations : MonoBehaviour
                 sprite: animationImageSprite,
                 startPoint: attacker,
                 endPoint: receiver,
-                imageSize: new Vector2(250f, 250f),
+                imageSize: new Vector2(300f, 300f),
                 duration: 0.5f,
                 startSound: startSound,
                 initialRotation: 90f, // napr. -15 stupňov na začiatku
@@ -2867,7 +2886,7 @@ public class AttackAnimations : MonoBehaviour
                 planeSprite: sprite,
                 explosionSprite: explosionSprite,
                 sound: sound,
-                isSuccessful: false,
+                isSuccessful: true,
                 rotateTowardsTarget: false,
                 attacker: attacker,
                 defender: defender,

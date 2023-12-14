@@ -318,8 +318,8 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
                 if (leveledUp)
                 {
-                    StartCoroutine(EffectAnimations(level, "LVL", color_yellow));
                     UpdateRandomStat();
+                    StartCoroutine(EffectAnimations(level, "LVL", color_yellow));
                     level += 1;
                     LoadCardData();
                 }
@@ -362,7 +362,10 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         return cardData;
     }
 
-
+    public bool HasAvailableAttacks()
+    {
+        return countAttack1 > 0 || countAttack2 > 0 || countAttack3 > 0 || countAttack4 > 0;
+    }
 
     public void UpdateRandomStat()
     {
@@ -566,7 +569,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         for (int i = 0; i < effects.Count; i++)
         {
             int effectId = effects[i][0];
-            if (effectId == id && id != 1 && id != 4)
+            if (effectId == id && id != 1 && id != 4 && id != 16)
             {
                 idExists = true;
                 Debug.Log(Time.time + "  " + cardName + " má již efekt s ID " + id + ".");
@@ -635,11 +638,13 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
     public void Heal(int amount)
     {
-        Debug.Log(Time.time + "  " + cardName + " sa healuje za " + amount);
+        if (amount <= 0)
+            amount = 1;
         health += amount;
         StartCoroutine(EffectAnimations(amount, "HP", color_green));
         if (health > maxHP)
             health = maxHP;
+        Debug.Log(Time.time + "  " + cardName + " sa healuje za " + amount);
     }
 
     public void HandleStrength(int amount)

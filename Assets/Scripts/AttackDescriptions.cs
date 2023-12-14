@@ -36,79 +36,79 @@ public class AttackDescriptions : MonoBehaviour
                 count = 20 + attacker.strength;
                 break;
             case 3://Heal
-                count = 5;
+                count = 3 + (attacker.knowledge / 3);
                 break;
             case 4://Forgiveness
                 count = attacker.charisma / 2;
                 break;
             case 5://Crusade
-                count = 9;
-                break;
-            case 6://"Water to Wine
-                count = attacker.knowledge;
-                break;
-            case 7://Car Hit
-                count = attacker.knowledge;
-                break;
-            case 8://MonkeyWrench
                 count = 10 + attacker.charisma;
                 break;
+            case 6://"Water to Wine
+                count = 5 + (attacker.knowledge / 2);
+                break;
+            case 7://Car Hit
+                count = 3 + (attacker.charisma / 3);
+                break;
+            case 8://MonkeyWrench
+                count = 10 + attacker.strength;
+                break;
             case 9://Radiation
-                count = attacker.knowledge / 2;
+                count = 5 + (attacker.knowledge / 2);
                 break;
             case 10://Scratch
-                count = attacker.attack * 5;
+                count = 20 + attacker.strength;
                 break;
             case 11://Scientific Lecture
                 count = 5 + (attacker.knowledge / 2);
                 break;
             case 12://Chi Sau
-                count = attacker.attack;
+                count = 5 + (attacker.defense / 2);
                 break;
             case 13://One Inch Punch
-                count = attacker.attack;
+                count = 5 + (attacker.attack / 2);
                 break;
             case 14://Up In Smoke
-                count = attacker.charisma;
+                count = 3 + (attacker.charisma / 3);
                 break;
             case 15://Sing
-                count = attacker.knowledge;
+                count = 3 + (attacker.knowledge / 3);
                 break;
             case 16://Revolver
                 count = 6;
                 break;
             case 17://Heavy Artillery
-                count = (int)System.Math.Ceiling((double)attacker.charisma / 5);
+                count = 3 + (attacker.charisma / 3);
                 break;
             case 18://Bloodthirst
-                count = attacker.attack;
+                count = 5 + (attacker.attack / 2);
                 break;
             case 19://Sword
                 count = 10 + attacker.strength;
                 break;
             case 20://Pike
-                count = attacker.strength * 5;
+                count = 10 + attacker.strength;
                 break;
             case 21://Terrify
-                count = attacker.defense * 5;
+                count = 5 + (attacker.defense / 2);
                 break;
             case 22://Drink Wine
-                count = attacker.knowledge;
+                count = 3 + (attacker.strength / 3);
                 break;
             case 23://Flaming Gun
-                count = UnityEngine.Random.Range(5, 15);
+                count = 3 + (attacker.attack / 3);
                 break;
             case 24://Cleaver
-                count = attacker.strength * 5;
+                count = 10 + attacker.strength;
                 break;
             case 25://Pan
-                count = attacker.strength * 5;
+                count = 10 + attacker.strength;
                 break;
             case 26://Boost
-                count = attacker.charisma;
+                count = 3 + (attacker.strength / 3);
                 break;
             case 27://Temptation
-                count = attacker.charisma;
+                count = 5 + (attacker.charisma / 2);
                 break;
             case 28://Shamshir
                 count = attacker.strength * 5;

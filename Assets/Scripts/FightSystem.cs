@@ -326,7 +326,7 @@ public class FightSystem : MonoBehaviour
 
         dialogText.color = Color.black;
 
-        if (enemy.cardInGame.health <= 0)
+        if (enemy.cardInGame.health <= 0 || !enemy.cardInGame.HasAvailableAttacks())
         {
             yield return StartCoroutine(player.cardInGame.AddExperience(enemy.cardInGame.level));//exp
             if (missionID == 0)
@@ -353,7 +353,7 @@ public class FightSystem : MonoBehaviour
             enemyLifeBar.SetBar(enemy.cardInGame);
         }
 
-        if (player.cardInGame.health <= 0)
+        if (player.cardInGame.health <= 0 || !player.cardInGame.HasAvailableAttacks())
         {
             player.RemoveCardFromBoard(player.cardInGame);
             state = FightState.PLAYERDEATH;
@@ -375,6 +375,7 @@ public class FightSystem : MonoBehaviour
         Turn();
 
     }
+
 
     public IEnumerator ResetCardPositions()
     {
@@ -683,6 +684,7 @@ public class FightSystem : MonoBehaviour
             Color32 cardColor = new Color32(byte.Parse(farbaKarty[0]), byte.Parse(farbaKarty[1]), byte.Parse(farbaKarty[2]), 255);
 
             GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
+            novaKarta.GetComponent<Kard>().styleId = int.Parse(kartaHodnoty[0]);
             novaKarta.GetComponent<Kard>().cardName = kartaHodnoty[1];
             novaKarta.GetComponent<Kard>().health = int.Parse(kartaHodnoty[2]) + iter;
             novaKarta.GetComponent<Kard>().strength = int.Parse(kartaHodnoty[3]) + boost[0];
