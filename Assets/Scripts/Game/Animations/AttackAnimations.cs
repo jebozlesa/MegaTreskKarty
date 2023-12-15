@@ -281,7 +281,7 @@ public class AttackAnimations : MonoBehaviour
                 duration: 1f, // Trvanie animácie
                 shootSound: attackSound,
                 showHitImage: true, // Zobrazenie šípu
-                rotateToTarget: false, // Otočenie smerom k cieľu
+                rotateToTarget: true, // Otočenie smerom k cieľu
                 arrowImageSize: new Vector2(250f, 250f), // Veľkosť obrázka šípu
                 arrowCount: numberOfAttacks, // Počet šípov
                 arrowInterval: 0.1f, // Interval medzi šípmi
@@ -624,7 +624,27 @@ public class AttackAnimations : MonoBehaviour
     }
 
     //27
-    public IEnumerator PlayTemptationAnimation(Transform targetCard)
+    public IEnumerator PlayTemptationAnimation(Transform attacker, Transform receiver)
+    {
+        Sprite sprite = Resources.Load<Sprite>("Game/Animations/temptation5");
+        AudioClip sound = Resources.Load<AudioClip>("Sounds/Game/Animations/temptation");
+
+        yield return StartCoroutine(
+            moveImageAnimation.StartAnimation(
+                sprite: sprite,
+                startPoint: attacker,
+                endPoint: receiver,
+                imageSize: new Vector2(250f, 250f),
+                duration: 1f,
+                startSound: sound,
+                initialRotation: 0f, // napr. -15 stupňov na začiatku
+                finalRotation: -15f     // napr. 15 stupňov na konci
+            )
+        );
+    }
+
+    //27
+    public IEnumerator PlayTemptationSuccessAnimation(Transform targetCard, bool gender)
     {
         Sprite[] sprites = new Sprite[5];
         sprites[0] = Resources.Load<Sprite>("Game/Animations/temptation1");
@@ -632,7 +652,13 @@ public class AttackAnimations : MonoBehaviour
         sprites[2] = Resources.Load<Sprite>("Game/Animations/temptation3");
         sprites[3] = Resources.Load<Sprite>("Game/Animations/temptation4");
         sprites[4] = Resources.Load<Sprite>("Game/Animations/temptation5");
-        AudioClip effectSound = Resources.Load<AudioClip>("Sounds/Game/Animations/temptation");
+        AudioClip soundMan = Resources.Load<AudioClip>("Sounds/Game/Animations/temptationman");
+        AudioClip soundWoman = Resources.Load<AudioClip>("Sounds/Game/Animations/temptationwoman");
+        AudioClip sound;
+        if (gender)
+            sound = soundMan;
+        else
+            sound = soundWoman;
 
         Vector2 initialSize = new Vector2(50f, 50f); // Počiatočná veľkosť obrázka
         Vector2 finalSize = new Vector2(150f, 150f);   // Konečná veľkosť obrázka
@@ -648,7 +674,7 @@ public class AttackAnimations : MonoBehaviour
                 startSize: initialSize,
                 endSize: finalSize,
                 imageLifetime: 0.3f,
-                soundEffect: effectSound
+                soundEffect: sound
             )
         );
     }

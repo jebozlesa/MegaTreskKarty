@@ -250,13 +250,13 @@ public class CardGenerator : MonoBehaviour
         int randomIndex = UnityEngine.Random.Range(1, cardCount + 1);
         dbCommand.Dispose();
 
-        //randomIndex = 50;  // docasne - vymazat resp. zakomentovat ked netreeba                                         <============  RANDOM INDEX
-        yield return StartCoroutine(AddCardById(randomIndex));
+        randomIndex = 31;  // docasne - vymazat resp. zakomentovat ked netreeba                                         <============  RANDOM INDEX
+        yield return StartCoroutine(AddCardById(randomIndex, 2));
 
         dbConnection.Close();
     }
 
-    public IEnumerator AddCardById(int id)
+    public IEnumerator AddCardById(int id, int series = 1)
     {
         Debug.Log("AddCardById(" + id + ")");
         IDbConnection dbConnection = new SqliteConnection(connectionString);
@@ -268,7 +268,7 @@ public class CardGenerator : MonoBehaviour
 
         if (reader.Read())
         {
-            GeneratedCard card = CreateCardFromDatabase(reader);
+            GeneratedCard card = CreateCardFromDatabase(reader, series);
             string json = ConvertCardToJson(card);
 
             PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>

@@ -9,13 +9,13 @@ public class Attack : MonoBehaviour
     // public MoveImage moveImageAnimation;
     public AttackAnimations attackAnimations;
 
-    public List<int> exceptionAttacks = new List<int> { 64 };  //je tu utek z retazov od houdiniho co rusi efekty, exception preto ze ide aj ked nieje v stave attack
+    public List<int> exceptionAttacks = new List<int> { 64, 26 };  //je tu utek z retazov od houdiniho co rusi efekty, exception preto ze ide aj ked nieje v stave attack
 
-    public List<int> priorityAttacks;
+    public List<int> priorityAttacks = new List<int> { 82 };
 
     private void Start()
     {
-        priorityAttacks = new List<int> { 82 };
+
     }
 
     public int GetAttackNumber(Kard attacker, int attackIndex)
@@ -931,8 +931,7 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Boost"));
         yield return StartCoroutine(attackAnimations.PlayBoostAnimation(attacker.transform));        //ANIMACIA
         attacker.HandleStrength(2);
-        attacker.HandleAttack(2);
-        attacker.HandleDefense(1);
+        attacker.HandleAttack(3);
         attacker.HandleCharisma(-1);
         attacker.HandleKnowledge(-2);
         attacker.RemoveEffectById(3);
@@ -946,17 +945,19 @@ public class Attack : MonoBehaviour
         HashSet<int> maleIDs = new HashSet<int> { 1, 2, 3, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 26, 27, 28, 29, 31, 32, 33, 34, 37, 38, 39, 40, 42, 43, 46, 47, 48, 49 };
         HashSet<int> femaleIDs = new HashSet<int> { 4, 10, 25, 30, 35, 36, 41, 44, 45, 50 };
 
+        yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Temptation"));
+        yield return StartCoroutine(attackAnimations.PlayTemptationAnimation(attacker.transform, receiver.transform));
+
         // Skontrolujte, či útočník a obranca sú z rôznych skupín
-        if ((maleIDs.Contains(attacker.styleId) && femaleIDs.Contains(receiver.styleId)) || (femaleIDs.Contains(attacker.styleId) && maleIDs.Contains(receiver.styleId)))
+        if ((attacker.charisma >= receiver.charisma) && ((maleIDs.Contains(attacker.styleId) && femaleIDs.Contains(receiver.styleId)) || (femaleIDs.Contains(attacker.styleId) && maleIDs.Contains(receiver.styleId))))
         {
-            yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Temptation"));
-            yield return StartCoroutine(attackAnimations.PlayTemptationAnimation(receiver.transform));
+            if (maleIDs.Contains(receiver.styleId)) yield return StartCoroutine(attackAnimations.PlayTemptationSuccessAnimation(receiver.transform, true));
+            if (femaleIDs.Contains(receiver.styleId)) yield return StartCoroutine(attackAnimations.PlayTemptationSuccessAnimation(receiver.transform, false));
 
             // Aplikácia efektov útoku
-            receiver.HandleAttack(-2);
-            receiver.HandleDefense(-1);
-            receiver.HandleCharisma(2);
-            receiver.HandleKnowledge(-1);
+            receiver.HandleAttack(-1);
+            receiver.HandleDefense(-3);
+            receiver.HandleCharisma(1);
 
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " feels awkward and confused"));
         }
