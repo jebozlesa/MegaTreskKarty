@@ -96,7 +96,7 @@ public class AttackDescriptions : MonoBehaviour
                 count = 3 + (attacker.strength / 3);
                 break;
             case 23://Flaming Gun
-                count = 3 + (attacker.attack / 3);
+                count = 5 + (attacker.attack / 2);
                 break;
             case 24://Cleaver
                 count = 10 + attacker.strength;
@@ -111,22 +111,22 @@ public class AttackDescriptions : MonoBehaviour
                 count = 5 + (attacker.charisma / 2);
                 break;
             case 28://Shamshir
-                count = attacker.strength * 5;
+                count = 10 + attacker.strength;
                 break;
             case 29://Diplomacy
-                count = attacker.knowledge;
+                count = 5 + (attacker.knowledge / 2);
                 break;
             case 30://Siege
-                count = attacker.knowledge / 2;
+                count = 3 + (attacker.attack / 3);
                 break;
             case 31://TreeStratagem
-                count = (int)System.Math.Ceiling((double)attacker.knowledge / 5);
+                count = (int)System.Math.Ceiling((double)attacker.knowledge / 5);                         //KOKOTINA, DAT DO PICE!
                 break;
             case 32://Tomahawk
-                count = attacker.strength * 5;
+                count = 10 + attacker.strength;
                 break;
             case 33://PeacePipe
-                count = attacker.charisma;
+                count = 5 + (attacker.charisma / 2);
                 break;
             case 34://RecurveBow
                 count = attacker.strength * 2;

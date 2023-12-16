@@ -992,9 +992,9 @@ public class Attack : MonoBehaviour
     public IEnumerator Diplomacy(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Diplomacy"));
-        yield return StartCoroutine(attackAnimations.PlayDiplomacyAnimation(attacker.transform, receiver.transform));        //ANIMACIA
-        receiver.HandleDefense(-(int)System.Math.Ceiling((double)attacker.charisma / 10));
-        receiver.HandleKnowledge(-(int)System.Math.Ceiling((double)attacker.charisma / 10));
+        yield return StartCoroutine(attackAnimations.PlayDiplomacyAnimation(attacker.transform, receiver.transform));
+        receiver.HandleDefense(-1);
+        if (Random.value <= Mathf.Min(1f, attacker.charisma / 20f)) receiver.HandleDefense(-1);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " made diplomatic gesture"));
 
         Debug.Log(attacker.cardName + " -> Diplomacy => " + receiver.cardName);
@@ -1003,8 +1003,8 @@ public class Attack : MonoBehaviour
     public IEnumerator Siege(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Siege"));
-        yield return StartCoroutine(attackAnimations.PlaySiegeAnimation(attacker.transform));        //ANIMACIA
-        StartCoroutine(attacker.AddEffect(5, 2)); //siege
+        yield return StartCoroutine(attackAnimations.PlaySiegeAnimation(attacker.transform));
+        StartCoroutine(attacker.AddEffect(5, 1)); //siege
         attacker.state = CardState.STAY;
         attacker.HandleDefense(10);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is building watch tower"));
@@ -1013,10 +1013,10 @@ public class Attack : MonoBehaviour
     }
 
     //31
-    public IEnumerator TreeStratagem(Kard attacker, Kard receiver, TMP_Text dialogText)
+    public IEnumerator TreeStratagem(Kard attacker, Kard receiver, TMP_Text dialogText)                         //KOKOTINA, DAT DO PICE!
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Tree Stratagem"));
-        yield return StartCoroutine(attackAnimations.PlayTreeStratagemAnimation(receiver.transform));        //ANIMACIA
+        yield return StartCoroutine(attackAnimations.PlayTreeStratagemAnimation(receiver.transform));
         if (attacker.knowledge >= receiver.knowledge)
         {
             receiver.TakeDamage(Random.Range(1, 3));
@@ -1024,7 +1024,7 @@ public class Attack : MonoBehaviour
         }
         else
         {
-            StartCoroutine(attackAnimations.PlayAnimationNotImpressed(receiver.transform));        //ANIMACIA
+            StartCoroutine(attackAnimations.PlayAnimationNotImpressed(receiver.transform));
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + ": Yo think am stupid?!"));
         }
 
@@ -1035,13 +1035,13 @@ public class Attack : MonoBehaviour
     public IEnumerator Tomahawk(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Tomahawk"));
-        yield return StartCoroutine(attackAnimations.PlayTomahawkAnimation(attacker.transform, receiver.transform));        //ANIMACIA
+        yield return StartCoroutine(attackAnimations.PlayTomahawkAnimation(attacker.transform, receiver.transform));
         receiver.TakeDamage(Random.Range(2, 3) + (attacker.attack / 4) - (receiver.defense / 4));
         if (Random.value <= Mathf.Min(1f, attacker.strength / 20f)) receiver.TakeDamage(4);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " hits with tomahawk"));
         if (Random.value <= Mathf.Min(1f, attacker.knowledge / 20f))
         {
-            yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));        //ANIMACIA
+            yield return StartCoroutine(attackAnimations.PlayBleedStartAnimation(receiver.transform));
             yield return StartCoroutine(receiver.AddEffect(1, Random.Range(1, 6))); //bleed
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is wounded"));
         }
