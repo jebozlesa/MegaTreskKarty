@@ -39,7 +39,7 @@ public class AttackDescriptions : MonoBehaviour
                 count = 3 + (attacker.knowledge / 3);
                 break;
             case 4://Forgiveness
-                count = attacker.charisma / 2;
+                count = 3 + (attacker.charisma / 3);
                 break;
             case 5://Crusade
                 count = 10 + attacker.charisma;
@@ -129,39 +129,39 @@ public class AttackDescriptions : MonoBehaviour
                 count = 5 + (attacker.charisma / 2);
                 break;
             case 34://RecurveBow
-                count = attacker.strength * 2;
+                count = 10 + attacker.attack;
                 break;
             case 35://Fury
-                count = attacker.attack;
+                count = 3 + (attacker.attack / 3);
                 break;
             case 36://Guerilla
-                count = attacker.attack * 5;
+                count = 10 + attacker.charisma;
                 break;
             case 37://Famine
-                count = attacker.strength;
+                count = 3 + (attacker.strength / 3);
                 break;
             case 38://Marxism
-                count = attacker.knowledge * 2;
+                count = 5 + (attacker.charisma / 2);
                 break;
             case 39://TeslaCoil
-                count = attacker.knowledge / 2;
+                count = 10 + attacker.knowledge;
                 break;
             case 40://WirelessCharger
-                count = attacker.knowledge * 2;
+                count = 5 + (attacker.strength / 2);
                 break;
             case 41://Experiment
-                count = attacker.knowledge * 10;
+                count = 5 + (attacker.charisma / 2);
                 break;
             case 42://TommyGun
                 count = new int[] { 2, 3, 5, 10 }[UnityEngine.Random.Range(0, 4)];
                 break;
             case 43://TieUp
-                count = 10;
+                count = 3 + (attacker.attack / 3);
                 break;
             case 44://Corruption
-                count = attacker.charisma;
+                count = 5 + (attacker.charisma / 2);
                 break;
-            case 45://Colt1911
+            case 45://Colt1911                                          <========== TU POKRACUJ!
                 count = 7;
                 break;
             case 46://Mortar

@@ -566,7 +566,7 @@ public class AttackAnimations : MonoBehaviour
                 startPoint: attacker,
                 endPoint: receiver,
                 imageSize: new Vector2(300f, 300f),
-                duration: 0.7f,
+                duration: 0.5f,
                 startSound: startSound,
                 initialRotation: 90f, // napr. -15 stupňov na začiatku
                 finalRotation: 0f     // napr. 15 stupňov na konci
