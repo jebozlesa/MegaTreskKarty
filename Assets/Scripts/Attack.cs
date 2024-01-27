@@ -1248,10 +1248,10 @@ public class Attack : MonoBehaviour
     public IEnumerator Colt1911(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Colt 1911"));
-        if (Random.value <= (attacker.attack / 12f))
+        if (Random.value <= 0.8f)
         {
             yield return StartCoroutine(attackAnimations.PlayColt1911Animation(attacker.transform, receiver.transform, true));        //ANIMACIA
-            receiver.TakeDamage(7);
+            receiver.TakeDamage(Random.Range(5, 10));
             yield return StartCoroutine(ShowDialog(dialogText, "Bang! " + attacker.cardName + " shoots"));
         }
         else
@@ -1289,7 +1289,6 @@ public class Attack : MonoBehaviour
         attacker.HandleStrength((int)System.Math.Ceiling((double)receiver.charisma / 10));
         attacker.HandleAttack((int)System.Math.Ceiling((double)receiver.charisma / 10));
         attacker.HandleDefense((int)System.Math.Ceiling((double)receiver.charisma / 10));
-        attacker.HandleCharisma(1);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is assembling an army"));
         Debug.Log(attacker.cardName + " -> GrandArmee => " + receiver.cardName);
     }
@@ -1342,9 +1341,7 @@ public class Attack : MonoBehaviour
             receiver.HandleStrength(-3);
             receiver.HandleSpeed(-3);
             receiver.HandleAttack(-3);
-            receiver.HandleDefense(-3);
-            receiver.HandleCharisma(-3);
-            yield return StartCoroutine(receiver.AddEffect(13, 1));//Depression
+            yield return StartCoroutine(receiver.AddEffect(13, 2));//Depression
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " feels bad for enemy"));
         }
         if (Random.value <= 0.3f)
@@ -1362,9 +1359,9 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses SelfIsolation"));
         yield return StartCoroutine(attackAnimations.PlaySelfIsolationAnimation(attacker.transform));        //ANIMACIA
-        attacker.HandleDefense(3);
+        attacker.HandleDefense(Random.Range(1, 3));
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " feels happy alone"));
-        if (Random.value <= 0.3f)
+        if (Random.value <= 0.2f)
         {
             attacker.state = CardState.STAY;
             yield return StartCoroutine(attackAnimations.PlayArtInspirationStartAnimation(attacker.transform));        //ANIMACIA
@@ -1411,7 +1408,7 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Gravity Pull"));
         yield return StartCoroutine(attackAnimations.PlayGravityPullAnimation(attacker.transform, receiver.transform, r));        //ANIMACIA
         string[] objects = { "piano", "boiler", "anvil", "gases" };
-        int[] weight = { 6, 5, 4, 0 };
+        int[] weight = { 10, 8, 6, 0 };
         if (r != 3) { receiver.TakeDamage(weight[r]); }
         yield return StartCoroutine(ShowDialog(dialogText, "Gravity pulled " + objects[r] + " to " + receiver.cardName));
         if (Random.value <= 0.1f && r != 3)
@@ -1428,11 +1425,11 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Kamikaze"));
         int dmg = attacker.health;
-        if (Random.value <= 0.9f)
+        if (Random.value <= 0.8f)
         {
             yield return StartCoroutine(attackAnimations.PlayKamikazeAnimation(attacker.transform, receiver.transform, true));        //ANIMACIA
             attacker.TakeDamage(dmg);
-            receiver.TakeDamage(Random.Range(1, (attacker.knowledge + attacker.speed + attacker.attack)));
+            receiver.TakeDamage(Random.Range(1, 20));
             yield return StartCoroutine(ShowDialog(dialogText, "Kamikaze strikes"));
         }
         else
@@ -1448,7 +1445,7 @@ public class Attack : MonoBehaviour
     public IEnumerator TakeOff(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Take Off"));
-        if (Random.value <= 0.75f)
+        if (Random.value <= Mathf.Min(1f, (attacker.knowledge / 40f) + 0.5f))
         {
             yield return StartCoroutine(attackAnimations.PlayTakeOffAnimation(attacker.transform));        //ANIMACIA
             attacker.HandleSpeed(3);
@@ -1467,13 +1464,13 @@ public class Attack : MonoBehaviour
     public IEnumerator AirStrike(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses AirStrike"));
-        int hits = Random.Range(attacker.attack, attacker.speed + attacker.attack) - receiver.defense;
+        int hits = Random.Range(4, 8 + attacker.speed / 4) - receiver.defense / 4;
         yield return StartCoroutine(attackAnimations.PlayAirStrikeAnimation(attacker.transform, receiver.transform, hits));        //ANIMACIA
         if (hits >= 1) { receiver.TakeDamage(hits); }
-        if (Random.value <= (attacker.attack / 30f))
+        if (Random.value <= 0.2f)
         {
             yield return StartCoroutine(attackAnimations.PlayAirStrikeCriticalAnimation(receiver.transform));        //ANIMACIA
-            receiver.TakeDamage(attacker.speed);
+            receiver.TakeDamage(attacker.attack / 2);
         }
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " strikes from air"));
         Debug.Log(attacker.cardName + " -> AirStrike => " + receiver.cardName);
@@ -1484,7 +1481,7 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Justice Crusade"));
         yield return StartCoroutine(attackAnimations.PlayJusticeCrusadeAnimation(attacker.transform));        //ANIMACIA
-        receiver.TakeDamage(Random.Range((receiver.strength + receiver.attack) / 4, (receiver.strength + receiver.attack) / 2));
+        receiver.TakeDamage(Random.Range(5, 6) + (attacker.charisma / 4) - (receiver.knowledge / 4));
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " fights enemy for justice"));
         Debug.Log(attacker.cardName + " -> JusticeCrusade => " + receiver.cardName);
     }
@@ -1511,7 +1508,7 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Expeditionary Assault"));
         yield return StartCoroutine(attackAnimations.PlayExpeditionaryAssaultAnimation(attacker.transform));        //ANIMACIA
-        if (Random.value <= (20f + attacker.knowledge) / 50f)
+        if (Random.value <= Mathf.Min(1f, (attacker.knowledge / 40f) + 0.5f))
         {
             yield return StartCoroutine(attackAnimations.PlayExpeditionaryAssaultSuccessAnimation(attacker.transform, receiver.transform));        //ANIMACIA
             int[] boost = DistributeRandomly(Random.Range(3, 6));
@@ -1538,7 +1535,7 @@ public class Attack : MonoBehaviour
         {
             yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Culverin"));
             yield return StartCoroutine(attackAnimations.PlayCulverinAnimation(attacker.transform, receiver.transform, true));        //ANIMACIA
-            receiver.TakeDamage(Random.Range(1, 15));
+            receiver.TakeDamage(Random.Range(6, 12));
             yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + "'s cannon fires"));
         }
         else
@@ -1556,10 +1553,10 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(attackAnimations.PlayFireShipAnimation(attacker.transform, receiver.transform));        //ANIMACIA
         receiver.TakeDamage(3);
         yield return StartCoroutine(ShowDialog(dialogText, "Fire ship impacts"));
-        if (Random.value <= 0.5f)
+        if (Random.value <= 0.5f && !receiver.CheckEffect(16))
         {
             yield return StartCoroutine(attackAnimations.PlayBurnStartAnimation(receiver.transform));        //ANIMACIA
-            yield return StartCoroutine(receiver.AddEffect(16, 1));//burn
+            yield return StartCoroutine(receiver.AddEffect(16, 0));//burn
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " is burning"));
         }
         Debug.Log(attacker.cardName + " -> FireShip => " + receiver.cardName);

@@ -138,7 +138,7 @@ public class AttackDescriptions : MonoBehaviour
                 count = 10 + attacker.charisma;
                 break;
             case 37://Famine
-                count = 3 + (attacker.strength / 3);
+                count = 1 + (attacker.strength / 4);
                 break;
             case 38://Marxism
                 count = 5 + (attacker.charisma / 2);
@@ -161,62 +161,62 @@ public class AttackDescriptions : MonoBehaviour
             case 44://Corruption
                 count = 5 + (attacker.charisma / 2);
                 break;
-            case 45://Colt1911                                          <========== TU POKRACUJ!
+            case 45://Colt1911
                 count = 7;
                 break;
             case 46://Mortar
-                count = 7;
+                count = 5 + (attacker.attack / 2);
                 break;
             case 47://GreatArmy
-                count = 3;
+                count = 3 + (attacker.attack / 3);
                 break;
-            case 48://ScorchedEarth
+            case 48://ScorchedEarth                                          <========== Preskocene
                 count = attacker.attack;
                 break;
             case 49://DoubleEnvelopment
-                count = attacker.knowledge * 2;
+                count = 1 + (attacker.knowledge / 4);
                 break;
             case 50://ContinentalBlockade
-                count = attacker.strength * 10;
+                count = 5 + (attacker.charisma / 2);
                 break;
             case 51://Depression
-                count = attacker.knowledge + 10;
+                count = 10 + attacker.knowledge;
                 break;
             case 52://SelfIsolation
-                count = attacker.knowledge + 10;
+                count = 3 + (attacker.defense / 3);
                 break;
             case 53://Knife
-                count = attacker.strength * 10;
+                count = 10 + attacker.strength;
                 break;
             case 54://Autoportrait
-                count = 10;
+                count = 3 + (attacker.knowledge / 3);
                 break;
             case 55://GravityPull
-                count = attacker.knowledge + 5;
+                count = 10 + attacker.knowledge;
                 break;
             case 56://Kamikaze
                 count = 1;
                 break;
             case 57://TakeOff
-                count = attacker.knowledge * 2;
+                count = 3 + (attacker.charisma / 3);
                 break;
             case 58://AirStrike
-                count = attacker.attack * 3;
+                count = 5 + (attacker.attack / 2);
                 break;
             case 59://JusticeCrusade
-                count = attacker.strength * 5;
+                count = 10 + attacker.defense;
                 break;
             case 60://Rapier
                 count = attacker.strength * 5;
                 break;
             case 61://ExpeditionaryAssault
-                count = attacker.charisma;
+                count = 3 + (attacker.charisma / 3);
                 break;
             case 62://Culverin
-                count = attacker.strength;
+                count = 10 + attacker.strength;
                 break;
             case 63://FireShip
-                count = attacker.knowledge / 2;
+                count = 3 + (attacker.knowledge / 3);
                 break;
             case 64://HandcuffEscape
                 count = attacker.knowledge * 2;

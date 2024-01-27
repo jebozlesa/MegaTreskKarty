@@ -345,7 +345,7 @@ public class Effects : MonoBehaviour
             card.RemoveEffect(iteration);
             card.state = CardState.ATTACK;
             card.HandleDefense(3);
-            target.TakeDamage(UnityEngine.Random.Range(3, Math.Max(4, 3 + card.speed + card.attack + card.strength + card.knowledge - target.defense - target.speed)));
+            target.TakeDamage(UnityEngine.Random.Range(12, 16) + (card.attack / 2) - (target.defense / 4));
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " attacks from all sides"));
             yield break;
         }
@@ -374,7 +374,7 @@ public class Effects : MonoBehaviour
             card.state = CardState.MAYBE;
             yield return StartCoroutine(attackAnimations.PlayBlocadeWaitAnimation(card.transform));        //ANIMACIA
             card.TakeDamage(2);
-            card.HandleDefense(-1);
+            card.HandleCharisma(-1);
             card.HandleStrength(-1);
             card.effects[iteration][1] -= 1;
             yield return StartCoroutine(ShowDialog(dialogText, "The blockade holds strong"));
@@ -393,8 +393,6 @@ public class Effects : MonoBehaviour
             card.HandleStrength(3);
             card.HandleSpeed(3);
             card.HandleAttack(3);
-            card.HandleDefense(3);
-            card.HandleCharisma(3);
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " feels better"));
             yield break;
         }
@@ -417,14 +415,14 @@ public class Effects : MonoBehaviour
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " finished his creation"));
             card.RemoveEffect(iteration);
             yield return StartCoroutine(attackAnimations.PlayArtInspirationEndEnemyAnimation(target.transform));        //ANIMACIA
-            target.HandleStrength(UnityEngine.Random.Range(-3, 0));
-            target.HandleSpeed(UnityEngine.Random.Range(-3, 0));
-            target.HandleAttack(UnityEngine.Random.Range(-3, 0));
-            target.HandleDefense(UnityEngine.Random.Range(-3, 0));
-            target.HandleKnowledge(UnityEngine.Random.Range(0, 3));
+            target.HandleStrength(-2);
+            target.HandleSpeed(-2);
+            target.HandleAttack(-2);
+            target.HandleDefense(-2);
+            target.HandleKnowledge(2);
             yield return StartCoroutine(ShowDialog(dialogText, target.cardName + " is impressed by masterpiece"));
             yield return StartCoroutine(attackAnimations.PlayArtInspirationEndAttackAnimation(card.transform, target.transform));        //ANIMACIA
-            target.TakeDamage(UnityEngine.Random.Range(1, target.defense * 2));
+            target.TakeDamage(10 - (target.defense / 4));
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " attacks in distruption"));
             //    yield break;
         }
