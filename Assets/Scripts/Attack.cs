@@ -1597,10 +1597,10 @@ public class Attack : MonoBehaviour
     public IEnumerator CarcanoM91(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Carcano M91"));
-        if (Random.value <= ((20 + attacker.attack) / 37f))
+        if (Random.value <= 0.75f)
         {
             yield return StartCoroutine(attackAnimations.PlayCarcanoAnimation(attacker.transform, receiver.transform, true));        //ANIMACIA
-            receiver.TakeDamage(Random.Range(6, 9));
+            receiver.TakeDamage(Random.Range(7, 9));
             yield return StartCoroutine(ShowDialog(dialogText, "Bang! " + attacker.cardName + " shoots"));
         }
         else
@@ -1615,10 +1615,10 @@ public class Attack : MonoBehaviour
     public IEnumerator Winchester(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Winchester"));
-        if (Random.value <= ((20 + attacker.attack) / 40f))
+        if (Random.value <= 0.90f)
         {
             yield return StartCoroutine(attackAnimations.PlayWinchesterAnimation(attacker.transform, receiver.transform, true));        //ANIMACIA
-            receiver.TakeDamage(Random.Range(6, 9));
+            receiver.TakeDamage(Random.Range(6, 8));
             yield return StartCoroutine(ShowDialog(dialogText, "Bang! " + attacker.cardName + " shoots"));
         }
         else
@@ -1634,9 +1634,12 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Ambush"));
         yield return StartCoroutine(attackAnimations.PlayAmbushAnimation(receiver.transform));        //ANIMACIA
-        receiver.TakeDamage(2);
-        receiver.HandleCharisma(-1);
-        attacker.HandleCharisma(1);
+        receiver.TakeDamage(Random.Range(5, 6) + (attacker.attack / 4) - (receiver.defense / 4));
+        if (Random.value <= Mathf.Min(0.8f, attacker.speed / 25f))
+        {
+            receiver.HandleCharisma(-1);
+            attacker.HandleCharisma(1);
+        }
         yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " ambushed with surprise"));
         Debug.Log(attacker.cardName + " -> Ambush => " + receiver.cardName);
     }
@@ -1666,10 +1669,10 @@ public class Attack : MonoBehaviour
     public IEnumerator V2(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses V-2"));
-        if (Random.value <= Mathf.Min(1f, attacker.knowledge / 30f))
+        if (Random.value <= Mathf.Min(0.5f, attacker.knowledge / 28f))
         {
             yield return StartCoroutine(attackAnimations.PlayV2Animation(attacker.transform, receiver.transform, true));        //ANIMACIA
-            receiver.TakeDamage(Random.Range(15, 20));
+            receiver.TakeDamage(Random.Range(20, 25));
             yield return StartCoroutine(ShowDialog(dialogText, "V2 hits target"));
         }
         else
@@ -1685,8 +1688,9 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses BattleCry"));
         yield return StartCoroutine(attackAnimations.PlayBattleCryAnimation(attacker.transform));        //ANIMACIA
-        attacker.HandleStrength((int)System.Math.Ceiling((double)receiver.charisma / 5));
-        attacker.HandleAttack((int)System.Math.Ceiling((double)receiver.charisma / 10));
+        attacker.HandleStrength(1);
+        attacker.HandleAttack(1);
+        if (Random.value <= Mathf.Min(0.8f, attacker.strength / 20f)) attacker.HandleAttack(1);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " roared into battle"));
         Debug.Log(attacker.cardName + " -> BattleCry => " + receiver.cardName);
     }
@@ -1704,6 +1708,7 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(attackAnimations.PlayRevelationAnimation(attacker.transform, variantIndex));        //ANIMACIA
         attacker.HandleCharisma(2);
         attacker.HandleKnowledge(2);
+        attacker.HandleAttack(-3);
         yield return StartCoroutine(ShowDialog(dialogText, "God is with " + attacker.cardName));
         Debug.Log(attacker.cardName + " -> Revelation => " + receiver.cardName);
     }
@@ -1774,10 +1779,9 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " summons ghost"));
         if (receiver.CheckEffect(19) == false)
         {
-
             yield return StartCoroutine(attackAnimations.PlayFearStartAnimation(receiver.transform));        //ANIMACIA
             StartCoroutine(receiver.AddEffect(19, 2));//fear
-            receiver.HandleStrength(-6);
+            receiver.HandleStrength(-5);
             receiver.HandleAttack(-5);
             receiver.HandleDefense(3);
             yield return StartCoroutine(ShowDialog(dialogText, receiver.cardName + " fears"));

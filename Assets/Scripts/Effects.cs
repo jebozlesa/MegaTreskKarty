@@ -415,10 +415,10 @@ public class Effects : MonoBehaviour
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " finished his creation"));
             card.RemoveEffect(iteration);
             yield return StartCoroutine(attackAnimations.PlayArtInspirationEndEnemyAnimation(target.transform));        //ANIMACIA
-            target.HandleStrength(-2);
-            target.HandleSpeed(-2);
-            target.HandleAttack(-2);
-            target.HandleDefense(-2);
+            target.HandleStrength(-1);
+            target.HandleSpeed(-1);
+            target.HandleAttack(-1);
+            target.HandleDefense(-1);
             target.HandleKnowledge(2);
             yield return StartCoroutine(ShowDialog(dialogText, target.cardName + " is impressed by masterpiece"));
             yield return StartCoroutine(attackAnimations.PlayArtInspirationEndAttackAnimation(card.transform, target.transform));        //ANIMACIA
@@ -538,14 +538,14 @@ public class Effects : MonoBehaviour
             card.state = CardState.ATTACK;
             card.HandleDefense(1);
             card.HandleAttack(-2);
-            target.TakeDamage(UnityEngine.Random.Range(1, Math.Max(4, 3 + card.speed + card.attack + card.strength + card.knowledge - target.defense - target.speed)));
+            target.TakeDamage(UnityEngine.Random.Range(1, Math.Max(4, 16 + (card.knowledge / 4) - (target.defense / 4))));
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + "'s Horns strike"));
         }
         else
         {
             yield return StartCoroutine(attackAnimations.PlayBuffaloHornsContinueAnimation(card.transform));        //ANIMACIA
-            card.TakeDamage(1);
-            target.TakeDamage(1);
+            card.TakeDamage(2);
+            target.TakeDamage(5);
             card.effects[iteration][1] -= 1;
             yield return StartCoroutine(ShowDialog(dialogText, "buffalo's head keeps strong"));
         }

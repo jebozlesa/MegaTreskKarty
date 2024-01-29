@@ -207,7 +207,7 @@ public class AttackDescriptions : MonoBehaviour
                 count = 10 + attacker.defense;
                 break;
             case 60://Rapier
-                count = attacker.strength * 5;
+                count = 10 + attacker.strength;
                 break;
             case 61://ExpeditionaryAssault
                 count = 3 + (attacker.charisma / 3);
@@ -219,10 +219,10 @@ public class AttackDescriptions : MonoBehaviour
                 count = 3 + (attacker.knowledge / 3);
                 break;
             case 64://HandcuffEscape
-                count = attacker.knowledge * 2;
+                count = 3 + (attacker.defense / 3);
                 break;
             case 65://Illusion
-                count = attacker.knowledge * 2;
+                count = 3 + (attacker.knowledge / 3);
                 break;
             case 66://CarcanoM91
                 count = 6;
@@ -231,31 +231,31 @@ public class AttackDescriptions : MonoBehaviour
                 count = 11;
                 break;
             case 68://Ambush
-                count = attacker.speed;
+                count = 5 + (attacker.charisma / 2);
                 break;
             case 69://JupiterC
-                count = 3;
+                count = 3 + (attacker.knowledge / 3);
                 break;
             case 70://V2
-                count = 5 + attacker.charisma / 3;
+                count = 3 + (attacker.charisma / 3);
                 break;
             case 71://BattleCry
                 count = attacker.charisma;
                 break;
             case 72://Revelation
-                count = 10;
+                count = 3 + (attacker.defense / 3);
                 break;
             case 73://Standard
-                count = attacker.strength * 10;
+                count = 3 + (attacker.strength / 3);
                 break;
             case 74://Pen
-                count = (attacker.knowledge * 5) + 10;
+                count = 10 + attacker.strength;
                 break;
             case 75://IambicPentameter
-                count = 3;
+                count = 3 + (attacker.knowledge / 3);
                 break;
             case 76://Ghost
-                count = 4;
+                count = 3 + (attacker.knowledge / 3);
                 break;
             case 77://BuffaloHorns
                 count = 10;
