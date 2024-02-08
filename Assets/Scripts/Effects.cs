@@ -538,7 +538,7 @@ public class Effects : MonoBehaviour
             card.state = CardState.ATTACK;
             card.HandleDefense(1);
             card.HandleAttack(-2);
-            target.TakeDamage(UnityEngine.Random.Range(1, Math.Max(4, 16 + (card.knowledge / 4) - (target.defense / 4))));
+            target.TakeDamage(UnityEngine.Random.Range(1, Math.Max(4, 10 + (card.knowledge / 4) - (target.defense / 4))));
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + "'s Horns strike"));
         }
         else

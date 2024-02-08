@@ -258,34 +258,34 @@ public class AttackDescriptions : MonoBehaviour
                 count = 3 + (attacker.knowledge / 3);
                 break;
             case 77://BuffaloHorns
-                count = 10;
+                count = 5 + (attacker.knowledge / 2);
                 break;
             case 78://Iklwa
-                count = attacker.strength * 5;
+                count = 5 + (attacker.charisma / 2);
                 break;
             case 79://Iwisa
-                count = 5;
+                count = 10 + attacker.strength;
                 break;
             case 80://NitenIchiRyu
-                count = attacker.attack;
+                count = 5 + (attacker.attack / 2);
                 break;
             case 81://Tessenjutsu
-                count = attacker.defense;
+                count = 3 + (attacker.defense / 3);
                 break;
             case 82://Iaijutsu
-                count = attacker.speed;
+                count = 10 + attacker.speed;
                 break;
             case 83://Katana
-                count = attacker.strength * 5;
+                count = 10 + attacker.strength;
                 break;
             case 84://Nodachi
-                count = attacker.strength * 5;
+                count = 10 + attacker.strength;
                 break;
             case 85://Yumi
                 count = 20;
                 break;
             case 86://Jujutsu
-                count = attacker.attack;
+                count = 10 + attacker.attack;
                 break;
             case 87://Espionage
                 count = 10;
