@@ -581,7 +581,7 @@ public class Effects : MonoBehaviour
             if (UnityEngine.Random.value <= ((20 + card.attack) / 40f))
             {
                 yield return StartCoroutine(attackAnimations.PlayFlintlockPistolShotAnimation(card.transform, target.transform, true));        //ANIMACIA
-                target.TakeDamage(UnityEngine.Random.Range(10, 22));
+                target.TakeDamage(UnityEngine.Random.Range(18, 22));
                 yield return StartCoroutine(ShowDialog(dialogText, "Bang! " + card.cardName + " shoots"));
             }
             else
@@ -609,7 +609,7 @@ public class Effects : MonoBehaviour
             yield return StartCoroutine(attackAnimations.PlayTridentHitAnimation(card.transform, target.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
             card.state = CardState.ATTACK;
-            target.TakeDamage(card.attack - target.defense);
+            target.TakeDamage(8);
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + "attacks with trident"));
         }
         else

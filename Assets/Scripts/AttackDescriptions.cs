@@ -288,85 +288,85 @@ public class AttackDescriptions : MonoBehaviour
                 count = 10 + attacker.attack;
                 break;
             case 87://Espionage
-                count = 10;
+                count = 3 + (attacker.defense / 3);
                 break;
             case 88://Sabre
-                count = attacker.strength * 5;
+                count = 5 + (attacker.strength / 2);
                 break;
             case 89://Gamble
-                count = attacker.charisma;
+                count = 3 + (attacker.knowledge / 3);
                 break;
-            case 90://Philosophy
+            case 90://Philosophy                                DOMYSLIET!!!
                 count = 10;
                 break;
             case 91://Calm
-                count = attacker.charisma; ;
+                count = 3 + (attacker.defense / 3);
                 break;
             case 92://Honesty
-                count = attacker.knowledge * 2;
+                count = 5 + (attacker.attack / 2);
                 break;
             case 93://Valaska
-                count = attacker.strength * 5;
+                count = 10 + attacker.strength;
                 break;
             case 94://Moonshine
-                count = attacker.strength;
+                count = 3 + (attacker.strength / 3);
                 break;
             case 95://OutlawBand
-                count = attacker.charisma;
+                count = 5 + (attacker.charisma / 2);
                 break;
             case 96://FlintlockPistol
-                count = attacker.attack * 3;
+                count = 5 + (attacker.attack / 2);
                 break;
             case 97://PassiveResistance
-                count = attacker.knowledge * 2;
+                count = 3 + (attacker.knowledge / 3);
                 break;
             case 98://HungerStrike
-                count = attacker.health / 5;
+                count = 3 + (attacker.defense / 3);
                 break;
             case 99://Gladius
-                count = attacker.strength * 5;
+                count = 10 + attacker.strength;
                 break;
             case 100://ShieldBash
-                count = attacker.defense * 3;
+                count = 5 + (attacker.defense / 2);
                 break;
             case 101://Yperit
-                count = 3;
+                count = 5 + (attacker.attack / 2);
                 break;
             case 102://Blitzkrieg
-                count = attacker.attack;
+                count = 5 + (attacker.attack / 2);
                 break;
             case 103://Propaganda
-                count = attacker.knowledge * 2;
+                count = 3 + (attacker.charisma / 3);
                 break;
             case 104://Retiarius
-                count = attacker.attack * 3;
+                count = 5 + (attacker.strength / 2);
                 break;
             case 105://Shuriken
-                count = attacker.attack;
+                count = 3 + (attacker.attack / 3);
                 break;
             case 106://Kusarigama
-                count = attacker.strength * 5;
+                count = 10 + attacker.strength;
                 break;
             case 107://Ninjutsu
-                count = (attacker.attack + attacker.knowledge) / 4;
+                count = 1 + (attacker.knowledge / 4);
                 break;
             case 108://OrientalSpice
-                count = (int)System.Math.Ceiling((double)attacker.charisma / 5);
+                count = 3 + (attacker.attack / 3);
                 break;
             case 109://FieryArquebus
-                count = attacker.attack;
+                count = 5 + (attacker.charisma / 2);
                 break;
             case 110://PirateRaid
-                count = attacker.attack / 2;
+                count = 3 + (attacker.charisma / 3);
                 break;
             case 111://Axe
-                count = attacker.strength * 5;
+                count = 10 + attacker.strength;
                 break;
             case 112://JaguarWarriors
-                count = attacker.attack * 5;
+                count = 5 + (attacker.charisma / 2);
                 break;
             case 113://Atlatl
-                count = (int)Math.Round(attacker.strength * 1.2);
+                count = 10 + attacker.charisma;
                 break;
             case 114://Macuahuitl
                 count = attacker.strength * 5;
