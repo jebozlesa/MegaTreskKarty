@@ -369,31 +369,31 @@ public class AttackDescriptions : MonoBehaviour
                 count = 10 + attacker.charisma;
                 break;
             case 114://Macuahuitl
-                count = attacker.strength * 5;
+                count = 10 + attacker.strength;
                 break;
             case 115://Cubism
-                count = 3;
+                count = 3 + (attacker.knowledge / 3);
                 break;
             case 116://CosaNostra
-                count = attacker.charisma;
+                count = 5 + (attacker.attack / 2);
                 break;
             case 117://Act
-                count = 5;
+                count = 3 + (attacker.charisma / 3);
                 break;
             case 118://Football
-                count = (int)Math.Round(attacker.strength * 1.5);
+                count = 10 + attacker.defense;
                 break;
             case 119://BicycleKick
-                count = attacker.strength * 3;
+                count = 5 + (attacker.attack / 2);
                 break;
             case 120://WorldChampion
-                count = 3;
+                count = 5 + (attacker.defense / 2);
                 break;
             case 121://ShaolinSoccer
-                count = 3;
+                count = 1 + (attacker.speed / 4);
                 break;
             case 123://Curse
-                count = 5;
+                count = 5 + (attacker.knowledge / 2);
                 break;
             default:
                 Debug.LogError("Invalid attack type.");
