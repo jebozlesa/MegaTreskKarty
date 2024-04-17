@@ -115,7 +115,7 @@ public class FightSystem : MonoBehaviour
     {
         Debug.Log("Album.OnError  -- Start");
 
-        Debug.Log("Daco nahovno");
+        Debug.Log("Daco nahovno je velmi");
         //      errorImage.SetActive(true);
         Debug.Log(error.GenerateErrorReport());
     }
