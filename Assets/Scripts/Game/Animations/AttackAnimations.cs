@@ -224,8 +224,8 @@ public class AttackAnimations : MonoBehaviour
             enlargeImageAnimation.StartEnlargeAnimation(
                 sprite: effectSprite,
                 targetCard: targetCard,
-                startSize: new Vector2(250f, 250f),
-                endSize: new Vector2(350f, 350f),
+                startSize: new Vector2(450f, 450f),
+                endSize: new Vector2(450f, 450f),
                 duration: 0.7f,
                 soundEffect: effectSound
             )
@@ -638,7 +638,8 @@ public class AttackAnimations : MonoBehaviour
                 duration: 1f,
                 startSound: sound,
                 initialRotation: 0f, // napr. -15 stupňov na začiatku
-                finalRotation: -15f     // napr. 15 stupňov na konci
+                finalRotation: -15f,     // napr. 15 stupňov na konci
+                rotateTowardsTarget: false
             )
         );
     }
@@ -826,20 +827,22 @@ public class AttackAnimations : MonoBehaviour
         Sprite sprite2 = Resources.Load<Sprite>("Game/Animations/guerilla2");
         AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/guerilla");
 
+        // Spustenie animácie výstrelu šípu
         yield return StartCoroutine(
-            dualMoveImageAnimation.StartAnimation(
-                sprite1: sprite1,
-                sprite2: sprite2,
-                startPoint: attacker,
-                endPoint: receiver,
-                imageSize: new Vector2(305f, 350f),
-                duration: 1f,
-                startSound: startSound,
-                switchRatio: 0.5f, // V 30% animácie sa zmení obrázok
-                                   //switchEffectDuration: 0.2f, // Trvanie efektu zmeny
-                initialRotation: 0f, // Začiatočná rotácia -15 stupňov
-                finalRotation: 0f,   // Konečná rotácia 15 stupňov
-                rotateTowardsTarget: true
+            bowShootAnimation.StartShootAnimation(
+                bowSprite: sprite1,
+                arrowSprite: sprite2,
+                shooterCard: attacker,
+                targetCard: receiver,
+                imageSize: new Vector2(350f, 350f), // Veľkosť obrázka luku
+                duration: 1f, // Trvanie animácie
+                shootSound: startSound,
+                showHitImage: true, // Zobrazenie šípu
+                rotateToTarget: false, // Otočenie smerom k cieľu
+                arrowImageSize: new Vector2(250f, 250f), // Veľkosť obrázka šípu
+                arrowCount: 3, // Počet šípov
+                arrowInterval: 0.2f, // Interval medzi šípmi
+                arrowFlightDuration: 0.3f // Čas letu šípu
             )
         );
     }
@@ -2666,7 +2669,7 @@ public class AttackAnimations : MonoBehaviour
                 sprite: effectSprite,
                 targetCard: targetCard,
                 startSize: new Vector2(250f, 250f),
-                endSize: new Vector2(400f, 400f),
+                endSize: new Vector2(300f, 300f),
                 duration: 1f,
                 soundEffect: effectSound
             )
