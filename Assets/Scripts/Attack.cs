@@ -2618,7 +2618,7 @@ public class Attack : MonoBehaviour
         if (Random.value <= Mathf.Min(1f, attacker.charisma / 20f)) attacker.HandleCharisma(1);
         attacker.HandleCharisma(1);
         attacker.HandleStrength(1);
-        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is world champion, remember!"));
+        yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is world champion"));
 
         Debug.Log(attacker.cardName + " -> WorldChampion => " + receiver.cardName);
     }
