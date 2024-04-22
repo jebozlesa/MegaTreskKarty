@@ -119,9 +119,19 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     public string connectionString;
 
     public TMP_Text attNameText;
+    // public TMP_Text attDescriptionTextOld;
+    // public TMP_Text attAttributesText;
+    // public TMP_Text attSpecialText;
+    public TMP_Text attPlayerText;
+    public TMP_Text attPlayerSpecialText;
+    public TMP_Text attEnemyText;
+    public TMP_Text attEnemySpecialText;
+    public TMP_Text attAccurancyText;
+    public TMP_Text attDurationText;
+    public TMP_Text attPlayerAttributesText;
+    public TMP_Text attEnemyAttributesText;
     public TMP_Text attDescriptionText;
-    public TMP_Text attAttributesText;
-    public TMP_Text attSpecialText;
+
 
     public Image changeButtonImg;
     public TMP_Text changeButtonText;
@@ -225,9 +235,18 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         storyText.color = color;
 
         attNameText.color = color;
+        // attDescriptionTextOld.color = color;
+        // attAttributesText.color = color;
+        // attSpecialText.color = color;
+        attPlayerText.color = color;
+        attPlayerSpecialText.color = color;
+        attEnemyText.color = color;
+        attEnemySpecialText.color = color;
+        attAccurancyText.color = color;
+        attDurationText.color = color;
+        attPlayerAttributesText.color = color;
+        attEnemyAttributesText.color = color;
         attDescriptionText.color = color;
-        attAttributesText.color = color;
-        attSpecialText.color = color;
 
         changeButtonImg.color = ChangeAlpha(color, 80);
         changeButtonText.color = color;
@@ -479,9 +498,18 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
                     if (reader.Read())
                     {
                         attNameText.text = reader["AttackName"].ToString();
+                        // attDescriptionTextOld.text = "Description: " + reader["Description"].ToString();
+                        // attAttributesText.text = "Attributes: " + reader["Attributes"].ToString();
+                        // attSpecialText.text = "Special: " + reader["Special"].ToString();
+                        attPlayerText.text = "Player: " + reader["Player"].ToString();
+                        attPlayerSpecialText.text = "Special: " + reader["PlayerSpecial"].ToString();
+                        attEnemyText.text = "Enemy: " + reader["Enemy"].ToString();
+                        attEnemySpecialText.text = "Special: " + reader["EnemySpecial"].ToString();
+                        attAccurancyText.text = "Accurancy: " + reader["Accurancy"].ToString();
+                        attDurationText.text = "Duration: " + reader["Duration"].ToString() + " R";
+                        attPlayerAttributesText.text = "Player Attributes: " + reader["PlayerAttributes"].ToString();
+                        attEnemyAttributesText.text = "Enemy Attributes: " + reader["EnemyAttributes"].ToString();
                         attDescriptionText.text = "Description: " + reader["Description"].ToString();
-                        attAttributesText.text = "Attributes: " + reader["Attributes"].ToString();
-                        attSpecialText.text = "Special: " + reader["Special"].ToString();
                     }
                     else
                     {

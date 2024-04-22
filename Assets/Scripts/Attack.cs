@@ -532,7 +532,6 @@ public class Attack : MonoBehaviour
 
         Debug.Log(attacker.cardName + " -> Forgiveness => " + receiver.cardName);
     }
-
     //5
     public IEnumerator Crusade(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
@@ -544,7 +543,6 @@ public class Attack : MonoBehaviour
 
         Debug.Log(attacker.cardName + " -> Crusade => " + receiver.cardName);
     }
-
     //6
     public IEnumerator WaterToWine(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
@@ -557,7 +555,6 @@ public class Attack : MonoBehaviour
 
         Debug.Log(attacker.cardName + " -> WaterToWine => " + attacker.cardName);
     }
-
     //7
     public IEnumerator CarHit(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
@@ -603,8 +600,6 @@ public class Attack : MonoBehaviour
 
         Debug.Log(attacker.cardName + " -> CarHit => " + receiver.cardName);
     }
-
-
     //8
     public IEnumerator MonkeyWrench(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
@@ -686,8 +681,6 @@ public class Attack : MonoBehaviour
             yield return StartCoroutine(attackAnimations.PlayAnimationNotEffective(receiver.transform));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, "Attack has no effect"));
         }
-
-
         Debug.Log(attacker.cardName + " -> ScientificLecture => " + receiver.cardName);
     }
     //12
@@ -932,7 +925,7 @@ public class Attack : MonoBehaviour
         attacker.HandleAttack(3);
         attacker.HandleCharisma(-1);
         attacker.HandleKnowledge(-2);
-        attacker.RemoveEffectById(3);
+        attacker.RemoveEffectById(3);   //sleep
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " gets some good boost"));
 
         Debug.Log(attacker.cardName + " -> Boost => " + attacker.cardName);
@@ -1004,7 +997,7 @@ public class Attack : MonoBehaviour
         yield return StartCoroutine(attackAnimations.PlaySiegeAnimation(attacker.transform));
         StartCoroutine(attacker.AddEffect(5, 1)); //siege
         attacker.state = CardState.STAY;
-        attacker.HandleDefense(3);
+        attacker.HandleDefense(10);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is building watch tower"));
 
         Debug.Log(attacker.cardName + " -> Siege => " + receiver.cardName);
@@ -1183,8 +1176,8 @@ public class Attack : MonoBehaviour
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Experiment"));
         yield return StartCoroutine(attackAnimations.PlayExperimentAnimation(attacker.transform));        //ANIMACIA
-        receiver.TakeDamage(Random.Range(0, 2));
-        attacker.TakeDamage(Random.Range(0, 2));
+        receiver.TakeDamage(Random.Range(0, 3));
+        attacker.TakeDamage(Random.Range(0, 3));
         attacker.HandleKnowledge(2);
         yield return StartCoroutine(ShowDialog(dialogText, attacker.cardName + " is trying something"));
         Debug.Log(attacker.cardName + " -> Experiment => " + attacker.cardName);

@@ -219,7 +219,7 @@ public class Effects : MonoBehaviour
             yield return StartCoroutine(attackAnimations.PlaySiegeEndAnimation(target.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
             card.state = CardState.ATTACK;
-            card.HandleDefense(-3);
+            card.HandleDefense(-10);
             target.TakeDamage(UnityEngine.Random.Range(8, 15));
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " attacking gates"));
         }
