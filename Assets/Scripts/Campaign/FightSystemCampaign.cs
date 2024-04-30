@@ -206,7 +206,7 @@ public class FightSystemCampaign : MonoBehaviour
         if (playerGoesFirst)
         {
             dialogText.color = Color.blue;
-            yield return StartCoroutine(effects.ExecuteEffects(player.cardInGame, dialogText, enemy.cardInGame));
+            yield return StartCoroutine(effects.ExecuteEffects(player.cardInGame, dialogText, playerAttack, enemy.cardInGame));
             playerLifeBar.SetHP(player.cardInGame.health);
 
             if ((player.cardInGame.state == CardState.ATTACK || (player.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(playerAttack)))
@@ -220,7 +220,7 @@ public class FightSystemCampaign : MonoBehaviour
             if (player.cardInGame.health > 0 && enemy.cardInGame.health > 0)
             {
                 dialogText.color = Color.red;
-                yield return StartCoroutine(effects.ExecuteEffects(enemy.cardInGame, dialogText, player.cardInGame));
+                yield return StartCoroutine(effects.ExecuteEffects(enemy.cardInGame, dialogText, enemyAttack, player.cardInGame));
                 enemyLifeBar.SetHP(enemy.cardInGame.health);
 
                 if ((enemy.cardInGame.state == CardState.ATTACK || (enemy.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(enemyAttack)))
@@ -236,7 +236,7 @@ public class FightSystemCampaign : MonoBehaviour
         else
         {
             dialogText.color = Color.red;
-            yield return StartCoroutine(effects.ExecuteEffects(enemy.cardInGame, dialogText, player.cardInGame));
+            yield return StartCoroutine(effects.ExecuteEffects(enemy.cardInGame, dialogText, enemyAttack, player.cardInGame));
             enemyLifeBar.SetHP(enemy.cardInGame.health);
 
             if ((enemy.cardInGame.state == CardState.ATTACK || (enemy.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(enemyAttack)))
@@ -250,7 +250,7 @@ public class FightSystemCampaign : MonoBehaviour
             if (player.cardInGame.health > 0 && enemy.cardInGame.health > 0)
             {
                 dialogText.color = Color.blue;
-                yield return StartCoroutine(effects.ExecuteEffects(player.cardInGame, dialogText, enemy.cardInGame));
+                yield return StartCoroutine(effects.ExecuteEffects(player.cardInGame, dialogText, playerAttack, enemy.cardInGame));
                 playerLifeBar.SetHP(player.cardInGame.health);
 
                 if ((player.cardInGame.state == CardState.ATTACK || (player.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(playerAttack)))

@@ -27,7 +27,7 @@ public class Effects : MonoBehaviour
         yield return new WaitForSeconds(0.8f);
     }
 
-    public IEnumerator ExecuteEffects(Kard card, TMP_Text dialogText, Kard target)
+    public IEnumerator ExecuteEffects(Kard card, TMP_Text dialogText, int attackType, Kard target)
     {
         Debug.Log(card.cardName + " card.effects.Count = " + card.effects.Count);
         if (card.effects.Count == 0)
@@ -40,13 +40,33 @@ public class Effects : MonoBehaviour
         for (int i = dynamickyRozmer; i > 0; i--)
         {
             Debug.Log(Time.time + " ExecuteEffect -> count: " + card.effects.Count + "  iter: " + (i) + "  efekt: " + card.effects[i - 1][0] + "  kola: " + card.effects[i - 1][1]);
-            yield return StartCoroutine(ExecuteEffect(card, card.effects[i - 1][1], dialogText, i - 1, target));
+            yield return StartCoroutine(ExecuteEffect(card, card.effects[i - 1][1], dialogText, i - 1, attackType, target));
         }
 
     }
+    
 
-    IEnumerator ExecuteEffect(Kard card, int param, TMP_Text dialogText, int iteration, Kard target = null)
+    IEnumerator ExecuteEffect(Kard card, int param, TMP_Text dialogText, int iteration, int attackType, Kard target = null)
     {
+        switch (attackType)
+        {
+            case 1:
+                attackType = card.attack1;
+                break;
+            case 2:
+                attackType = card.attack2;
+                break;
+            case 3:
+                attackType = card.attack3;
+                break;
+            case 4:
+                attackType = card.attack4;
+                break;
+            default:
+                Debug.LogError("Invalid attack type from button.");
+                break;
+        }
+
         switch (card.effects[iteration][0])
         {
             case 1:
@@ -56,7 +76,7 @@ public class Effects : MonoBehaviour
                 yield return StartCoroutine(Asceticism(card, dialogText, iteration));
                 break;
             case 3:
-                yield return StartCoroutine(Sleep(card, dialogText, iteration));
+                yield return StartCoroutine(Sleep(card, dialogText, iteration, attackType));
                 break;
             case 4:
                 yield return StartCoroutine(Exposure(card, dialogText, iteration));
@@ -74,7 +94,7 @@ public class Effects : MonoBehaviour
                 yield return StartCoroutine(Electicity(card, dialogText, iteration));
                 break;
             case 9:
-                yield return StartCoroutine(Tether(card, dialogText, iteration));
+                yield return StartCoroutine(Tether(card, dialogText, iteration, attackType));
                 break;
             case 10:
                 yield return StartCoroutine(Starving(card, dialogText, iteration));
@@ -83,7 +103,7 @@ public class Effects : MonoBehaviour
                 yield return StartCoroutine(Envelop(card, dialogText, iteration, target));
                 break;
             case 12:
-                yield return StartCoroutine(Blockade(card, dialogText, iteration));
+                yield return StartCoroutine(Blockade(card, dialogText, iteration, attackType));
                 break;
             case 13:
                 yield return StartCoroutine(Depression(card, dialogText, iteration));
@@ -168,23 +188,29 @@ public class Effects : MonoBehaviour
         }
         Debug.Log(card.cardName + " => Asceticism");
     }
-    //3
-    public IEnumerator Sleep(Kard card, TMP_Text dialogText, int iteration)
+    public IEnumerator Sleep(Kard card, TMP_Text dialogText, int iteration, int attackType)
     {
+
         yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is affected by Sleep"));
+
+        // Množina čísel útokov, ktoré resetujú trvanie efektu Sleep
+        HashSet<int> resetSleepAttacks = new HashSet<int> {26}; 
+        // Kontrola, či sa útok nachádza v množine určených čísel
+        if (resetSleepAttacks.Contains(attackType)) {  card.effects[iteration][1] = 0; }// Resetovanie trvanie efektu na 0
+
         if (card.state != CardState.STAY) card.state = CardState.MAYBE;
         if (card.effects[iteration][1] == 0)
         {
-            yield return StartCoroutine(attackAnimations.PlaySleepEndAnimation(card.transform));        //ANIMACIA
-            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " wokes up"));
+            yield return StartCoroutine(attackAnimations.PlaySleepEndAnimation(card.transform)); // ANIMÁCIA
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " wakes up"));
             card.RemoveEffect(iteration);
             card.state = CardState.ATTACK;
             yield break;
         }
         else
         {
-            yield return StartCoroutine(attackAnimations.PlaySleepAnimation(card.transform));        //ANIMACIA
-            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " Sleeps"));
+            yield return StartCoroutine(attackAnimations.PlaySleepAnimation(card.transform)); // ANIMÁCIA
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " sleeps"));
             card.effects[iteration][1] -= 1;
             card.state = CardState.MAYBE;
         }
@@ -294,8 +320,13 @@ public class Effects : MonoBehaviour
         Debug.Log(card.cardName + " => Electicity");
     }
     //9
-    public IEnumerator Tether(Kard card, TMP_Text dialogText, int iteration)
+    public IEnumerator Tether(Kard card, TMP_Text dialogText, int iteration, int attackType)
     {
+        // Množina čísel útokov, ktoré resetujú trvanie efektu Sleep
+        HashSet<int> resetSleepAttacks = new HashSet<int> {64}; 
+        // Kontrola, či sa útok nachádza v množine určených čísel
+        if (resetSleepAttacks.Contains(attackType)) {  card.effects[iteration][1] = 0; }// Resetovanie trvanie efektu na 0
+
         card.state = CardState.MAYBE;
         if (card.effects[iteration][1] == 0)
         {
@@ -358,8 +389,13 @@ public class Effects : MonoBehaviour
         Debug.Log(card.cardName + " => Envelop");
     }
     //12
-    public IEnumerator Blockade(Kard card, TMP_Text dialogText, int iteration)
+    public IEnumerator Blockade(Kard card, TMP_Text dialogText, int iteration, int attackType)
     {
+        // Množina čísel útokov, ktoré resetujú trvanie efektu Sleep
+        HashSet<int> resetSleepAttacks = new HashSet<int> {64}; 
+        // Kontrola, či sa útok nachádza v množine určených čísel
+        if (resetSleepAttacks.Contains(attackType)) {  card.effects[iteration][1] = 0; }// Resetovanie trvanie efektu na 0
+
         yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is affected by Continental Blockade"));
         if (card.effects[iteration][1] == 0 || (UnityEngine.Random.value <= 0.5f))
         {
@@ -374,7 +410,6 @@ public class Effects : MonoBehaviour
             card.state = CardState.MAYBE;
             yield return StartCoroutine(attackAnimations.PlayBlocadeWaitAnimation(card.transform));        //ANIMACIA
             card.TakeDamage(2);
-            card.HandleCharisma(-1);
             card.HandleStrength(-1);
             card.effects[iteration][1] -= 1;
             yield return StartCoroutine(ShowDialog(dialogText, "The blockade holds strong"));
@@ -537,7 +572,7 @@ public class Effects : MonoBehaviour
             card.RemoveEffect(iteration);
             card.state = CardState.ATTACK;
             card.HandleDefense(1);
-            card.HandleAttack(-2);
+            target.HandleAttack(-2);
             target.TakeDamage(UnityEngine.Random.Range(1, Math.Max(4, 10 + (card.knowledge / 4) - (target.defense / 4))));
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + "'s Horns strike"));
         }

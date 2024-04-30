@@ -838,7 +838,7 @@ public class AttackAnimations : MonoBehaviour
                 duration: 1f, // Trvanie animácie
                 shootSound: startSound,
                 showHitImage: true, // Zobrazenie šípu
-                rotateToTarget: false, // Otočenie smerom k cieľu
+                rotateToTarget: true, // Otočenie smerom k cieľu
                 arrowImageSize: new Vector2(250f, 250f), // Veľkosť obrázka šípu
                 arrowCount: 3, // Počet šípov
                 arrowInterval: 0.2f, // Interval medzi šípmi

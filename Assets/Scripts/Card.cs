@@ -131,6 +131,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     public TMP_Text attPlayerAttributesText;
     public TMP_Text attEnemyAttributesText;
     public TMP_Text attDescriptionText;
+    public Image attackIcon;
 
 
     public Image changeButtonImg;
@@ -510,6 +511,8 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
                         attPlayerAttributesText.text = "Player Attributes: " + reader["PlayerAttributes"].ToString();
                         attEnemyAttributesText.text = "Enemy Attributes: " + reader["EnemyAttributes"].ToString();
                         attDescriptionText.text = "Description: " + reader["Description"].ToString();
+
+                        attackIcon.sprite = Resources.Load<Sprite>("Game/Animations/" + reader["Icon"].ToString());
                     }
                     else
                     {
