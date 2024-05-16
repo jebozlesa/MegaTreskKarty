@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -32,18 +33,59 @@ public class Effects : MonoBehaviour
         Debug.Log(card.cardName + " card.effects.Count = " + card.effects.Count);
         if (card.effects.Count == 0)
         {
-            //            dialogText.text = "no effects";
             yield break;
         }
 
-        int dynamickyRozmer = card.effects.Count;
-        for (int i = dynamickyRozmer; i > 0; i--)
+        // Získanie a zoradenie efektov podľa ich trvania od najkratšieho po najdlhšie
+        var sortedEffects = card.effects.OrderBy(effect => effect[1]).ToList();
+
+        for (int i = 0; i < sortedEffects.Count; i++)
         {
-            Debug.Log(Time.time + " ExecuteEffect -> count: " + card.effects.Count + "  iter: " + (i) + "  efekt: " + card.effects[i - 1][0] + "  kola: " + card.effects[i - 1][1]);
-            yield return StartCoroutine(ExecuteEffect(card, card.effects[i - 1][1], dialogText, i - 1, attackType, target));
+            Debug.Log(Time.time + " ExecuteEffect -> count: " + card.effects.Count + "  iter: " + (i) + "  efekt: " + sortedEffects[i][0] + "  kola: " + sortedEffects[i][1]);
+            yield return StartCoroutine(ExecuteEffect(card, sortedEffects[i][1], dialogText, i, attackType, target));
+        }
+    }
+
+    public bool CanMove(Kard card)
+    {
+        bool isSleeping = false;
+        bool isTethered = false;
+        bool isBlocked = false;
+
+        // Prechádzajte všetky efekty a aktualizujte stav na základe ich trvania a typu
+        for (int i = 0; i < card.effects.Count; i++)
+        {
+            int effectType = card.effects[i][0]; // Typ efektu
+            int effectDuration = card.effects[i][1]; // Trvanie efektu
+
+            if (effectDuration > 0)
+            {
+                switch (effectType)
+                {
+                    case 3: // Sleep
+                        isSleeping = true;
+                        break;
+                    case 9: // Tether
+                        isTethered = true;
+                        break;
+                    case 12: // Blockade
+                        isBlocked = true;
+                        break;
+                }
+            }
         }
 
+        // Nastavte stav karty na základe kombinácie efektov
+        if (isSleeping || isTethered || isBlocked)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
     }
+
     
 
     IEnumerator ExecuteEffect(Kard card, int param, TMP_Text dialogText, int iteration, int attackType, Kard target = null)
@@ -175,7 +217,7 @@ public class Effects : MonoBehaviour
         {
             yield return StartCoroutine(attackAnimations.PlayAscetismEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            card.state = CardState.ATTACK;
+            if (CanMove(card)) { card.state = CardState.ATTACK; }
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " feels blessed again"));
         }
         else
@@ -204,7 +246,7 @@ public class Effects : MonoBehaviour
             yield return StartCoroutine(attackAnimations.PlaySleepEndAnimation(card.transform)); // ANIMÁCIA
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " wakes up"));
             card.RemoveEffect(iteration);
-            card.state = CardState.ATTACK;
+            if (CanMove(card)) { if (CanMove(card)) { card.state = CardState.ATTACK; } }
             yield break;
         }
         else
@@ -244,7 +286,7 @@ public class Effects : MonoBehaviour
         {
             yield return StartCoroutine(attackAnimations.PlaySiegeEndAnimation(target.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            card.state = CardState.ATTACK;
+            if (CanMove(card)) { card.state = CardState.ATTACK; }
             card.HandleDefense(-10);
             target.TakeDamage(UnityEngine.Random.Range(8, 15));
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " attacking gates"));
@@ -313,7 +355,7 @@ public class Effects : MonoBehaviour
             }
             else
             {
-                card.state = CardState.ATTACK;
+                if (CanMove(card)) { card.state = CardState.ATTACK; }
             }
             card.effects[iteration][1] -= 1;
         }
@@ -332,7 +374,7 @@ public class Effects : MonoBehaviour
         {
             yield return StartCoroutine(attackAnimations.PlayTetherEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            card.state = CardState.ATTACK;
+            if (CanMove(card)) { card.state = CardState.ATTACK; }
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " broke loose"));
         }
         else
@@ -374,7 +416,7 @@ public class Effects : MonoBehaviour
         {
             yield return StartCoroutine(attackAnimations.PlayDoubleEnvelopAttackAnimation(target.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            card.state = CardState.ATTACK;
+            if (CanMove(card)) { card.state = CardState.ATTACK; }
             card.HandleDefense(3);
             target.TakeDamage(UnityEngine.Random.Range(12, 16) + (card.attack / 2) - (target.defense / 4));
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " attacks from all sides"));
@@ -399,7 +441,7 @@ public class Effects : MonoBehaviour
         yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is affected by Continental Blockade"));
         if (card.effects[iteration][1] == 0 || (UnityEngine.Random.value <= 0.5f))
         {
-            card.state = CardState.ATTACK;
+            if (CanMove(card)) { card.state = CardState.ATTACK; }
             yield return StartCoroutine(attackAnimations.PlayBlocadeEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
             yield return StartCoroutine(ShowDialog(dialogText, "Blockade breached!"));
@@ -445,7 +487,7 @@ public class Effects : MonoBehaviour
         //StartCoroutine(textBubble.ShowForSeconds("surrender!", Resources.Load<Sprite>("oblacik"), 2.5f));
         if (card.effects[iteration][1] == 0)
         {
-            card.state = CardState.ATTACK;
+            if (CanMove(card)) { card.state = CardState.ATTACK; }
             yield return StartCoroutine(attackAnimations.PlayArtInspirationEndAnimation(card.transform));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " finished his creation"));
             card.RemoveEffect(iteration);
@@ -476,7 +518,7 @@ public class Effects : MonoBehaviour
         yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is painting Autoportrait"));
         if (card.effects[iteration][1] == 0)
         {
-            card.state = CardState.ATTACK;
+            if (CanMove(card)) { card.state = CardState.ATTACK; }
             yield return StartCoroutine(attackAnimations.PlayAutoportraitFinishAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " finished"));
@@ -508,7 +550,7 @@ public class Effects : MonoBehaviour
         yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is confused"));
         if (card.effects[iteration][1] == 0)
         {
-            card.state = CardState.ATTACK;
+            if (CanMove(card)) { card.state = CardState.ATTACK; }
             yield return StartCoroutine(attackAnimations.PlayConfusionEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is out of confussion"));
@@ -570,7 +612,7 @@ public class Effects : MonoBehaviour
         {
             yield return StartCoroutine(attackAnimations.PlayBuffaloHornsEndAnimation(card.transform, target.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            card.state = CardState.ATTACK;
+            if (CanMove(card)) { card.state = CardState.ATTACK; }
             card.HandleDefense(1);
             target.HandleAttack(-2);
             target.TakeDamage(UnityEngine.Random.Range(1, Math.Max(4, 10 + (card.knowledge / 4) - (target.defense / 4))));
@@ -611,7 +653,7 @@ public class Effects : MonoBehaviour
         if (card.effects[iteration][1] == 0)
         {
             card.RemoveEffect(iteration);
-            card.state = CardState.ATTACK;
+            if (CanMove(card)) { card.state = CardState.ATTACK; }
             card.HandleDefense(1);
             if (UnityEngine.Random.value <= ((20 + card.attack) / 40f))
             {
@@ -643,7 +685,7 @@ public class Effects : MonoBehaviour
         {
             yield return StartCoroutine(attackAnimations.PlayTridentHitAnimation(card.transform, target.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
-            card.state = CardState.ATTACK;
+            if (CanMove(card)) { card.state = CardState.ATTACK; }
             target.TakeDamage(8);
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + "attacks with trident"));
         }
@@ -675,7 +717,7 @@ public class Effects : MonoBehaviour
         if (card.effects[iteration][1] == 0)
         {
             card.RemoveEffect(iteration);
-            card.state = CardState.ATTACK;
+            if (CanMove(card)) { card.state = CardState.ATTACK; }
             dialogText.text = card.cardName + " wokes up";
             yield return new WaitForSeconds(2);
             yield break;
@@ -696,7 +738,7 @@ public class Effects : MonoBehaviour
         yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is cursed"));
         if (card.effects[iteration][1] == 0)
         {
-            card.state = CardState.ATTACK;
+            if (CanMove(card)) { card.state = CardState.ATTACK; }
             yield return StartCoroutine(attackAnimations.PlayCurseEndAnimation(card.transform));        //ANIMACIA
             card.RemoveEffect(iteration);
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is out of curse"));
@@ -712,7 +754,7 @@ public class Effects : MonoBehaviour
             }
             else
             {
-                card.state = CardState.ATTACK;
+                if (CanMove(card)) { card.state = CardState.ATTACK; }
             }
             card.effects[iteration][1] -= 1;
         }

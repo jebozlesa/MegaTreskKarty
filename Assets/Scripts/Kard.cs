@@ -583,7 +583,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
             effects.Add(new List<int>());
             effects[effects.Count - 1].Add(id);
             effects[effects.Count - 1].Add(param);
-            attackCount[id] = param;
+            //attackCount[id] = param;
             Debug.Log(Time.time + "  " + cardName + " pridal efekt " + id + ", " + param);
             yield return new WaitForSeconds(0.1f);
         }

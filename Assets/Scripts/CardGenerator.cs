@@ -250,7 +250,7 @@ public class CardGenerator : MonoBehaviour
         int randomIndex = UnityEngine.Random.Range(1, cardCount + 1);
         dbCommand.Dispose();
 
-        randomIndex = 31;  // docasne - vymazat resp. zakomentovat ked netreeba                                         <============  RANDOM INDEX
+        //randomIndex = 31;  // docasne - vymazat resp. zakomentovat ked netreeba                                         <============  RANDOM INDEX
         yield return StartCoroutine(AddCardById(randomIndex, 2));
 
         dbConnection.Close();
