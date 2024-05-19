@@ -77,4 +77,23 @@ public class MusicManager : MonoBehaviour
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
+
+    private void OnApplicationPause(bool pauseStatus)
+    {
+        if (!pauseStatus)
+        {
+            // Aplikácia sa obnovuje z pauzy
+            AudioSettings.Reset(AudioSettings.GetConfiguration());
+            RefreshMusicState();
+
+            // Ak sme na scéne "Main" a hudba nie je stlmená, spustiť hudbu
+            string currentSceneName = SceneManager.GetActiveScene().name;
+            bool isMusicMuted = PlayerPrefs.GetInt("isMusicMuted", 0) == 1;
+            if (currentSceneName == "Main" && !isMusicMuted && !audioSource.isPlaying)
+            {
+                PlayMusic();
+            }
+        }
+    }
+
 }

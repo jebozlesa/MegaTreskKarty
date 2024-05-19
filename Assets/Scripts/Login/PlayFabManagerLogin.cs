@@ -79,12 +79,42 @@ public class PlayFabManagerLogin : MonoBehaviour
         messageGandhiBubble.SetActive(false);
         messageStalinBubble.SetActive(false);
         controlPanel.SetActive(false);
-
         loadingImage.SetActive(true);
+
+        // Kontrola, či sú všetky polia vyplnené
+        if (string.IsNullOrEmpty(emailInput.text))
+        {
+            messageGandhiText.text = "Email is required!";
+            messageGandhiBubble.SetActive(true);
+            loadingImage.SetActive(false);
+            controlPanel.SetActive(true);
+            return;
+        }
+        
+        if (string.IsNullOrEmpty(usernameInput.text))
+        {
+            messageGandhiText.text = "Username is required!";
+            messageGandhiBubble.SetActive(true);
+            loadingImage.SetActive(false);
+            controlPanel.SetActive(true);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(passwordInput.text))
+        {
+            messageGandhiText.text = "Password is required!";
+            messageGandhiBubble.SetActive(true);
+            loadingImage.SetActive(false);
+            controlPanel.SetActive(true);
+            return;
+        }
 
         if (passwordInput.text.Length < 6)
         {
             messageGandhiText.text = "Password too short!";
+            messageGandhiBubble.SetActive(true);
+            loadingImage.SetActive(false);
+            controlPanel.SetActive(true);
             return;
         }
 
@@ -97,6 +127,7 @@ public class PlayFabManagerLogin : MonoBehaviour
         };
         PlayFabClientAPI.RegisterPlayFabUser(request, OnRegisterSuccess, OnError);
     }
+
 
     void OnRegisterSuccess(RegisterPlayFabUserResult result)
     {

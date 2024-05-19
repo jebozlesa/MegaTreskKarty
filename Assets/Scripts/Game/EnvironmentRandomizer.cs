@@ -67,4 +67,21 @@ public class EnvironmentRandomizer : MonoBehaviour
         bool isMusicMuted = PlayerPrefs.GetInt("isMusicMuted", 0) == 1;
         audioSource.mute = isMusicMuted;
     }
+
+    private void OnApplicationPause(bool pauseStatus)
+    {
+        if (!pauseStatus)
+        {
+            // Aplikácia sa obnovuje z pauzy
+            AudioSettings.Reset(AudioSettings.GetConfiguration());
+            UpdateAudioState();
+
+            // Ak hudba nie je stlmená a nehrá, spustiť hudbu
+            bool isMusicMuted = PlayerPrefs.GetInt("isMusicMuted", 0) == 1;
+            if (!isMusicMuted && !audioSource.isPlaying)
+            {
+                audioSource.Play();
+            }
+        }
+    }
 }

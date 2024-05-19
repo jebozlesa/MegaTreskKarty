@@ -8,6 +8,7 @@ using UnityEngine.EventSystems;
 using System.Data;
 using Mono.Data.Sqlite;
 using System;
+using System.Linq;
 
 public enum CardState { ATTACK, MAYBE, STAY }
 
@@ -102,173 +103,12 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         //LoadPlayerCardData();
     }
 
-    // private void LoadPlayerCardData()
-    // {
-    //     Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + "Kard.LoadPlayerCardData => START");
-    //     kartyHrac = LoadPlayerCardFromDatabase(cardId);
-    // }
-
-    // private List<string> LoadPlayerCardFromDatabase(int cardId)
-    // {
-    //     Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + "Kard.LoadPlayerCardFromDatabase => START " + cardId);
-    //     List<string> kartaData = new List<string>();
-
-    //     IDbConnection dbConnection = new SqliteConnection(connectionString);
-    //     dbConnection.Open();
-
-    //     IDbCommand dbCommand = dbConnection.CreateCommand();
-    //     dbCommand.CommandText = $"SELECT * FROM PlayerCards WHERE CardID = {cardId}";
-    //     IDataReader reader = dbCommand.ExecuteReader();
-
-    //     while (reader.Read())
-    //     {
-    //         string cardDataString = "";
-    //         for (int i = 0; i < reader.FieldCount; i++)
-    //         {
-    //             cardDataString += reader.GetValue(i).ToString();
-    //             if (i < reader.FieldCount - 1) cardDataString += ",";
-    //         }
-    //         kartaData.Add(cardDataString);
-    //     }
-
-    //     reader.Close();
-    //     dbCommand.Dispose();
-    //     dbConnection.Close();
-
-    //     return kartaData;
-    // }
-
-
     private void LoadCardData()
     {
         //Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.LoadCardData => START");
 
         levelText.text = "lvl " + level;
     }
-
-    // public void AddExperience(int increase)
-    // {
-    //     Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.AddExperience => START " + increase);
-
-    //     //bool lvlUp = false;
-    //     Debug.Log("LoadCardData()");
-
-    //     // Connect to the database
-    //     using (IDbConnection dbConnection = new SqliteConnection(connectionString))
-    //     {
-    //         dbConnection.Open();
-    //         Debug.Log("DATABAZA PRIPOJENA");
-
-    //         // Get the current experience and level
-    //         using (IDbCommand dbCommand = dbConnection.CreateCommand())
-    //         {
-    //             dbCommand.CommandText = $"SELECT Level, Experience FROM PlayerCards WHERE CardID = {cardId}";
-    //             using (IDataReader reader = dbCommand.ExecuteReader())
-    //             {
-    //                 if (reader.Read())
-    //                 {
-    //                     int currentExperience = reader.GetInt32(1);
-    //                     int currentLevel = reader.GetInt32(0);
-    //                     int newExperience = currentExperience + increase;
-
-    //                     // Update the experience
-    //                     UpdateStat("Experience", increase, dbConnection);
-    //                     StartCoroutine(EffectAnimations(increase, "XP", color_purple));
-    //                     experience = newExperience;
-
-    //                     // Check if player leveled up
-    //                     if (currentLevel * (10*(currentLevel)) <= newExperience)                                             //LEVEL   <========== dat potom nadruhu corentlevel
-    //                     {
-    //                         //lvlUp = true;
-    //                         UpdateStat("Level", 1, dbConnection);
-    //                         UpdateRandomStat(dbConnection);
-    //                         level = currentLevel + 1;
-    //                         StartCoroutine(EffectAnimations(level, "LVL", color_yellow));
-    //                     }
-
-    //                 }
-    //             }
-    //             dbCommand.Dispose();
-    //             dbConnection.Close();
-    //         }
-    //     }
-
-    //     LoadCardData();
-    // }
-
-    // public void UpdateRandomStat(IDbConnection dbConnection)
-    // {
-
-    //     switch ((int)UnityEngine.Random.Range(2, 9))
-    //     {
-    //         case 2:
-    //             Heal(2);
-    //             UpdateStat("Health", 2, dbConnection);
-    //             StartCoroutine(EffectAnimations(2, "HP", color_blue));
-    //             break;
-    //         case 3:
-    //             HandleStrength(1);
-    //             UpdateStat("Strength", 1, dbConnection);
-    //             StartCoroutine(EffectAnimations(1, "STR", color_blue));
-    //             break;
-    //         case 4:
-    //             HandleSpeed(1);
-    //             UpdateStat("Speed", 1, dbConnection);
-    //             StartCoroutine(EffectAnimations(1, "SPE", color_blue));
-    //             break;
-    //         case 5:
-    //             HandleAttack(1);
-    //             UpdateStat("Attack", 1, dbConnection);
-    //             StartCoroutine(EffectAnimations(1, "ATT", color_blue));
-    //             break;
-    //         case 6:
-    //             HandleDefense(1);
-    //             UpdateStat("Defense", 1, dbConnection);
-    //             StartCoroutine(EffectAnimations(1, "DEF", color_blue));
-    //             break;
-    //         case 7:
-    //             HandleKnowledge(1);
-    //             UpdateStat("Knowledge", 1, dbConnection);
-    //             StartCoroutine(EffectAnimations(1, "KNO", color_blue));
-    //             break;
-    //         case 8:
-    //             HandleCharisma(1);
-    //             UpdateStat("Charisma", 1, dbConnection);
-    //             StartCoroutine(EffectAnimations(1, "CHA", color_blue));
-    //             break;
-    //         default:
-    //             Debug.LogError("Invalid shit fak UpdateRandomStat(int index,int increase)");
-    //             break;
-    //     }
-    // }
-
-    // public void UpdateStat(string parameterName, int difference, IDbConnection dbConnection)
-    // {
-    //     if (string.IsNullOrEmpty(parameterName)) return;
-
-    //     // Aktualizácia hodnôt karty s rozdielmi
-    //     using (IDbCommand dbCommand = dbConnection.CreateCommand())
-    //     {
-    //         string query = $"UPDATE PlayerCards SET {parameterName} = {parameterName} + @{parameterName} WHERE CardID = @CardID";
-    //         Debug.Log("TU JE TO   " + query);
-
-    //         dbCommand.CommandText = query;
-
-    //         // Pridajte hodnoty parametrov pre aktualizáciu do SQL dotazu
-    //         IDbDataParameter parameter = dbCommand.CreateParameter();
-    //         parameter.ParameterName = $"@{parameterName}";
-    //         parameter.Value = difference;
-    //         dbCommand.Parameters.Add(parameter);
-
-    //         IDbDataParameter cardIdParameter = dbCommand.CreateParameter();
-    //         cardIdParameter.ParameterName = "@CardID";
-    //         cardIdParameter.Value = cardId;
-    //         dbCommand.Parameters.Add(cardIdParameter);
-
-    //         dbCommand.ExecuteNonQuery();
-    //     }
-
-    // }
 
     public IEnumerator AddExperience(int increase)
     {
@@ -331,8 +171,6 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         }
     }
 
-
-
     private PlayFabCardManager.CardData ConvertDictionaryToCardData(Dictionary<string, object> cardDataDictionary)
     {
         //Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.PlayFabCardManager.CardData => START ");
@@ -364,7 +202,9 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
     public bool HasAvailableAttacks()
     {
-        return countAttack1 > 0 || countAttack2 > 0 || countAttack3 > 0 || countAttack4 > 0;
+        bool result = attackCount[1] > 0 || attackCount[2] > 0 || attackCount[3] > 0 || attackCount[4] > 0;
+        Debug.Log(DateTime.Now.ToString("mm:ss") + " - " + cardName + " - " + result);
+        return result;
     }
 
     public void UpdateRandomStat()
@@ -452,9 +292,6 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
             }
         });
     }
-
-
-
 
     private void InitializeAttackCount()
     {
