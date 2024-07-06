@@ -9,6 +9,7 @@ using System.Data;
 using PlayFab;
 using PlayFab.ClientModels;
 using System.Linq;
+using System;
 
 public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
@@ -197,10 +198,19 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         deckPanel = deckPanelReference;
     }
 
+    private int CalculateExpForLevel(int level)
+    {
+        // Použite optimalizovaný vzorec pre výpočet EXP pre daný level
+        double a = 0.2636521817872269;
+        double b = 5.356569536042434;
+        return (int)Math.Round(a * Math.Pow(level, b));
+    }
+
+
     public void LoadDetails()
     {
         nameTextAttr.text = cardName;
-        expText.text = "Experience: " + experience + " / " + level * (10 * level);    //LEVEL   <========== dat potom nadruhu level
+        expText.text = "Experience: " + experience + " / " + CalculateExpForLevel(level + 1);    //LEVEL
         hpText.text = "Health: " + health;
         strText.text = "Strength: " + strength;
         speText.text = "Speed: " + speed;

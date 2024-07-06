@@ -133,15 +133,16 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
             int newExperience = currentExperience + increase;
 
             Dictionary<string, string> updates = new Dictionary<string, string>
-        {
-            { "Experience", newExperience.ToString() }
-        };
+            {
+                { "Experience", newExperience.ToString() }
+            };
 
             bool leveledUp = false;
             // Check if player leveled up
-            if (currentLevel * (10 * (currentLevel)) <= newExperience)
+            while (newExperience >= CalculateExpForLevel(currentLevel + 1))
             {
-                updates.Add("Level", (currentLevel + 1).ToString());
+                currentLevel += 1;
+                updates["Level"] = currentLevel.ToString();
                 leveledUp = true;
             }
 
@@ -170,6 +171,15 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
             Debug.LogError("ERROR: cardDataDictionary == null");
         }
     }
+
+    private int CalculateExpForLevel(int level)
+    {
+        // Použite optimalizovaný vzorec pre výpočet EXP pre daný level
+        double a = 0.2636521817872269;
+        double b = 5.356569536042434;
+        return (int)Math.Round(a * Math.Pow(level, b));
+    }
+
 
     private PlayFabCardManager.CardData ConvertDictionaryToCardData(Dictionary<string, object> cardDataDictionary)
     {

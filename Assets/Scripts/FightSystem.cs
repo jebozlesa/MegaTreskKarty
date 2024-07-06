@@ -361,8 +361,11 @@ public class FightSystem : MonoBehaviour
             if (player.hand.Count == plyerCardsUsage)
             {
                 state = FightState.LOST;
+                AudioSource.PlayClipAtPoint(Resources.Load<AudioClip>("Sounds/Game/gameover"), Camera.main.transform.position);
                 dialogText.text = "Loser you are!";
                 recordHandler.SendNewRecordToPlayFab(enemyLevel);
+                yield return new WaitForSeconds(3f);
+                SceneManager.LoadScene("Leaderboard");
                 yield break;
             }
             else
