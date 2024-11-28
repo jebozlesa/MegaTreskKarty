@@ -347,6 +347,9 @@ public class FightSystem : MonoBehaviour
                 {
                     CampaignManager.Instance.IncreaseMission("bushido");
                 }
+                yield return new WaitForSeconds(3f);
+                GameParameters.CampaignID = 1;
+                SceneManager.LoadScene("Campaign");
                 yield break;
             }
             enemy.PlayCard(enemy.hand[0], enemyBoard);
