@@ -133,7 +133,7 @@ public class Effects : MonoBehaviour
                 yield return StartCoroutine(Famine(card, dialogText, iteration));
                 break;
             case 8:
-                yield return StartCoroutine(Electicity(card, dialogText, iteration));
+                yield return StartCoroutine(Electricity(card, dialogText, iteration));
                 break;
             case 9:
                 yield return StartCoroutine(Tether(card, dialogText, iteration, attackType));
@@ -193,21 +193,21 @@ public class Effects : MonoBehaviour
     }
     //1
     public IEnumerator Bleed(Kard card, TMP_Text dialogText, int iteration)
+{
+    if (card.effects[iteration][1] == 0)
     {
-        if (card.effects[iteration][1] == 0)
-        {
-            card.RemoveEffect(iteration);
-            yield break;
-        }
-        else
-        {
-            StartCoroutine(attackAnimations.PlayBleedContinueAnimation(card.transform, card.effects[iteration][1]));        //ANIMACIA
-            card.TakeDamage(card.effects[iteration][1]);
-            card.effects[iteration][1] -= 1;
-            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " Bleeds"));
-        }
-        Debug.Log(card.cardName + " => Bleed");
+        card.RemoveEffect(iteration); // Ikonka sa odstráni podľa logiky v RemoveEffect
+        yield break;
     }
+    else
+    {
+        StartCoroutine(attackAnimations.PlayBleedContinueAnimation(card.transform, card.effects[iteration][1]));
+        card.TakeDamage(card.effects[iteration][1]);
+        card.effects[iteration][1] -= 1;
+        yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is bleeding"));
+    }
+    Debug.Log(card.cardName + " => Bleed");
+}
     //2
     public IEnumerator Asceticism(Kard card, TMP_Text dialogText, int iteration)
     {
@@ -336,9 +336,9 @@ public class Effects : MonoBehaviour
         Debug.Log(card.cardName + " => Famine");
     }
     //8
-    public IEnumerator Electicity(Kard card, TMP_Text dialogText, int iteration)
+    public IEnumerator Electricity(Kard card, TMP_Text dialogText, int iteration)
     {
-        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is affected by Electicity"));
+        yield return StartCoroutine(ShowAttackDialog(dialogText, card.cardName + " is affected by Electricity"));
         if (card.effects[iteration][1] == 0)
         {
             yield return StartCoroutine(attackAnimations.PlayElectricityEndAnimation(card.transform));        //ANIMACIA

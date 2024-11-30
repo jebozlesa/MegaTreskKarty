@@ -82,6 +82,9 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
     private PlayFabCardManager playFabManager = new PlayFabCardManager();
 
+    public Transform effectIconContainer;
+    public List<GameObject> effectIcons = new List<GameObject>();
+
 
 
     private void Start()
@@ -344,7 +347,6 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         Destroy(notsure);
     }
 
-
     public IEnumerator ShakeCard(float dmg)
     {
         Vector3 originalPosition = transform.position;
@@ -407,69 +409,260 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
     public IEnumerator AddEffect(int id, int param)
     {
-        //    yield return new WaitForSeconds(1f);
-        Debug.Log(Time.time + "  " + cardName + " pridava efekt " + id + ", " + param);
+        Debug.Log(Time.time + "  " + cardName + " pridáva efekt " + id + ", " + param);
 
-        bool idExists = false;
-
-        // Kontrola, či efekt s daným ID existuje a toto ID nie je 1 alebo 4
-        for (int i = 0; i < effects.Count; i++)
+        // Pre efekty, ktoré môžu byť na karte viackrát (ID 1 a 4)
+        if (id == 1 || id == 4)
         {
-            int effectId = effects[i][0];
-            if (effectId == id && id != 1 && id != 4 && id != 16)
+            // Vždy pridáme efekt bez kontroly duplicity
+            effects.Add(new List<int> { id, param });
+            AddEffectIcon(GetEffectNameById(id));
+            RepositionEffectIcons();
+        }
+        else
+        {
+            // Skontrolujeme, či efekt už existuje
+            bool idExists = effects.Any(e => e[0] == id);
+
+            if (!idExists)
             {
-                idExists = true;
-                Debug.Log(Time.time + "  " + cardName + " má již efekt s ID " + id + ".");
-                break;
+                // Pridáme efekt a ikonku
+                effects.Add(new List<int> { id, param });
+                AddEffectIcon(GetEffectNameById(id));
+                RepositionEffectIcons();
+            }
+            else
+            {
+                Debug.Log(Time.time + "  " + cardName + " už má efekt s ID " + id + ".");
             }
         }
 
-        if (!idExists)
-        {
-            // ID sa v zozname nevyskytuje alebo ide o ID 1 alebo 4, efekt pridáme
-            effects.Add(new List<int>());
-            effects[effects.Count - 1].Add(id);
-            effects[effects.Count - 1].Add(param);
-            //attackCount[id] = param;
-            Debug.Log(Time.time + "  " + cardName + " pridal efekt " + id + ", " + param);
-            yield return new WaitForSeconds(0.1f);
-        }
+        yield return new WaitForSeconds(0.1f);
     }
+
+    // Pomocná metóda na kontrolu, či bola ikonka efektu už pridaná
+    private bool IsEffectIconAdded(int effectId)
+    {
+        string effectName = GetEffectNameById(effectId);
+        Transform iconTransform = effectIconContainer.Find(effectName + "Icon");
+        return iconTransform != null;
+    }
+
+
     public void RemoveEffect(int index)
     {
-        Debug.Log(Time.time + "  " + cardName + " odobera efekt " + index);
-        if (index < effects.Count)
+        int effectId = effects[index][0];
+        string effectName = GetEffectNameById(effectId);
+
+        effects.RemoveAt(index);
+
+        StartCoroutine(RemoveEffectIcon(effectName));
+
+        // Pre efekty, ktoré môžu byť na karte viackrát (ID 1 a 4)
+        if (effectId == 1 || effectId == 4)
         {
-            effects.RemoveAt(index);
+            // Skontrolujeme, či ešte existujú ďalšie inštancie efektu
+            bool effectStillExists = effects.Any(e => e[0] == effectId);
+            if (!effectStillExists)
+            {
+                // Odstránime ikonku, ak už neexistujú ďalšie inštancie
+                RemoveEffectIcon(GetEffectNameById(effectId));
+            }
+        }
+        else
+        {
+            // Pre ostatné efekty odstránime ikonku okamžite
+            RemoveEffectIcon(GetEffectNameById(effectId));
         }
     }
+
 
     public void RemoveEffectById(int id)
     {
-        Debug.Log(Time.time + "  " + cardName + " odobera vsetky efekty s ID " + id);
-        for (int i = effects.Count - 1; i >= 0; i--)
+        // Odstránime všetky efekty s daným ID
+        effects.RemoveAll(e => e[0] == id);
+
+        // Pre efekty, ktoré môžu byť na karte viackrát (ID 1 a 4)
+        if (id == 1 || id == 4)
         {
-            int effectId = effects[i][0];
-            if (effectId == id)
+            // Skontrolujeme, či ešte existujú ďalšie inštancie efektu
+            bool effectStillExists = effects.Any(e => e[0] == id);
+            if (!effectStillExists)
             {
-                effects.RemoveAt(i);
+                // Odstránime ikonku, ak už neexistujú ďalšie inštancie
+                StartCoroutine(RemoveEffectIcon(GetEffectNameById(id)));
             }
+        }
+        else
+        {
+            // Pre ostatné efekty odstránime ikonku okamžite
+            StartCoroutine(RemoveEffectIcon(GetEffectNameById(id)));
         }
     }
 
-    public void RemoveEffectsById(int[] id)
+
+    public void RemoveEffectsById(int[] ids)
     {
-        for (int j = 0; j < id.Length - 1; j++)
+        foreach (int id in ids)
         {
-            for (int i = effects.Count - 1; i >= 0; i--)
+            RemoveEffectById(id);
+        }
+    }
+
+
+    public void AddEffectIcon(string effectName)
+{
+    // Načítanie ikonky z Resources
+    Sprite iconSprite = Resources.Load<Sprite>("Game/EffectIcons/" + effectName);
+    if (iconSprite == null)
+    {
+        Debug.LogError("Ikonka efektu nebola nájdená: " + effectName);
+        return;
+    }
+
+    // Vytvorenie unikátneho názvu pre ikonku
+    string uniqueIconName = effectName + "Icon_" + Guid.NewGuid().ToString();
+    GameObject iconGO = new GameObject(uniqueIconName);
+
+    // Pridanie komponentu Image
+    Image iconImage = iconGO.AddComponent<Image>();
+    iconImage.sprite = iconSprite;
+
+    // Nastavenie rodiča na effectIconContainer
+    iconGO.transform.SetParent(effectIconContainer, false);
+
+    // Nastavenie veľkosti ikonky
+    RectTransform rectTransform = iconGO.GetComponent<RectTransform>();
+    rectTransform.sizeDelta = new Vector2(80, 80); // Nastavte veľkosť podľa vašich ikon
+
+    // Nastavenie pivotu a anchoru ikonky
+    rectTransform.anchorMin = new Vector2(1, 1); // Ukotvené k pravému hornému rohu
+    rectTransform.anchorMax = new Vector2(1, 1);
+    rectTransform.pivot = new Vector2(0.5f, 1); // Pivot v strede horizontálne, hore vertikálne
+}
+
+
+
+    private int GetEffectIconIndex(string effectName)
+    {
+        int index = 0;
+        foreach (Transform child in effectIconContainer)
+        {
+            if (child.name == effectName + "Icon")
             {
-                int effectId = effects[i][0];
-                if (effectId == id[j])
-                {
-                    Debug.Log(Time.time + "  " + cardName + " odobera vsetky efekty s ID " + id);
-                    effects[i][0] = 0;
-                }
+                // Nájdeme existujúcu ikonku a vrátime jej index
+                return index;
             }
+            index++;
+        }
+        // Ak ikonka neexistuje, vrátime počet detí ako nový index
+        return effectIconContainer.childCount - 1;
+    }
+
+
+    public IEnumerator RemoveEffectIcon(string effectName)
+{
+    // Nájdeme prvú ikonku, ktorá zodpovedá danému efektu
+    foreach (Transform child in effectIconContainer)
+    {
+        if (child.name.StartsWith(effectName + "Icon"))
+        {
+            Destroy(child.gameObject);
+            break; // Odstránime iba jednu ikonku
+        }
+    }
+
+    // Počkáme do konca frame-u, aby sa ikonka skutočne odstránila
+    yield return null;
+
+    // Po odstránení ikonky preusporiadame zvyšné ikonky
+    RepositionEffectIcons();
+}
+
+
+
+    private void RepositionEffectIcons()
+{
+    int index = 0;
+    float iconWidth = 80f; // Šírka ikonky
+    float iconHeight = 80f; // Výška ikonky
+    float verticalSpacing = 10f; // Medzera medzi ikonkami
+    float xOffset = 0f; // Horizontálny posun ikoniek
+
+    foreach (Transform child in effectIconContainer)
+    {
+        RectTransform rectTransform = child.GetComponent<RectTransform>();
+        if (rectTransform != null)
+        {
+            float xPos = xOffset; // Posun ikonky doprava
+            float yPos = -index * (iconHeight + verticalSpacing);
+
+            rectTransform.anchoredPosition = new Vector2(xPos, yPos);
+            index++;
+        }
+    }
+}
+
+
+
+    private string GetEffectNameById(int id)
+    {
+        switch (id)
+        {
+            case 1:
+                return "bleed";
+            case 2:
+                return "asceticism";
+            case 3:
+                return "sleep";
+            case 4:
+                return "exposure";
+            case 5:
+                return "siege";
+            case 6:
+                return "fury";
+            case 7:
+                return "famine";
+            case 8:
+                return "electricity"; // Opravený preklep
+            case 9:
+                return "tether";
+            case 10:
+                return "starving";
+            case 11:
+                return "envelop";
+            case 12:
+                return "blockade";
+            case 13:
+                return "depression";
+            case 14:
+                return "art_inspiration"; // Pre lepšiu čitateľnosť ikonky
+            case 15:
+                return "autoportrait";
+            case 16:
+                return "burn";
+            case 17:
+                return "confusion";
+            case 18:
+                return "satellite";
+            case 19:
+                return "fear";
+            case 20:
+                return "horns";
+            case 21:
+                return "calm";
+            case 22:
+                return "reloading";
+            case 23:
+                return "trident";
+            case 24:
+                return "poison";
+            case 26:
+                return "curse";
+            // Pridajte ďalšie efekty podľa potreby
+            default:
+                Debug.LogError("Neznámy efekt s ID: " + id);
+                return "unknown";
         }
     }
 
