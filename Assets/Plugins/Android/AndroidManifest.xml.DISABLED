@@ -10,7 +10,10 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
+            <meta-data android:name="unityplayer.UnityActivity" android:value="true" 
+            android:name="com.google.android.play.billingclient.version"
+            android:value="7.0.0"
+            tools:replace="android:value"/>
         </activity>
     </application>
 </manifest>

@@ -193,21 +193,21 @@ public class Effects : MonoBehaviour
     }
     //1
     public IEnumerator Bleed(Kard card, TMP_Text dialogText, int iteration)
-{
-    if (card.effects[iteration][1] == 0)
     {
-        card.RemoveEffect(iteration); // Ikonka sa odstráni podľa logiky v RemoveEffect
-        yield break;
+        if (card.effects[iteration][1] == 0)
+        {
+            card.RemoveEffect(iteration); // Ikonka sa odstráni podľa logiky v RemoveEffect
+            yield break;
+        }
+        else
+        {
+            StartCoroutine(attackAnimations.PlayBleedContinueAnimation(card.transform, card.effects[iteration][1]));
+            card.TakeDamage(card.effects[iteration][1]);
+            card.effects[iteration][1] -= 1;
+            yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is bleeding"));
+        }
+        Debug.Log(card.cardName + " => Bleed");
     }
-    else
-    {
-        StartCoroutine(attackAnimations.PlayBleedContinueAnimation(card.transform, card.effects[iteration][1]));
-        card.TakeDamage(card.effects[iteration][1]);
-        card.effects[iteration][1] -= 1;
-        yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is bleeding"));
-    }
-    Debug.Log(card.cardName + " => Bleed");
-}
     //2
     public IEnumerator Asceticism(Kard card, TMP_Text dialogText, int iteration)
     {
@@ -669,7 +669,6 @@ public class Effects : MonoBehaviour
         }
         else
         {
-
             card.effects[iteration][1] -= 1;
             yield return StartCoroutine(attackAnimations.PlayFlintlockPistolLoadingAnimation(card.transform));        //ANIMACIA
             yield return StartCoroutine(ShowDialog(dialogText, card.cardName + " is still reloading"));
