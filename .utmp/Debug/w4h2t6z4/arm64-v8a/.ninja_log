@@ -1,0 +1,5 @@
+# ninja log v5
+235	355	7663702290862843	C:/Zlozka/MegaTresk/MegaTreskKarty/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/Debug/w4h2t6z4/obj/arm64-v8a/libswappywrapper.so	19c4d86d7b1cb5cb
+1	231	7663702289685584	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	385d5469c8cc58bf
+23	426	7664496989444468	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	385d5469c8cc58bf
+427	590	7664496991032858	C:/Zlozka/MegaTresk/MegaTreskKarty/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/Debug/w4h2t6z4/obj/arm64-v8a/libswappywrapper.so	19c4d86d7b1cb5cb

@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5958543020059574071}
   - component: {fileID: 5958543020059574068}
   m_Layer: 5
-  m_Name: Notsure
+  m_Name: KardStatChange
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -68,14 +68,14 @@ MonoBehaviour:
   m_text: YOLO
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: efbfd225e2d46f64abb47a6520eb2c9c, type: 2}
-  m_sharedMaterial: {fileID: 2100000, guid: f2dcf029949142e28b974630369c8b4e, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 602b954abbc346144ae1919ebdda6be8, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4293460223
-  m_fontColor: {r: 1, g: 0, b: 0.9137182, a: 1}
+    rgba: 4291559671
+  m_fontColor: {r: 0.96981126, g: 0, b: 0.799289, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -106,7 +106,7 @@ MonoBehaviour:
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
-  m_paragraphSpacing: 0
+  m_paragraphSpacing: 10
   m_charWidthMaxAdj: 0
   m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
@@ -114,7 +114,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
-  m_ActiveFontFeatures: 00000000
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -133,6 +133,6 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
