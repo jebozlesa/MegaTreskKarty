@@ -1,3 +1,5 @@
 # ninja log v5
-1	309	7664513877690931	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	d5de61c124b73b23
-311	424	7664513878800372	C:/Zlozka/MegaTresk/MegaTreskKarty/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/6b92j3p2/obj/arm64-v8a/libswappywrapper.so	8ffdb6d8f56dde40
+19	270	7684023773549431	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	d5de61c124b73b23
+270	1166	7684023782446839	C:/Zlozka/MegaTresk/MegaTreskKarty/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/6b92j3p2/obj/arm64-v8a/libswappywrapper.so	8ffdb6d8f56dde40
+3	292	7684049485095820	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	d5de61c124b73b23
+294	483	7684049486920334	C:/Zlozka/MegaTresk/MegaTreskKarty/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/6b92j3p2/obj/arm64-v8a/libswappywrapper.so	8ffdb6d8f56dde40
