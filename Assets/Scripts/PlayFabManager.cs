@@ -11,6 +11,7 @@ public class PlayFabManager : MonoBehaviour
 
     public int maxRetryAttempts = 3;
     public float retryDelaySeconds = 2f;
+    public static string CurrentPlayFabId;
 
     public event Action<List<PlayerLeaderboardEntry>> OnLeaderboardLoaded;
 
@@ -57,7 +58,7 @@ public class PlayFabManager : MonoBehaviour
     private void OnLoginSuccess(LoginResult result)
     {
         Debug.Log("PlayFabManager: Prihlásenie úspešné");
-        // Tu môžete pridať akékoľvek ďalšie kroky po úspešnom prihlásení.
+        CurrentPlayFabId = result.PlayFabId;
     }
 
     private void OnLoginError(PlayFabError error)

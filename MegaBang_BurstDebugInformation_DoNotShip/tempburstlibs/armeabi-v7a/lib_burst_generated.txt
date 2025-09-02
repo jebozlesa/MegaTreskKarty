@@ -9,6 +9,7 @@ Library: C:\Zlozka\MegaTresk\MegaTreskKarty\Temp\BurstOutput\tempburstlibs\armea
 --target-framework=NetFramework
 --generate-link-xml=Temp\burst.link.xml
 --temp-folder=C:\Zlozka\MegaTresk\MegaTreskKarty\Temp\Burst
+--debug=LineOnly
 --key-folder=C:/Program Files/Unity/Hub/Editor/6000.0.43f1/Editor/Data/PlaybackEngines/AndroidPlayer
 --decode-folder=C:\Zlozka\MegaTresk\MegaTreskKarty\Library\Burst
 --output=C:\Zlozka\MegaTresk\MegaTreskKarty\Temp\BurstOutput\tempburstlibs\armeabi-v7a\lib_burst_generated

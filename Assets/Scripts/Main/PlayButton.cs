@@ -10,7 +10,6 @@ public class PlayButton : MonoBehaviour
         onButtonClick?.Invoke(missionID);
     }
 
-
     public void LoadScene(string sceneName)
     {
         SceneManager.LoadScene(sceneName);
