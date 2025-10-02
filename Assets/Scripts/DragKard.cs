@@ -20,7 +20,7 @@ public class DragKard : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDrag
     {
         rectTransform = GetComponent<RectTransform>();
         canvasGroup = GetComponent<CanvasGroup>();
-        fightManager = FindObjectOfType<FightSystem>();
+        fightManager = FindFirstObjectByType<FightSystem>();
     }
 
     public void OnBeginDrag(PointerEventData eventData)

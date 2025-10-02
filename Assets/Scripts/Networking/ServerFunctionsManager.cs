@@ -8,6 +8,12 @@ public class ServerFunctionsManager : MonoBehaviour
     // Univerzálne volanie PlayFab funkcie
     public void CallFunction(string functionName, object parameters, Action<ExecuteFunctionResult> callback)
     {
+        if (callback == null)
+        {
+            Debug.LogError($"CallFunction: callback is null! functionName={functionName}");
+            return;
+        }
+        Debug.LogWarning($"CallFunction: {functionName}, parameters: {Newtonsoft.Json.JsonConvert.SerializeObject(parameters)}");
         var request = new ExecuteFunctionRequest
         {
             FunctionName = functionName,
@@ -16,6 +22,7 @@ public class ServerFunctionsManager : MonoBehaviour
         };
 
         PlayFabCloudScriptAPI.ExecuteFunction(request, result => {
+            Debug.LogWarning($"ExecuteFunction result: {Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}");
             callback?.Invoke(result);
         }, error => {
             Debug.LogError(error.GenerateErrorReport());
@@ -23,15 +30,117 @@ public class ServerFunctionsManager : MonoBehaviour
         });
     }
 
-    // Príklad: pripojenie do miestnosti
-    public void JoinOrCreateRoom(string roomCode, string playerId, Action<ExecuteFunctionResult> callback)
+    // Upravené: pripojenie do miestnosti podľa novej logiky s username
+    public void JoinOrCreateRoom(string playerId, string username, Action<ExecuteFunctionResult> callback)
     {
+        if (callback == null)
+        {
+            Debug.LogError("JoinOrCreateRoom: callback is null!");
+            return;
+        }
+        Debug.LogWarning($"JoinOrCreateRoom called with playerId: {playerId}, username: {username}");
         var parameters = new {
-            roomCode = roomCode,
-            playerId = playerId
+            playerId = playerId,
+            username = username
         };
         CallFunction("joinOrCreateRoom", parameters, callback);
     }
 
-    // Tu môžeš pridať ďalšie metódy pre iné serverové funkcie
+    // Nová funkcia: získanie informácií o hráčoch v miestnosti
+    public void GetRoomPlayersInfo(string roomCode, Action<ExecuteFunctionResult> callback)
+    {
+        if (callback == null)
+        {
+            Debug.LogError("GetRoomPlayersInfo: callback is null!");
+            return;
+        }
+        Debug.LogWarning($"GetRoomPlayersInfo called with roomCode: {roomCode}");
+        var parameters = new {
+            roomCode = roomCode
+        };
+        CallFunction("getRoomPlayersInfo", parameters, callback);
+    }
+
+    // Nová funkcia: aktualizácia informácií o hráčovi
+    public void UpdatePlayerInfo(string playerId, string username, Action<ExecuteFunctionResult> callback)
+    {
+        if (callback == null)
+        {
+            Debug.LogError("UpdatePlayerInfo: callback is null!");
+            return;
+        }
+        Debug.LogWarning($"UpdatePlayerInfo called with playerId: {playerId}, username: {username}");
+        var parameters = new {
+            playerId = playerId,
+            username = username
+        };
+        CallFunction("updatePlayerInfo", parameters, callback);
+    }
+
+    // Preťažená verzia JoinOrCreateRoom pre spätnu kompatibilitu
+    public void JoinOrCreateRoom(string playerId, Action<ExecuteFunctionResult> callback)
+    {
+        string username = PlayerPrefs.GetString("username", playerId);
+        JoinOrCreateRoom(playerId, username, callback);
+    }
+
+    // Nová funkcia: opustenie miestnosti
+    public void LeaveRoom(string playerId, Action<ExecuteFunctionResult> callback)
+    {
+        if (callback == null)
+        {
+            Debug.LogError("LeaveRoom: callback is null!");
+            return;
+        }
+        Debug.LogWarning($"LeaveRoom called with playerId: {playerId}");
+        var parameters = new {
+            playerId = playerId
+        };
+        CallFunction("leaveRoom", parameters, callback);
+    }
+
+    // Nová funkcia: heartbeat (životný signál)
+    public void Heartbeat(string playerId, Action<ExecuteFunctionResult> callback = null)
+    {
+        Debug.Log($"Heartbeat called with playerId: {playerId}");
+        var parameters = new {
+            playerId = playerId
+        };
+        CallFunction("heartbeat", parameters, callback ?? (result => {
+            // Tichý callback - heartbeat nemusí mať výstup
+            if (result == null)
+            {
+                Debug.LogWarning("Heartbeat failed");
+            }
+        }));
+    }
+
+    // Nová funkcia: cleanup starých miestností
+    public void CleanupRooms(Action<ExecuteFunctionResult> callback = null)
+    {
+        Debug.Log("CleanupRooms called");
+        var parameters = new { }; // Prázdne parametre
+        CallFunction("cleanupRooms", parameters, callback ?? (result => {
+            if (result != null && result.FunctionResult != null)
+            {
+                Debug.Log($"Cleanup result: {result.FunctionResult}");
+            }
+        }));
+    }
+
+    // Nová funkcia: označenie miestnosti ako completed
+    public void MarkRoomAsCompleted(string roomCode, string playerId, Action<ExecuteFunctionResult> callback = null)
+    {
+        Debug.Log($"MarkRoomAsCompleted called with roomCode: {roomCode}, playerId: {playerId}");
+        var parameters = new {
+            roomCode = roomCode,
+            playerId = playerId
+        };
+        CallFunction("markRoomAsCompleted", parameters, callback ?? (result => {
+            if (result != null && result.FunctionResult != null)
+            {
+                Debug.Log($"Mark room completed result: {result.FunctionResult}");
+            }
+        }));
+    }
 }
