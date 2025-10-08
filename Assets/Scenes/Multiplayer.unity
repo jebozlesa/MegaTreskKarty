@@ -1541,6 +1541,53 @@ RectTransform:
   m_AnchoredPosition: {x: -10, y: 0}
   m_SizeDelta: {x: -20, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &551249649
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 551249651}
+  - component: {fileID: 551249650}
+  m_Layer: 0
+  m_Name: MultiplayerBoardManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &551249650
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 551249649}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fa7c576728a5bf48a2e734657cc02cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fightSystem: {fileID: 1771868604}
+  selectedCardPollIntervalSeconds: 1.5
+  selectedCardPollAttempts: 30
+--- !u!4 &551249651
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 551249649}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 538.80115, y: 1193.8331, z: -0.36323768}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &553139925
 GameObject:
   m_ObjectHideFlags: 0
@@ -5467,6 +5514,7 @@ MonoBehaviour:
   multiplayerService: {fileID: 261861852}
   multiplayerUI: {fileID: 293431817}
   multiplayerHandManager: {fileID: 1788473150}
+  multiplayerBoardManager: {fileID: 551249650}
 --- !u!4 &1771868605
 Transform:
   m_ObjectHideFlags: 0
@@ -7250,5 +7298,6 @@ SceneRoots:
   - {fileID: 523109069}
   - {fileID: 891367916}
   - {fileID: 261861853}
+  - {fileID: 551249651}
   - {fileID: 1771868605}
   - {fileID: 1788473151}
