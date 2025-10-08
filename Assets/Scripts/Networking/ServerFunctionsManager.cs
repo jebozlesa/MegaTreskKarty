@@ -5,6 +5,20 @@ using UnityEngine;
 
 public class ServerFunctionsManager : MonoBehaviour
 {
+    // Nová funkcia: načítanie balíčkov hráčov do miestnosti
+    public async System.Threading.Tasks.Task<ExecuteFunctionResult> LoadPlayerDecksIntoRoomAsync(string playerId, string roomCode)
+    {
+        var tcs = new System.Threading.Tasks.TaskCompletionSource<ExecuteFunctionResult>();
+        var parameters = new {
+            playerId = playerId,
+            roomCode = roomCode
+        };
+        CallFunction("loadPlayerDecksIntoRoom", parameters, result =>
+        {
+            tcs.SetResult(result);
+        });
+        return await tcs.Task;
+    }
     // Univerzálne volanie PlayFab funkcie
     public void CallFunction(string functionName, object parameters, Action<ExecuteFunctionResult> callback)
     {
@@ -77,7 +91,7 @@ public class ServerFunctionsManager : MonoBehaviour
         CallFunction("updatePlayerInfo", parameters, callback);
     }
 
-    // Preťažená verzia JoinOrCreateRoom pre spätnu kompatibilitu
+    // Preťažená verzia JoinOrCreateRoom pre spätnú kompatibilitu
     public void JoinOrCreateRoom(string playerId, Action<ExecuteFunctionResult> callback)
     {
         string username = PlayerPrefs.GetString("username", playerId);
@@ -142,5 +156,20 @@ public class ServerFunctionsManager : MonoBehaviour
                 Debug.Log($"Mark room completed result: {result.FunctionResult}");
             }
         }));
+    }
+
+    // Nová funkcia: získanie deckov v miestnosti cez getRoomDecks
+    public void GetRoomDecks(string roomCode, Action<ExecuteFunctionResult> callback)
+    {
+        if (callback == null)
+        {
+            Debug.LogError("GetRoomDecks: callback is null!");
+            return;
+        }
+        Debug.LogWarning($"GetRoomDecks called with roomCode: {roomCode}");
+        var parameters = new {
+            roomCode = roomCode
+        };
+        CallFunction("getRoomDecks", parameters, callback);
     }
 }

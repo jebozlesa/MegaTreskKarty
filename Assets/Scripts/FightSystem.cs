@@ -493,7 +493,7 @@ public class FightSystem : MonoBehaviour
         yield return new WaitUntil(() => isCompleted);
     }
 
-    private void CreateCardInGame(GeneratedCard cardData, GameObject playerGO, Player player)
+    public void CreateCardInGame(GeneratedCard cardData, GameObject playerGO, Player player)
     {
         GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
 
