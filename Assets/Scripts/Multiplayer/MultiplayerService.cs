@@ -527,4 +527,100 @@ public class MultiplayerService : MonoBehaviour
         // Nahraj hlavné menu
         SceneManager.LoadScene("MainMenu"); // Zmeň na správny názov scény
     }
+
+    public async Task SubmitSelectedCardAsync(string roomCode, string playerId, SelectedCardData cardData)
+    {
+        if (serverFunctionsManager == null)
+        {
+            Debug.LogError("SubmitSelectedCardAsync: serverFunctionsManager is null");
+            return;
+        }
+
+        var tcs = new TaskCompletionSource<bool>();
+
+        serverFunctionsManager.SetSelectedCard(roomCode, playerId, cardData, result =>
+        {
+            if (result == null)
+            {
+                Debug.LogError("SubmitSelectedCardAsync: Failed to set selected card on server");
+            }
+            else
+            {
+                Debug.Log($"SubmitSelectedCardAsync: Card {cardData?.cardId} stored for player {playerId}");
+            }
+
+            tcs.TrySetResult(true);
+        });
+
+        await tcs.Task;
+    }
+
+    public async Task<Dictionary<string, SelectedCardData>> GetSelectedCardsAsync(string roomCode)
+    {
+        var tcs = new TaskCompletionSource<Dictionary<string, SelectedCardData>>();
+
+        if (serverFunctionsManager == null)
+        {
+            Debug.LogError("GetSelectedCardsAsync: serverFunctionsManager is null");
+            tcs.TrySetResult(new Dictionary<string, SelectedCardData>());
+            return await tcs.Task;
+        }
+
+        serverFunctionsManager.GetSelectedCards(roomCode, result =>
+        {
+            var map = new Dictionary<string, SelectedCardData>();
+
+            if (result != null && result.FunctionResult != null)
+            {
+                try
+                {
+                    JObject functionResult = JObject.Parse(result.FunctionResult.ToString());
+                    if (functionResult["selectedCards"] is JObject selectedCards)
+                    {
+                        foreach (var property in selectedCards)
+                        {
+                            if (property.Value is JObject cardObject)
+                            {
+                                var cardData = SelectedCardData.FromJson(property.Key, cardObject);
+                                if (cardData != null)
+                                {
+                                    map[property.Key] = cardData;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"GetSelectedCardsAsync: Error parsing response - {ex.Message}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("GetSelectedCardsAsync: No result returned from server");
+            }
+
+            tcs.TrySetResult(map);
+        });
+
+        return await tcs.Task;
+    }
+
+    public async Task ClearSelectedCardsAsync(string roomCode)
+    {
+        if (serverFunctionsManager == null)
+        {
+            Debug.LogError("ClearSelectedCardsAsync: serverFunctionsManager is null");
+            return;
+        }
+
+        var tcs = new TaskCompletionSource<bool>();
+
+        serverFunctionsManager.ClearSelectedCards(roomCode, _ =>
+        {
+            tcs.TrySetResult(true);
+        });
+
+        await tcs.Task;
+    }
 }

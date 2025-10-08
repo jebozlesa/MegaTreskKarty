@@ -12,6 +12,7 @@ public class GeneratedCard
     public int Level;
     public int Experience;
     public int Health;
+    public int MaxHealth;
     public int Strength;
     public int Speed;
     public int Attack;

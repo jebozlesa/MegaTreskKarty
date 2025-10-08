@@ -80,3 +80,30 @@ Upravte názvy scén v kóde podľa vašich skutočných scén:
 
 **Problém:** Chyby kompilátora
 - **Riešenie:** Skontrolujte či máte správne using direktívy v script súboroch
+
+---
+
+## 🔄 Nový multiplayerový turn flow
+
+### 1. Čo robíme na klientovi
+- `FightSystemMultiplayer` teraz zachytáva presun karty do bojovej zóny cez `MultiplayerCardDrag`
+- Po výbere hráča sa na PlayFab odošle payload so štatistikami (`setSelectedCard`)
+- Klient každých ~1,5s ťahá `getSelectedCards` až pokiaľ aj súper neposlal svoju kartu
+- Po tom, čo sú obaja prihlásení, sa najprv zobrazí súperova karta na bojovom poli a až potom sa pripraví fáza útokov (logika útokov doprogramujeme neskôr)
+- Až keď obe karty vidíme na boarde, klient zavolá `clearSelectedCards`, ale údaje ostávajú lokálne pripravené pre budúce útoky
+
+### 2. Čo musí pripraviť server
+Implementujte tri nové CloudScript funkcie, ktoré pracujú s dokumentom miestnosti (MongoDB):
+
+| Funkcia | Parametre | Popis |
+| --- | --- | --- |
+| `setSelectedCard` | `roomCode`, `playerId`, `card` | Uloží do `room.selectedCards[playerId]` objekt `{ cardId, name, image, level, health, maxHealth, styleId, strength, speed, attack, defense, knowledge, charisma, experience, attack1, attack2, attack3, attack4, color }` |
+| `getSelectedCards` | `roomCode` | Vráti `room.selectedCards` pre všetkých prítomných hráčov |
+| `clearSelectedCards` | `roomCode` | Vymaže `room.selectedCards` po skončení kola |
+
+> ⚠️ Poznámka: Štruktúra `card` musí obsahovať všetky vyššie uvedené polia – klient z nich skladá kompletnú kartu so štatistikami a útokmi. Ak niektoré pole chýba, karta sa neodhalí správne.
+
+### 3. Debugging
+- Klient loguje každý krok s prefixom `[FightSystemMultiplayer]`
+- Ak v konzole nevidíte `Opponent selected card ...`, funkcia `getSelectedCards` zrejme nevracia súperovu položku
+- Pri chybe PlayFab volania sa výber karty resetuje do ruky

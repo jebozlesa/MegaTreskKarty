@@ -172,4 +172,85 @@ public class ServerFunctionsManager : MonoBehaviour
         };
         CallFunction("getRoomDecks", parameters, callback);
     }
+
+    public void SetSelectedCard(string roomCode, string playerId, SelectedCardData cardData, Action<ExecuteFunctionResult> callback)
+    {
+        if (cardData == null)
+        {
+            Debug.LogError("SetSelectedCard: cardData is null!");
+            callback?.Invoke(null);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(roomCode) || string.IsNullOrEmpty(playerId))
+        {
+            Debug.LogError("SetSelectedCard: roomCode or playerId missing!");
+            callback?.Invoke(null);
+            return;
+        }
+
+        Debug.LogWarning($"SetSelectedCard called with roomCode: {roomCode}, playerId: {playerId}, cardId: {cardData.cardId}");
+        var parameters = new
+        {
+            roomCode,
+            playerId,
+            card = new
+            {
+                cardId = cardData.cardId,
+                name = cardData.name,
+                image = cardData.image,
+                level = cardData.level,
+                health = cardData.health,
+                maxHealth = cardData.maxHealth,
+                styleId = cardData.styleId,
+                strength = cardData.strength,
+                speed = cardData.speed,
+                attack = cardData.attack,
+                defense = cardData.defense,
+                knowledge = cardData.knowledge,
+                charisma = cardData.charisma,
+                experience = cardData.experience,
+                attack1 = cardData.attack1,
+                attack2 = cardData.attack2,
+                attack3 = cardData.attack3,
+                attack4 = cardData.attack4,
+                color = cardData.color ?? new int[] { 255, 255, 255 }
+            }
+        };
+
+        CallFunction("setSelectedCard", parameters, callback);
+    }
+
+    public void GetSelectedCards(string roomCode, Action<ExecuteFunctionResult> callback)
+    {
+        if (callback == null)
+        {
+            Debug.LogError("GetSelectedCards: callback is null!");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(roomCode))
+        {
+            Debug.LogError("GetSelectedCards: roomCode is empty!");
+            callback?.Invoke(null);
+            return;
+        }
+
+        Debug.LogWarning($"GetSelectedCards called with roomCode: {roomCode}");
+        var parameters = new
+        {
+            roomCode
+        };
+        CallFunction("getSelectedCards", parameters, callback);
+    }
+
+    public void ClearSelectedCards(string roomCode, Action<ExecuteFunctionResult> callback)
+    {
+        Debug.LogWarning($"ClearSelectedCards called with roomCode: {roomCode}");
+        var parameters = new
+        {
+            roomCode
+        };
+        CallFunction("clearSelectedCards", parameters, callback ?? (_ => { }));
+    }
 }
