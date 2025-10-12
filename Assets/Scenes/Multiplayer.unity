@@ -877,54 +877,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &293431813
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 293431815}
-  - component: {fileID: 293431817}
-  m_Layer: 0
-  m_Name: MultiplayeruUI
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &293431815
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 293431813}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 221.52493, y: 1151.9711, z: -12.736721}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &293431817
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 293431813}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4c954e7ba37681f4fab97d530884fdd9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerNameText: {fileID: 1616554859}
-  enemyNameText: {fileID: 428584301}
-  statusText: {fileID: 1327332876}
-  exitButton: {fileID: 0}
 --- !u!1 &297122524
 GameObject:
   m_ObjectHideFlags: 0
@@ -2588,56 +2540,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 879972778}
   m_CullTransparentMesh: 1
---- !u!1 &891367914
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 891367916}
-  - component: {fileID: 891367915}
-  m_Layer: 0
-  m_Name: MultiplayerHandManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!114 &891367915
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 891367914}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0cd895fc909ed854880543e443da4f63, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  multiplayerService: {fileID: 0}
-  kartaPrefab: {fileID: 0}
-  playerBoard: {fileID: 0}
-  attackDescriptions: {fileID: 0}
-  fightSystem: {fileID: 0}
-  serverFunctionsManager: {fileID: 0}
---- !u!4 &891367916
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 891367914}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 538.80115, y: 1193.8331, z: -0.36323768}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &897323947
 GameObject:
   m_ObjectHideFlags: 0
@@ -2916,6 +2818,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 898015515}
   m_CullTransparentMesh: 1
+--- !u!114 &909972134 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4298181560895731028, guid: c6ed0527a7e3ca24ba8a23cbce5c93e9, type: 3}
+  m_PrefabInstance: {fileID: 1327332871}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1327332873}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &941016682
 GameObject:
   m_ObjectHideFlags: 0
@@ -3637,6 +3550,58 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   canvas: {fileID: 0}
+--- !u!1 &1153135161
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1153135163}
+  - component: {fileID: 1153135162}
+  m_Layer: 0
+  m_Name: AttackSelectionManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1153135162
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1153135161}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8eb790f9b8cba14ca19d9589092473f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dialogText: {fileID: 1327332876}
+  confirmButton: {fileID: 909972134}
+  button1: {fileID: 1016203478}
+  button2: {fileID: 1269769295}
+  button3: {fileID: 2131714914}
+  button4: {fileID: 897323950}
+  attackDescriptions: {fileID: 3518227811020080132, guid: efdb9002191ce904da2c4c323080f9a1, type: 3}
+  fightSystem: {fileID: 1771868604}
+--- !u!4 &1153135163
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1153135161}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 538.80115, y: 1193.8331, z: -0.36323768}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1158558730
 GameObject:
   m_ObjectHideFlags: 0
@@ -5603,6 +5568,7 @@ MonoBehaviour:
   attackDescriptions: {fileID: 3518227811020080132, guid: efdb9002191ce904da2c4c323080f9a1, type: 3}
   attackNamesLoader: {fileID: 1299250289}
   attackCountLoader: {fileID: 2061391569}
+  attackSelectionManager: {fileID: 1153135162}
   effects: {fileID: 0}
   recordHandler: {fileID: 0}
   myPlayerId: 
@@ -5612,7 +5578,7 @@ MonoBehaviour:
   roomPlayers: []
   playerDecks: []
   multiplayerService: {fileID: 261861852}
-  multiplayerUI: {fileID: 293431817}
+  multiplayerUI: {fileID: 0}
   multiplayerHandManager: {fileID: 1788473150}
   multiplayerBoardManager: {fileID: 551249650}
 --- !u!4 &1771868605
@@ -7442,14 +7408,13 @@ SceneRoots:
   - {fileID: 520582316}
   - {fileID: 1788547980}
   - {fileID: 988871914}
-  - {fileID: 293431815}
-  - {fileID: 1092620046}
-  - {fileID: 523109069}
-  - {fileID: 891367916}
-  - {fileID: 261861853}
-  - {fileID: 551249651}
-  - {fileID: 1771868605}
-  - {fileID: 1788473151}
-  - {fileID: 72967453}
-  - {fileID: 1299250290}
   - {fileID: 2061391570}
+  - {fileID: 1299250290}
+  - {fileID: 1153135163}
+  - {fileID: 1771868605}
+  - {fileID: 551249651}
+  - {fileID: 72967453}
+  - {fileID: 1788473151}
+  - {fileID: 261861853}
+  - {fileID: 523109069}
+  - {fileID: 1092620046}

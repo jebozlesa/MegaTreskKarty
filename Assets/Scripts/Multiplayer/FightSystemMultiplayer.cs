@@ -58,6 +58,7 @@ public class FightSystemMultiplayer : MonoBehaviour
     public AttackDescriptions attackDescriptions;
     public AttackNamesLoader attackNamesLoader;
     public AttackCountLoader attackCountLoader;
+    public AttackSelectionManager attackSelectionManager;
 
     public Effects effects;
 
@@ -178,6 +179,12 @@ public class FightSystemMultiplayer : MonoBehaviour
                 if (result != null)
                 {
                     Debug.Log($"[FightSystemMultiplayer] Attack counts loaded successfully");
+                    
+                    // Po načítaní attack counts priprav UI pre výber útoku
+                    if (attackSelectionManager != null)
+                    {
+                        attackSelectionManager.PrepareAttackSelection(card, result);
+                    }
                 }
                 else
                 {
@@ -189,6 +196,19 @@ public class FightSystemMultiplayer : MonoBehaviour
         {
             Debug.LogWarning("[FightSystemMultiplayer] AttackCountLoader not assigned");
         }
+    }
+
+    /// <summary>
+    /// Callback volaný po potvrdení výberu útoku
+    /// </summary>
+    /// <param name="attackData">Dáta o vybratom útoku</param>
+    public void OnAttackConfirmed(SelectedAttackData attackData)
+    {
+        Debug.Log($"[FightSystemMultiplayer] Attack confirmed: Type={attackData.attackType}, ID={attackData.attackId}, Count={attackData.attackCount}");
+        
+        // TODO: Odoslať útok na server
+        // Zatiaľ len log
+        multiplayerUI?.ShowStatus($"Attack selected: {attackData.attackId}");
     }
 
 }

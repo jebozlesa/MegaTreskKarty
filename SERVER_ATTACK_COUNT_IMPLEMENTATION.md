@@ -5,8 +5,6 @@ Táto funkcia vypočíta počty útokov karty na základe jej štatistík. Všet
 
 ## 🎯 Serverová Funkcia: `calculateAttackCounts`
 
-⚠️ **DÔLEŽITÉ:** Názov funkcie MUSÍ byť presne `calculateAttackCounts` (s 's' na konci)!
-
 ### Vstupné Parametre (args):
 ```javascript
 {

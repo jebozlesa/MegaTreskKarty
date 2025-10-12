@@ -1995,4 +1995,42 @@ public class AttackDescriptions : MonoBehaviour
             default: return "";
         }
     }
+
+    /// <summary>
+    /// Zobrazí útok pre multiplayer s vlastným attack count (zo servera)
+    /// </summary>
+    public void DisplayAttackMultiplayer(Kard attacker, int attackType, TMP_Text dialogText, int attackCount)
+    {
+        int attackId = 0;
+        
+        switch (attackType)
+        {
+            case 1:
+                attackId = attacker.attack1;
+                break;
+            case 2:
+                attackId = attacker.attack2;
+                break;
+            case 3:
+                attackId = attacker.attack3;
+                break;
+            case 4:
+                attackId = attacker.attack4;
+                break;
+            default:
+                Debug.LogError("Invalid attack type from button.");
+                return;
+        }
+
+        string attackName = GetAttackName(attackId);
+        
+        if (!string.IsNullOrEmpty(attackName))
+        {
+            dialogText.text = $"{attackName} chosen\nLaunch here !!! {attackCount} remaining";
+        }
+        else
+        {
+            dialogText.text = $"Attack chosen\nLaunch here !!! {attackCount} remaining";
+        }
+    }
 }
