@@ -232,13 +232,8 @@ public class MultiplayerBoardManager : MonoBehaviour
             fightSystem.state = FightStateMultiplayer.TURN;
         }
 
-        // Delay clearing to ensure both clients have read the selections
-        await Task.Delay(System.TimeSpan.FromSeconds(0.5f));
-
-        if (MultiplayerService != null)
-        {
-            await MultiplayerService.ClearSelectedCardsAsync(RoomCode);
-        }
+        // Note: selectedCards remain in room for ongoing battle state synchronization
+        // They will be cleared only when the round/battle ends
     }
 
     private void ResetLocalSelectionState(bool keepCardOnBoard)

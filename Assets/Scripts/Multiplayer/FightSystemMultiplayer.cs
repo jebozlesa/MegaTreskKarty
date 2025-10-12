@@ -57,6 +57,7 @@ public class FightSystemMultiplayer : MonoBehaviour
     public Attack attack;
     public AttackDescriptions attackDescriptions;
     public AttackNamesLoader attackNamesLoader;
+    public AttackCountLoader attackCountLoader;
 
     public Effects effects;
 
@@ -142,7 +143,10 @@ public class FightSystemMultiplayer : MonoBehaviour
             Debug.LogError("[FightSystemMultiplayer] MultiplayerBoardManager missing when card dropped.");
             dragHandler?.ResetToOriginalPosition();
         }
+        
+        // Načítaj názvy a počty útokov
         LoadAttackNames(card);
+        LoadAttackCounts(card);
     }
 
     /// <summary>
@@ -158,6 +162,32 @@ public class FightSystemMultiplayer : MonoBehaviour
         else
         {
             Debug.LogWarning("[FightSystemMultiplayer] AttackNamesLoader not assigned");
+        }
+    }
+
+    /// <summary>
+    /// Načíta a zobrazí počty útokov pre vybranú kartu zo servera
+    /// </summary>
+    /// <param name="card">Vybraná karta</param>
+    public void LoadAttackCounts(Kard card)
+    {
+        if (attackCountLoader != null)
+        {
+            attackCountLoader.LoadAttackCounts(card, result =>
+            {
+                if (result != null)
+                {
+                    Debug.Log($"[FightSystemMultiplayer] Attack counts loaded successfully");
+                }
+                else
+                {
+                    Debug.LogWarning($"[FightSystemMultiplayer] Failed to load attack counts");
+                }
+            });
+        }
+        else
+        {
+            Debug.LogWarning("[FightSystemMultiplayer] AttackCountLoader not assigned");
         }
     }
 

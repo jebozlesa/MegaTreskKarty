@@ -253,4 +253,37 @@ public class ServerFunctionsManager : MonoBehaviour
         };
         CallFunction("clearSelectedCards", parameters, callback ?? (_ => { }));
     }
+
+    // Nová funkcia: vypočítanie počtov útokov na serveri
+    public void CalculateAttackCounts(CardStatsForCalculation cardStats, Action<ExecuteFunctionResult> callback)
+    {
+        if (callback == null)
+        {
+            Debug.LogError("CalculateAttackCounts: callback is null!");
+            return;
+        }
+
+        if (cardStats == null)
+        {
+            Debug.LogError("CalculateAttackCounts: cardStats is null!");
+            callback?.Invoke(null);
+            return;
+        }
+
+        Debug.LogWarning($"CalculateAttackCounts called with attacks: {cardStats.attack1}, {cardStats.attack2}, {cardStats.attack3}, {cardStats.attack4}");
+        var parameters = new
+        {
+            attack1 = cardStats.attack1,
+            attack2 = cardStats.attack2,
+            attack3 = cardStats.attack3,
+            attack4 = cardStats.attack4,
+            strength = cardStats.strength,
+            defense = cardStats.defense,
+            attack = cardStats.attack,
+            knowledge = cardStats.knowledge,
+            charisma = cardStats.charisma,
+            speed = cardStats.speed
+        };
+        CallFunction("calculateAttackCounts", parameters, callback);
+    }
 }
