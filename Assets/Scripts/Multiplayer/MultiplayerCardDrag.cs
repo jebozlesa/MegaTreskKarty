@@ -10,6 +10,7 @@ public class MultiplayerCardDrag : MonoBehaviour, IDragHandler, IBeginDragHandle
     private FightSystemMultiplayer fightSystem;
     private Kard kard;
     private Canvas canvas;
+    public MultiplayerBoardManager multiplayerBoardManager;
 
     public void Initialize(FightSystemMultiplayer fightSystem)
     {
@@ -125,5 +126,32 @@ public class MultiplayerCardDrag : MonoBehaviour, IDragHandler, IBeginDragHandle
         }
 
         return cardCollider.bounds.Intersects(battleAreaCollider.bounds);
+    }
+
+    public void OnCardDropped(Kard card, MultiplayerCardDrag dragHandler)
+    {
+        if (card == null)
+        {
+            Debug.LogWarning("[FightSystemMultiplayer] OnCardDropped called with null card");
+            dragHandler?.ResetToOriginalPosition();
+            return;
+        }
+
+        if (multiplayerBoardManager != null && multiplayerBoardManager.IsProcessingSelection)
+        {
+            Debug.LogWarning("[FightSystemMultiplayer] Already submitting a card selection");
+            dragHandler?.ResetToOriginalPosition();
+            return;
+        }
+
+        if (multiplayerBoardManager != null)
+        {
+            _ = multiplayerBoardManager.HandleCardSelectedAsync(card, dragHandler);
+        }
+        else
+        {
+            Debug.LogError("[FightSystemMultiplayer] MultiplayerBoardManager missing when card dropped.");
+            dragHandler?.ResetToOriginalPosition();
+        }
     }
 }

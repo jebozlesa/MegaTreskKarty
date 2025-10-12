@@ -25,8 +25,6 @@ public class FightSystemMultiplayer : MonoBehaviour
     public GameObject playerBoard;
     public GameObject enemyBoard;
 
-    // ...existing code...
-
     // UI elements
     public TMP_Text dialogText;
     public Image dialogButtonBorder;
@@ -56,10 +54,9 @@ public class FightSystemMultiplayer : MonoBehaviour
     public GameObject hrac;
     public GameObject nepriatel;
 
-    // ...existing code...
-
     public Attack attack;
     public AttackDescriptions attackDescriptions;
+    public AttackNamesLoader attackNamesLoader;
 
     public Effects effects;
 
@@ -117,7 +114,7 @@ public class FightSystemMultiplayer : MonoBehaviour
         roomCode = PlayerPrefs.GetString("RoomCode", "");
         await multiplayerService.InitGame();
         multiplayerHandManager.CreateCardsFromDecks(myPlayerId, roomCode);
-        multiplayerUI?.ShowStatus("Vyber si bojovníka");
+        multiplayerUI?.ShowStatus("Choose fighter!");
     }
 
     public void OnCardDropped(Kard card, MultiplayerCardDrag dragHandler)
@@ -145,200 +142,23 @@ public class FightSystemMultiplayer : MonoBehaviour
             Debug.LogError("[FightSystemMultiplayer] MultiplayerBoardManager missing when card dropped.");
             dragHandler?.ResetToOriginalPosition();
         }
+        LoadAttackNames(card);
     }
 
-    // private async Task HandleCardSelectedAsync(Kard card, MultiplayerCardDrag dragHandler)
-    // {
-    //     isSubmittingSelection = true;
-    //     localSelectedCard = card;
-    //     localSelectedCardDrag = dragHandler;
-    //     opponentCardRevealed = false;
+    /// <summary>
+    /// Načíta a zobrazí názvy útokov pre vybranú kartu
+    /// </summary>
+    /// <param name="card">Vybraná karta</param>
+    public void LoadAttackNames(Kard card)
+    {
+        if (attackNamesLoader != null)
+        {
+            attackNamesLoader.LoadAttackNames(card);
+        }
+        else
+        {
+            Debug.LogWarning("[FightSystemMultiplayer] AttackNamesLoader not assigned");
+        }
+    }
 
-    //     try
-    //     {
-    //         if (player == null)
-    //         {
-    //             Debug.LogError("[FightSystemMultiplayer] Player reference is missing when selecting a card");
-    //             dragHandler?.ResetToOriginalPosition();
-    //             return;
-    //         }
-
-    //         player.PlayCard(card, playerBoard);
-    //         player.cardInGame.isDragable = false;
-    //         playerLifeBar?.SetBar(player.cardInGame);
-    //         state = FightStateMultiplayer.START;
-
-    //         var definition = multiplayerHandManager.GetCardDefinition(card.cardId);
-    //         localSelectedCardData = SelectedCardData.FromCard(card, definition, myPlayerId);
-
-    //         if (localSelectedCardData == null)
-    //         {
-    //             Debug.LogError("[FightSystemMultiplayer] Failed to create payload for selected card");
-    //             dragHandler?.ResetToOriginalPosition();
-    //             ResetLocalSelectionState(false);
-    //             return;
-    //         }
-
-    //         await multiplayerService.SubmitSelectedCardAsync(roomCode, myPlayerId, localSelectedCardData);
-    //         multiplayerUI?.ShowStatus("Čaká sa na súpera...");
-
-    //         await WaitForOpponentSelectionAsync();
-
-    //         if (opponentSelectedCardData != null)
-    //         {
-    //             await RevealCardsAsync();
-    //         }
-    //         else
-    //         {
-    //             Debug.LogWarning("[FightSystemMultiplayer] Opponent selection timed out");
-    //             multiplayerUI?.ShowStatus("Súper nevybral kartu včas");
-    //             ResetLocalSelectionState(false);
-    //         }
-    //     }
-    //     catch (System.Exception ex)
-    //     {
-    //         Debug.LogError($"[FightSystemMultiplayer] Error while handling card selection: {ex.Message}");
-    //         dragHandler?.ResetToOriginalPosition();
-    //     }
-    //     finally
-    //     {
-    //         isSubmittingSelection = false;
-    //     }
-    // }
-
-    // private async Task WaitForOpponentSelectionAsync()
-    // {
-    //     opponentSelectedCardData = null;
-
-    //     opponentSelectionCancellation?.Cancel();
-    //     opponentSelectionCancellation = new CancellationTokenSource();
-    //     var token = opponentSelectionCancellation.Token;
-
-    //     for (int attempt = 0; attempt < selectedCardPollAttempts; attempt++)
-    //     {
-    //         if (token.IsCancellationRequested)
-    //         {
-    //             opponentSelectionCancellation?.Dispose();
-    //             opponentSelectionCancellation = null;
-    //             return;
-    //         }
-
-    //         var selectedCards = await multiplayerService.GetSelectedCardsAsync(roomCode);
-    //         if (selectedCards != null)
-    //         {
-    //             if (selectedCards.TryGetValue(myPlayerId, out var mine) && mine != null)
-    //             {
-    //                 localSelectedCardData = mine;
-    //             }
-
-    //             var opponentId = GetOpponentPlayerId(selectedCards);
-    //             if (!string.IsNullOrEmpty(opponentId) && selectedCards.TryGetValue(opponentId, out var opponentCard) && opponentCard != null)
-    //             {
-    //                 opponentSelectedCardData = opponentCard;
-    //                 Debug.Log($"[FightSystemMultiplayer] Opponent selected card {opponentCard.cardId}");
-    //                 opponentSelectionCancellation?.Cancel();
-    //                 opponentSelectionCancellation?.Dispose();
-    //                 opponentSelectionCancellation = null;
-    //                 return;
-    //             }
-    //         }
-
-    //         await Task.Delay(System.TimeSpan.FromSeconds(selectedCardPollIntervalSeconds));
-    //     }
-
-    //     opponentSelectionCancellation?.Dispose();
-    //     opponentSelectionCancellation = null;
-    // }
-
-    // private string GetOpponentPlayerId(Dictionary<string, SelectedCardData> selectedCards)
-    // {
-    //     foreach (var entry in selectedCards)
-    //     {
-    //         if (entry.Key != myPlayerId)
-    //         {
-    //             return entry.Key;
-    //         }
-    //     }
-
-    //     return string.Empty;
-    // }
-
-    // private async Task RevealCardsAsync()
-    // {
-    //     if (opponentCardRevealed)
-    //     {
-    //         return;
-    //     }
-
-    //     if (localSelectedCardData == null || opponentSelectedCardData == null)
-    //     {
-    //         Debug.LogWarning("[FightSystemMultiplayer] RevealCardsAsync called without both cards present");
-    //         return;
-    //     }
-
-    //     Debug.Log($"[FightSystemMultiplayer] Revealing opponent card: mine={localSelectedCardData.cardId}, opponent={opponentSelectedCardData.cardId}");
-
-    //     if (enemy == null || enemyBoard == null)
-    //     {
-    //         Debug.LogError("[FightSystemMultiplayer] Enemy references missing, cannot reveal opponent card");
-    //         return;
-    //     }
-
-    //     if (enemy.cardInGame != null)
-    //     {
-    //         if (enemy.cardInGame.gameObject != null)
-    //         {
-    //             Destroy(enemy.cardInGame.gameObject);
-    //         }
-    //         enemy.cardInGame = null;
-    //     }
-
-    //     enemy.hand.Clear();
-
-    //     var opponentGeneratedCard = opponentSelectedCardData.ToGeneratedCard();
-    //     var enemyCard = multiplayerHandManager.CreateCardInGame(opponentGeneratedCard, enemy.gameObject, enemy, true, false, enemyBoard);
-    //     if (enemyCard == null)
-    //     {
-    //         Debug.LogError("[FightSystemMultiplayer] Failed to instantiate opponent card");
-    //         return;
-    //     }
-
-    //     enemyCard.isDragable = false;
-    //     enemy.PlayCard(enemyCard, enemyBoard);
-    //     enemyLifeBar?.SetBar(enemy.cardInGame);
-
-    //     multiplayerUI?.ShowStatus("Obaja hráči sú pripravení – zvoľ útok");
-    //     opponentCardRevealed = true;
-
-    //     await multiplayerService.ClearSelectedCardsAsync(roomCode);
-
-    //     state = FightStateMultiplayer.TURN;
-    // }
-
-    // private void ResetLocalSelectionState(bool keepCardOnBoard)
-    // {
-    //     if (!keepCardOnBoard && localSelectedCard != null)
-    //     {
-    //         if (player != null)
-    //         {
-    //             Vector3 returnPosition = localSelectedCardDrag != null ? localSelectedCardDrag.GetOriginalLocalPosition() : Vector3.zero;
-    //             player.ReturnCardToHand(localSelectedCard, returnPosition);
-    //             localSelectedCard.isDragable = true;
-    //         }
-    //         else
-    //         {
-    //             var dragHandler = localSelectedCardDrag;
-    //             dragHandler?.ResetToOriginalPosition();
-    //         }
-    //     }
-
-    //     localSelectedCardDrag = null;
-    //     if (!keepCardOnBoard)
-    //     {
-    //         localSelectedCard = null;
-    //     }
-    //     localSelectedCardData = null;
-    //     opponentSelectedCardData = null;
-    //     opponentCardRevealed = false;
-    // }
 }

@@ -18,50 +18,9 @@ public class MultiplayerHandManager : MonoBehaviour
     private bool cardsCreated = false;
 
 
-    // public void CreateCards(string myPlayerId, string roomCode)
-    // {
+
     private readonly Dictionary<string, GeneratedCard> cardDefinitions = new Dictionary<string, GeneratedCard>();
-    //     Debug.Log($"[CreateCards] Called with myPlayerId={myPlayerId}, roomCode={roomCode}");
 
-    //     serverFunctionsManager.GetRoomPlayersInfo(roomCode, result =>
-    //     {
-    //         if (result != null && result.FunctionResult != null)
-    //         {
-    //             try
-    //             {
-    //                 JObject functionResult = JObject.Parse(result.FunctionResult.ToString());
-    //                 if (functionResult["room"] != null)
-    //                 {
-    //                     var room = functionResult["room"];
-    //                     Debug.Log($"[CreateCards] Room object: {room}");
-
-    //                     if (room["playerDecks"] != null && room["playerDecks"][myPlayerId] != null && room["playerDecks"][myPlayerId]["cards"] != null)
-    //                     {
-    //                         JArray cardsArray = room["playerDecks"][myPlayerId]["cards"] as JArray;
-    //                         Debug.Log($"[CreateCards] Found cards array, count={cardsArray?.Count ?? 0}");
-    //                         CreateMultiplayerHandFromRoom(cardsArray);
-    //                     }
-    //                     else
-    //                     {
-    //                         Debug.LogWarning("[CreateCards] Deck or cards not found for this player yet.");
-    //                     }
-    //                 }
-    //                 else
-    //                 {
-    //                     Debug.LogWarning("[CreateCards] Room object missing in function result.");
-    //                 }
-    //             }
-    //             catch (System.Exception e)
-    //             {
-    //                 Debug.LogError("[CreateCards] Error parsing room info for cards: " + e.Message);
-    //             }
-    //         }
-    //         else
-    //         {
-    //             Debug.LogError("[CreateCards] No result from GetRoomPlayersInfo for cards");
-    //         }
-    //     });
-    // }
 
     public void CreateCardsFromDecks(string myPlayerId, string roomCode)
     {

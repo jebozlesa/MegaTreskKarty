@@ -70,6 +70,7 @@ public class MultiplayerBoardManager : MonoBehaviour
             Player.PlayCard(card, PlayerBoard);
             Player.cardInGame.isDragable = false;
             PlayerLifeBar?.SetBar(Player.cardInGame);
+            LockPlayerHand();
             if (fightSystem != null)
             {
                 fightSystem.state = FightStateMultiplayer.START;
@@ -90,7 +91,7 @@ public class MultiplayerBoardManager : MonoBehaviour
             {
                 await MultiplayerService.SubmitSelectedCardAsync(RoomCode, MyPlayerId, localSelectedCardData);
             }
-            MultiplayerUI?.ShowStatus("Čaká sa na súpera...");
+            MultiplayerUI?.ShowStatus("Waiting for enemy...");
 
             await WaitForOpponentSelectionAsync();
 
@@ -101,7 +102,7 @@ public class MultiplayerBoardManager : MonoBehaviour
             else
             {
                 Debug.LogWarning("[FightSystemMultiplayer] Opponent selection timed out");
-                MultiplayerUI?.ShowStatus("Súper nevybral kartu včas");
+                MultiplayerUI?.ShowStatus("Enemy was too scared of you!");
                 ResetLocalSelectionState(false);
             }
         }
@@ -223,17 +224,20 @@ public class MultiplayerBoardManager : MonoBehaviour
         Enemy.PlayCard(enemyCard, EnemyBoard);
         EnemyLifeBar?.SetBar(Enemy.cardInGame);
 
-        MultiplayerUI?.ShowStatus("Obaja hráči sú pripravení – zvoľ útok");
+        MultiplayerUI?.ShowStatus("Choose your action!");
         opponentCardRevealed = true;
-
-        if (MultiplayerService != null)
-        {
-            await MultiplayerService.ClearSelectedCardsAsync(RoomCode);
-        }
 
         if (fightSystem != null)
         {
             fightSystem.state = FightStateMultiplayer.TURN;
+        }
+
+        // Delay clearing to ensure both clients have read the selections
+        await Task.Delay(System.TimeSpan.FromSeconds(0.5f));
+
+        if (MultiplayerService != null)
+        {
+            await MultiplayerService.ClearSelectedCardsAsync(RoomCode);
         }
     }
 
@@ -246,6 +250,7 @@ public class MultiplayerBoardManager : MonoBehaviour
                 Vector3 returnPosition = localSelectedCardDrag != null ? localSelectedCardDrag.GetOriginalLocalPosition() : Vector3.zero;
                 Player.ReturnCardToHand(localSelectedCard, returnPosition);
                 localSelectedCard.isDragable = true;
+                UnlockPlayerHand();
             }
             else
             {
@@ -262,5 +267,38 @@ public class MultiplayerBoardManager : MonoBehaviour
         localSelectedCardData = null;
         opponentSelectedCardData = null;
         opponentCardRevealed = false;
+    }
+
+    public void UnlockPlayerHand()
+    {
+        SetHandInteractivity(true);
+    }
+
+    public void LockPlayerHand()
+    {
+        SetHandInteractivity(false);
+    }
+
+    private void SetHandInteractivity(bool isEnabled)
+    {
+        if (Player == null)
+        {
+            return;
+        }
+
+        foreach (var kard in Player.hand)
+        {
+            if (kard == null)
+            {
+                continue;
+            }
+
+            kard.isDragable = isEnabled;
+            var dragHandler = kard.GetComponent<MultiplayerCardDrag>();
+            if (dragHandler != null)
+            {
+                dragHandler.enabled = isEnabled;
+            }
+        }
     }
 }

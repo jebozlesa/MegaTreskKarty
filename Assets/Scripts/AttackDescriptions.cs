@@ -1860,4 +1860,139 @@ public class AttackDescriptions : MonoBehaviour
     {
         buttonText.text = "Curse";
     }
+
+    /// <summary>
+    /// Získa názov útoku podľa jeho ID
+    /// </summary>
+    /// <param name="attackId">ID útoku (1-123)</param>
+    /// <returns>Názov útoku alebo prázdny string, ak ID neexistuje</returns>
+    public string GetAttackName(int attackId)
+    {
+        switch (attackId)
+        {
+            case 1: return "Punch";
+            case 2: return "Kick";
+            case 3: return "Heal";
+            case 4: return "Forgiveness";
+            case 5: return "Crusade";
+            case 6: return "Water To Wine";
+            case 7: return "Car Hit";
+            case 8: return "Monkey Wrench";
+            case 9: return "Radiation";
+            case 10: return "Scratch";
+            case 11: return "Scientific Lecture";
+            case 12: return "Chi Sau";
+            case 13: return "One-inch Punch";
+            case 14: return "Up In Smoke";
+            case 15: return "Sing";
+            case 16: return "Revolver";
+            case 17: return "Artillery Regiment";
+            case 18: return "Bloodthirst";
+            case 19: return "Sword";
+            case 20: return "Pike";
+            case 21: return "Terrify";
+            case 22: return "Drink Wine";
+            case 23: return "Flaming Gun";
+            case 24: return "Cleaver";
+            case 25: return "Pan";
+            case 26: return "Boost";
+            case 27: return "Temptation";
+            case 28: return "Shamshir";
+            case 29: return "Diplomacy";
+            case 30: return "Siege";
+            case 31: return "36 Stratagems";
+            case 32: return "Tomahawk";
+            case 33: return "Peace Pipe";
+            case 34: return "Recurve Bow";
+            case 35: return "Fury";
+            case 36: return "Guerilla";
+            case 37: return "Famine";
+            case 38: return "Marxism";
+            case 39: return "Tesla Coil";
+            case 40: return "Wireless Charger";
+            case 41: return "Experiment";
+            case 42: return "Tommy Gun";
+            case 43: return "Tie Up";
+            case 44: return "Corruption";
+            case 45: return "Colt 1911";
+            case 46: return "Mortar";
+            case 47: return "Great Army";
+            case 48: return "Scorched Earth";
+            case 49: return "Double Envelopment";
+            case 50: return "Continental Blockade";
+            case 51: return "Depression";
+            case 52: return "Self Isolation";
+            case 53: return "Knife";
+            case 54: return "Autoportrait";
+            case 55: return "Gravity Pull";
+            case 56: return "Kamikaze";
+            case 57: return "Take-Off";
+            case 58: return "Air Strike";
+            case 59: return "Justice Crusade";
+            case 60: return "Rapier";
+            case 61: return "Expeditionary Assault";
+            case 62: return "Culverin";
+            case 63: return "Fire Ship";
+            case 64: return "Handcuff Escape";
+            case 65: return "Illusion";
+            case 66: return "Carcano M91";
+            case 67: return "Winchester";
+            case 68: return "Ambush";
+            case 69: return "Jupiter-C";
+            case 70: return "V-2";
+            case 71: return "Battle Cry";
+            case 72: return "Revelation";
+            case 73: return "Standard";
+            case 74: return "Pen";
+            case 75: return "Iambic Pentameter";
+            case 76: return "Ghost";
+            case 77: return "Buffalo Horns";
+            case 78: return "Iklwa";
+            case 79: return "Iwisa";
+            case 80: return "Niten Ichi-ryū";
+            case 81: return "Tessenjutsu";
+            case 82: return "Iaijutsu";
+            case 83: return "Katana";
+            case 84: return "Nodachi";
+            case 85: return "Yumi";
+            case 86: return "Jujutsu";
+            case 87: return "Espionage";
+            case 88: return "Sabre";
+            case 89: return "Gamble";
+            case 90: return "Philosophy";
+            case 91: return "Calm";
+            case 92: return "Honesty";
+            case 93: return "Valaska";
+            case 94: return "Moonshine";
+            case 95: return "Outlaw Band";
+            case 96: return "Flintlock Pistol";
+            case 97: return "Passive Resistance";
+            case 98: return "Hunger Strike";
+            case 99: return "Gladius";
+            case 100: return "Shield Bash";
+            case 101: return "Yperit";
+            case 102: return "Blitzkrieg";
+            case 103: return "Propaganda";
+            case 104: return "Retiarius";
+            case 105: return "Shuriken";
+            case 106: return "Kusarigama";
+            case 107: return "Ninjutsu";
+            case 108: return "Oriental Spice";
+            case 109: return "Arquebus";
+            case 110: return "Pirate Raid";
+            case 111: return "Axe";
+            case 112: return "Jaguar Warriors";
+            case 113: return "Atlatl";
+            case 114: return "Macuahuitl";
+            case 115: return "Cubism";
+            case 116: return "La Cosa Nostra";
+            case 117: return "Act a fool";
+            case 118: return "Football";
+            case 119: return "Bicycle Kick";
+            case 120: return "World Champion";
+            case 121: return "Shaolin Soccer";
+            case 123: return "Curse";
+            default: return "";
+        }
+    }
 }
