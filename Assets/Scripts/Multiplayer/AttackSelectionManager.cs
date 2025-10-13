@@ -258,15 +258,3 @@ public class AttackSelectionManager : MonoBehaviour
         return selectedAttackType;
     }
 }
-
-/// <summary>
-/// Dáta o vybratom útoku pre odoslanie na server
-/// </summary>
-[System.Serializable]
-public class SelectedAttackData
-{
-    public int attackType;      // 1-4 (ktoré tlačidlo)
-    public int attackId;        // ID útoku (1-123)
-    public int attackCount;     // Damage/heal hodnota
-    public string cardId;       // ID karty, ktorá útočí
-}

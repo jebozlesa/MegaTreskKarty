@@ -84,11 +84,15 @@ public class FightSystemMultiplayer : MonoBehaviour
     public List<Player> roomPlayers;
     public List<string> playerDecks;
 
-    // Nové referencie na služby
+    // Nové referencie na battle komponenty
     public MultiplayerService multiplayerService;
     public MultiplayerUI multiplayerUI;
     public MultiplayerHandManager multiplayerHandManager;
     public MultiplayerBoardManager multiplayerBoardManager;
+    
+    // Battle system komponenty
+    public BattleSubmitter battleSubmitter;
+    public BattleResultProcessor battleResultProcessor;
 
 
     void Start()
@@ -204,11 +208,28 @@ public class FightSystemMultiplayer : MonoBehaviour
     /// <param name="attackData">Dáta o vybratom útoku</param>
     public void OnAttackConfirmed(SelectedAttackData attackData)
     {
-        Debug.Log($"[FightSystemMultiplayer] Attack confirmed: Type={attackData.attackType}, ID={attackData.attackId}, Count={attackData.attackCount}");
+        Debug.Log($"[FightSystemMultiplayer] Attack confirmed: Type={attackData.attackType}, ID={attackData.attackId}");
         
-        // TODO: Odoslať útok na server
-        // Zatiaľ len log
-        multiplayerUI?.ShowStatus($"Attack selected: {attackData.attackId}");
+        if (battleSubmitter == null)
+        {
+            Debug.LogError("[FightSystemMultiplayer] BattleSubmitter not assigned!");
+            return;
+        }
+        
+        // Získaj cardId aktuálnej karty
+        Kard myCard = player?.cardInGame;
+        if (myCard == null)
+        {
+            Debug.LogError("[FightSystemMultiplayer] No card in game!");
+            return;
+        }
+        
+        // Deleguj na BattleSubmitter - pošli len IDs, server si načíta stats z DB
+        battleSubmitter.SubmitAttack(roomCode, myPlayerId, myCard.cardId, attackData.attackId);
+        
+        // Zobraz status
+        multiplayerUI?.ShowStatus("Waiting for opponent...");
     }
+
 
 }

@@ -286,4 +286,27 @@ public class ServerFunctionsManager : MonoBehaviour
         };
         CallFunction("calculateAttackCounts", parameters, callback);
     }
+
+    /// <summary>
+    /// Odošle útok na server a vráti výsledok battle
+    /// </summary>
+    public void ExecuteBattle(string roomCode, string playerId, AttackSubmission attackData, Action<ExecuteFunctionResult> callback)
+    {
+        if (callback == null)
+        {
+            Debug.LogError("ExecuteBattle: callback is null!");
+            return;
+        }
+
+        Debug.LogWarning($"ExecuteBattle called for room: {roomCode}, player: {playerId}");
+        
+        var parameters = new
+        {
+            roomCode = roomCode,
+            playerId = playerId,
+            attackData = attackData
+        };
+        
+        CallFunction("executeBattle", parameters, callback);
+    }
 }

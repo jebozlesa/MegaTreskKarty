@@ -24,6 +24,16 @@ public class SelectedCardData
     public int attack3;
     public int attack4;
     public int[] color;
+    public EffectData[] effects;  // ✅ Support pre effects (burn, sleep, atď.)
+    
+    [System.Serializable]
+    public class EffectData
+    {
+        public string type;        // "burn", "sleep", "stun", atď.
+        public int duration;       // Počet turno v
+        public int appliedTurn;    // Kedy bol aplikovaný
+        public int value;          // Optional value (napr. burn damage per turn)
+    }
 
     public static SelectedCardData FromCard(Kard card, GeneratedCard definition, string ownerPlayerId)
     {
@@ -65,7 +75,8 @@ public class SelectedCardData
             attack2 = card.attack2,
             attack3 = card.attack3,
             attack4 = card.attack4,
-            color = resolvedColor
+            color = resolvedColor,
+            effects = null  // ✅ Effects budú z DB pri refresh
         };
 
         return data;
@@ -99,8 +110,46 @@ public class SelectedCardData
             attack2 = payload.Value<int?>("attack2") ?? 0,
             attack3 = payload.Value<int?>("attack3") ?? 0,
             attack4 = payload.Value<int?>("attack4") ?? 0,
-            color = payload["color"] is JArray colorArray ? colorArray.ToObject<int[]>() : null
+            color = payload["color"] is JArray colorArray ? colorArray.ToObject<int[]>() : null,
+            effects = ParseEffects(payload["effects"])  // ✅ Parse effects z servera
         };
+    }
+    
+    /// <summary>
+    /// Parsuje effects array z JSON
+    /// </summary>
+    private static EffectData[] ParseEffects(JToken effectsToken)
+    {
+        if (effectsToken == null || effectsToken.Type != JTokenType.Array)
+        {
+            return null;
+        }
+        
+        try
+        {
+            var effectsArray = (JArray)effectsToken;
+            var effects = new System.Collections.Generic.List<EffectData>();
+            
+            foreach (var effectObj in effectsArray)
+            {
+                if (effectObj is JObject jobj)
+                {
+                    effects.Add(new EffectData
+                    {
+                        type = jobj.Value<string>("type"),
+                        duration = jobj.Value<int?>("duration") ?? 0,
+                        appliedTurn = jobj.Value<int?>("appliedTurn") ?? 0,
+                        value = jobj.Value<int?>("value") ?? 0
+                    });
+                }
+            }
+            
+            return effects.Count > 0 ? effects.ToArray() : null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public GeneratedCard ToGeneratedCard()
