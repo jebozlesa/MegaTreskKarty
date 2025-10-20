@@ -79,7 +79,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
     public bool priorityAttack;
 
-    private PlayFabCardManager playFabManager = new PlayFabCardManager();
+    private PlayFabCardManager playFabManager;
 
     public Transform effectIconContainer;
     public List<GameObject> effectIcons = new List<GameObject>();
@@ -119,6 +119,17 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         Dictionary<string, object> cardDataDictionary = null;
         bool updateSuccess = false;
 
+        // Lazy initialization of PlayFabCardManager
+        if (playFabManager == null)
+        {
+            playFabManager = FindFirstObjectByType<PlayFabCardManager>();
+            if (playFabManager == null)
+            {
+                Debug.LogError("[Kard] PlayFabCardManager not found in scene!");
+                yield break;
+            }
+        }
+
         // Získanie údajov o karte
         yield return StartCoroutine(playFabManager.GetCardData(cardId, data =>
         {
@@ -146,6 +157,17 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
                 currentLevel += 1;
                 updates["Level"] = currentLevel.ToString();
                 leveledUp = true;
+            }
+
+            // Lazy initialization of PlayFabCardManager
+            if (playFabManager == null)
+            {
+                playFabManager = FindFirstObjectByType<PlayFabCardManager>();
+                if (playFabManager == null)
+                {
+                    Debug.LogError("[Kard] PlayFabCardManager not found in scene!");
+                    yield break;
+                }
             }
 
             // Aktualizujte údaje o karte
@@ -223,6 +245,17 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
     {
         Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.UpdateRandomStat => START ");
 
+        // Lazy initialization of PlayFabCardManager
+        if (playFabManager == null)
+        {
+            playFabManager = FindFirstObjectByType<PlayFabCardManager>();
+            if (playFabManager == null)
+            {
+                Debug.LogError("[Kard] PlayFabCardManager not found in scene!");
+                return;
+            }
+        }
+
         playFabManager.GetCardData(cardId, cardDataDictionary =>
         {
             if (cardDataDictionary != null)
@@ -289,6 +322,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
                         { statName, increaseValue.ToString() }
                     };
 
+                    // playFabManager už je inicializovaný vyššie v metóde
                     playFabManager.UpdateCardData(cardId, updates, success =>
                     {
                         if (!success)

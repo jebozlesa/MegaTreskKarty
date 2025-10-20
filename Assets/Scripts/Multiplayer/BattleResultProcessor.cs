@@ -363,7 +363,150 @@ public class BattleResultProcessor : MonoBehaviour
         {
             dialogText.text = "Next turn!";
             Debug.Log("[BattleResultProcessor] Battle continues - preparing next turn");
-            // TODO: Priprav ďalší turn (reset attack selection UI)
+            
+            // ✅ Priprav ďalší turn s ready check systémom
+            StartCoroutine(PrepareNextTurn());
+        }
+    }
+    
+    /// <summary>
+    /// Pripraví ďalší turn - ready check systém + reset UI
+    /// </summary>
+    private IEnumerator PrepareNextTurn()
+    {
+        yield return new WaitForSeconds(2f); // Chvíľa pauzy po "Next turn!" 
+        
+        dialogText.text = "Preparing next turn...";
+        
+        // ✅ Označ sa ako ready pre ďalší turn
+        yield return StartCoroutine(MarkReadyForNextTurn());
+        
+        // ✅ Reset UI pre ďalší attack selection
+        ResetAttackSelectionUI();
+        
+        dialogText.text = "Choose an attack";
+    }
+    
+    /// <summary>
+    /// Označí hráča ako ready pre ďalší turn a čaká na opponent
+    /// </summary>
+    private IEnumerator MarkReadyForNextTurn()
+    {
+        var serverFunctions = fightSystem.serverFunctionsManager;
+        if (serverFunctions == null)
+        {
+            Debug.LogError("[BattleResultProcessor] ServerFunctionsManager not found!");
+            yield break;
+        }
+        
+        Debug.Log("[BattleResultProcessor] Marking ready for next turn...");
+        
+        bool isCompleted = false;
+        bool bothReady = false;
+        
+        // Pošli ready signál na server
+        serverFunctions.MarkReadyForNextTurn(fightSystem.roomCode, fightSystem.myPlayerId, result => {
+            if (result?.FunctionResult != null)
+            {
+                var resultData = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
+                    .DeserializeObject<Dictionary<string, object>>(result.FunctionResult.ToString());
+                
+                if (resultData.ContainsKey("bothPlayersReady"))
+                {
+                    bothReady = (bool)resultData["bothPlayersReady"];
+                    Debug.Log($"[BattleResultProcessor] Ready check result: bothReady={bothReady}");
+                }
+            }
+            isCompleted = true;
+        });
+        
+        yield return new WaitUntil(() => isCompleted);
+        
+        if (bothReady)
+        {
+            Debug.Log("[BattleResultProcessor] Both players ready immediately - no polling needed!");
+            // Immediately proceed to next turn
+            yield break; // Use yield break instead of return in IEnumerator
+        }
+        else
+        {
+            dialogText.text = "Waiting for opponent to be ready...";
+            
+            // Polling kým nie sú obaja ready
+            yield return StartCoroutine(PollForNextTurnReady());
+        }
+    }
+    
+    /// <summary>
+    /// Polling - čaká kým nie sú obaja hráči ready pre ďalší turn
+    /// </summary>
+    private IEnumerator PollForNextTurnReady()
+    {
+        var serverFunctions = fightSystem.serverFunctionsManager;
+        int pollAttempts = 0;
+        const int MAX_POLL_ATTEMPTS = 30; // 30 sekúnd timeout
+        
+        while (pollAttempts < MAX_POLL_ATTEMPTS)
+        {
+            yield return new WaitForSeconds(1f);
+            pollAttempts++;
+            
+            bool isCompleted = false;
+            bool bothReady = false;
+            
+            // Check ready status
+            serverFunctions.CheckNextTurnReady(fightSystem.roomCode, result => {
+                if (result?.FunctionResult != null)
+                {
+                    var resultData = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
+                        .DeserializeObject<Dictionary<string, object>>(result.FunctionResult.ToString());
+                    
+                    if (resultData.ContainsKey("bothPlayersReady"))
+                    {
+                        bothReady = (bool)resultData["bothPlayersReady"];
+                    }
+                }
+                isCompleted = true;
+            });
+            
+            yield return new WaitUntil(() => isCompleted);
+            
+            if (bothReady)
+            {
+                Debug.Log("[BattleResultProcessor] Both players ready after polling!");
+                break;
+            }
+        }
+        
+        if (pollAttempts >= MAX_POLL_ATTEMPTS)
+        {
+            Debug.LogError("[BattleResultProcessor] Timeout waiting for opponent to be ready");
+            dialogText.text = "Opponent disconnected?";
+        }
+    }
+    
+    /// <summary>
+    /// Reset attack selection UI pre ďalší turn
+    /// </summary>
+    private void ResetAttackSelectionUI()
+    {
+        var attackSelectionManager = fightSystem.attackSelectionManager;
+        if (attackSelectionManager != null)
+        {
+            attackSelectionManager.ResetSelection();
+            Debug.Log("[BattleResultProcessor] Attack selection UI reset for next turn");
+        }
+        else
+        {
+            Debug.LogWarning("[BattleResultProcessor] AttackSelectionManager not found!");
+        }
+        
+        // ✅ Re-enable attack selection pre aktuálnu kartu
+        Kard myCard = fightSystem.player?.cardInGame;
+        if (myCard != null && fightSystem.attackCountLoader != null)
+        {
+            // Znovu načítaj attack counts (možno sa zmenili)
+            fightSystem.LoadAttackCounts(myCard);
         }
     }
 }

@@ -50,6 +50,9 @@ public class AttackCountLoader : MonoBehaviour
         isLoading = true;
         Debug.Log($"[AttackCountLoader] Loading attack counts for card: {card.cardName}");
 
+        // Add timeout protection - reset isLoading after 15 seconds
+        StartCoroutine(ResetLoadingStateAfterTimeout());
+
         // Priprav parametre pre serverovú funkciu
         var cardData = new CardStatsForCalculation
         {
@@ -143,6 +146,20 @@ public class AttackCountLoader : MonoBehaviour
         if (button2CountText != null) button2CountText.text = "";
         if (button3CountText != null) button3CountText.text = "";
         if (button4CountText != null) button4CountText.text = "";
+    }
+
+    /// <summary>
+    /// Timeout protection - resets isLoading flag after 15 seconds
+    /// </summary>
+    private System.Collections.IEnumerator ResetLoadingStateAfterTimeout()
+    {
+        yield return new WaitForSeconds(15f);
+        
+        if (isLoading)
+        {
+            Debug.LogWarning("[AttackCountLoader] Timeout reached, resetting loading state");
+            isLoading = false;
+        }
     }
 }
 

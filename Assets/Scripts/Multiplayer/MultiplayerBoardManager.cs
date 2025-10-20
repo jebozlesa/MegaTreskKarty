@@ -97,7 +97,7 @@ public class MultiplayerBoardManager : MonoBehaviour
 
             if (opponentSelectedCardData != null)
             {
-                await RevealCardsAsync();
+                RevealCards();
             }
             else
             {
@@ -140,15 +140,26 @@ public class MultiplayerBoardManager : MonoBehaviour
                 return;
             }
 
+            Debug.Log($"[WaitForOpponentSelectionAsync] Polling attempt {attempt + 1}/{selectedCardPollAttempts}");
+            
             var selectedCards = await MultiplayerService.GetSelectedCardsAsync(RoomCode);
             if (selectedCards != null)
             {
+                Debug.Log($"[WaitForOpponentSelectionAsync] Retrieved {selectedCards.Count} selected cards");
+                foreach (var kvp in selectedCards)
+                {
+                    Debug.Log($"[WaitForOpponentSelectionAsync] Player {kvp.Key}: card {kvp.Value?.cardId} ({kvp.Value?.name})");
+                }
+                
                 if (!string.IsNullOrEmpty(MyPlayerId) && selectedCards.TryGetValue(MyPlayerId, out var mine) && mine != null)
                 {
                     localSelectedCardData = mine;
+                    Debug.Log($"[WaitForOpponentSelectionAsync] Found my card: {mine.cardId}");
                 }
 
                 var opponentId = GetOpponentPlayerId(selectedCards);
+                Debug.Log($"[WaitForOpponentSelectionAsync] Opponent ID: {opponentId}");
+                
                 if (!string.IsNullOrEmpty(opponentId) && selectedCards.TryGetValue(opponentId, out var opponentCard) && opponentCard != null)
                 {
                     opponentSelectedCardData = opponentCard;
@@ -157,6 +168,10 @@ public class MultiplayerBoardManager : MonoBehaviour
                     opponentSelectionCancellation?.Dispose();
                     opponentSelectionCancellation = null;
                     return;
+                }
+                else
+                {
+                    Debug.Log($"[WaitForOpponentSelectionAsync] Opponent {opponentId} hasn't selected a card yet");
                 }
             }
 
@@ -180,7 +195,7 @@ public class MultiplayerBoardManager : MonoBehaviour
         return string.Empty;
     }
 
-    private async Task RevealCardsAsync()
+    private void RevealCards()
     {
         if (opponentCardRevealed)
         {
@@ -189,7 +204,7 @@ public class MultiplayerBoardManager : MonoBehaviour
 
         if (localSelectedCardData == null || opponentSelectedCardData == null)
         {
-            Debug.LogWarning("[FightSystemMultiplayer] RevealCardsAsync called without both cards present");
+            Debug.LogWarning("[FightSystemMultiplayer] RevealCards called without both cards present");
             return;
         }
 

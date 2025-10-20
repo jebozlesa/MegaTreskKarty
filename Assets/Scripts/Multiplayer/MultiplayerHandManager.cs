@@ -25,6 +25,13 @@ public class MultiplayerHandManager : MonoBehaviour
     public void CreateCardsFromDecks(string myPlayerId, string roomCode)
     {
         Debug.Log($"[CreateCardsFromDecks] Called with myPlayerId={myPlayerId}, roomCode={roomCode}");
+        
+        // Prevent duplicate card creation
+        if (cardsCreated)
+        {
+            Debug.Log("[CreateCardsFromDecks] Cards already created, skipping...");
+            return;
+        }
 
         serverFunctionsManager.GetRoomDecks(roomCode, result =>
         {
@@ -102,6 +109,10 @@ public class MultiplayerHandManager : MonoBehaviour
                 }
             CreateCardInGame(card, playerGO, player);
         }
+        
+        // Mark cards as created to prevent duplicates
+        cardsCreated = true;
+        Debug.Log("[CreateMultiplayerHandFromRoom] Cards creation completed, flag set");
     }
 
     public Kard CreateCardInGame(GeneratedCard cardData, GameObject parentOverride, Player player, bool addToHand = true, bool enableMultiplayerDrag = true, GameObject battleAreaOverride = null)
@@ -180,6 +191,13 @@ public class MultiplayerHandManager : MonoBehaviour
         }
 
         return kardComponent;
+    }
+
+    public void ResetCardsState()
+    {
+        cardsCreated = false;
+        cardDefinitions.Clear();
+        Debug.Log("[MultiplayerHandManager] Cards state reset");
     }
 
         public GeneratedCard GetCardDefinition(string cardId)

@@ -309,4 +309,47 @@ public class ServerFunctionsManager : MonoBehaviour
         
         CallFunction("executeBattle", parameters, callback);
     }
+    
+    /// <summary>
+    /// Označí hráča ako ready pre ďalší turn
+    /// </summary>
+    public void MarkReadyForNextTurn(string roomCode, string playerId, Action<ExecuteFunctionResult> callback)
+    {
+        if (callback == null)
+        {
+            Debug.LogError("MarkReadyForNextTurn: callback is null!");
+            return;
+        }
+
+        Debug.LogWarning($"MarkReadyForNextTurn called for room: {roomCode}, player: {playerId}");
+        
+        var parameters = new
+        {
+            roomCode = roomCode,
+            playerId = playerId
+        };
+        
+        CallFunction("markReadyForNextTurn", parameters, callback);
+    }
+    
+    /// <summary>
+    /// Skontroluje ready stav pre ďalší turn (polling)
+    /// </summary>
+    public void CheckNextTurnReady(string roomCode, Action<ExecuteFunctionResult> callback)
+    {
+        if (callback == null)
+        {
+            Debug.LogError("CheckNextTurnReady: callback is null!");
+            return;
+        }
+
+        Debug.Log($"CheckNextTurnReady called for room: {roomCode}");
+        
+        var parameters = new
+        {
+            roomCode = roomCode
+        };
+        
+        CallFunction("checkNextTurnReady", parameters, callback);
+    }
 }

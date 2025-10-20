@@ -234,7 +234,7 @@ public class AttackSelectionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Resetuj výber útoku
+    /// Resetuj výber útoku pre ďalší turn
     /// </summary>
     public void ResetSelection()
     {
@@ -247,7 +247,22 @@ public class AttackSelectionManager : MonoBehaviour
             dialogText.text = "";
         }
 
+        // ✅ Reset tlačidiel do disabled stavu
         SetConfirmButtonState(false);
+        SetAllAttackButtonsInteractable(false);
+        
+        Debug.Log("[AttackSelectionManager] Selection reset for next turn");
+    }
+    
+    /// <summary>
+    /// Nastaví všetky attack tlačidlá na enabled/disabled
+    /// </summary>
+    private void SetAllAttackButtonsInteractable(bool enabled)
+    {
+        if (button1 != null) button1.interactable = enabled;
+        if (button2 != null) button2.interactable = enabled;
+        if (button3 != null) button3.interactable = enabled;
+        if (button4 != null) button4.interactable = enabled;
     }
 
     /// <summary>

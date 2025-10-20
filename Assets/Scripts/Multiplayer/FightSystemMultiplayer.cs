@@ -93,7 +93,6 @@ public class FightSystemMultiplayer : MonoBehaviour
     // Battle system komponenty
     public BattleSubmitter battleSubmitter;
     public BattleResultProcessor battleResultProcessor;
-    public MultiplayerCardAnimator cardAnimator;  // ✅ NEW: Card animations
 
 
     void Start()
@@ -120,8 +119,55 @@ public class FightSystemMultiplayer : MonoBehaviour
         myPlayerId = PlayFabManagerLogin.Instance.LoggedInPlayerId;
         roomCode = PlayerPrefs.GetString("RoomCode", "");
         await multiplayerService.InitGame();
-        multiplayerHandManager.CreateCardsFromDecks(myPlayerId, roomCode);
+        
+        // Use retry logic for card loading
+        bool cardsLoaded = await LoadPlayerCardsWithRetry(myPlayerId, roomCode);
+        if (!cardsLoaded)
+        {
+            Debug.LogError("[FightSystemMultiplayer] Failed to load cards after all retries");
+            multiplayerUI?.ShowStatus("Failed to load cards!");
+            return;
+        }
+        
         multiplayerUI?.ShowStatus("Choose fighter!");
+    }
+
+    private async System.Threading.Tasks.Task<bool> LoadPlayerCardsWithRetry(string myPlayerId, string roomCode)
+    {
+        const int MAX_RETRIES = 3;
+        const int RETRY_DELAY_MS = 3000;
+        
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++)
+        {
+            Debug.Log($"[FightSystemMultiplayer] Loading cards attempt {attempt}/{MAX_RETRIES}");
+            
+            // Reset cards state before each attempt to prevent conflicts
+            multiplayerHandManager.ResetCardsState();
+            
+            // Start card loading
+            multiplayerHandManager.CreateCardsFromDecks(myPlayerId, roomCode);
+            
+            // Wait up to 10 seconds for cards to load
+            for (int wait = 0; wait < 100; wait++) // 100 * 100ms = 10 seconds
+            {
+                await System.Threading.Tasks.Task.Delay(100);
+                
+                if (player != null && player.hand != null && player.hand.Count > 0)
+                {
+                    Debug.Log($"[FightSystemMultiplayer] Cards loaded successfully! Player has {player.hand.Count} cards");
+                    return true;
+                }
+            }
+            
+            Debug.LogWarning($"[FightSystemMultiplayer] Cards loading attempt {attempt} failed, retrying...");
+            
+            if (attempt < MAX_RETRIES)
+            {
+                await System.Threading.Tasks.Task.Delay(RETRY_DELAY_MS);
+            }
+        }
+        
+        return false;
     }
 
     public void OnCardDropped(Kard card, MultiplayerCardDrag dragHandler)

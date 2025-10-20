@@ -537,9 +537,13 @@ public class MultiplayerService : MonoBehaviour
         }
 
         var tcs = new TaskCompletionSource<bool>();
+        bool isCompleted = false;
 
         serverFunctionsManager.SetSelectedCard(roomCode, playerId, cardData, result =>
         {
+            if (isCompleted) return; // Ignore late responses
+            isCompleted = true;
+            
             if (result == null)
             {
                 Debug.LogError("SubmitSelectedCardAsync: Failed to set selected card on server");
@@ -550,6 +554,16 @@ public class MultiplayerService : MonoBehaviour
             }
 
             tcs.TrySetResult(true);
+        });
+
+        // Add 15-second timeout
+        _ = Task.Delay(15000).ContinueWith(_ => {
+            if (!isCompleted)
+            {
+                isCompleted = true;
+                Debug.LogWarning($"SubmitSelectedCardAsync: Timeout for player {playerId}, card {cardData?.cardId}");
+                tcs.TrySetResult(false);
+            }
         });
 
         await tcs.Task;
@@ -566,28 +580,40 @@ public class MultiplayerService : MonoBehaviour
             return await tcs.Task;
         }
 
+        Debug.Log($"[GetSelectedCardsAsync] Calling server for roomCode: {roomCode}");
+        
         serverFunctionsManager.GetSelectedCards(roomCode, result =>
         {
             var map = new Dictionary<string, SelectedCardData>();
 
             if (result != null && result.FunctionResult != null)
             {
+                Debug.Log($"[GetSelectedCardsAsync] Raw server response: {result.FunctionResult}");
+                
                 try
                 {
                     JObject functionResult = JObject.Parse(result.FunctionResult.ToString());
                     if (functionResult["selectedCards"] is JObject selectedCards)
                     {
+                        Debug.Log($"[GetSelectedCardsAsync] Found selectedCards with {selectedCards.Count} players");
+                        
                         foreach (var property in selectedCards)
                         {
+                            Debug.Log($"[GetSelectedCardsAsync] Processing player: {property.Key}");
                             if (property.Value is JObject cardObject)
                             {
                                 var cardData = SelectedCardData.FromJson(property.Key, cardObject);
                                 if (cardData != null)
                                 {
                                     map[property.Key] = cardData;
+                                    Debug.Log($"[GetSelectedCardsAsync] Added card {cardData.cardId} for player {property.Key}");
                                 }
                             }
                         }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[GetSelectedCardsAsync] No selectedCards field in response");
                     }
                 }
                 catch (System.Exception ex)
@@ -600,6 +626,7 @@ public class MultiplayerService : MonoBehaviour
                 Debug.LogWarning("GetSelectedCardsAsync: No result returned from server");
             }
 
+            Debug.Log($"[GetSelectedCardsAsync] Final result: {map.Count} cards loaded");
             tcs.TrySetResult(map);
         });
 

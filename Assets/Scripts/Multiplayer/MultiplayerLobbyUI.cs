@@ -61,12 +61,14 @@ public class MultiplayerLobbyUI : MonoBehaviour
                     if (isWaiting)
                     {
                         statusText.text = "Waiting for opponent...";
-                        StartCoroutine(ShowWaitingAndSwitchScene());
+                        // ✅ Spusti polling pre druhého hráča
+                        StartCoroutine(WaitForOpponentAndStartBattle());
                     }
                     else
                     {
-                        statusText.text = "CONNECTED!";
-                        SceneManager.LoadScene("Multiplayer");
+                        statusText.text = "Both players ready!";
+                        // ✅ Immediate transition - druhý hráč sa pripojil
+                        StartCoroutine(StartBattleWithDelay());
                     }
                 }
                 else
@@ -81,10 +83,79 @@ public class MultiplayerLobbyUI : MonoBehaviour
         });
     }
 
-    private IEnumerator ShowWaitingAndSwitchScene()
+    /// <summary>
+    /// Čaká kým sa nepripojí druhý hráč, potom spustí battle
+    /// </summary>
+    private IEnumerator WaitForOpponentAndStartBattle()
     {
-        statusText.text = "Waiting for opponent...";
-        yield return new WaitForSeconds(1f);
+        string roomCode = PlayerPrefs.GetString("RoomCode", "");
+        int pollAttempts = 0;
+        const int MAX_POLL_ATTEMPTS = 60; // 60 sekúnd timeout
+        
+        while (pollAttempts < MAX_POLL_ATTEMPTS)
+        {
+            yield return new WaitForSeconds(1f);
+            pollAttempts++;
+            
+            bool isCompleted = false;
+            bool bothPlayersReady = false;
+            
+            // Check room players count
+            serverFunctionsManager.GetRoomPlayersInfo(roomCode, result =>
+            {
+                if (result?.FunctionResult != null)
+                {
+                    try
+                    {
+                        var resultData = JObject.Parse(result.FunctionResult.ToString());
+                        if (resultData["room"]?["playersCount"] != null)
+                        {
+                            int playersCount = resultData["room"]["playersCount"].Value<int>();
+                            bothPlayersReady = (playersCount >= 2);
+                            
+                            Debug.Log($"[Lobby] Polling: {playersCount}/2 players in room");
+                        }
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogError($"[Lobby] Error parsing GetRoomPlayersInfo: {e.Message}");
+                    }
+                }
+                isCompleted = true;
+            });
+            
+            yield return new WaitUntil(() => isCompleted);
+            
+            if (bothPlayersReady)
+            {
+                statusText.text = "Both players ready!";
+                Debug.Log("[Lobby] Both players connected - starting battle!");
+                yield return StartCoroutine(StartBattleWithDelay());
+                break;
+            }
+            
+            // Update waiting message
+            statusText.text = $"Waiting for opponent... ({pollAttempts}/60)";
+        }
+        
+        if (pollAttempts >= MAX_POLL_ATTEMPTS)
+        {
+            statusText.text = "Timeout - opponent didn't join";
+            Debug.LogError("[Lobby] Timeout waiting for opponent");
+            // Možno by sme mohli vrátiť hráča späť alebo restart lobby
+        }
+    }
+    
+    /// <summary>
+    /// Spustí battle scene s krátkym delay pre UI feedback
+    /// </summary>
+    private IEnumerator StartBattleWithDelay()
+    {
+        Debug.Log("[Lobby] StartBattleWithDelay() called");
+        statusText.text = "Starting battle...";
+        yield return new WaitForSeconds(1f); // UI feedback delay
+        
+        Debug.Log("[Lobby] Loading Multiplayer battle scene...");
         SceneManager.LoadScene("Multiplayer");
     }
 
