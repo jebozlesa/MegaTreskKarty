@@ -827,6 +827,66 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   canvas: {fileID: 575752764}
+--- !u!1 &246442532
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 246442534}
+  - component: {fileID: 246442533}
+  m_Layer: 0
+  m_Name: MultiplayerCardAnimator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &246442533
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 246442532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e24caa23fe7466744b7349dc21a73dd3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  effectAnimationPrefab: {fileID: 0}
+  redColor:
+    serializedVersion: 2
+    rgba: 4278190335
+  greenColor:
+    serializedVersion: 2
+    rgba: 4278255360
+  blueColor:
+    serializedVersion: 2
+    rgba: 4294901760
+  yellowColor:
+    serializedVersion: 2
+    rgba: 4278255615
+  purpleColor:
+    serializedVersion: 2
+    rgba: 4286578816
+--- !u!4 &246442534
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 246442532}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &252130842
 GameObject:
   m_ObjectHideFlags: 0
@@ -2318,6 +2378,7 @@ MonoBehaviour:
   fightSystem: {fileID: 1771868604}
   attackComponent: {fileID: 163625929}
   multiplayerService: {fileID: 261861852}
+  cardAnimator: {fileID: 246442533}
   dialogText: {fileID: 1327332876}
   playerLifeBar: {fileID: 1970018297}
   enemyLifeBar: {fileID: 1802879729}
@@ -5727,6 +5788,7 @@ MonoBehaviour:
   multiplayerBoardManager: {fileID: 551249650}
   battleSubmitter: {fileID: 955118753}
   battleResultProcessor: {fileID: 820623878}
+  cardAnimator: {fileID: 246442533}
 --- !u!4 &1771868605
 Transform:
   m_ObjectHideFlags: 0
@@ -7553,12 +7615,14 @@ SceneRoots:
   - {fileID: 575752765}
   - {fileID: 520582316}
   - {fileID: 1788547980}
+  - {fileID: 163625930}
   - {fileID: 988871914}
   - {fileID: 2061391570}
   - {fileID: 1299250290}
   - {fileID: 1153135163}
   - {fileID: 1771868605}
   - {fileID: 551249651}
+  - {fileID: 246442534}
   - {fileID: 72967453}
   - {fileID: 1788473151}
   - {fileID: 261861853}
@@ -7566,4 +7630,3 @@ SceneRoots:
   - {fileID: 1092620046}
   - {fileID: 955118754}
   - {fileID: 820623879}
-  - {fileID: 163625930}

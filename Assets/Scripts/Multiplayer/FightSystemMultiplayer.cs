@@ -93,6 +93,7 @@ public class FightSystemMultiplayer : MonoBehaviour
     // Battle system komponenty
     public BattleSubmitter battleSubmitter;
     public BattleResultProcessor battleResultProcessor;
+    public MultiplayerCardAnimator cardAnimator;  // ✅ NEW: Card animations
 
 
     void Start()

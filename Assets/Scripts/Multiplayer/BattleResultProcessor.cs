@@ -16,6 +16,7 @@ public class BattleResultProcessor : MonoBehaviour
     public FightSystemMultiplayer fightSystem;
     public Attack attackComponent;
     public MultiplayerService multiplayerService;  // ✅ For refreshing selectedCards
+    public MultiplayerCardAnimator cardAnimator;    // ✅ NEW: Card animations (damage, stats, shake)
     
     [Header("UI References")]
     public TMP_Text dialogText;
@@ -24,14 +25,15 @@ public class BattleResultProcessor : MonoBehaviour
     
     private void Start()
     {
-        // ✅ Auto-find MultiplayerService ak nie je nastavený
+        // ⚠️ Validácia required referencií
         if (multiplayerService == null)
         {
-            multiplayerService = FindFirstObjectByType<MultiplayerService>();
-            if (multiplayerService == null)
-            {
-                Debug.LogWarning("[BattleResultProcessor] MultiplayerService not found in scene!");
-            }
+            Debug.LogError("[BattleResultProcessor] MultiplayerService not assigned! Please set in Inspector.");
+        }
+        
+        if (cardAnimator == null)
+        {
+            Debug.LogError("[BattleResultProcessor] MultiplayerCardAnimator not assigned! Card animations will be skipped. Please set in Inspector.");
         }
     }
     
@@ -151,6 +153,12 @@ public class BattleResultProcessor : MonoBehaviour
                 
                 if (card != null)
                 {
+                    // ✅ Zachytaj stat changes pre animácie
+                    int oldStrength = card.strength;
+                    int oldDefense = card.defense;
+                    int oldSpeed = card.speed;
+                    int oldKnowledge = card.knowledge;
+                    
                     // Aplikuj live stats z servera
                     card.health = cardData.health;
                     card.maxHealth = cardData.maxHealth;  // ✅ Update maxHealth!
@@ -158,6 +166,24 @@ public class BattleResultProcessor : MonoBehaviour
                     card.defense = cardData.defense;
                     card.speed = cardData.speed;
                     card.knowledge = cardData.knowledge;
+                    
+                    // ✅ Animuj stat changes ak sa zmenili
+                    if (cardAnimator != null)
+                    {
+                        int strChange = card.strength - oldStrength;
+                        int defChange = card.defense - oldDefense;
+                        int spdChange = card.speed - oldSpeed;
+                        int knoChange = card.knowledge - oldKnowledge;
+                        
+                        if (strChange != 0)
+                            StartCoroutine(cardAnimator.AnimateStatChange(card, strChange, "STR"));
+                        if (defChange != 0)
+                            StartCoroutine(cardAnimator.AnimateStatChange(card, defChange, "DEF"));
+                        if (spdChange != 0)
+                            StartCoroutine(cardAnimator.AnimateStatChange(card, spdChange, "SPD"));
+                        if (knoChange != 0)
+                            StartCoroutine(cardAnimator.AnimateStatChange(card, knoChange, "KNO"));
+                    }
                     
                     // ✅ Aplikuj effects (burn, sleep, atď.)
                     if (cardData.effects != null && cardData.effects.Length > 0)
@@ -200,9 +226,14 @@ public class BattleResultProcessor : MonoBehaviour
             yield return StartCoroutine(ShowDialog($"{myCard.cardName} uses Punch!"));
             yield return StartCoroutine(animations.PlayPunchAnimation(myCard.transform, enemyCard.transform));
             
-            // ✅ APLIKUJ DAMAGE NA NEPRIATEĽA
+            // ✅ APLIKUJ DAMAGE NA NEPRIATEĽA S ANIMÁCIOU
             enemyCard.health -= myDamage;
             if (enemyCard.health < 0) enemyCard.health = 0;
+            
+            if (cardAnimator != null && myDamage > 0)
+            {
+                yield return StartCoroutine(cardAnimator.AnimateDamage(enemyCard, myDamage));
+            }
             enemyLifeBar.SetHP(enemyCard.health);
             
             yield return StartCoroutine(ShowDialog($"Hit! {myDamage} damage!"));
@@ -214,9 +245,14 @@ public class BattleResultProcessor : MonoBehaviour
                 yield return StartCoroutine(ShowDialog($"{enemyCard.cardName} uses Punch!"));
                 yield return StartCoroutine(animations.PlayPunchAnimation(enemyCard.transform, myCard.transform));
                 
-                // ✅ APLIKUJ DAMAGE NA MŇA
+                // ✅ APLIKUJ DAMAGE NA MŇA S ANIMÁCIOU
                 myCard.health -= enemyDamage;
                 if (myCard.health < 0) myCard.health = 0;
+                
+                if (cardAnimator != null && enemyDamage > 0)
+                {
+                    yield return StartCoroutine(cardAnimator.AnimateDamage(myCard, enemyDamage));
+                }
                 playerLifeBar.SetHP(myCard.health);
                 
                 yield return StartCoroutine(ShowDialog($"Hit! {enemyDamage} damage!"));
@@ -228,9 +264,14 @@ public class BattleResultProcessor : MonoBehaviour
             yield return StartCoroutine(ShowDialog($"{enemyCard.cardName} uses Punch!"));
             yield return StartCoroutine(animations.PlayPunchAnimation(enemyCard.transform, myCard.transform));
             
-            // ✅ APLIKUJ DAMAGE NA MŇA
+            // ✅ APLIKUJ DAMAGE NA MŇA S ANIMÁCIOU
             myCard.health -= enemyDamage;
             if (myCard.health < 0) myCard.health = 0;
+            
+            if (cardAnimator != null && enemyDamage > 0)
+            {
+                yield return StartCoroutine(cardAnimator.AnimateDamage(myCard, enemyDamage));
+            }
             playerLifeBar.SetHP(myCard.health);
             
             yield return StartCoroutine(ShowDialog($"Hit! {enemyDamage} damage!"));
@@ -242,9 +283,14 @@ public class BattleResultProcessor : MonoBehaviour
                 yield return StartCoroutine(ShowDialog($"{myCard.cardName} uses Punch!"));
                 yield return StartCoroutine(animations.PlayPunchAnimation(myCard.transform, enemyCard.transform));
                 
-                // ✅ APLIKUJ DAMAGE NA NEPRIATEĽA
+                // ✅ APLIKUJ DAMAGE NA NEPRIATEĽA S ANIMÁCIOU
                 enemyCard.health -= myDamage;
                 if (enemyCard.health < 0) enemyCard.health = 0;
+                
+                if (cardAnimator != null && myDamage > 0)
+                {
+                    yield return StartCoroutine(cardAnimator.AnimateDamage(enemyCard, myDamage));
+                }
                 enemyLifeBar.SetHP(enemyCard.health);
                 
                 yield return StartCoroutine(ShowDialog($"Hit! {myDamage} damage!"));
@@ -253,6 +299,16 @@ public class BattleResultProcessor : MonoBehaviour
         
         // ✅ V5: HP sa updatuje postupne počas animácií, žiadna finálna sync!
         // selectedCards refresh sa volá v PlayBattleAnimationsAndRefresh
+        
+        // ✅ Reset card positions na správne miesta
+        if (cardAnimator != null)
+        {
+            Vector3 playerBoardPos = fightSystem.playerBoard != null ? fightSystem.playerBoard.transform.position : myCard.transform.position;
+            Vector3 enemyBoardPos = fightSystem.enemyBoard != null ? fightSystem.enemyBoard.transform.position : enemyCard.transform.position;
+            
+            StartCoroutine(cardAnimator.ResetCardPosition(myCard, playerBoardPos, Quaternion.identity));
+            StartCoroutine(cardAnimator.ResetCardPosition(enemyCard, enemyBoardPos, Quaternion.identity));
+        }
         
         // Skontroluj výsledok
         yield return new WaitForSeconds(1f);
