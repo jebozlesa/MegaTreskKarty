@@ -10,6 +10,28 @@
 
 
 
+---
+
+## ⚠️ CRITICAL: Unity Inspector Setup Policy## ⚠️ CRITICAL: Unity Inspector Setup Policy
+
+**VŽDY sa SPÝTAJ pred automatickým riešením missing references!****VŽDY sa SPÝTAJ pred automatickým riešením missing references!**
+
+Keď chýba referencia (napr. NullReferenceException):Keď chýba referencia (napr. NullReferenceException):
+1. ✅ **PREFEROVANÁ METÓDA**: Spýtaj sa užívateľa či nastaviť v Unity Inspector alebo pridať auto-find v kóde1. ✅ **PREFEROVANÁ METÓDA**: Spýtaj sa užívateľa či nastaviť v Unity Inspector alebo pridať auto-find v kóde
+2. ❌ **NErob AUTOMATICKY**: `FindFirstObjectByType<>()` v `Start()` BEZ súhlasu užívateľa2. ❌ **NErob AUTOMATICKY**: `FindFirstObjectByType<>()` v `Start()` BEZ súhlasu užívateľa
+3. ✅ **Inspector setup je čistejší** než runtime auto-discovery (performance, clarity)3. ✅ **Inspector setup je čistejší** než runtime auto-discovery (performance, clarity)
+
+**Príklad:**  **Príklad:**  
+```csharp```csharp
+// ❌ ZLÉ - pridané bez opýtania sa// ❌ ZLÉ - pridané bez opýtania sa
+void Start() {void Start() {
+    multiplayerService = FindFirstObjectByType<MultiplayerService>();    multiplayerService = FindFirstObjectByType<MultiplayerService>();
+}}
+
+// ✅ SPRÁVNE - spýtať sa: "Chceš nastaviť multiplayerService v Inspector alebo pridať auto-find?"// ✅ SPRÁVNE - spýtať sa: "Chceš nastaviť multiplayerService v Inspector alebo pridať auto-find?"
+// Užívateľ preferuje Inspector setup// Užívateľ preferuje Inspector setup
+``````
+
 ------
 
 

@@ -17,8 +17,9 @@ public class HealthBar : MonoBehaviour
 
     public void SetBar(Kard card)
     {
-        maxHp = card.health;
-        SetHP(maxHp);
+        // ✅ Use maxHealth if available (multiplayer), otherwise use current health (singleplayer)
+        maxHp = card.maxHealth > 0 ? card.maxHealth : card.health;
+        SetHP(card.health);
     }
 
     // Update is called once per frame

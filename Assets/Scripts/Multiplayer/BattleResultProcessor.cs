@@ -2,10 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using PlayFab;
+using PlayFab.ClientModels;
 
 /// <summary>
 /// Zodpovedný za spracovanie battle výsledkov zo servera
 /// Aplikuje HP zmeny, hrá animácie a určuje víťaza
+/// V5: BattleResult identifikuje karty cez cardId namiesto player1/player2
 /// </summary>
 public class BattleResultProcessor : MonoBehaviour
 {
@@ -19,19 +22,26 @@ public class BattleResultProcessor : MonoBehaviour
     public HealthBar playerLifeBar;
     public HealthBar enemyLifeBar;
     
+    private void Start()
+    {
+        // ✅ Auto-find MultiplayerService ak nie je nastavený
+        if (multiplayerService == null)
+        {
+            multiplayerService = FindFirstObjectByType<MultiplayerService>();
+            if (multiplayerService == null)
+            {
+                Debug.LogWarning("[BattleResultProcessor] MultiplayerService not found in scene!");
+            }
+        }
+    }
+    
     /// <summary>
     /// Spracuje výsledok battle a spustí animácie
+    /// V5: BattleResult identifikuje karty cez cardId, HP sa načíta z selectedCards
     /// </summary>
     public void ProcessBattleResult(Dictionary<string, object> battleResult)
     {
-        Debug.Log($"[BattleResultProcessor] Processing battle result");
-        
-        // Parsuj výsledky
-        int player1Health = int.Parse(battleResult["player1Health"].ToString());
-        int player2Health = int.Parse(battleResult["player2Health"].ToString());
-        int player1Damage = int.Parse(battleResult["player1Damage"].ToString());
-        int player2Damage = int.Parse(battleResult["player2Damage"].ToString());
-        string firstAttacker = battleResult["firstAttacker"].ToString();
+        Debug.Log($"[BattleResultProcessor] Processing battle result (V5)");
         
         // Získaj karty
         Kard myCard = fightSystem.player?.cardInGame;
@@ -43,30 +53,58 @@ public class BattleResultProcessor : MonoBehaviour
             return;
         }
         
-        // Urči ktorý hráč som ja
-        bool iAmPlayer1 = DetermineIfIAmPlayer1();
-        
-        // Aplikuj HP zmeny
-        if (iAmPlayer1)
+        // ✅ V5: Parsuj attacks object (indexované podľa cardId)
+        if (!battleResult.ContainsKey("attacks"))
         {
-            myCard.health = player1Health;
-            enemyCard.health = player2Health;
-        }
-        else
-        {
-            myCard.health = player2Health;
-            enemyCard.health = player1Health;
+            Debug.LogError("[BattleResultProcessor] Missing 'attacks' in battleResult!");
+            return;
         }
         
-        // Aktualizuj health bary
-        playerLifeBar.SetHP(myCard.health);
-        enemyLifeBar.SetHP(enemyCard.health);
+        var attacksJson = battleResult["attacks"].ToString();
+        var attacks = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
+            .DeserializeObject<Dictionary<string, object>>(attacksJson);
         
-        // ✅ REFRESH selectedCards z DB (načíta live stats, effects, atď.)
-        StartCoroutine(RefreshCardsFromServer());
+        string firstAttacker = battleResult["firstAttacker"].ToString();
         
-        // Spusti animácie
-        StartCoroutine(PlayBattleAnimations(myCard, enemyCard, firstAttacker, player1Damage, player2Damage, iAmPlayer1));
+        // ✅ Nájdi damage pre moju kartu a nepriateľa pomocou cardId
+        string myCardId = myCard.cardId;
+        string enemyCardId = enemyCard.cardId;
+        
+        Debug.Log($"[BattleResultProcessor] MyCardId={myCardId}, EnemyCardId={enemyCardId}");
+        Debug.Log($"[BattleResultProcessor] FirstAttacker={firstAttacker}");
+        
+        if (!attacks.ContainsKey(myCardId) || !attacks.ContainsKey(enemyCardId))
+        {
+            Debug.LogError($"[BattleResultProcessor] Missing attack data for cards! attacks keys: {string.Join(", ", attacks.Keys)}");
+            return;
+        }
+        
+        var myAttackData = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
+            .DeserializeObject<Dictionary<string, object>>(attacks[myCardId].ToString());
+        var enemyAttackData = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
+            .DeserializeObject<Dictionary<string, object>>(attacks[enemyCardId].ToString());
+        
+        int myDamage = int.Parse(myAttackData["damage"].ToString());
+        int enemyDamage = int.Parse(enemyAttackData["damage"].ToString());
+        
+        Debug.Log($"[BattleResultProcessor] MyDamage={myDamage}, EnemyDamage={enemyDamage}");
+        
+        // ✅ Spusti animácie (HP sa updatne postupne!)
+        // ✅ REFRESH selectedCards sa spustí AŽ PO animáciách
+        StartCoroutine(PlayBattleAnimationsAndRefresh(myCard, enemyCard, firstAttacker, myCardId, enemyCardId, myDamage, enemyDamage));
+    }
+    
+    /// <summary>
+    /// Wrapper coroutine - animácie POTOM refresh
+    /// V5: Používa cardId na identifikáciu, damage namiesto finalHealth
+    /// </summary>
+    private IEnumerator PlayBattleAnimationsAndRefresh(Kard myCard, Kard enemyCard, string firstAttacker, string myCardId, string enemyCardId, int myDamage, int enemyDamage)
+    {
+        // 1. Prehrá animácie (postupný HP update)
+        yield return StartCoroutine(PlayBattleAnimations(myCard, enemyCard, firstAttacker, myCardId, enemyCardId, myDamage, enemyDamage));
+        
+        // 2. AŽ PO animáciách refreshni selectedCards z DB (pre buffs/effects)
+        yield return StartCoroutine(RefreshCardsFromServer());
     }
     
     /// <summary>
@@ -95,20 +133,27 @@ public class BattleResultProcessor : MonoBehaviour
                 string playerId = kvp.Key;
                 var cardData = kvp.Value;
                 
+                Debug.Log($"[RefreshCards] Processing playerId={playerId}, cardName={cardData.name}, HP={cardData.health}/{cardData.maxHealth}");
+                Debug.Log($"[RefreshCards] myPlayerId={fightSystem.myPlayerId}");
+                Debug.Log($"[RefreshCards] player.cardInGame={fightSystem.player?.cardInGame?.cardName}, enemy.cardInGame={fightSystem.enemy?.cardInGame?.cardName}");
+                
                 Kard card = null;
                 if (playerId == fightSystem.myPlayerId && fightSystem.player?.cardInGame != null)
                 {
                     card = fightSystem.player.cardInGame;
+                    Debug.Log($"[RefreshCards] ✅ Mapped to MY card: {card.cardName}");
                 }
                 else if (playerId != fightSystem.myPlayerId && fightSystem.enemy?.cardInGame != null)
                 {
                     card = fightSystem.enemy.cardInGame;
+                    Debug.Log($"[RefreshCards] ✅ Mapped to ENEMY card: {card.cardName}");
                 }
                 
                 if (card != null)
                 {
                     // Aplikuj live stats z servera
                     card.health = cardData.health;
+                    card.maxHealth = cardData.maxHealth;  // ✅ Update maxHealth!
                     card.strength = cardData.strength;  // ✅ Buffs/debuffs!
                     card.defense = cardData.defense;
                     card.speed = cardData.speed;
@@ -126,18 +171,21 @@ public class BattleResultProcessor : MonoBehaviour
                         }
                     }
                     
-                    Debug.Log($"[BattleResultProcessor] Updated {card.cardName}: HP={card.health}/{cardData.maxHealth}, STR={card.strength}, DEF={card.defense}");
+                    Debug.Log($"[BattleResultProcessor] Updated {card.cardName}: HP={card.health}/{card.maxHealth}, STR={card.strength}, DEF={card.defense}");
                 }
             }
         }
     }
     
     /// <summary>
-    /// Prehrá battle animácie
+    /// Prehrá battle animácie s postupným HP updateom
+    /// V5: Používa cardId na určenie kto útočil prvý
     /// </summary>
-    private IEnumerator PlayBattleAnimations(Kard myCard, Kard enemyCard, string firstAttacker, int p1Damage, int p2Damage, bool iAmPlayer1)
+    private IEnumerator PlayBattleAnimations(Kard myCard, Kard enemyCard, string firstAttacker, string myCardId, string enemyCardId, int myDamage, int enemyDamage)
     {
-        bool iAttackedFirst = (iAmPlayer1 && firstAttacker == "player1") || (!iAmPlayer1 && firstAttacker == "player2");
+        bool iAttackedFirst = (firstAttacker == myCardId);
+        
+        Debug.Log($"[PlayBattleAnimations] FirstAttacker={firstAttacker}, MyCardId={myCardId}, IAttackedFirst={iAttackedFirst}");
         
         AttackAnimations animations = attackComponent?.attackAnimations;
         if (animations == null)
@@ -148,36 +196,63 @@ public class BattleResultProcessor : MonoBehaviour
         
         if (iAttackedFirst)
         {
-            // Ja útočím prvý
+            // ✅ JA ÚTOČÍM PRVÝ
             yield return StartCoroutine(ShowDialog($"{myCard.cardName} uses Punch!"));
             yield return StartCoroutine(animations.PlayPunchAnimation(myCard.transform, enemyCard.transform));
-            yield return StartCoroutine(ShowDialog($"Hit! {(iAmPlayer1 ? p1Damage : p2Damage)} damage!"));
             
-            // Ak nepriateľ prežil, jeho útok
+            // ✅ APLIKUJ DAMAGE NA NEPRIATEĽA
+            enemyCard.health -= myDamage;
+            if (enemyCard.health < 0) enemyCard.health = 0;
+            enemyLifeBar.SetHP(enemyCard.health);
+            
+            yield return StartCoroutine(ShowDialog($"Hit! {myDamage} damage!"));
+            
+            // ✅ AK NEPRIATEĽ PREŽIL, JEHO ÚTOK
             if (enemyCard.health > 0)
             {
                 yield return new WaitForSeconds(0.5f);
                 yield return StartCoroutine(ShowDialog($"{enemyCard.cardName} uses Punch!"));
                 yield return StartCoroutine(animations.PlayPunchAnimation(enemyCard.transform, myCard.transform));
-                yield return StartCoroutine(ShowDialog($"Hit! {(iAmPlayer1 ? p2Damage : p1Damage)} damage!"));
+                
+                // ✅ APLIKUJ DAMAGE NA MŇA
+                myCard.health -= enemyDamage;
+                if (myCard.health < 0) myCard.health = 0;
+                playerLifeBar.SetHP(myCard.health);
+                
+                yield return StartCoroutine(ShowDialog($"Hit! {enemyDamage} damage!"));
             }
         }
         else
         {
-            // Nepriateľ útočí prvý
+            // ✅ NEPRIATEĽ ÚTOČÍ PRVÝ
             yield return StartCoroutine(ShowDialog($"{enemyCard.cardName} uses Punch!"));
             yield return StartCoroutine(animations.PlayPunchAnimation(enemyCard.transform, myCard.transform));
-            yield return StartCoroutine(ShowDialog($"Hit! {(iAmPlayer1 ? p2Damage : p1Damage)} damage!"));
             
-            // Ak ja prežijem, môj útok
+            // ✅ APLIKUJ DAMAGE NA MŇA
+            myCard.health -= enemyDamage;
+            if (myCard.health < 0) myCard.health = 0;
+            playerLifeBar.SetHP(myCard.health);
+            
+            yield return StartCoroutine(ShowDialog($"Hit! {enemyDamage} damage!"));
+            
+            // ✅ AK JA PREŽIJEM, MÔJ ÚTOK
             if (myCard.health > 0)
             {
                 yield return new WaitForSeconds(0.5f);
                 yield return StartCoroutine(ShowDialog($"{myCard.cardName} uses Punch!"));
                 yield return StartCoroutine(animations.PlayPunchAnimation(myCard.transform, enemyCard.transform));
-                yield return StartCoroutine(ShowDialog($"Hit! {(iAmPlayer1 ? p1Damage : p2Damage)} damage!"));
+                
+                // ✅ APLIKUJ DAMAGE NA NEPRIATEĽA
+                enemyCard.health -= myDamage;
+                if (enemyCard.health < 0) enemyCard.health = 0;
+                enemyLifeBar.SetHP(enemyCard.health);
+                
+                yield return StartCoroutine(ShowDialog($"Hit! {myDamage} damage!"));
             }
         }
+        
+        // ✅ V5: HP sa updatuje postupne počas animácií, žiadna finálna sync!
+        // selectedCards refresh sa volá v PlayBattleAnimationsAndRefresh
         
         // Skontroluj výsledok
         yield return new WaitForSeconds(1f);

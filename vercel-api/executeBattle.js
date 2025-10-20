@@ -1,14 +1,14 @@
 import clientPromise from './mongodb';
 
 /**
- * 🚀 V4 - SELECTEDCARDS-BASED TRACKING
+ * 🚀 V5 - CARDID-BASED BATTLE RESULTS
  * 
  * Endpoint: POST /api/executeBattle
  * 
- * ✅ Všetky live stats (HP, strength, defense, effects) v room.selectedCards
- * ✅ Jeden source of truth - žiadne duplicitné battleState.playerHealths
- * ✅ Support pre buffs/debuffs (+2 ATT, -1 DEF, atď.)
- * ✅ Support pre effects (burn, sleep, stun, atď.)
+ * ✅ HP tracking v room.selectedCards (single source of truth)
+ * ✅ battleResult identifikuje karty cez cardId (nie player1/player2)
+ * ✅ battleResult obsahuje len damage/effects (nie HP!)
+ * ✅ Klient načíta finálne HP z selectedCards, damage aplikuje postupne v animáciách
  * 
  * Request payload:
  * {
@@ -18,6 +18,15 @@ import clientPromise from './mongodb';
  *     cardId: "card_123",
  *     attackId: 1
  *   }
+ * }
+ * 
+ * Response (battleResult):
+ * {
+ *   attacks: {
+ *     "cardId1": { damage: 2, didSleep: false, ... },
+ *     "cardId2": { damage: 1, didSleep: true, ... }
+ *   },
+ *   firstAttacker: "cardId1"
  * }
  */
 
@@ -184,27 +193,27 @@ function simulateBattle(card1, card2, attackId1, attackId2) {
   }
 
   // Zostav result object
+  // ✅ V5: Identifikácia pomocou cardId namiesto player1/player2
   const result = {
-    firstAttacker: firstAttacker,
+    firstAttacker: firstCard.cardId,
     
-    // Player 1 data
-    player1Health: card1.health,
-    player1Damage: firstAttacker === 'player1' ? firstResult.damage : secondResult.damage,
-    player1DidSleep: firstAttacker === 'player1' ? secondResult.didSleep : firstResult.didSleep,
-    player1SleepDuration: firstAttacker === 'player1' ? secondResult.sleepDuration : firstResult.sleepDuration,
-    
-    // Player 2 data
-    player2Health: card2.health,
-    player2Damage: firstAttacker === 'player2' ? firstResult.damage : secondResult.damage,
-    player2DidSleep: firstAttacker === 'player2' ? secondResult.didSleep : firstResult.didSleep,
-    player2SleepDuration: firstAttacker === 'player2' ? secondResult.sleepDuration : firstResult.sleepDuration,
-
-    // Effects (pre budúcnosť)
-    player1Effects: card1.effects || [],
-    player2Effects: card2.effects || []
+    attacks: {
+      [card1.cardId]: {
+        damage: firstAttacker === 'player1' ? firstResult.damage : secondResult.damage,
+        didSleep: firstAttacker === 'player1' ? secondResult.didSleep : firstResult.didSleep,
+        sleepDuration: firstAttacker === 'player1' ? secondResult.sleepDuration : firstResult.sleepDuration,
+        effects: card1.effects || []
+      },
+      [card2.cardId]: {
+        damage: firstAttacker === 'player2' ? firstResult.damage : secondResult.damage,
+        didSleep: firstAttacker === 'player2' ? secondResult.didSleep : firstResult.didSleep,
+        sleepDuration: firstAttacker === 'player2' ? secondResult.sleepDuration : firstResult.sleepDuration,
+        effects: card2.effects || []
+      }
+    }
   };
 
-  console.log('[simulateBattle] Result:', result);
+  console.log('[simulateBattle] Result:', JSON.stringify(result, null, 2));
   return result;
 }
 

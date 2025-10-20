@@ -23,14 +23,13 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
     public int level;
 
     public int health { get; set; }
+    public int maxHealth { get; set; }  // ✅ Public property pre max HP
     public int strength { get; set; }
     public int speed { get; set; }
     public int attack { get; set; }
     public int defense { get; set; }
     public int knowledge { get; set; }
     public int charisma { get; set; }
-
-    int maxHP;
 
     public Dictionary<int, int> attackCount;
 
@@ -95,7 +94,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
         nameText.text = cardName;
         levelText.text = "lvl " + level;
-        maxHP = health;
+        maxHealth = health;  // ✅ Initialize maxHealth
         cardImage.sprite = Resources.Load<Sprite>("Cards/" + image);
         background.GetComponent<Image>().color = color;
         nameText.color = color;
@@ -682,8 +681,8 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
             amount = 1;
         health += amount;
         StartCoroutine(EffectAnimations(amount, "HP", color_green));
-        if (health > maxHP)
-            health = maxHP;
+        if (health > maxHealth)  // ✅ Use maxHealth
+            health = maxHealth;
         Debug.Log(Time.time + "  " + cardName + " sa healuje za " + amount);
     }
 

@@ -121,6 +121,7 @@ public class MultiplayerHandManager : MonoBehaviour
         kardComponent.styleId = cardData.StyleID;
         kardComponent.cardName = cardData.PersonName;
         kardComponent.health = cardData.Health;
+        kardComponent.maxHealth = cardData.MaxHealth;  // ✅ Initialize maxHealth for HealthBar!
         kardComponent.strength = cardData.Strength;
         kardComponent.speed = cardData.Speed;
         kardComponent.attack = cardData.Attack;
