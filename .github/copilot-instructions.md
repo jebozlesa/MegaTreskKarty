@@ -198,13 +198,15 @@ FightSystemMultiplayer.cs      → Coordinator (deleguje úlohy)FightSystemMulti
 
 4. executeBattle.js:4. executeBattle.js:
 
-   - Načíta card stats z MongoDB (room.playerDecks)   - Načíta card stats z MongoDB (room.playerDecks)
+   - ATOMIC UPDATE: Uloží attackData pomocou nested field path (anti race-condition)   - ATOMIC UPDATE: Uloží attackData pomocou nested field path (anti race-condition)
 
-   - Načíta HP z MongoDB (room.battleState.playerHealths)   - Načíta HP z MongoDB (room.battleState.playerHealths)
+   - Načíta card stats z MongoDB (room.selectedCards)   - Načíta card stats z MongoDB (room.selectedCards)
 
    - Simuluje battle (rovnaké vzorce ako Attack.cs)   - Simuluje battle (rovnaké vzorce ako Attack.cs)
 
-   - Uloží nové HP do battleState   - Uloží nové HP do battleState
+   - Uloží výsledok do battleData.lastResult   - Uloží výsledok do battleData.lastResult
+
+   - RESET: Nastaví nextTurnReady = {p1:false, p2:false} (fix timeout bug)   - RESET: Nastaví nextTurnReady = {p1:false, p2:false} (fix timeout bug)
 
       
 
@@ -272,11 +274,11 @@ rooms: {rooms: {
 
     
 
-  battleState: {  battleState: {
+  selectedCards: {  selectedCards: {
 
-    playerHealths: { "player1_id": 85, "player2_id": 72 },    playerHealths: { "player1_id": 85, "player2_id": 72 },
+    "player1_id": { cardId, name, health, maxHealth, strength, defense, speed, ... },    "player1_id": { cardId, name, health, maxHealth, strength, defense, speed, ... },
 
-    turnNumber: 3    turnNumber: 3
+    "player2_id": { ... }    "player2_id": { ... }
 
   },  },
 
@@ -289,6 +291,18 @@ rooms: {rooms: {
     player2: { cardId, attackId, submitted: false },    player2: { cardId, attackId, submitted: false },
 
     lastResult: { ... }    lastResult: { ... }
+
+  },  },
+
+    
+
+  // ✅ V5: Next turn ready tracking  // ✅ V5: Next turn ready tracking
+
+  nextTurnReady: {  nextTurnReady: {
+
+    "player1_id": false,    "player1_id": false,
+
+    "player2_id": true    "player2_id": true
 
   }  }
 
@@ -622,9 +636,23 @@ db.rooms.findOne({ roomCode: "ABC123" })db.rooms.findOne({ roomCode: "ABC123" })
 
 
 
-**HP sa resetujú každý turn**  **HP sa resetujú každý turn**  
+**"Timeout waiting for opponent after first turn"** ⚠️ **CRITICAL****"Timeout waiting for opponent after first turn"** ⚠️ **CRITICAL**  
 
-→ Používaš V2, potrebuješ V3 (server-side HP tracking)→ Používaš V2, potrebuješ V3 (server-side HP tracking)
+→ Race condition v `nextTurnReady` - server neresetuje flags po battle  → Race condition v `nextTurnReady` - server neresetuje flags po battle  
+
+→ Fix: `executeBattle.js` musí resetovať `nextTurnReady = {p1:false, p2:false}` po každom battle  → Fix: `executeBattle.js` musí resetovať `nextTurnReady = {p1:false, p2:false}` po každom battle  
+
+→ Riešenie: Pozri `HOTFIX_CRITICAL_NextTurnRace.md`→ Riešenie: Pozri `HOTFIX_CRITICAL_NextTurnRace.md`
+
+
+
+**"Súbežné attack submity failujú (race condition)"** ⚠️**"Súbežné attack submity failujú (race condition)"** ⚠️  
+
+→ `battleData` update prepíše celý objekt namiesto atomic update  → `battleData` update prepíše celý objekt namiesto atomic update  
+
+→ Fix: Použiť `$set: { [\`battleData.\${playerKey}.field\`]: value }` namiesto `$set: { battleData: obj }`  → Fix: Použiť `$set: { [\`battleData.\${playerKey}.field\`]: value }` namiesto `$set: { battleData: obj }`  
+
+→ Riešenie: Pozri `SNIPPET_FIX2_AtomicUpdates.js`→ Riešenie: Pozri `SNIPPET_FIX2_AtomicUpdates.js`
 
 
 
@@ -632,7 +660,7 @@ db.rooms.findOne({ roomCode: "ABC123" })db.rooms.findOne({ roomCode: "ABC123" })
 
 
 
-**Version:** V3 (Server-Authoritative)  **Version:** V3 (Server-Authoritative)  
+**Version:** V5 (CardID-based + Next Turn System)  **Version:** V5 (CardID-based + Next Turn System)  
 
 **Branch:** Multiplayer  **Branch:** Multiplayer  
 
@@ -1358,6 +1386,6 @@ db.rooms.updateOne(
 
 ---
 
-**Last Updated:** 2025-10-13
-**Version:** V3 (Server-Authoritative HP Tracking)
+**Last Updated:** 2025-10-29
+**Version:** V5 (CardID-based + Next Turn System + Race Condition Fixes)
 **Current Branch:** Multiplayer

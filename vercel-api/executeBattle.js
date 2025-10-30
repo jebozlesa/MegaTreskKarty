@@ -300,28 +300,27 @@ export default async function handler(req, res) {
     // Načítaj/vytvor battleData
     let battleData = room.battleData || { player1: null, player2: null };
 
-    // Ulož attack submission
-    if (isPlayer1) {
-      battleData.player1 = {
-        playerId: playerId,
-        cardId: cardId,
-        attackId: attackId,
-        submitted: true
-      };
-    } else {
-      battleData.player2 = {
-        playerId: playerId,
-        cardId: cardId,
-        attackId: attackId,
-        submitted: true
-      };
-    }
-
-    // Ulož battleData
+    // ✅ ATOMIC UPDATE - použiť nested path namiesto celého objektu (race condition fix)
+    const playerKey = isPlayer1 ? 'player1' : 'player2';
+    
     await collection.updateOne(
       { roomCode },
-      { $set: { battleData: battleData, lastActivity: new Date() } }
+      {
+        $set: {
+          [`battleData.${playerKey}.playerId`]: playerId,
+          [`battleData.${playerKey}.cardId`]: cardId,
+          [`battleData.${playerKey}.attackId`]: attackId,
+          [`battleData.${playerKey}.submitted`]: true,
+          lastActivity: new Date()
+        }
+      }
     );
+    
+    console.log(`[executeBattle] ${playerKey} submitted attack ${attackId}`);
+    
+    // ✅ RE-LOAD battleData po zápise (aby sme mali fresh data od oboch hráčov)
+    const updatedRoom = await collection.findOne({ roomCode });
+    battleData = updatedRoom.battleData || { player1: null, player2: null };
 
     // ✅ CHECK: Sú obaja hráči ready?
     if (battleData.player1?.submitted && battleData.player2?.submitted) {
@@ -346,7 +345,13 @@ export default async function handler(req, res) {
       // ✅ ULOŽ UPDATOVANÉ CARDS (HP, effects, atď.)
       await saveSelectedCards(roomCode, player1Id, player2Id, card1, card2);
 
-      // Vyčisti battleData pre ďalšie kolo
+      // ✅ RESET nextTurnReady pre ďalší turn (CRITICAL FIX!)
+      const resetNextTurnReady = {};
+      room.players.forEach(pid => {
+        resetNextTurnReady[pid] = false;
+      });
+
+      // Vyčisti battleData pre ďalšie kolo + RESET nextTurnReady
       await collection.updateOne(
         { roomCode },
         {
@@ -354,10 +359,13 @@ export default async function handler(req, res) {
             'battleData.player1.submitted': false,
             'battleData.player2.submitted': false,
             'battleData.lastResult': battleResult,
-            'battleData.lastBattleTime': new Date()
+            'battleData.lastBattleTime': new Date(),
+            nextTurnReady: resetNextTurnReady  // ✅ RESET na {p1:false, p2:false}
           }
         }
       );
+
+      console.log('[executeBattle] Battle complete, nextTurnReady reset to:', resetNextTurnReady);
 
       return res.status(200).json({
         success: true,
