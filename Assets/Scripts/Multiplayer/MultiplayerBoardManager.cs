@@ -16,8 +16,8 @@ public class MultiplayerBoardManager : MonoBehaviour
     private SelectedCardData localSelectedCardData;
     private SelectedCardData opponentSelectedCardData;
     private bool isSubmittingSelection;
-    private CancellationTokenSource opponentSelectionCancellation;
-    private bool opponentCardRevealed;
+    public CancellationTokenSource opponentSelectionCancellation; // ✅ public for BattleResultProcessor reuse
+    public bool opponentCardRevealed; // ✅ public for BattleResultProcessor reuse
 
     public bool IsProcessingSelection => isSubmittingSelection;
 
@@ -117,7 +117,8 @@ public class MultiplayerBoardManager : MonoBehaviour
         }
     }
 
-    private async Task WaitForOpponentSelectionAsync()
+    // ✅ public for BattleResultProcessor reuse (enemy card replacement after death)
+    public async Task WaitForOpponentSelectionAsync()
     {
         opponentSelectedCardData = null;
 
@@ -195,7 +196,8 @@ public class MultiplayerBoardManager : MonoBehaviour
         return string.Empty;
     }
 
-    private void RevealCards()
+    // ✅ public for BattleResultProcessor reuse (enemy card replacement after death)
+    public void RevealCards()
     {
         if (opponentCardRevealed)
         {

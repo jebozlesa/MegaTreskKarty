@@ -24,16 +24,27 @@ BattleResultProcessor.ProcessBattleResult()
          ↓
 CheckBattleOutcome(myCard, enemyCard)
          ↓
-  if (card.health <= 0)
+  if (myCard.health <= 0)
          ↓
-HandleCardDeath(deadCard, isMyCard) ← ✅ NOVÝ SYSTÉM
+HandlePlayerCardDeath(myCard) ← ✅ NEW: Checks remaining cards
          ↓
     ┌────────────┴────────────┐
     ↓                         ↓
-Player.RemoveCardFromBoard()  ServerFunctionsManager.ClearDeadCard()
-(UI - zničí GameObject)       (Server - vymaže z selectedCards)
+HasCardsInHand?          NoCardsLeft?
     ↓                         ↓
- Destroy(card.gameObject)  clearSelectedCards.js (selective clear)
+PLAYERDEATH State         LOST State
+    ↓                         
+UnlockPlayerHand() ← ✅ Enable card selection
+    ↓
+Player drags new card to board
+    ↓
+MultiplayerCardDrag.OnEndDrag() → HandleCardSelectedAsync()
+    ↓
+Submit to selectedCards (existing system reused!)
+    ↓
+Wait for opponent (may also select new card)
+    ↓
+Both ready → Reveal cards → Continue battle
 ```
 
 ---
@@ -85,6 +96,61 @@ private IEnumerator HandleCardDeath(Kard deadCard, bool isMyCard)
     
     // 4. Wait for server response (max 5s timeout)
     // ...
+}
+
+// ✅ NEW V2: Handler pre player card death + PLAYERDEATH state
+private IEnumerator HandlePlayerCardDeath(Kard myCard)
+{
+    // 1. Vymaž kartu (board + server)
+    yield return StartCoroutine(HandleCardDeath(myCard, isMyCard: true));
+    
+    // 2. Skontroluj či má player ďalšie karty
+    if (player.hand.Count > 0)
+    {
+        // ✅ PLAYERDEATH State - odomkni hand pre výber novej karty
+        dialogText.text = "Choose new fighter!";
+        fightSystem.state = FightStateMultiplayer.PLAYERDEATH;
+        
+        boardManager.UnlockPlayerHand();
+        
+        // Existujúci drag & drop systém sa postará o:
+        // - Submit novej karty do selectedCards
+        // - Wait for opponent
+        // - Reveal + continue battle
+    }
+    else
+    {
+        // ❌ Žiadne karty → LOST
+        fightSystem.state = FightStateMultiplayer.LOST;
+    }
+}
+
+// ✅ NEW V2: Handler pre enemy card death
+private IEnumerator HandleEnemyCardDeath(Kard enemyCard)
+{
+    yield return StartCoroutine(HandleCardDeath(enemyCard, isMyCard: false));
+    
+    // WIN condition (enemy nemá multi-card support zatiaľ)
+    fightSystem.state = FightStateMultiplayer.WON;
+}
+
+// ✅ NEW V2: Handler pre smrť oboch kariet
+private IEnumerator HandleBothCardsDeath(Kard myCard, Kard enemyCard)
+{
+    yield return StartCoroutine(HandleCardDeath(myCard, isMyCard: true));
+    yield return StartCoroutine(HandleCardDeath(enemyCard, isMyCard: false));
+    
+    if (player.hand.Count > 0)
+    {
+        // PLAYERDEATH - vyberie novú kartu
+        fightSystem.state = FightStateMultiplayer.PLAYERDEATH;
+        boardManager.UnlockPlayerHand();
+    }
+    else
+    {
+        // DRAW - žiadne karty
+        fightSystem.state = FightStateMultiplayer.WON; // alebo DRAW
+    }
 }
 ```
 
@@ -191,7 +257,7 @@ export default async function handler(req, res) {
 
 ## 🔄 Flow Example
 
-### Scenario: Player's card dies (HP = 0)
+### Scenario: Player's card dies but has more cards in hand
 
 **1. Battle Complete:**
 ```javascript
@@ -214,10 +280,23 @@ myCard.health = 0;  // Sync z servera
 enemyCard.health = 15;
 
 CheckBattleOutcome(myCard, enemyCard);
-// → myCard.health <= 0 → HandleCardDeath()
+// → myCard.health <= 0 → HandlePlayerCardDeath()
 ```
 
-**3. UI Remove:**
+**3. Check Remaining Cards:**
+```csharp
+// BattleResultProcessor.HandlePlayerCardDeath()
+int remainingCards = player.hand.Count; // 2 karty v ruke
+
+if (remainingCards > 0) {
+    // ✅ PLAYERDEATH State
+    fightSystem.state = FightStateMultiplayer.PLAYERDEATH;
+    boardManager.UnlockPlayerHand();
+    dialogText.text = "Choose new fighter!";
+}
+```
+
+**4. UI Remove:**
 ```csharp
 // Player.cs
 RemoveCardFromBoard(myCard);
@@ -225,7 +304,7 @@ RemoveCardFromBoard(myCard);
 // → Board je teraz prázdny
 ```
 
-**4. Server Clear:**
+**5. Server Clear:**
 ```csharp
 // ServerFunctionsManager.cs
 ClearDeadCard(roomCode: "ABC123", cardIdToClear: "05b120d1-...")
@@ -252,11 +331,33 @@ selectedCards = {
 }
 ```
 
-**5. Complete:**
+**6. Player Selects New Card:**
+```csharp
+// Unity - Player drags "Elon Musk" card to board
+MultiplayerCardDrag.OnEndDrag() 
+  → MultiplayerBoardManager.HandleCardSelectedAsync()
+  → SubmitSelectedCardAsync(newCard) ← ✅ REUSED EXISTING SYSTEM!
 ```
-✅ GameObject zničený (board je prázdny)
-✅ selectedCards na serveri vymazaný
-✅ Ready for PLAYERDEATH state (player chooses new card)
+
+```javascript
+// Server - new card submitted
+selectedCards = {
+  "player1_id": { cardId: "new-card-id", name: "Elon Musk", health: 30 }, ← NEW
+  "player2_id": { cardId: "dc8f40b2-...", name: "Dezider", health: 15 }
+}
+```
+
+**7. Wait for Opponent:**
+```csharp
+// Opponent's card is still alive, so no new selection needed
+// System detects both players ready → Reveal cards → Continue battle
+```
+
+**8. Complete:**
+```
+✅ Old card removed (board + server)
+✅ New card selected & submitted
+✅ Battle continues with new matchup: Elon Musk vs Dezider
 ```
 
 ---
@@ -352,16 +453,38 @@ db.rooms.findOne({ roomCode: "ABC123" }, { selectedCards: 1 })
 
 ## 🚀 Future Enhancements
 
-### PLAYERDEATH State:
+### ✅ IMPLEMENTED: PLAYERDEATH State
 ```csharp
-// TODO: Po smrti karty umožni výber novej karty z ruky
+// ✅ DONE: Po smrti karty umožni výber novej karty z ruky
 if (myCard.health <= 0 && fightSystem.player.hand.Count > 0)
 {
     fightSystem.state = FightStateMultiplayer.PLAYERDEATH;
     dialogText.text = "Choose new fighter";
-    // Show hand UI
-    // Wait for player to select new card
-    // Call selectCardForBattle.js with new cardId
+    boardManager.UnlockPlayerHand(); // Enable drag & drop
+    // Existing system handles: drag → submit → wait → reveal → continue
+}
+```
+
+### Enemy Multi-Card Support (TODO):
+```csharp
+// TODO: Enemy tiež môže mať viac kariet
+private IEnumerator HandleEnemyCardDeath(Kard enemyCard)
+{
+    yield return StartCoroutine(HandleCardDeath(enemyCard, isMyCard: false));
+    
+    // Check if enemy has more cards (need server support)
+    var enemyCardsRemaining = await GetEnemyHandSize(opponentPlayerId);
+    
+    if (enemyCardsRemaining > 0)
+    {
+        // Wait for enemy to select new card
+        await WaitForOpponentSelectionAsync();
+    }
+    else
+    {
+        // WIN - enemy out of cards
+        fightSystem.state = FightStateMultiplayer.WON;
+    }
 }
 ```
 

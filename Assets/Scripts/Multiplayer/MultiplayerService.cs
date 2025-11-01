@@ -26,8 +26,9 @@ public class MultiplayerService : MonoBehaviour
     private string myPlayerId;
     private string roomCode;
     
-    // ✅ Public getter pre roomCode (used by BattleResultProcessor)
+    // ✅ Public getters pre BattleResultProcessor a ostatné komponenty
     public string RoomCode => roomCode;
+    public string MyPlayerId => myPlayerId;
     
     private bool isWaitingForOpponent;
     private Coroutine pollingCoroutine;

@@ -4,6 +4,7 @@ using UnityEngine;
 using TMPro;
 using PlayFab;
 using PlayFab.ClientModels;
+using Newtonsoft.Json.Linq;
 
 /// <summary>
 /// Zodpovedný za spracovanie battle výsledkov zo servera
@@ -341,40 +342,38 @@ public class BattleResultProcessor : MonoBehaviour
     /// </summary>
     private void CheckBattleOutcome(Kard myCard, Kard enemyCard)
     {
-        if (myCard.health <= 0 && enemyCard.health <= 0)
+        bool myCardDead = myCard.health <= 0;
+        bool enemyCardDead = enemyCard.health <= 0;
+        
+        if (myCardDead && enemyCardDead)
         {
-            dialogText.text = "Draw!";
-            fightSystem.state = FightStateMultiplayer.WON; // alebo nový state DRAW
-            Debug.Log("[BattleResultProcessor] Battle ended in a draw");
+            // ✅ Obe karty zomreli - Draw alebo PLAYERDEATH pre oboch
+            dialogText.text = "Both cards destroyed!";
+            Debug.Log("[BattleResultProcessor] Both cards died - checking remaining cards");
             
-            // ✅ Obe karty mŕtve - vymaž obe
-            StartCoroutine(HandleCardDeath(myCard, isMyCard: true));
-            StartCoroutine(HandleCardDeath(enemyCard, isMyCard: false));
+            StartCoroutine(HandleBothCardsDeath(myCard, enemyCard));
         }
-        else if (myCard.health <= 0)
+        else if (myCardDead)
         {
-            dialogText.text = "You Lost!";
-            fightSystem.state = FightStateMultiplayer.LOST;
-            Debug.Log("[BattleResultProcessor] Player lost");
+            // ✅ Len moja karta zomrela
+            Debug.Log("[BattleResultProcessor] My card died - checking if I have more cards");
             
-            // ✅ Moja karta zomrela
-            StartCoroutine(HandleCardDeath(myCard, isMyCard: true));
+            StartCoroutine(HandlePlayerCardDeath(myCard));
         }
-        else if (enemyCard.health <= 0)
+        else if (enemyCardDead)
         {
-            dialogText.text = "You Won!";
-            fightSystem.state = FightStateMultiplayer.WON;
-            Debug.Log("[BattleResultProcessor] Player won");
+            // ✅ Len enemy karta zomrela
+            dialogText.text = "Enemy card destroyed!";
+            Debug.Log("[BattleResultProcessor] Enemy card died");
             
-            // ✅ Enemy karta zomrela
-            StartCoroutine(HandleCardDeath(enemyCard, isMyCard: false));
+            StartCoroutine(HandleEnemyCardDeath(enemyCard));
         }
         else
         {
+            // ✅ Obe karty žijú - pokračuj v battle
             dialogText.text = "Next turn!";
             Debug.Log("[BattleResultProcessor] Battle continues - preparing next turn");
             
-            // ✅ Priprav ďalší turn s ready check systémom
             StartCoroutine(PrepareNextTurn());
         }
     }
@@ -579,10 +578,11 @@ public class BattleResultProcessor : MonoBehaviour
             
             if (result != null && result.FunctionResult != null)
             {
-                var resultDict = result.FunctionResult as Dictionary<string, object>;
-                if (resultDict != null && resultDict.ContainsKey("success"))
+                // ✅ Server vracia JObject, nie Dictionary!
+                var jObject = result.FunctionResult as Newtonsoft.Json.Linq.JObject;
+                if (jObject != null && jObject["success"] != null)
                 {
-                    serverCallSuccess = (bool)resultDict["success"];
+                    serverCallSuccess = jObject["success"].ToObject<bool>();
                     
                     if (serverCallSuccess)
                     {
@@ -590,9 +590,14 @@ public class BattleResultProcessor : MonoBehaviour
                     }
                     else
                     {
-                        string errorMsg = resultDict.ContainsKey("error") ? resultDict["error"].ToString() : "Unknown error";
+                        string errorMsg = jObject["error"]?.ToString() ?? "Unknown error";
                         Debug.LogError($"[BattleResultProcessor] ❌ Server failed to clear dead card: {errorMsg}");
                     }
+                }
+                else
+                {
+                    Debug.LogWarning("[BattleResultProcessor] ⚠️ Unexpected response format - assuming success");
+                    serverCallSuccess = true; // Assume success if can't parse (server returned success in logs)
                 }
             }
             else
@@ -620,5 +625,211 @@ public class BattleResultProcessor : MonoBehaviour
         }
         
         Debug.Log($"[BattleResultProcessor] Card death handling complete for {cardName}");
+    }
+    
+    /// <summary>
+    /// Handler pre smrť player karty - skontroluje či má ďalšie karty
+    /// </summary>
+    private IEnumerator HandlePlayerCardDeath(Kard myCard)
+    {
+        // 1. Vymaž kartu (board + server)
+        yield return StartCoroutine(HandleCardDeath(myCard, isMyCard: true));
+        
+        // 2. Skontroluj či má player ďalšie karty v ruke
+        Player player = fightSystem?.player;
+        if (player == null)
+        {
+            Debug.LogError("[BattleResultProcessor] Player reference is null!");
+            fightSystem.state = FightStateMultiplayer.LOST;
+            yield break;
+        }
+        
+        int remainingCards = player.hand.Count;
+        Debug.Log($"[BattleResultProcessor] Player has {remainingCards} cards remaining in hand");
+        
+        if (remainingCards > 0)
+        {
+            // ✅ Má karty → PLAYERDEATH state (výber novej karty)
+            dialogText.text = "Choose new fighter!";
+            fightSystem.state = FightStateMultiplayer.PLAYERDEATH;
+            
+            Debug.Log("[BattleResultProcessor] 🔓 Unlocking hand for new card selection");
+            
+            // Unlock hand pre výber novej karty
+            var boardManager = fightSystem.multiplayerBoardManager;
+            if (boardManager != null)
+            {
+                boardManager.UnlockPlayerHand();
+            }
+            else
+            {
+                Debug.LogError("[BattleResultProcessor] MultiplayerBoardManager not found - cannot unlock hand!");
+            }
+            
+            // Existujúci systém HandleCardSelectedAsync sa postará o:
+            // - Submit novej karty do selectedCards
+            // - Wait for opponent (ak aj on vyberie novú)
+            // - Reveal cards + pokračovanie battle
+        }
+        else
+        {
+            // ❌ Žiadne karty → definitívna prehra
+            dialogText.text = "You Lost! No cards left!";
+            fightSystem.state = FightStateMultiplayer.LOST;
+            Debug.Log("[BattleResultProcessor] Player lost - no cards remaining");
+        }
+    }
+    
+    /// <summary>
+    /// Handler pre smrť enemy karty - čakáme na výber novej enemy karty
+    /// </summary>
+    private IEnumerator HandleEnemyCardDeath(Kard enemyCard)
+    {
+        // 1. Vymaž kartu (board + server)
+        yield return StartCoroutine(HandleCardDeath(enemyCard, isMyCard: false));
+        
+        // 2. ✅ REUSE MultiplayerBoardManager polling + reveal systém (KISS principle!)
+        dialogText.text = "Opponent choosing new fighter...";
+        Debug.Log("[BattleResultProcessor] Waiting for opponent to select new card...");
+        
+        var boardManager = fightSystem.multiplayerBoardManager;
+        if (boardManager == null)
+        {
+            Debug.LogError("[BattleResultProcessor] MultiplayerBoardManager not found!");
+            dialogText.text = "You Won!"; // Fallback
+            fightSystem.state = FightStateMultiplayer.WON;
+            yield break;
+        }
+        
+        // ✅ REUSE: Reset opponent card flag (aby WaitForOpponentSelectionAsync fungoval znova)
+        boardManager.opponentCardRevealed = false;
+        
+        // ✅ REUSE: Zavolaj existujúcu metódu (async → coroutine wrapper)
+        var waitTask = boardManager.WaitForOpponentSelectionAsync();
+        yield return new WaitUntil(() => waitTask.IsCompleted);
+        
+        // ✅ REUSE: Reveal opponent card (existujúca metóda)
+        boardManager.RevealCards();
+        
+        // Hotovo - battle pokračuje
+        Debug.Log("[BattleResultProcessor] Enemy card revealed! Battle continues.");
+        
+        // ⏳ Počkaj chvíľu aby sa GUI mohlo updatovať
+        yield return new WaitForSeconds(0.5f);
+        
+        // ✅ CRITICAL: Vyčisti starý battleResult zo servera (inak server vráti battle s MŔTVOU kartou!)
+        var serverFunctions = fightSystem.serverFunctionsManager;
+        if (serverFunctions != null)
+        {
+            Debug.Log("[BattleResultProcessor] Clearing old battle result from server...");
+            
+            bool clearCompleted = false;
+            bool clearSuccess = false;
+            
+            serverFunctions.ClearBattleData(fightSystem.roomCode, fightSystem.myPlayerId, result =>
+            {
+                clearCompleted = true;
+                clearSuccess = result != null && (result.FunctionResult as Newtonsoft.Json.Linq.JObject)?["success"]?.ToObject<bool>() == true;
+                
+                if (clearSuccess)
+                {
+                    Debug.Log("[BattleResultProcessor] ✅ Old battle result cleared successfully!");
+                }
+                else
+                {
+                    Debug.LogWarning("[BattleResultProcessor] ⚠️ Failed to clear battle result - may cause issues!");
+                }
+            });
+            
+            // Počkaj na server response (max 5s - môže byť pomalý)
+            float waitTime = 0f;
+            while (!clearCompleted && waitTime < 5f)
+            {
+                yield return new WaitForSeconds(0.1f);
+                waitTime += 0.1f;
+            }
+            
+            if (!clearCompleted)
+            {
+                Debug.LogWarning("[BattleResultProcessor] ⚠️ ClearBattleData timeout after 5s - continuing anyway");
+            }
+        }
+        else
+        {
+            Debug.LogError("[BattleResultProcessor] ServerFunctionsManager not found!");
+        }
+        
+        // ✅ Nastav state na TURN (RevealCards() nemusí to urobiť ak fightSystem field je null)
+        fightSystem.state = FightStateMultiplayer.TURN;
+        Debug.Log($"[BattleResultProcessor] State set to TURN. Current state: {fightSystem.state}");
+        
+        // ✅ CRITICAL: Znova načítaj attack counts pre aktuálnu kartu (aby sa buttony aktivovali!)
+        var myCard = fightSystem.player.cardInGame;
+        if (myCard != null)
+        {
+            Debug.Log($"[BattleResultProcessor] Reloading attack counts for {myCard.cardName}");
+            fightSystem.LoadAttackCounts(myCard);
+            
+            // ✅ Update dialog text PO načítaní attack counts
+            yield return new WaitForSeconds(0.2f);
+            dialogText.text = "Choose your attack!";
+        }
+        else
+        {
+            Debug.LogError("[BattleResultProcessor] Player card not found after enemy card death!");
+            dialogText.text = "Choose your attack!";
+        }
+    }
+    
+    // ✅ REMOVED: WaitForEnemyNewCard() - duplicitný kód
+    // ✅ REMOVED: RevealEnemyNewCard() - duplicitný kód
+    // Teraz reusujeme MultiplayerBoardManager.WaitForOpponentSelectionAsync() + RevealCards()
+    
+    /// <summary>
+    /// Handler pre smrť oboch kariet simultánne
+    /// </summary>
+    private IEnumerator HandleBothCardsDeath(Kard myCard, Kard enemyCard)
+    {
+        // 1. Vymaž obe karty (board + server)
+        yield return StartCoroutine(HandleCardDeath(myCard, isMyCard: true));
+        yield return StartCoroutine(HandleCardDeath(enemyCard, isMyCard: false));
+        
+        // 2. Skontroluj či player má ďalšie karty
+        Player player = fightSystem?.player;
+        if (player == null)
+        {
+            dialogText.text = "Draw!";
+            fightSystem.state = FightStateMultiplayer.WON; // alebo DRAW state
+            yield break;
+        }
+        
+        int remainingCards = player.hand.Count;
+        Debug.Log($"[BattleResultProcessor] Both died - Player has {remainingCards} cards remaining");
+        
+        if (remainingCards > 0)
+        {
+            // ✅ Má karty → PLAYERDEATH state
+            dialogText.text = "Both destroyed! Choose new fighter!";
+            fightSystem.state = FightStateMultiplayer.PLAYERDEATH;
+            
+            Debug.Log("[BattleResultProcessor] 🔓 Unlocking hand after mutual destruction");
+            
+            var boardManager = fightSystem.multiplayerBoardManager;
+            if (boardManager != null)
+            {
+                boardManager.UnlockPlayerHand();
+            }
+            else
+            {
+                Debug.LogError("[BattleResultProcessor] MultiplayerBoardManager not found in both cards death!");
+            }
+        }
+        else
+        {
+            // ❌ Žiadne karty → Draw
+            dialogText.text = "Draw! No cards left!";
+            fightSystem.state = FightStateMultiplayer.WON; // alebo DRAW state
+            Debug.Log("[BattleResultProcessor] Draw - both players out of cards");
+        }
     }
 }

@@ -31,18 +31,35 @@ enemyCard.health = 15;
 // BattleResultProcessor.CheckBattleOutcome()
 if (myCard.health <= 0)
 {
-    StartCoroutine(HandleCardDeath(myCard, isMyCard: true));
+    StartCoroutine(HandlePlayerCardDeath(myCard));
 }
 ```
 
-### Krok 3: Remove z Boardu
+### Krok 3: Kontrola Zostávajúcich Kariet
+```csharp
+// BattleResultProcessor.HandlePlayerCardDeath()
+if (player.hand.Count > 0)
+{
+    // ✅ Má karty → PLAYERDEATH state
+    fightSystem.state = FightStateMultiplayer.PLAYERDEATH;
+    boardManager.UnlockPlayerHand(); // ← Odomkni hand!
+    dialogText.text = "Choose new fighter!";
+}
+else
+{
+    // ❌ Žiadne karty → LOST
+    fightSystem.state = FightStateMultiplayer.LOST;
+}
+```
+
+### Krok 4: Remove z Boardu
 ```csharp
 // Player.RemoveCardFromBoard()
 Destroy(card.gameObject);  // ← GameObject zmizne z UI
 cardInGame = null;          // ← Clear reference
 ```
 
-### Krok 4: Clear zo Servera
+### Krok 5: Clear zo Servera
 ```javascript
 // clearSelectedCards.js
 db.rooms.updateOne(
@@ -52,21 +69,58 @@ db.rooms.updateOne(
 // ← Karta vymazaná z MongoDB
 ```
 
+### Krok 6: Výber Novej Karty (✅ REUSED SYSTEM!)
+```csharp
+// Player drag & drop novú kartu na board
+MultiplayerCardDrag.OnEndDrag()
+  → MultiplayerBoardManager.HandleCardSelectedAsync(newCard)
+  → SubmitSelectedCardAsync(newCard) // ← Submit do selectedCards
+  → WaitForOpponentSelectionAsync()  // ← Čakaj na súpera
+  → RevealCards()                    // ← Reveal + continue battle
+```
+
+### Krok 7: Battle Pokračuje
+```
+✅ Stará karta vymazaná
+✅ Nová karta na boarde
+✅ Battle continues s novou kartou
+```
+
 ---
 
 ## 🧪 Testovanie
 
-### Test Case 1: Player's Card Dies
+### Test Case 1: Player's Card Dies (Has More Cards)
 ```
 1. Hraj battle až kým myCard.health <= 0
-2. Očakávaj:
+2. Player má 2+ karty v ruke
+3. Očakávaj:
    - ✅ GameObject karty zmizne z boardu
    - ✅ Unity log: "💀 Card died: Henry Ford"
-   - ✅ Unity log: "✅ Dead card cleared from server"
+   - ✅ Unity log: "Player has 2 cards remaining in hand"
+   - ✅ Unity log: "🔓 Unlocking hand for new card selection"
+   - ✅ Text: "Choose new fighter!"
+   - ✅ Karty v ruke sú draggable (unlock)
    - ✅ MongoDB: selectedCards.player1_id = undefined
+4. Drag novú kartu na board
+5. Očakávaj:
+   - ✅ Submit do selectedCards (existing system)
+   - ✅ Wait for opponent message
+   - ✅ Cards revealed + battle continues
 ```
 
-### Test Case 2: Enemy's Card Dies
+### Test Case 2: Player's Card Dies (No Cards Left)
+```
+1. Hraj battle až kým myCard.health <= 0
+2. Player má 0 kariet v ruke
+3. Očakávaj:
+   - ✅ Karta zmizne
+   - ✅ Unity log: "Player lost - no cards remaining"
+   - ✅ Text: "You Lost! No cards left!"
+   - ✅ State: LOST
+```
+
+### Test Case 3: Enemy's Card Dies
 ```
 1. Hraj battle až kým enemyCard.health <= 0
 2. Očakávaj:
@@ -75,13 +129,18 @@ db.rooms.updateOne(
    - ✅ MongoDB: selectedCards.player2_id = undefined
 ```
 
-### Test Case 3: Both Cards Die (Draw)
+### Test Case 4: Both Cards Die (Draw)
 ```
 1. Obe karty majú HP = 1-2, simultánne zomrú
-2. Očakávaj:
+2. Player má karty v ruke
+3. Očakávaj:
    - ✅ Obe karty zmiznú z boardu
-   - ✅ Unity log: "Draw!"
+   - ✅ Text: "Both destroyed! Choose new fighter!"
+   - ✅ State: PLAYERDEATH
+   - ✅ Hand unlocked
    - ✅ MongoDB: selectedCards = {}
+4. Player vyberie novú kartu
+5. Battle pokračuje
 ```
 
 ---

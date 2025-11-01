@@ -12,61 +12,25 @@
 
 ---
 
-## 🏗️ CRITICAL: Development Philosophy (KISS Principle)
+## ⚠️ CRITICAL: Unity Inspector Setup Policy## ⚠️ CRITICAL: Unity Inspector Setup Policy
 
-### ❌ **NEVER Do Quick Fixes or Temporary Solutions**
+**VŽDY sa SPÝTAJ pred automatickým riešením missing references!****VŽDY sa SPÝTAJ pred automatickým riešením missing references!**
 
-**User Mandate:**
-> "nechceme vobec robit rychle riesenia... chceme najlepsie riesenia... podla principu KISS... nech nespustam zbytocnu funkcionalitu"
+Keď chýba referencia (napr. NullReferenceException):Keď chýba referencia (napr. NullReferenceException):
+1. ✅ **PREFEROVANÁ METÓDA**: Spýtaj sa užívateľa či nastaviť v Unity Inspector alebo pridať auto-find v kóde1. ✅ **PREFEROVANÁ METÓDA**: Spýtaj sa užívateľa či nastaviť v Unity Inspector alebo pridať auto-find v kóde
+2. ❌ **NErob AUTOMATICKY**: `FindFirstObjectByType<>()` v `Start()` BEZ súhlasu užívateľa2. ❌ **NErob AUTOMATICKY**: `FindFirstObjectByType<>()` v `Start()` BEZ súhlasu užívateľa
+3. ✅ **Inspector setup je čistejší** než runtime auto-discovery (performance, clarity)3. ✅ **Inspector setup je čistejší** než runtime auto-discovery (performance, clarity)
 
-> "ked toho budem mat vela tak tam bude do pana boha chyb" (If we accumulate many quick fixes, there will be tons of bugs)
+**Príklad:**  **Príklad:**  
+```csharp```csharp
+// ❌ ZLÉ - pridané bez opýtania sa// ❌ ZLÉ - pridané bez opýtania sa
+void Start() {void Start() {
+    multiplayerService = FindFirstObjectByType<MultiplayerService>();    multiplayerService = FindFirstObjectByType<MultiplayerService>();
+}}
 
-### ✅ **ALWAYS Follow These Principles:**
-
-1. **Quality Over Speed** - Proper architecture beats fast hacks
-   - ❌ Temporary workarounds that "work for now"
-   - ✅ Clean, maintainable solutions from the start
-
-2. **KISS (Keep It Simple, Stupid)** - Reuse existing code
-   - ❌ Duplicate functionality "because it's faster"
-   - ✅ Use dedicated endpoints/methods designed for specific purpose
-   - Example: Reuse `MultiplayerBoardManager.RevealCards()` instead of writing new card reveal logic
-
-3. **No Unnecessary Functionality** - "nech nespustam zbytocnu funkcionalitu"
-   - ❌ Generic "reset everything" functions with side effects
-   - ✅ Dedicated methods with single responsibility
-   - Example: `ClearBattleData()` only clears battle data, nothing else
-
-4. **Error-Prone Prevention** - "je to potom nachylne na chyby"
-   - ❌ Quick fixes accumulate technical debt
-   - ✅ Proper error handling, null checks, timeout handling
-
-**When User Suggests Quick Fix:**
-- ❌ DON'T implement it immediately
-- ✅ Propose proper solution following KISS principle
-- ✅ Explain why proper solution is better long-term
-
----
-
-## ⚠️ CRITICAL: Unity Inspector Setup Policy
-
-**VŽDY sa SPÝTAJ pred automatickým riešením missing references!**
-
-Keď chýba referencia (napr. NullReferenceException):
-1. ✅ **PREFEROVANÁ METÓDA**: Spýtaj sa užívateľa či nastaviť v Unity Inspector alebo pridať auto-find v kóde
-2. ❌ **NErob AUTOMATICKY**: `FindFirstObjectByType<>()` v `Start()` BEZ súhlasu užívateľa
-3. ✅ **Inspector setup je čistejší** než runtime auto-discovery (performance, clarity)
-
-**Príklad:**  
-```csharp
-// ❌ ZLÉ - pridané bez opýtania sa
-void Start() {
-    multiplayerService = FindFirstObjectByType<MultiplayerService>();
-}
-
-// ✅ SPRÁVNE - spýtať sa: "Chceš nastaviť multiplayerService v Inspector alebo pridať auto-find?"
-// Užívateľ preferuje Inspector setup
-```
+// ✅ SPRÁVNE - spýtať sa: "Chceš nastaviť multiplayerService v Inspector alebo pridať auto-find?"// ✅ SPRÁVNE - spýtať sa: "Chceš nastaviť multiplayerService v Inspector alebo pridať auto-find?"
+// Užívateľ preferuje Inspector setup// Užívateľ preferuje Inspector setup
+``````
 
 ------
 
@@ -1419,33 +1383,20 @@ db.rooms.updateOne(
 **Problém:** `ClearDeadCard` server call failol alebo timeout
 **Fix:** Skontroluj Vercel logs pre `clearSelectedCards` endpoint, overiť že `cardIdToClear` parameter je správny
 
-### "Missing attack data for cards!" after card replacement
-**Problém:** Server vracia battle result s MŔTVOU kartou (nie s novou kartou)
-**Príčina:** `battleData.lastResult` nie je vyčistený po card replacement
-**Fix:** ✅ `ClearBattleData()` sa volá v `HandleEnemyCardDeath` po `RevealCards()` (už implementované)
-
 ---
 
 ## 📞 Support & Contact
 
 - GitHub Issues: [MegaTreskKarty/issues](https://github.com/jebozlesa/MegaTreskKarty/issues)
 - Documentation: Viď README files v roote projektu
-  - `CARD_REPLACEMENT_SYSTEM.md` - **NEW!** Complete card replacement guide (death → selection → reveal → ClearBattleData)
   - `CARD_DEATH_SYSTEM.md` - Card death handling (remove from board + server)
-  - `REFACTORING_ARCHITECTURE.md` - Clean architecture overview (KISS principle)
+  - `REFACTORING_ARCHITECTURE.md` - Clean architecture overview
   - `SERVER_HP_TRACKING.md` - Server-authoritative HP tracking
 - Server logs: Vercel Dashboard → Functions → Logs
 - MongoDB: Atlas Dashboard → Browse Collections
 
 ---
 
-**Last Updated:** 2025-11-01  
-**Version:** V6 (Card Replacement System + ClearBattleData Fix + KISS Principle Enforcement)  
-**Current Branch:** Multiplayer  
-
-**Key Changes in V6:**
-- ✅ Complete card replacement flow (death → poll → reveal → clear → activate)
-- ✅ ClearBattleData integration (prevents stale battleResult bugs)
-- ✅ JObject parsing fix (no more false positive warnings)
-- ✅ Timeout improvements (5s for slow server responses)
-- ✅ KISS principle documentation (quality over speed mandate)
+**Last Updated:** 2025-10-30
+**Version:** V5 (CardID-based + Next Turn System + Race Condition Fixes + Card Death System)
+**Current Branch:** Multiplayer

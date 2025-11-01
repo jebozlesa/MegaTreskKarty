@@ -268,6 +268,20 @@ public class ServerFunctionsManager : MonoBehaviour
         CallFunction("clearSelectedCards", parameters, callback ?? (_ => { }));
     }
 
+    /// <summary>
+    /// Vyčistí battle data po výmene karty - resetuje lastResult aby server vytvoril nový
+    /// </summary>
+    public void ClearBattleData(string roomCode, string playerId, Action<ExecuteFunctionResult> callback)
+    {
+        Debug.Log($"[ServerFunctionsManager] ClearBattleData called - roomCode: {roomCode}, playerId: {playerId}");
+        var parameters = new
+        {
+            roomCode = roomCode,
+            playerId = playerId
+        };
+        CallFunction("clearBattleData", parameters, callback ?? (_ => { }));
+    }
+
     // Nová funkcia: vypočítanie počtov útokov na serveri
     public void CalculateAttackCounts(CardStatsForCalculation cardStats, Action<ExecuteFunctionResult> callback)
     {
