@@ -25,6 +25,10 @@ public class MultiplayerService : MonoBehaviour
 
     private string myPlayerId;
     private string roomCode;
+    
+    // ✅ Public getter pre roomCode (used by BattleResultProcessor)
+    public string RoomCode => roomCode;
+    
     private bool isWaitingForOpponent;
     private Coroutine pollingCoroutine;
     private Coroutine heartbeatCoroutine;

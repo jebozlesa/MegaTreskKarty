@@ -346,18 +346,28 @@ public class BattleResultProcessor : MonoBehaviour
             dialogText.text = "Draw!";
             fightSystem.state = FightStateMultiplayer.WON; // alebo nový state DRAW
             Debug.Log("[BattleResultProcessor] Battle ended in a draw");
+            
+            // ✅ Obe karty mŕtve - vymaž obe
+            StartCoroutine(HandleCardDeath(myCard, isMyCard: true));
+            StartCoroutine(HandleCardDeath(enemyCard, isMyCard: false));
         }
         else if (myCard.health <= 0)
         {
             dialogText.text = "You Lost!";
             fightSystem.state = FightStateMultiplayer.LOST;
             Debug.Log("[BattleResultProcessor] Player lost");
+            
+            // ✅ Moja karta zomrela
+            StartCoroutine(HandleCardDeath(myCard, isMyCard: true));
         }
         else if (enemyCard.health <= 0)
         {
             dialogText.text = "You Won!";
             fightSystem.state = FightStateMultiplayer.WON;
             Debug.Log("[BattleResultProcessor] Player won");
+            
+            // ✅ Enemy karta zomrela
+            StartCoroutine(HandleCardDeath(enemyCard, isMyCard: false));
         }
         else
         {
@@ -508,5 +518,107 @@ public class BattleResultProcessor : MonoBehaviour
             // Znovu načítaj attack counts (možno sa zmenili)
             fightSystem.LoadAttackCounts(myCard);
         }
+    }
+    
+    /// <summary>
+    /// Vymaže mŕtvu kartu z boardu a zo servera (selectedCards)
+    /// </summary>
+    private IEnumerator HandleCardDeath(Kard deadCard, bool isMyCard)
+    {
+        if (deadCard == null)
+        {
+            Debug.LogWarning("[BattleResultProcessor] HandleCardDeath called with null card!");
+            yield break;
+        }
+        
+        string cardId = deadCard.cardId;
+        string cardName = deadCard.cardName;
+        
+        Debug.Log($"[BattleResultProcessor] 💀 Card died: {cardName} (ID: {cardId}, isMyCard: {isMyCard})");
+        
+        // 1. ✅ Animácia smrti (voliteľné - fade out, shake, atď.)
+        yield return new WaitForSeconds(1f); // Krátka pauza pre dramatický efekt
+        
+        // 2. ✅ Vymaž kartu z boardu (UI)
+        Player owner = isMyCard ? fightSystem.player : fightSystem.enemy;
+        if (owner != null)
+        {
+            Debug.Log($"[BattleResultProcessor] Removing {cardName} from {(isMyCard ? "player" : "enemy")} board");
+            owner.RemoveCardFromBoard(deadCard);
+        }
+        else
+        {
+            Debug.LogWarning($"[BattleResultProcessor] Owner not found for card {cardName}!");
+            // Fallback: zničíme GameObject priamo
+            Destroy(deadCard.gameObject);
+        }
+        
+        // 3. ✅ Vymaž kartu zo servera (selectedCards)
+        var serverFunctions = fightSystem.serverFunctionsManager;
+        if (serverFunctions == null)
+        {
+            Debug.LogError("[BattleResultProcessor] ServerFunctionsManager not found! Cannot clear dead card from server.");
+            yield break;
+        }
+        
+        string roomCode = multiplayerService?.RoomCode;
+        if (string.IsNullOrEmpty(roomCode))
+        {
+            Debug.LogError("[BattleResultProcessor] RoomCode is null/empty! Cannot clear dead card from server.");
+            yield break;
+        }
+        
+        Debug.Log($"[BattleResultProcessor] Calling server to clear dead card - roomCode: {roomCode}, cardId: {cardId}");
+        
+        bool serverCallCompleted = false;
+        bool serverCallSuccess = false;
+        
+        serverFunctions.ClearDeadCard(roomCode, cardId, (result) =>
+        {
+            serverCallCompleted = true;
+            
+            if (result != null && result.FunctionResult != null)
+            {
+                var resultDict = result.FunctionResult as Dictionary<string, object>;
+                if (resultDict != null && resultDict.ContainsKey("success"))
+                {
+                    serverCallSuccess = (bool)resultDict["success"];
+                    
+                    if (serverCallSuccess)
+                    {
+                        Debug.Log($"[BattleResultProcessor] ✅ Dead card cleared from server: {cardName} (ID: {cardId})");
+                    }
+                    else
+                    {
+                        string errorMsg = resultDict.ContainsKey("error") ? resultDict["error"].ToString() : "Unknown error";
+                        Debug.LogError($"[BattleResultProcessor] ❌ Server failed to clear dead card: {errorMsg}");
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogError("[BattleResultProcessor] ❌ Server call returned null result!");
+            }
+        });
+        
+        // Počkaj na server response (max 5s)
+        float timeout = 5f;
+        float elapsed = 0f;
+        while (!serverCallCompleted && elapsed < timeout)
+        {
+            yield return new WaitForSeconds(0.1f);
+            elapsed += 0.1f;
+        }
+        
+        if (!serverCallCompleted)
+        {
+            Debug.LogError($"[BattleResultProcessor] ⏱️ Server call timeout after {timeout}s - dead card may still be in selectedCards!");
+        }
+        else if (!serverCallSuccess)
+        {
+            Debug.LogWarning("[BattleResultProcessor] Server call completed but failed - check server logs");
+        }
+        
+        Debug.Log($"[BattleResultProcessor] Card death handling complete for {cardName}");
     }
 }

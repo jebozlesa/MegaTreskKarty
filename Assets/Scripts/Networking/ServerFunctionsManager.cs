@@ -254,6 +254,20 @@ public class ServerFunctionsManager : MonoBehaviour
         CallFunction("clearSelectedCards", parameters, callback ?? (_ => { }));
     }
 
+    /// <summary>
+    /// Vymaže mŕtvu kartu zo selectedCards na serveri (selective clear)
+    /// </summary>
+    public void ClearDeadCard(string roomCode, string cardIdToClear, Action<ExecuteFunctionResult> callback)
+    {
+        Debug.LogWarning($"[ServerFunctionsManager] ClearDeadCard called - roomCode: {roomCode}, cardId: {cardIdToClear}");
+        var parameters = new
+        {
+            roomCode = roomCode,
+            cardIdToClear = cardIdToClear
+        };
+        CallFunction("clearSelectedCards", parameters, callback ?? (_ => { }));
+    }
+
     // Nová funkcia: vypočítanie počtov útokov na serveri
     public void CalculateAttackCounts(CardStatsForCalculation cardStats, Action<ExecuteFunctionResult> callback)
     {

@@ -45,6 +45,13 @@ public class Player : MonoBehaviour
         dialogText.text = card.cardName + " failed";
 
         cardsInGame.Remove(card);
+        
+        // ✅ Clear cardInGame reference if this was the active card
+        if (cardInGame == card)
+        {
+            cardInGame = null;
+        }
+        
         Destroy(card.gameObject);
     }
 

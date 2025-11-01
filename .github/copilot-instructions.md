@@ -1375,17 +1375,28 @@ db.rooms.updateOne(
 **Problém:** Používaš starú verziu servera (V2)
 **Fix:** Deploy executeBattle_v3.js (server-side HP tracking)
 
+### "Card nie je vymazaná z boardu po smrti"
+**Problém:** `HandleCardDeath` nie je volaný v `CheckBattleOutcome`
+**Fix:** Skontroluj či `BattleResultProcessor.CheckBattleOutcome` obsahuje `StartCoroutine(HandleCardDeath(...))`
+
+### "Dead card still in selectedCards on server"
+**Problém:** `ClearDeadCard` server call failol alebo timeout
+**Fix:** Skontroluj Vercel logs pre `clearSelectedCards` endpoint, overiť že `cardIdToClear` parameter je správny
+
 ---
 
 ## 📞 Support & Contact
 
 - GitHub Issues: [MegaTreskKarty/issues](https://github.com/jebozlesa/MegaTreskKarty/issues)
 - Documentation: Viď README files v roote projektu
+  - `CARD_DEATH_SYSTEM.md` - Card death handling (remove from board + server)
+  - `REFACTORING_ARCHITECTURE.md` - Clean architecture overview
+  - `SERVER_HP_TRACKING.md` - Server-authoritative HP tracking
 - Server logs: Vercel Dashboard → Functions → Logs
 - MongoDB: Atlas Dashboard → Browse Collections
 
 ---
 
-**Last Updated:** 2025-10-29
-**Version:** V5 (CardID-based + Next Turn System + Race Condition Fixes)
+**Last Updated:** 2025-10-30
+**Version:** V5 (CardID-based + Next Turn System + Race Condition Fixes + Card Death System)
 **Current Branch:** Multiplayer
