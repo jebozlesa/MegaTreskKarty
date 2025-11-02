@@ -18,6 +18,7 @@ public class BattleResultProcessor : MonoBehaviour
     public Attack attackComponent;
     public MultiplayerService multiplayerService;  // ✅ For refreshing selectedCards
     public MultiplayerCardAnimator cardAnimator;    // ✅ NEW: Card animations (damage, stats, shake)
+    public MultiplayerKillCounterManager killCounterManager;  // ✅ NEW: Kill counter tracking
     
     [Header("UI References")]
     public TMP_Text dialogText;
@@ -632,6 +633,17 @@ public class BattleResultProcessor : MonoBehaviour
     /// </summary>
     private IEnumerator HandlePlayerCardDeath(Kard myCard)
     {
+        // ✅ HNEĎ zaznamenaj kill (PRED HandleCardDeath ktorý môže failnúť)
+        if (killCounterManager != null)
+        {
+            Debug.Log("[BattleResultProcessor] 💀 Player card died - incrementing enemy kill count");
+            killCounterManager.OnEnemyKilledPlayerCard();
+        }
+        else
+        {
+            Debug.LogWarning("[BattleResultProcessor] KillCounterManager not assigned!");
+        }
+        
         // 1. Vymaž kartu (board + server)
         yield return StartCoroutine(HandleCardDeath(myCard, isMyCard: true));
         
@@ -685,6 +697,17 @@ public class BattleResultProcessor : MonoBehaviour
     /// </summary>
     private IEnumerator HandleEnemyCardDeath(Kard enemyCard)
     {
+        // ✅ HNEĎ zaznamenaj kill (PRED HandleCardDeath ktorý môže failnúť)
+        if (killCounterManager != null)
+        {
+            Debug.Log("[BattleResultProcessor] 💀 Enemy card died - incrementing player kill count");
+            killCounterManager.OnPlayerKilledEnemyCard();
+        }
+        else
+        {
+            Debug.LogWarning("[BattleResultProcessor] KillCounterManager not assigned!");
+        }
+        
         // 1. Vymaž kartu (board + server)
         yield return StartCoroutine(HandleCardDeath(enemyCard, isMyCard: false));
         
@@ -790,6 +813,18 @@ public class BattleResultProcessor : MonoBehaviour
     /// </summary>
     private IEnumerator HandleBothCardsDeath(Kard myCard, Kard enemyCard)
     {
+        // ✅ HNEĎ zaznamenaj obe kills (PRED HandleCardDeath ktorý môže failnúť)
+        if (killCounterManager != null)
+        {
+            Debug.Log("[BattleResultProcessor] 💀💀 Both cards died - incrementing both kill counts");
+            killCounterManager.OnEnemyKilledPlayerCard(); // Enemy zabil player kartu
+            killCounterManager.OnPlayerKilledEnemyCard(); // Player zabil enemy kartu
+        }
+        else
+        {
+            Debug.LogWarning("[BattleResultProcessor] KillCounterManager not assigned!");
+        }
+        
         // 1. Vymaž obe karty (board + server)
         yield return StartCoroutine(HandleCardDeath(myCard, isMyCard: true));
         yield return StartCoroutine(HandleCardDeath(enemyCard, isMyCard: false));

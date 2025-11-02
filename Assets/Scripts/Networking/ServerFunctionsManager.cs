@@ -5,6 +5,10 @@ using UnityEngine;
 
 public class ServerFunctionsManager : MonoBehaviour
 {
+    [Header("Network Error Indicator")]
+    [Tooltip("GameObject ktorý sa zobrazí pri network error (napr. Image s error ikonou)")]
+    public GameObject networkErrorIndicator;
+    
     // Nová funkcia: načítanie balíčkov hráčov do miestnosti
     public async System.Threading.Tasks.Task<ExecuteFunctionResult> LoadPlayerDecksIntoRoomAsync(string playerId, string roomCode)
     {
@@ -37,9 +41,17 @@ public class ServerFunctionsManager : MonoBehaviour
 
         PlayFabCloudScriptAPI.ExecuteFunction(request, result => {
             Debug.LogWarning($"ExecuteFunction result: {Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}");
+            
+            // ✅ Úspech - skry error indikátor
+            HideNetworkError();
+            
             callback?.Invoke(result);
         }, error => {
             Debug.LogError(error.GenerateErrorReport());
+            
+            // ❌ Chyba - zobraz error indikátor
+            ShowNetworkError($"Server error: {functionName}");
+            
             callback?.Invoke(null);
         });
     }
@@ -379,5 +391,29 @@ public class ServerFunctionsManager : MonoBehaviour
         };
         
         CallFunction("checkNextTurnReady", parameters, callback);
+    }
+    
+    /// <summary>
+    /// Zobraz network error indikátor
+    /// </summary>
+    private void ShowNetworkError(string errorMessage = "Network error")
+    {
+        if (networkErrorIndicator != null)
+        {
+            networkErrorIndicator.SetActive(true);
+            Debug.LogWarning($"[ServerFunctionsManager] 🔴 Network error shown: {errorMessage}");
+        }
+    }
+    
+    /// <summary>
+    /// Skry network error indikátor
+    /// </summary>
+    private void HideNetworkError()
+    {
+        if (networkErrorIndicator != null && networkErrorIndicator.activeSelf)
+        {
+            networkErrorIndicator.SetActive(false);
+            Debug.LogWarning("[ServerFunctionsManager] ✅ Network error hidden - connection OK");
+        }
     }
 }
