@@ -97,6 +97,35 @@ public class FightSystemMultiplayer : MonoBehaviour
 
     void Start()
     {
+        Debug.LogWarning("[FightSystemMultiplayer] Start() called");
+        
+        // ✅ Auto-find MultiplayerUI ak nie je assigned v Inspector
+        if (multiplayerUI == null)
+        {
+            multiplayerUI = FindFirstObjectByType<MultiplayerUI>();
+            if (multiplayerUI == null)
+            {
+                Debug.LogError("[FightSystemMultiplayer] ❌ MultiplayerUI not found in scene!");
+            }
+            else
+            {
+                Debug.LogWarning("[FightSystemMultiplayer] ⚠️ Auto-found MultiplayerUI (prefer Inspector setup)");
+            }
+        }
+        
+        // ✅ Set initial status message (replaces Unity Inspector default "Fight!")
+        if (multiplayerUI != null)
+        {
+            Debug.LogWarning("[FightSystemMultiplayer] Setting status to 'Loading...'");
+            multiplayerUI.ShowStatus("Loading...");
+        }
+        else if (dialogText != null)
+        {
+            // Fallback ak MultiplayerUI chýba
+            Debug.LogWarning("[FightSystemMultiplayer] Using dialogText fallback");
+            dialogText.text = "Loading...";
+        }
+        
         if (multiplayerBoardManager == null)
         {
             multiplayerBoardManager = GetComponent<MultiplayerBoardManager>() ?? GetComponentInChildren<MultiplayerBoardManager>();
@@ -116,9 +145,15 @@ public class FightSystemMultiplayer : MonoBehaviour
 
     private async Task StartMultiplayerAsync()
     {
+        Debug.LogWarning("[FightSystemMultiplayer] StartMultiplayerAsync() called");
+        
         myPlayerId = PlayFabManagerLogin.Instance.LoggedInPlayerId;
         roomCode = PlayerPrefs.GetString("RoomCode", "");
+        
+        Debug.LogWarning($"[FightSystemMultiplayer] Initializing game for player {myPlayerId} in room {roomCode}");
         await multiplayerService.InitGame();
+        
+        Debug.LogWarning("[FightSystemMultiplayer] InitGame completed, loading cards...");
         
         // Use retry logic for card loading
         bool cardsLoaded = await LoadPlayerCardsWithRetry(myPlayerId, roomCode);
@@ -129,6 +164,7 @@ public class FightSystemMultiplayer : MonoBehaviour
             return;
         }
         
+        Debug.LogWarning("[FightSystemMultiplayer] Cards loaded successfully! Setting status to 'Choose fighter!'");
         multiplayerUI?.ShowStatus("Choose fighter!");
     }
 

@@ -305,7 +305,8 @@ public class MultiplayerService : MonoBehaviour
                 playerNameText.text = opponentUsername;
             }
 
-            statusText.text = "Connected!";
+            // ❌ Removed "Connected!" message - hráči idú priamo na "Choose fighter!"
+            // statusText.text = "Connected!";
             isWaitingForOpponent = false;
 
             // Zastavíme polling ak bežal

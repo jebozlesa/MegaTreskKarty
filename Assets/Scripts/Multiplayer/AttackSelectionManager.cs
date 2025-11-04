@@ -55,10 +55,8 @@ public class AttackSelectionManager : MonoBehaviour
         currentAttackCounts = attackCounts;
         selectedAttackType = 0;
 
-        if (dialogText != null)
-        {
-            dialogText.text = "Choose an attack";
-        }
+        // ✅ NEVYPĹŇAJ dialogText tu - správy nastavujú MultiplayerBoardManager a BattleResultProcessor
+        // Predchádzajúca správa je vždy relevantná ("Choose your attack", "Choose fighter!", atď.)
 
         // ✅ OCHRANA: Povoľ buttony IBA ak je stav TURN (obe karty sú revealed)
         if (fightSystem != null && fightSystem.state == FightStateMultiplayer.TURN)
