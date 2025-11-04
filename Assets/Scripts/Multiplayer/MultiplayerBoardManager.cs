@@ -91,7 +91,7 @@ public class MultiplayerBoardManager : MonoBehaviour
             {
                 await MultiplayerService.SubmitSelectedCardAsync(RoomCode, MyPlayerId, localSelectedCardData);
             }
-            MultiplayerUI?.ShowStatus("Waiting for enemy...");
+            MultiplayerUI?.ShowStatus(MultiplayerUI.MSG_WAITING_OPPONENT);
 
             await WaitForOpponentSelectionAsync();
 
@@ -241,7 +241,7 @@ public class MultiplayerBoardManager : MonoBehaviour
         Enemy.PlayCard(enemyCard, EnemyBoard);
         EnemyLifeBar?.SetBar(Enemy.cardInGame);
 
-        MultiplayerUI?.ShowStatus("Choose your attack");
+        MultiplayerUI?.ShowStatus(MultiplayerUI.MSG_CHOOSE_ATTACK);
         opponentCardRevealed = true;
 
         if (fightSystem != null)

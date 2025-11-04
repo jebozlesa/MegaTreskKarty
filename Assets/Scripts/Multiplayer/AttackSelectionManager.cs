@@ -239,7 +239,7 @@ public class AttackSelectionManager : MonoBehaviour
 
         if (dialogText != null)
         {
-            dialogText.text = "Waiting for opponent...";
+            dialogText.text = MultiplayerUI.MSG_WAITING_OPPONENT;
         }
     }
 

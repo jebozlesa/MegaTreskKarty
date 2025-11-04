@@ -4,6 +4,12 @@ using TMPro;
 
 public class MultiplayerUI : MonoBehaviour
 {
+    // ✅ Konštanty pre dialog messages - centrálne miesto pre všetky UI texty
+    public const string MSG_CHOOSE_ATTACK = "Choose your attack!";
+    public const string MSG_WAITING_OPPONENT = "Waiting for opponent...";
+    public const string MSG_LOADING = "Loading...";
+    public const string MSG_CHOOSE_FIGHTER = "Choose fighter!";
+    
     [Header("UI References")]
     public TMP_Text playerNameText;
     public TMP_Text enemyNameText;

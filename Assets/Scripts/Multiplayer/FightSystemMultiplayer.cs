@@ -117,13 +117,13 @@ public class FightSystemMultiplayer : MonoBehaviour
         if (multiplayerUI != null)
         {
             Debug.LogWarning("[FightSystemMultiplayer] Setting status to 'Loading...'");
-            multiplayerUI.ShowStatus("Loading...");
+            multiplayerUI.ShowStatus(MultiplayerUI.MSG_LOADING);
         }
         else if (dialogText != null)
         {
             // Fallback ak MultiplayerUI chýba
             Debug.LogWarning("[FightSystemMultiplayer] Using dialogText fallback");
-            dialogText.text = "Loading...";
+            dialogText.text = MultiplayerUI.MSG_LOADING;
         }
         
         if (multiplayerBoardManager == null)
@@ -165,7 +165,7 @@ public class FightSystemMultiplayer : MonoBehaviour
         }
         
         Debug.LogWarning("[FightSystemMultiplayer] Cards loaded successfully! Setting status to 'Choose fighter!'");
-        multiplayerUI?.ShowStatus("Choose fighter!");
+        multiplayerUI?.ShowStatus(MultiplayerUI.MSG_CHOOSE_FIGHTER);
     }
 
     private async System.Threading.Tasks.Task<bool> LoadPlayerCardsWithRetry(string myPlayerId, string roomCode)
@@ -311,7 +311,7 @@ public class FightSystemMultiplayer : MonoBehaviour
         battleSubmitter.SubmitAttack(roomCode, myPlayerId, myCard.cardId, attackData.attackId);
         
         // Zobraz status
-        multiplayerUI?.ShowStatus("Waiting for opponent...");
+        multiplayerUI?.ShowStatus(MultiplayerUI.MSG_WAITING_OPPONENT);
     }
 
 

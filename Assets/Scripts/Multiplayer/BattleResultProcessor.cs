@@ -372,7 +372,6 @@ public class BattleResultProcessor : MonoBehaviour
         else
         {
             // ✅ Obe karty žijú - pokračuj v battle
-            dialogText.text = "Next turn!";
             Debug.Log("[BattleResultProcessor] Battle continues - preparing next turn");
             
             StartCoroutine(PrepareNextTurn());
@@ -384,9 +383,7 @@ public class BattleResultProcessor : MonoBehaviour
     /// </summary>
     private IEnumerator PrepareNextTurn()
     {
-        yield return new WaitForSeconds(2f); // Chvíľa pauzy po "Next turn!" 
-        
-        dialogText.text = "Preparing next turn...";
+        // ✅ Žiadna pauza - priama plynulosť!
         
         // ✅ Označ sa ako ready pre ďalší turn
         yield return StartCoroutine(MarkReadyForNextTurn());
@@ -394,7 +391,7 @@ public class BattleResultProcessor : MonoBehaviour
         // ✅ Reset UI pre ďalší attack selection
         ResetAttackSelectionUI();
         
-        dialogText.text = "Choose an attack";
+        dialogText.text = MultiplayerUI.MSG_CHOOSE_ATTACK;
     }
     
     /// <summary>
@@ -793,14 +790,12 @@ public class BattleResultProcessor : MonoBehaviour
             Debug.Log($"[BattleResultProcessor] Reloading attack counts for {myCard.cardName}");
             fightSystem.LoadAttackCounts(myCard);
             
-            // ✅ Update dialog text PO načítaní attack counts
-            yield return new WaitForSeconds(0.2f);
-            dialogText.text = "Choose your attack!";
+            // ✅ ŽIADNA správa tu - RevealCards() už nastavilo "Choose your attack"
+            // Neprepisujeme to, aby nebola duplicita!
         }
         else
         {
             Debug.LogError("[BattleResultProcessor] Player card not found after enemy card death!");
-            dialogText.text = "Choose your attack!";
         }
     }
     
