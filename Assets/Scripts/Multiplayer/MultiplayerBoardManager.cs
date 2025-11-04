@@ -241,12 +241,18 @@ public class MultiplayerBoardManager : MonoBehaviour
         Enemy.PlayCard(enemyCard, EnemyBoard);
         EnemyLifeBar?.SetBar(Enemy.cardInGame);
 
-        MultiplayerUI?.ShowStatus("Choose your action!");
+        MultiplayerUI?.ShowStatus("Choose your attack");
         opponentCardRevealed = true;
 
         if (fightSystem != null)
         {
             fightSystem.state = FightStateMultiplayer.TURN;
+            
+            // ✅ Teraz povoľ attack buttony - obe karty sú revealed
+            if (fightSystem.attackSelectionManager != null)
+            {
+                fightSystem.attackSelectionManager.EnableAttackButtonsAfterReveal();
+            }
         }
 
         // Note: selectedCards remain in room for ongoing battle state synchronization

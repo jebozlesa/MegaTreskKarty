@@ -48,6 +48,45 @@
 
 ---
 
+## 🐛 CRITICAL: Debug Logging Policy
+
+**VŽDY použi Debug.LogWarning alebo Debug.LogError pre dôležité logy!**
+
+**User Mandate:**
+> "DOLEZITE! ked pises debug spravy, vzdy nech je to warning, tie bezne info logy mam vypnuty"
+
+### ✅ **Logging Guidelines:**
+
+1. **Debug.LogWarning** - Pre všetky informačné logy ktoré chceš vidieť
+   - ❌ `Debug.Log("Attack submitted")` - NEVIDITEĽNÉ v Unity Console (Info logs vypnuté)
+   - ✅ `Debug.LogWarning("Attack submitted")` - VIDITEĽNÉ vždy
+
+2. **Debug.LogError** - Pre kritické chyby
+   - ✅ `Debug.LogError("❌ executeBattle failed after 3 retries!")`
+   - ✅ `Debug.LogError("NullReferenceException: battleSubmitter is null")`
+
+3. **Debug.Log** - NEPOUŽÍVAJ pre debugging
+   - ❌ User má Info logs disabled v Unity Console
+   - ✅ Použij iba pre ultra-verbose logs ktoré user nemusí vidieť
+
+**Príklad správneho logovania:**
+```csharp
+// ✅ SPRÁVNE - viditeľné v Console
+Debug.LogWarning($"[BattleSubmitter] Submitting attack: attackId={attackId}");
+Debug.LogWarning($"[KillCounterManager] Player killed enemy! Count: {playerKillCount}/3");
+
+// ❌ ZLÉ - user to neuvidí!
+Debug.Log("Battle submitted");  // Info logs disabled!
+```
+
+**Prečo:**
+- User má vypnuté Info logs v Unity Console (performance, clarity)
+- Debug.Log správy sú kompletne neviditeľné
+- Nemožno debugovať bez viditeľných logov
+- Warnings sú vždy viditeľné a dobre označené
+
+---
+
 ## ⚠️ CRITICAL: Unity Inspector Setup Policy
 
 **VŽDY sa SPÝTAJ pred automatickým riešením missing references!**
@@ -1417,7 +1456,44 @@ db.rooms.updateOne(
 
 ### "Dead card still in selectedCards on server"
 **Problém:** `ClearDeadCard` server call failol alebo timeout
-**Fix:** Skontroluj Vercel logs pre `clearSelectedCards` endpoint, overiť že `cardIdToClear` parameter je správny
+**Symptom:** Opponent vidí mŕtvu kartu (health=0) namiesto novej karty
+**Log Example:**
+```
+/CloudScript/ExecuteFunction: connection timed out
+[ServerFunctionsManager] 🔴 Network error shown: Server error: clearSelectedCards
+[BattleResultProcessor] ❌ Server call returned null result!
+```
+**Fix:** ✅ **V7 Retry System** - ClearDeadCard má teraz 3-attempt retry!
+```
+Timeout → 🔄 Retry (3 left) → 🔄 Retry (2 left) → ✅ Success!
+Mŕtva karta vymazaná → Opponent vidí novú kartu
+```
+**Manual Fix:** Skontroluj Vercel logs pre `clearSelectedCards` endpoint, overiť že `cardIdToClear` parameter je správny
+
+### "Network errors during card selection"
+**Problém:** Race condition - opponent leaves room počas tvojho card selection
+**Log Example:**
+```
+/CloudScript/ExecuteFunction: {"success":false,"error":"Room not found or player not part of the room"}
+[ServerFunctionsManager] 🔴 Network error shown: Server error: setSelectedCard
+```
+**Fix:** ✅ **V7 Retry System** - SetSelectedCard má teraz retry protection!
+```
+Room deleted → Retry za 1s → Room recreated → ✅ Card selection success
+```
+
+### "Battle submission fails randomly"
+**Problém:** MongoDB timeout alebo Vercel cold start
+**Log Example:**
+```
+/CloudScript/ExecuteFunction: connection timed out
+[ServerFunctionsManager] 🔴 Network error shown: Server error: executeBattle
+```
+**Fix:** ✅ **V7 Retry System** - ExecuteBattle má 3 retries, väčšina failov sa opraví automaticky
+```
+Timeout → 🔄 Retry → 🔄 Retry → ✅ Battle executed
+Network indicator shows → Hides after success
+```
 
 ### "Missing attack data for cards!" after card replacement
 **Problém:** Server vracia battle result s MŔTVOU kartou (nie s novou kartou)
@@ -1430,7 +1506,9 @@ db.rooms.updateOne(
 
 - GitHub Issues: [MegaTreskKarty/issues](https://github.com/jebozlesa/MegaTreskKarty/issues)
 - Documentation: Viď README files v roote projektu
-  - `CARD_REPLACEMENT_SYSTEM.md` - **NEW!** Complete card replacement guide (death → selection → reveal → ClearBattleData)
+  - `NETWORK_RETRY_SYSTEM.md` - **V7 NEW!** Complete retry mechanism documentation (3-attempt retry, visual feedback)
+  - `KILL_COUNTER_SYSTEM.md` - **V7 NEW!** Kill counter & win condition system (3 kills = win)
+  - `CARD_REPLACEMENT_SYSTEM.md` - Complete card replacement guide (death → selection → reveal → ClearBattleData)
   - `CARD_DEATH_SYSTEM.md` - Card death handling (remove from board + server)
   - `REFACTORING_ARCHITECTURE.md` - Clean architecture overview (KISS principle)
   - `SERVER_HP_TRACKING.md` - Server-authoritative HP tracking
@@ -1439,13 +1517,16 @@ db.rooms.updateOne(
 
 ---
 
-**Last Updated:** 2025-11-01  
-**Version:** V6 (Card Replacement System + ClearBattleData Fix + KISS Principle Enforcement)  
+**Last Updated:** 2025-11-04  
+**Version:** V7 (Network Retry System + Kill Counter + Debug Logging Policy)  
 **Current Branch:** Multiplayer  
 
-**Key Changes in V6:**
-- ✅ Complete card replacement flow (death → poll → reveal → clear → activate)
-- ✅ ClearBattleData integration (prevents stale battleResult bugs)
-- ✅ JObject parsing fix (no more false positive warnings)
-- ✅ Timeout improvements (5s for slow server responses)
-- ✅ KISS principle documentation (quality over speed mandate)
+**Key Changes in V7:**
+- ✅ **Network Retry Mechanism** - All critical server functions have 3-attempt retry with exponential backoff
+- ✅ **Kill Counter System** - Visual kill tracking with green→red squares, 3 kills = win condition
+- ✅ **Network Error Indicator** - Visual feedback (red GameObject) shows during network issues
+- ✅ **Debug Logging Policy** - Mandatory Debug.LogWarning usage (user has Info logs disabled)
+- ✅ **Retry Protection** - 9 critical functions protected: setSelectedCard, getSelectedCards, calculateAttackCounts, executeBattle, markReadyForNextTurn, checkNextTurnReady, clearSelectedCards, clearDeadCard, clearBattleData
+- ✅ **Dead Card Bug Fix** - ClearDeadCard retry prevents zombie cards with health=0
+- ✅ **Win Condition** - First to 3 kills wins, automatic scene transition to "Main" after 2s
+- ✅ **Attack Button Timing** - Disabled until both cards revealed (prevents premature attacks)

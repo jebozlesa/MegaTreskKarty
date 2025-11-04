@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using PlayFab;
 using PlayFab.CloudScriptModels;
 using UnityEngine;
@@ -8,6 +9,13 @@ public class ServerFunctionsManager : MonoBehaviour
     [Header("Network Error Indicator")]
     [Tooltip("GameObject ktorý sa zobrazí pri network error (napr. Image s error ikonou)")]
     public GameObject networkErrorIndicator;
+    
+    [Header("Retry Settings")]
+    [Tooltip("Počet pokusov pri network error")]
+    public int maxRetries = 3;
+    
+    [Tooltip("Delay medzi pokusmi v sekundách")]
+    public float retryDelay = 1f;
     
     // Nová funkcia: načítanie balíčkov hráčov do miestnosti
     public async System.Threading.Tasks.Task<ExecuteFunctionResult> LoadPlayerDecksIntoRoomAsync(string playerId, string roomCode)
@@ -230,7 +238,8 @@ public class ServerFunctionsManager : MonoBehaviour
             }
         };
 
-        CallFunction("setSelectedCard", parameters, callback);
+        // ✅ Použij retry mechanizmus - často failne ak hráč opustil room
+        CallFunctionWithRetry("setSelectedCard", parameters, callback);
     }
 
     public void GetSelectedCards(string roomCode, Action<ExecuteFunctionResult> callback)
@@ -253,7 +262,8 @@ public class ServerFunctionsManager : MonoBehaviour
         {
             roomCode
         };
-        CallFunction("getSelectedCards", parameters, callback);
+        // ✅ Retry - polling funkcia, môže failnúť pri network glitchoch
+        CallFunctionWithRetry("getSelectedCards", parameters, callback);
     }
 
     public void ClearSelectedCards(string roomCode, Action<ExecuteFunctionResult> callback)
@@ -263,7 +273,8 @@ public class ServerFunctionsManager : MonoBehaviour
         {
             roomCode
         };
-        CallFunction("clearSelectedCards", parameters, callback ?? (_ => { }));
+        // ✅ Retry - kritická operácia pre card replacement!
+        CallFunctionWithRetry("clearSelectedCards", parameters, callback ?? (_ => { }));
     }
 
     /// <summary>
@@ -277,7 +288,8 @@ public class ServerFunctionsManager : MonoBehaviour
             roomCode = roomCode,
             cardIdToClear = cardIdToClear
         };
-        CallFunction("clearSelectedCards", parameters, callback ?? (_ => { }));
+        // ✅ Retry - SUPER KRITICKÉ! Ak failne, mŕtva karta ostane v DB!
+        CallFunctionWithRetry("clearSelectedCards", parameters, callback ?? (_ => { }));
     }
 
     /// <summary>
@@ -291,7 +303,8 @@ public class ServerFunctionsManager : MonoBehaviour
             roomCode = roomCode,
             playerId = playerId
         };
-        CallFunction("clearBattleData", parameters, callback ?? (_ => { }));
+        // ✅ Retry - kritická operácia pre turn cleanup!
+        CallFunctionWithRetry("clearBattleData", parameters, callback ?? (_ => { }));
     }
 
     // Nová funkcia: vypočítanie počtov útokov na serveri
@@ -324,7 +337,8 @@ public class ServerFunctionsManager : MonoBehaviour
             charisma = cardStats.charisma,
             speed = cardStats.speed
         };
-        CallFunction("calculateAttackCounts", parameters, callback);
+        // ✅ Retry - attack counts sú kritické pre UI
+        CallFunctionWithRetry("calculateAttackCounts", parameters, callback);
     }
 
     /// <summary>
@@ -347,7 +361,8 @@ public class ServerFunctionsManager : MonoBehaviour
             attackData = attackData
         };
         
-        CallFunction("executeBattle", parameters, callback);
+        // ✅ Retry - executeBattle je NAJKRITICKEJŠIA funkcia!
+        CallFunctionWithRetry("executeBattle", parameters, callback);
     }
     
     /// <summary>
@@ -369,7 +384,8 @@ public class ServerFunctionsManager : MonoBehaviour
             playerId = playerId
         };
         
-        CallFunction("markReadyForNextTurn", parameters, callback);
+        // ✅ Retry - turn synchronizácia je kritická
+        CallFunctionWithRetry("markReadyForNextTurn", parameters, callback);
     }
     
     /// <summary>
@@ -390,7 +406,8 @@ public class ServerFunctionsManager : MonoBehaviour
             roomCode = roomCode
         };
         
-        CallFunction("checkNextTurnReady", parameters, callback);
+        // ✅ Retry - polling funkcia pre next turn ready state
+        CallFunctionWithRetry("checkNextTurnReady", parameters, callback);
     }
     
     /// <summary>
@@ -415,5 +432,43 @@ public class ServerFunctionsManager : MonoBehaviour
             networkErrorIndicator.SetActive(false);
             Debug.LogWarning("[ServerFunctionsManager] ✅ Network error hidden - connection OK");
         }
+    }
+    
+    /// <summary>
+    /// Zavolá funkciu s retry mechanikou pri network error
+    /// </summary>
+    public void CallFunctionWithRetry(string functionName, object parameters, Action<ExecuteFunctionResult> callback, int retriesLeft = -1)
+    {
+        if (retriesLeft == -1) retriesLeft = maxRetries;
+        
+        CallFunction(functionName, parameters, result =>
+        {
+            if (result != null)
+            {
+                // Úspech!
+                callback?.Invoke(result);
+            }
+            else if (retriesLeft > 0)
+            {
+                // Neúspech - skús znova
+                Debug.LogWarning($"[ServerFunctionsManager] 🔄 Retrying {functionName} ({retriesLeft} attempts left)...");
+                StartCoroutine(RetryAfterDelay(functionName, parameters, callback, retriesLeft - 1));
+            }
+            else
+            {
+                // Vyčerpané pokusy
+                Debug.LogError($"[ServerFunctionsManager] ❌ {functionName} failed after {maxRetries} retries!");
+                callback?.Invoke(null);
+            }
+        });
+    }
+    
+    /// <summary>
+    /// Počká a potom retry
+    /// </summary>
+    private IEnumerator RetryAfterDelay(string functionName, object parameters, Action<ExecuteFunctionResult> callback, int retriesLeft)
+    {
+        yield return new WaitForSeconds(retryDelay);
+        CallFunctionWithRetry(functionName, parameters, callback, retriesLeft);
     }
 }

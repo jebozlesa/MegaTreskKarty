@@ -60,8 +60,20 @@ public class AttackSelectionManager : MonoBehaviour
             dialogText.text = "Choose an attack";
         }
 
-        // Nastav interaktivitu tlačidiel podľa toho, či majú count > 0
-        SetAttackButtonsInteractable(attackCounts);
+        // ✅ OCHRANA: Povoľ buttony IBA ak je stav TURN (obe karty sú revealed)
+        if (fightSystem != null && fightSystem.state == FightStateMultiplayer.TURN)
+        {
+            // Nastav interaktivitu tlačidiel podľa toho, či majú count > 0
+            SetAttackButtonsInteractable(attackCounts);
+            Debug.Log("[AttackSelectionManager] ✅ Attack selection enabled - both cards revealed");
+        }
+        else
+        {
+            // Obe karty ešte nie sú revealed - drž buttony disabled
+            DisableAttackSelection();
+            Debug.LogWarning("[AttackSelectionManager] ⏸️ Attack buttons disabled - waiting for opponent card reveal");
+        }
+        
         SetConfirmButtonState(false);
 
         Debug.Log("[AttackSelectionManager] Attack selection prepared for card: " + card.cardName);
@@ -234,7 +246,23 @@ public class AttackSelectionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Resetuj výber útoku pre ďalší turn
+    /// Enable attack buttony po reveal-nutí oboch kariet (volá sa z RevealCards)
+    /// </summary>
+    public void EnableAttackButtonsAfterReveal()
+    {
+        if (currentCard == null || currentAttackCounts == null)
+        {
+            Debug.LogWarning("[AttackSelectionManager] Cannot enable buttons - no card/counts prepared");
+            return;
+        }
+        
+        // Teraz sú obe karty revealed - povoľ attack buttony
+        SetAttackButtonsInteractable(currentAttackCounts);
+        Debug.LogWarning("[AttackSelectionManager] ✅ Attack buttons enabled - both cards revealed!");
+    }
+    
+    /// <summary>
+    /// Reset selection state pre nový turn
     /// </summary>
     public void ResetSelection()
     {
