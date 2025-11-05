@@ -213,6 +213,31 @@ public class AttackSelectionManager : MonoBehaviour
         if (button3 != null) button3.interactable = (currentCard.attack3 > 0 && counts.count3 > 0);
         if (button4 != null) button4.interactable = (currentCard.attack4 > 0 && counts.count4 > 0);
     }
+    
+    /// <summary>
+    /// Public metóda pre update attack counts (volané po decrement)
+    /// </summary>
+    public void UpdateAttackCounts(AttackCountsResult newCounts)
+    {
+        if (newCounts == null)
+        {
+            Debug.LogWarning("[AttackSelectionManager] UpdateAttackCounts called with null counts");
+            return;
+        }
+        
+        currentAttackCounts = newCounts;
+        
+        // Re-enable buttony s novými counts
+        if (currentCard != null && fightSystem != null && fightSystem.state == FightStateMultiplayer.TURN)
+        {
+            SetAttackButtonsInteractable(newCounts);
+            Debug.LogWarning($"[AttackSelectionManager] ✅ Attack counts updated: {newCounts.count1}, {newCounts.count2}, {newCounts.count3}, {newCounts.count4}");
+        }
+        else
+        {
+            Debug.LogWarning("[AttackSelectionManager] Attack counts updated but buttons remain disabled (not in TURN state)");
+        }
+    }
 
     /// <summary>
     /// Nastav stav confirm tlačidla

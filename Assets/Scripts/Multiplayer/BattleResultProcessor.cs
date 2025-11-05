@@ -512,7 +512,7 @@ public class BattleResultProcessor : MonoBehaviour
         Kard myCard = fightSystem.player?.cardInGame;
         if (myCard != null && fightSystem.attackCountLoader != null)
         {
-            // Znovu načítaj attack counts (možno sa zmenili)
+            // Znovu načítaj attack counts (server už ich decrementoval v executeBattle)
             fightSystem.LoadAttackCounts(myCard);
         }
     }
@@ -783,19 +783,12 @@ public class BattleResultProcessor : MonoBehaviour
         fightSystem.state = FightStateMultiplayer.TURN;
         Debug.Log($"[BattleResultProcessor] State set to TURN. Current state: {fightSystem.state}");
         
-        // ✅ CRITICAL: Znova načítaj attack counts pre aktuálnu kartu (aby sa buttony aktivovali!)
+        // Reload attack counts pre novú kartu
         var myCard = fightSystem.player.cardInGame;
-        if (myCard != null)
+        if (myCard != null && fightSystem.attackCountLoader != null)
         {
             Debug.Log($"[BattleResultProcessor] Reloading attack counts for {myCard.cardName}");
             fightSystem.LoadAttackCounts(myCard);
-            
-            // ✅ ŽIADNA správa tu - RevealCards() už nastavilo "Choose your attack"
-            // Neprepisujeme to, aby nebola duplicita!
-        }
-        else
-        {
-            Debug.LogError("[BattleResultProcessor] Player card not found after enemy card death!");
         }
     }
     

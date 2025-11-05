@@ -307,38 +307,34 @@ public class ServerFunctionsManager : MonoBehaviour
         CallFunctionWithRetry("clearBattleData", parameters, callback ?? (_ => { }));
     }
 
-    // Nová funkcia: vypočítanie počtov útokov na serveri
-    public void CalculateAttackCounts(CardStatsForCalculation cardStats, Action<ExecuteFunctionResult> callback)
+    // ============================================================
+    // ✅ V8: Attack Counts (Server Auto-Init + Auto-Decrement)
+    // ============================================================
+    // ❌ REMOVED: CalculateAttackCounts() - Server má auto-init v setSelectedCard
+    // ❌ REMOVED: DecrementAttackCount() - Server má auto-decrement v executeBattle
+
+    /// <summary>
+    /// Načíta persisted attack counts z MongoDB (read-only)
+    /// Server automaticky inicializuje counts pri setSelectedCard
+    /// Server automaticky decrementuje counts pri executeBattle
+    /// </summary>
+    public void GetAttackCounts(string roomCode, string playerId, string cardId, Action<ExecuteFunctionResult> callback)
     {
         if (callback == null)
         {
-            Debug.LogError("CalculateAttackCounts: callback is null!");
+            Debug.LogError("GetAttackCounts: callback is null!");
             return;
         }
 
-        if (cardStats == null)
-        {
-            Debug.LogError("CalculateAttackCounts: cardStats is null!");
-            callback?.Invoke(null);
-            return;
-        }
-
-        Debug.LogWarning($"CalculateAttackCounts called with attacks: {cardStats.attack1}, {cardStats.attack2}, {cardStats.attack3}, {cardStats.attack4}");
+        Debug.LogWarning($"[ServerFunctionsManager] GetAttackCounts: roomCode={roomCode}, playerId={playerId}, cardId={cardId}");
         var parameters = new
         {
-            attack1 = cardStats.attack1,
-            attack2 = cardStats.attack2,
-            attack3 = cardStats.attack3,
-            attack4 = cardStats.attack4,
-            strength = cardStats.strength,
-            defense = cardStats.defense,
-            attack = cardStats.attack,
-            knowledge = cardStats.knowledge,
-            charisma = cardStats.charisma,
-            speed = cardStats.speed
+            roomCode = roomCode,
+            playerId = playerId,
+            cardId = cardId
         };
         // ✅ Retry - attack counts sú kritické pre UI
-        CallFunctionWithRetry("calculateAttackCounts", parameters, callback);
+        CallFunctionWithRetry("getAttackCounts", parameters, callback);
     }
 
     /// <summary>

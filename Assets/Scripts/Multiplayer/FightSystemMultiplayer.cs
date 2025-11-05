@@ -307,8 +307,8 @@ public class FightSystemMultiplayer : MonoBehaviour
             return;
         }
         
-        // Deleguj na BattleSubmitter - pošli len IDs, server si načíta stats z DB
-        battleSubmitter.SubmitAttack(roomCode, myPlayerId, myCard.cardId, attackData.attackId);
+        // Deleguj na BattleSubmitter - pošli IDs + slot pre attack count decrement
+        battleSubmitter.SubmitAttack(roomCode, myPlayerId, myCard.cardId, attackData.attackId, attackData.attackType);
         
         // Zobraz status
         multiplayerUI?.ShowStatus(MultiplayerUI.MSG_WAITING_OPPONENT);

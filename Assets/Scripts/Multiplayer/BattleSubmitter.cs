@@ -21,7 +21,7 @@ public class BattleSubmitter : MonoBehaviour
     /// <summary>
     /// Odošle útok na server a spustí polling pre výsledok
     /// </summary>
-    public void SubmitAttack(string roomCode, string playerId, string cardId, int attackId)
+    public void SubmitAttack(string roomCode, string playerId, string cardId, int attackId, int attackSlot)
     {
         if (isWaitingForBattle)
         {
@@ -33,9 +33,9 @@ public class BattleSubmitter : MonoBehaviour
         pollAttempts = 0;
         lastSubmittedCardId = cardId; // ✅ Ulož cardId pre polling
         
-        Debug.Log($"[BattleSubmitter] Submitting attack: roomCode={roomCode}, cardId={cardId}, attackId={attackId}");
+        Debug.Log($"[BattleSubmitter] Submitting attack: roomCode={roomCode}, cardId={cardId}, attackId={attackId}, attackSlot={attackSlot}");
         
-        // ✅ V3 - MINIMÁLNY PAYLOAD: iba cardId + attackId
+        // ✅ V3 - MINIMÁLNY PAYLOAD: iba cardId + attackId + attackSlot
         // Server trackuje HP v room.battleState.playerHealths
         var submission = new AttackSubmission
         {
@@ -43,6 +43,7 @@ public class BattleSubmitter : MonoBehaviour
             roomCode = roomCode,
             cardId = cardId,
             attackId = attackId,
+            attackSlot = attackSlot,  // ✅ NOVÉ - pre attack count decrement
             
             // DEPRECATED - server v3 tieto fieldy IGNORUJE
             // Ponechané kvôli backward compatibility s staršími server verziami
@@ -134,7 +135,8 @@ public class BattleSubmitter : MonoBehaviour
             playerId = fightSystem.myPlayerId,
             roomCode = fightSystem.roomCode,
             cardId = lastSubmittedCardId, // ✅ Použij uložený cardId!
-            attackId = 0 // Special value pre "check status only"
+            attackId = 0, // Special value pre "check status only"
+            attackSlot = 0 // Dummy value pre polling
         };
         
         serverFunctionsManager.ExecuteBattle(fightSystem.roomCode, fightSystem.myPlayerId, dummySubmission, result =>

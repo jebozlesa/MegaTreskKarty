@@ -16,6 +16,7 @@ public class AttackCountLoader : MonoBehaviour
     public TMP_Text button4CountText;
 
     public ServerFunctionsManager serverFunctionsManager;
+    public FightSystemMultiplayer fightSystem; // ✅ V8: Reference to get roomCode & playerId
 
     private bool isLoading = false;
 
@@ -48,28 +49,36 @@ public class AttackCountLoader : MonoBehaviour
         }
 
         isLoading = true;
-        Debug.Log($"[AttackCountLoader] Loading attack counts for card: {card.cardName}");
+        Debug.LogWarning($"[AttackCountLoader] Loading attack counts for card: {card.cardName} (cardId: {card.cardId})");
 
         // Add timeout protection - reset isLoading after 15 seconds
         StartCoroutine(ResetLoadingStateAfterTimeout());
 
-        // Priprav parametre pre serverovú funkciu
-        var cardData = new CardStatsForCalculation
+        // ✅ V8: Volaj getAttackCounts (čítaj z DB), NIE calculateAttackCounts!
+        // Server má attackCounts už uložené v room.attackCounts[playerId][cardId]
+        if (fightSystem == null)
         {
-            attack1 = card.attack1,
-            attack2 = card.attack2,
-            attack3 = card.attack3,
-            attack4 = card.attack4,
-            strength = card.strength,
-            defense = card.defense,
-            attack = card.attack,
-            knowledge = card.knowledge,
-            charisma = card.charisma,
-            speed = card.speed
-        };
+            Debug.LogError("[AttackCountLoader] FightSystemMultiplayer reference missing!");
+            isLoading = false;
+            ClearAttackCounts();
+            onComplete?.Invoke(null);
+            return;
+        }
 
-        // Zavolaj serverovú funkciu
-        serverFunctionsManager.CalculateAttackCounts(cardData, result =>
+        string roomCode = fightSystem.roomCode;
+        string playerId = fightSystem.myPlayerId;
+
+        if (string.IsNullOrEmpty(roomCode) || string.IsNullOrEmpty(playerId))
+        {
+            Debug.LogError("[AttackCountLoader] Missing roomCode or playerId!");
+            isLoading = false;
+            ClearAttackCounts();
+            onComplete?.Invoke(null);
+            return;
+        }
+
+        // Zavolaj getAttackCounts (READ from DB)
+        serverFunctionsManager.GetAttackCounts(roomCode, playerId, card.cardId, result =>
         {
             isLoading = false;
 
@@ -115,6 +124,14 @@ public class AttackCountLoader : MonoBehaviour
     /// Zobrazí počty útokov v UI
     /// </summary>
     private void DisplayAttackCounts(AttackCountsResult counts)
+    {
+        UpdateCountTexts(counts);
+    }
+    
+    /// <summary>
+    /// Public metóda pre update count textov (použiteľná z iných tried)
+    /// </summary>
+    public void UpdateCountTexts(AttackCountsResult counts)
     {
         if (button1CountText != null)
         {
@@ -164,7 +181,9 @@ public class AttackCountLoader : MonoBehaviour
 }
 
 /// <summary>
-/// Dáta karty potrebné pre výpočet útokov
+/// ❌ DEPRECATED: Dáta karty potrebné pre výpočet útokov
+/// V8: Server už automaticky počíta counts pri setSelectedCard
+/// Táto trieda sa už nepoužíva, zostáva len kvôli kompatibilite
 /// </summary>
 [Serializable]
 public class CardStatsForCalculation

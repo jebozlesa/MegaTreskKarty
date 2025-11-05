@@ -35,6 +35,7 @@ public class AttackSubmission
     public string roomCode;
     public string cardId;             // ID karty (server načíta stats z DB)
     public int attackId;              // ID útoku (1 = Punch)
+    public int attackSlot;            // Slot útoku (1-4) - pre attack count decrement
     
     // DEPRECATED - server trackuje HP sám v room.battleState
     // Ponechané pre backward compatibility, ale server ich ignoruje

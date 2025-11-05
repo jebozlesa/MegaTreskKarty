@@ -48,6 +48,51 @@
 
 ---
 
+## 📖 CRITICAL: Always Study Attached Documentation
+
+**User Mandate:**
+> "dopln do instrukcii ak to tam nieje aby si pri svojich odpovediach studoval aj prilozenu dokumentaciu, nech to aj vyuzijeme ked to robime"
+
+### ✅ **Documentation-First Approach:**
+
+1. **Before Answering** - Check attached documentation:
+   - User may attach `.md` files with context
+   - Study them BEFORE proposing solutions
+   - Documentation contains architecture decisions, patterns, fixes
+
+2. **Available Documentation in Repo:**
+   - `CLEANUP_V8_AttackCountRefactor.md` - V8 attack count cleanup reasoning
+   - `SERVER_ATTACKCOUNTS_V8_AUTOINIT.md` - Server auto-init system
+   - `SERVER_V8_FIX_DECREMENT_MISSING.md` - attackSlot vs attackId fix
+   - `REFACTORING_ARCHITECTURE.md` - Overall clean architecture
+   - `NETWORK_RETRY_SYSTEM.md` - V7 retry mechanism (3-attempt retry)
+   - `KILL_COUNTER_SYSTEM.md` - V7 kill counter & win condition
+   - `CARD_REPLACEMENT_SYSTEM.md` - Card death → selection → reveal flow
+   - `SERVER_HP_TRACKING.md` - Server-authoritative HP tracking
+   - `SERVER_NEXT_TURN_SPEC.md` - Turn system specification
+
+3. **When User Asks Question:**
+   - ✅ First check if relevant `.md` doc exists in repo
+   - ✅ Read documentation to understand context
+   - ✅ Base your answer on documented patterns
+   - ❌ Don't reinvent solutions already documented
+
+4. **Why This Matters:**
+   - Documentation captures **why** decisions were made
+   - Prevents repeating past mistakes
+   - Ensures consistency across features
+   - Saves time (no re-explaining architecture)
+
+**Example:**
+```
+User: "How do attack counts work?"
+❌ BAD: Explain from scratch
+✅ GOOD: "Based on CLEANUP_V8_AttackCountRefactor.md and SERVER_ATTACKCOUNTS_V8_AUTOINIT.md, 
+         attack counts use server auto-init + auto-decrement. Let me explain..."
+```
+
+---
+
 ## 🐛 CRITICAL: Debug Logging Policy
 
 **VŽDY použi Debug.LogWarning alebo Debug.LogError pre dôležité logy!**
@@ -323,6 +368,72 @@ room.battleState.playerHealths = {room.battleState.playerHealths = {
 
 
 
+### 🔢 V8: Attack Count System (Server Auto-Init + Auto-Decrement):### 🔢 V8: Attack Count System (Server Auto-Init + Auto-Decrement):
+
+
+
+```javascript```javascript
+
+// ✅ Server auto-initializes on first card selection (setSelectedCard.js)// ✅ Server auto-initializes on first card selection (setSelectedCard.js)
+
+if (!room.attackCounts[playerId][cardId]) {if (!room.attackCounts[playerId][cardId]) {
+
+  counts = calculateAttackCountsLogic(attackIds, stats);  counts = calculateAttackCountsLogic(attackIds, stats);
+
+  await collection.updateOne({ roomCode }, { $set: { [`attackCounts.${playerId}.${cardId}`]: counts } });  await collection.updateOne({ roomCode }, { $set: { [`attackCounts.${playerId}.${cardId}`]: counts } });
+
+}}
+
+
+
+// ✅ Server auto-decrements after battle (executeBattle.js)// ✅ Server auto-decrements after battle (executeBattle.js)
+
+const p1Slot = battleData.player1?.attackSlot || battleData.player1?.attackId;  // ⚠️ Use attackSlot (1-4), NOT attackId (1-123)const p1Slot = battleData.player1?.attackSlot || battleData.player1?.attackId;  // ⚠️ Use attackSlot (1-4), NOT attackId (1-123)
+
+await decrementAttackCountLogic(collection, roomCode, player1Id, battleData.player1.cardId, p1Slot, updatedRoom);await decrementAttackCountLogic(collection, roomCode, player1Id, battleData.player1.cardId, p1Slot, updatedRoom);
+
+
+
+// ✅ Unity reads counts (AttackCountLoader.cs - READ ONLY)// ✅ Unity reads counts (AttackCountLoader.cs - READ ONLY)
+
+serverFunctionsManager.GetAttackCounts(roomCode, playerId, cardId, result => {serverFunctionsManager.GetAttackCounts(roomCode, playerId, cardId, result => {
+
+  DisplayAttackCounts(result); // { count1, count2, count3, count4 }  DisplayAttackCounts(result); // { count1, count2, count3, count4 }
+
+});});
+
+``````
+
+
+
+**⚠️ CRITICAL: attackSlot vs attackId Distinction:**  **⚠️ CRITICAL: attackSlot vs attackId Distinction:**  
+
+- `attackId` = Database ID of attack ability (1-123, varies by attack type: 1=Punch, 2=Kick, 8=Fireball, etc.)- `attackId` = Database ID of attack ability (1-123, varies by attack type: 1=Punch, 2=Kick, 8=Fireball, etc.)
+
+- `attackSlot` = UI button position (1-4, fixed slots on card UI)- `attackSlot` = UI button position (1-4, fixed slots on card UI)
+
+- **Decrement MUST use `attackSlot`** to update correct `count1`/`count2`/`count3`/`count4` field in DB- **Decrement MUST use `attackSlot`** to update correct `count1`/`count2`/`count3`/`count4` field in DB
+
+- Example: Card has Attack2 (Kick) in slot 2 → `attackId=2, attackSlot=2` → decrement `count2`- Example: Card has Attack2 (Kick) in slot 2 → `attackId=2, attackSlot=2` → decrement `count2`
+
+- Example: Card has Attack1 (Punch) in slot 2 → `attackId=1, attackSlot=2` → decrement `count2` (NOT count1!)- Example: Card has Attack1 (Punch) in slot 2 → `attackId=1, attackSlot=2` → decrement `count2` (NOT count1!)
+
+
+
+**📚 Documentation:**  **📚 Documentation:**  
+
+- `CLEANUP_V8_AttackCountRefactor.md` - Why V8 cleanup happened, deleted components- `CLEANUP_V8_AttackCountRefactor.md` - Why V8 cleanup happened, deleted components
+
+- `SERVER_ATTACKCOUNTS_V8_AUTOINIT.md` - Server auto-init implementation- `SERVER_ATTACKCOUNTS_V8_AUTOINIT.md` - Server auto-init implementation
+
+- `SERVER_V8_FIX_DECREMENT_MISSING.md` - attackSlot vs attackId bug fix- `SERVER_V8_FIX_DECREMENT_MISSING.md` - attackSlot vs attackId bug fix
+
+
+
+------
+
+
+
 ## 🗄️ MongoDB Schema## 🗄️ MongoDB Schema
 
 
@@ -361,11 +472,37 @@ rooms: {rooms: {
 
   battleData: {  battleData: {
 
-    player1: { cardId, attackId, submitted: true },    player1: { cardId, attackId, submitted: true },
+    player1: { cardId, attackId, attackSlot, submitted: true },    player1: { cardId, attackId, attackSlot, submitted: true },
 
-    player2: { cardId, attackId, submitted: false },    player2: { cardId, attackId, submitted: false },
+    player2: { cardId, attackId, attackSlot, submitted: false },    player2: { cardId, attackId, attackSlot, submitted: false },
 
     lastResult: { ... }    lastResult: { ... }
+
+  },  },
+
+    
+
+  // ✅ V8: Attack Counts (Server-side tracking)  // ✅ V8: Attack Counts (Server-side tracking)
+
+  attackCounts: {  attackCounts: {
+
+    "player1_id": {    "player1_id": {
+
+      "card_uuid_1": {      "card_uuid_1": {
+
+        count1: 15,  // Attack slot 1 remaining uses        count1: 15,  // Attack slot 1 remaining uses
+
+        count2: 44,  // Attack slot 2 remaining uses (decrements each use)        count2: 44,  // Attack slot 2 remaining uses (decrements each use)
+
+        count3: 5,   // Attack slot 3 remaining uses        count3: 5,   // Attack slot 3 remaining uses
+
+        count4: 3    // Attack slot 4 remaining uses        count4: 3    // Attack slot 4 remaining uses
+
+      }      }
+
+    },    },
+
+    "player2_id": { ... }    "player2_id": { ... }
 
   },  },
 
@@ -1512,21 +1649,31 @@ Network indicator shows → Hides after success
   - `CARD_DEATH_SYSTEM.md` - Card death handling (remove from board + server)
   - `REFACTORING_ARCHITECTURE.md` - Clean architecture overview (KISS principle)
   - `SERVER_HP_TRACKING.md` - Server-authoritative HP tracking
+  - `CLEANUP_V8_AttackCountRefactor.md` - **V8 NEW!** Attack count cleanup & refactoring (server auto-init + auto-decrement)
+  - `SERVER_ATTACKCOUNTS_V8_AUTOINIT.md` - **V8 NEW!** Server attack count auto-initialization system
+  - `SERVER_V8_FIX_DECREMENT_MISSING.md` - **V8 NEW!** attackSlot vs attackId bug fix documentation
 - Server logs: Vercel Dashboard → Functions → Logs
 - MongoDB: Atlas Dashboard → Browse Collections
 
 ---
 
-**Last Updated:** 2025-11-04  
-**Version:** V7 (Network Retry System + Kill Counter + Debug Logging Policy)  
+**Last Updated:** 2025-11-05  
+**Version:** V8 (Attack Count System - Server Auto-Decrement & Cleanup)  
 **Current Branch:** Multiplayer  
 
-**Key Changes in V7:**
-- ✅ **Network Retry Mechanism** - All critical server functions have 3-attempt retry with exponential backoff
-- ✅ **Kill Counter System** - Visual kill tracking with green→red squares, 3 kills = win condition
-- ✅ **Network Error Indicator** - Visual feedback (red GameObject) shows during network issues
-- ✅ **Debug Logging Policy** - Mandatory Debug.LogWarning usage (user has Info logs disabled)
-- ✅ **Retry Protection** - 9 critical functions protected: setSelectedCard, getSelectedCards, calculateAttackCounts, executeBattle, markReadyForNextTurn, checkNextTurnReady, clearSelectedCards, clearDeadCard, clearBattleData
-- ✅ **Dead Card Bug Fix** - ClearDeadCard retry prevents zombie cards with health=0
-- ✅ **Win Condition** - First to 3 kills wins, automatic scene transition to "Main" after 2s
-- ✅ **Attack Button Timing** - Disabled until both cards revealed (prevents premature attacks)
+**Key Changes in V8:**
+- ✅ **Critical Bug Fix** - Attack counts now decrement correctly (attackSlot vs attackId fix)
+- ✅ **Server Auto-Decrement** - executeBattle.js automatically decrements attack counts after battles
+- ✅ **Comprehensive Cleanup** - Removed 6 deprecated files/components (client-side decrement system)
+- ✅ **Simplified Architecture** - Server-only attack count management (no client-side calculation/decrement)
+- ✅ **Unity Read-Only** - AttackCountLoader.cs now only reads from server (GetAttackCounts)
+- ✅ **KISS Principle Applied** - Eliminated duplicate functionality, single source of truth
+- ✅ **MongoDB Schema Updated** - Added attackCounts field to Copilot instructions
+- ✅ **Documentation Complete** - 3 new V8 docs + updated Copilot instructions with V8 architecture
+
+**Key Changes in V7 (Previous):**
+- ✅ Network Retry Mechanism (3-attempt retry with exponential backoff)
+- ✅ Kill Counter System (visual tracking, 3 kills = win)
+- ✅ Network Error Indicator (visual feedback during errors)
+- ✅ Debug Logging Policy (Debug.LogWarning for important logs)
+- ✅ Dead Card Bug Fix (retry prevents zombie cards)
