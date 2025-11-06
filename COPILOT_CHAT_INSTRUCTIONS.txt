@@ -1,0 +1,114 @@
+═══════════════════════════════════════════════════════════════
+  📋 COPILOT INSTRUCTION: Implement Attack ID 2 (Kick)
+═══════════════════════════════════════════════════════════════
+
+TARGET FILE: api/executeBattle.js
+
+═══════════════════════════════════════════════════════════════
+TASK 1: Create executeKick() function
+═══════════════════════════════════════════════════════════════
+
+LOCATION: Add after executePunch() function (~line 123)
+
+REQUIREMENTS:
+• Input: (attackerCard, defenderCard) objects
+• Damage formula: Math.floor(speed/3) - Math.floor(defense/3), min 1
+• Apply damage to defenderCard.health
+• 20% chance (Math.random() <= 0.2): +4 extra damage
+• Return: { damage, didExtraDamage, extraDamage }
+
+CRITICAL:
+⚠️ Use Math.floor() TWICE (once per stat) - must match Unity!
+⚠️ Extra damage is FIXED 4 (not random)
+
+═══════════════════════════════════════════════════════════════
+TASK 2: Add Attack ID 2 to simulateBattle()
+═══════════════════════════════════════════════════════════════
+
+LOCATION: simulateBattle() function (~line 193-217)
+
+CHANGE THIS:
+```javascript
+if (firstAttackId === 1) {
+  firstResult = executePunch(firstCard, secondCard);
+}
+```
+
+TO THIS:
+```javascript
+if (firstAttackId === 1) {
+  firstResult = executePunch(firstCard, secondCard);
+} else if (firstAttackId === 2) {
+  firstResult = executeKick(firstCard, secondCard);
+}
+```
+
+REPEAT FOR: secondAttackId (second attack, same pattern)
+
+═══════════════════════════════════════════════════════════════
+TASK 3: **CRITICAL** - Add attackId to response
+═══════════════════════════════════════════════════════════════
+
+LOCATION: simulateBattle() - result object construction
+
+ADD THIS PROPERTY to BOTH attacks objects:
+```javascript
+attacks: {
+  [card1.cardId]: {
+    attackId: attackId1,  // ← ADD THIS LINE FIRST!
+    damage: ...,
+    // ... rest of properties
+  },
+  [card2.cardId]: {
+    attackId: attackId2,  // ← ADD THIS LINE FIRST!
+    damage: ...,
+    // ... rest of properties
+  }
+}
+```
+
+WHY CRITICAL: Unity client needs attackId to determine which
+animation to play (Punch vs Kick vs others)
+
+═══════════════════════════════════════════════════════════════
+VERIFICATION CHECKLIST:
+═══════════════════════════════════════════════════════════════
+
+□ executeKick() exists with correct damage formula
+□ simulateBattle() has "else if (attackId === 2)" for BOTH attacks
+□ Response includes attackId for card1 AND card2
+□ Damage formula uses floor() twice: floor(speed/3) - floor(defense/3)
+□ Extra damage is exactly 4 (not random)
+□ 20% proc uses: Math.random() <= 0.2
+
+═══════════════════════════════════════════════════════════════
+TEST AFTER IMPLEMENTATION:
+═══════════════════════════════════════════════════════════════
+
+Expected response format:
+{
+  "battleResult": {
+    "attacks": {
+      "card1_id": {
+        "attackId": 2,      ← MUST BE PRESENT!
+        "damage": 5
+      },
+      "card2_id": {
+        "attackId": 1,      ← MUST BE PRESENT!
+        "damage": 2
+      }
+    }
+  }
+}
+
+═══════════════════════════════════════════════════════════════
+REFERENCE:
+═══════════════════════════════════════════════════════════════
+
+Unity Implementation (Attack.cs line ~507):
+receiver.TakeDamage((attacker.speed / 3) - (receiver.defense / 3));
+if (UnityEngine.Random.value <= 0.2f) receiver.TakeDamage(4);
+
+Server MUST replicate this EXACTLY!
+
+═══════════════════════════════════════════════════════════════

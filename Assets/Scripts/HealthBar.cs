@@ -25,7 +25,10 @@ public class HealthBar : MonoBehaviour
     // Update is called once per frame
     public void SetHP(float hp)
     {
+        float oldHp = this.hp;
         this.hp = Mathf.Clamp(hp, 0, maxHp); // Zabezpečíme, aby hp nebolo mimo rozsah
+        
+        Debug.LogWarning($"❤️ [HP_BAR] {gameObject.name}.SetHP({hp}) → Clamped: {this.hp}/{maxHp} (fillAmount: {this.hp / maxHp:F2}) [Change: {this.hp - oldHp:+#.#;-#.#;0}]");
 
         // Aktualizujeme množstvo zdravia
         health.fillAmount = this.hp / maxHp;

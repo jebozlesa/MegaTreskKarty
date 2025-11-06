@@ -1,0 +1,264 @@
+═══════════════════════════════════════════════════════════════
+  📋 COPILOT INSTRUCTION: Implement Attack ID 3 (Heal)
+═══════════════════════════════════════════════════════════════
+
+TARGET FILE: api/executeBattle.js
+
+⚠️ CRITICAL: Heal je SELF-HEAL útok (heals attacker, nie damage defender!)
+
+═══════════════════════════════════════════════════════════════
+TASK 1: Create executeHeal() function
+═══════════════════════════════════════════════════════════════
+
+LOCATION: Add after executeKick() function
+
+REQUIREMENTS:
+• Input: (attackerCard, defenderCard) - ale heals ATTACKER!
+• Heal amount: Random(1,2) + Math.floor(attackerCard.knowledge / 4)
+  - Random(1,2) means: Math.floor(Math.random() * 2) + 1 (1 alebo 2)
+  - Plus: floor(knowledge / 4)
+  - Example: knowledge=12 → 1-2 + 3 = 4-5 HP heal
+
+• Apply heal to ATTACKER:
+  - attackerCard.health += healAmount
+  - Clamp to maxHealth: if (health > maxHealth) health = maxHealth
+
+• Remove negative effects from ATTACKER:
+  - Effect ID 1 (bleed)
+  - Effect ID 4 (exposure/radiation)
+  - Effect ID 13 (unknown - remove anyway)
+  - Effect ID 24 (unknown - remove anyway)
+  - Implementation: Filter attackerCard.effects array
+
+• Return: { 
+    healAmount: number,
+    effectsRemoved: array of effect types removed
+  }
+
+CRITICAL:
+⚠️ Heal formula: Random(1,2) + floor(knowledge/4)
+⚠️ This attack does NOT damage defender!
+⚠️ Remove effects array: [1, 4, 13, 24]
+
+═══════════════════════════════════════════════════════════════
+TASK 2: Add Attack ID 3 to simulateBattle()
+═══════════════════════════════════════════════════════════════
+
+LOCATION: simulateBattle() function
+
+⚠️ SPECIAL HANDLING: Heal neútočí na opponent!
+
+CHANGE THIS (first attack):
+```javascript
+if (firstAttackId === 1) {
+  firstResult = executePunch(firstCard, secondCard);
+} else if (firstAttackId === 2) {
+  firstResult = executeKick(firstCard, secondCard);
+}
+```
+
+TO THIS:
+```javascript
+if (firstAttackId === 1) {
+  firstResult = executePunch(firstCard, secondCard);
+} else if (firstAttackId === 2) {
+  firstResult = executeKick(firstCard, secondCard);
+} else if (firstAttackId === 3) {
+  firstResult = executeHeal(firstCard, secondCard);
+  // Note: Heal affects firstCard (self), not secondCard
+}
+```
+
+REPEAT FOR: secondAttackId (same pattern)
+
+SPECIAL NOTE:
+- executeHeal() returns { healAmount, effectsRemoved }
+- Damage field should be 0 for heal attacks
+- Result mapping needs adjustment (see Task 3)
+
+═══════════════════════════════════════════════════════════════
+TASK 3: Adjust result mapping for Heal ⚠️ CRITICAL!
+═══════════════════════════════════════════════════════════════
+
+LOCATION: simulateBattle() - result object construction
+
+⚠️ CRITICAL: Unity NEEDS "healAmount" field in response!
+⚠️ WITHOUT healAmount: Heal won't trigger green HP animation + heal sound!
+
+CURRENT LOGIC:
+```javascript
+attacks: {
+  [card1.cardId]: {
+    attackId: attackId1,
+    damage: firstAttacker === 'player1' ? firstResult.damage : secondResult.damage,
+    // ...
+  }
+}
+```
+
+PROBLEM: Heal doesn't have "damage" property, has "healAmount"
+
+SOLUTION: Add healAmount field (MANDATORY for Unity animations!)
+
+UPDATE to:
+```javascript
+attacks: {
+  [card1.cardId]: {
+    attackId: attackId1,
+    damage: firstAttacker === 'player1' 
+      ? (firstResult.damage !== undefined ? firstResult.damage : 0)
+      : (secondResult.damage !== undefined ? secondResult.damage : 0),
+    healAmount: firstAttacker === 'player1'  // ⚠️ CRITICAL: Unity needs this!
+      ? (firstResult.healAmount || 0) 
+      : (secondResult.healAmount || 0),
+    effectsRemoved: firstAttacker === 'player1'
+      ? (firstResult.effectsRemoved || [])
+      : (secondResult.effectsRemoved || []),
+    didSleep: firstAttacker === 'player1' ? secondResult.didSleep : firstResult.didSleep,
+    sleepDuration: firstAttacker === 'player1' ? secondResult.sleepDuration : firstResult.sleepDuration,
+    effects: card1.effects || []
+  },
+  [card2.cardId]: {
+    attackId: attackId2,
+    damage: firstAttacker === 'player2'
+      ? (firstResult.damage !== undefined ? firstResult.damage : 0)
+      : (secondResult.damage !== undefined ? secondResult.damage : 0),
+    healAmount: firstAttacker === 'player2'  // ⚠️ CRITICAL: Unity needs this!
+      ? (firstResult.healAmount || 0)
+      : (secondResult.healAmount || 0),
+    effectsRemoved: firstAttacker === 'player2'
+      ? (firstResult.effectsRemoved || [])
+      : (secondResult.effectsRemoved || []),
+    didSleep: firstAttacker === 'player2' ? secondResult.didSleep : firstResult.didSleep,
+    sleepDuration: firstAttacker === 'player2' ? secondResult.sleepDuration : firstResult.sleepDuration,
+    effects: card2.effects || []
+  }
+}
+```
+
+WHY: Different attacks return different data:
+- Punch/Kick: { damage, didSleep, ... }
+- Heal: { healAmount, effectsRemoved }
+- Response must support both formats
+
+⚠️ UNITY DEPENDENCY:
+Unity calls: attacker.Heal(healAmount) → triggers green HP animation + sound
+WITHOUT healAmount: Unity logs "healAmount=0! Server didn't return healAmount!"
+
+═══════════════════════════════════════════════════════════════
+IMPLEMENTATION DETAILS: executeHeal()
+═══════════════════════════════════════════════════════════════
+
+```javascript
+function executeHeal(attackerCard, defenderCard) {
+  // 1. Calculate heal amount
+  const randomHeal = Math.floor(Math.random() * 2) + 1; // 1-2
+  const knowledgeBonus = Math.floor(attackerCard.knowledge / 4);
+  const healAmount = randomHeal + knowledgeBonus;
+  
+  console.log(`[executeHeal] ${attackerCard.name} heals: ${healAmount} HP`);
+  
+  // 2. Apply heal to ATTACKER (self-heal)
+  attackerCard.health += healAmount;
+  if (attackerCard.health > attackerCard.maxHealth) {
+    attackerCard.health = attackerCard.maxHealth;
+  }
+  
+  // 3. Remove negative effects (IDs: 1, 4, 13, 24)
+  const effectsToRemove = [1, 4, 13, 24];
+  const effectsRemoved = [];
+  
+  if (attackerCard.effects && attackerCard.effects.length > 0) {
+    const originalEffects = [...attackerCard.effects];
+    attackerCard.effects = attackerCard.effects.filter(effect => {
+      // Assuming effect has { type: number } or { id: number }
+      const effectId = effect.type || effect.id;
+      if (effectsToRemove.includes(effectId)) {
+        effectsRemoved.push(effectId);
+        return false; // Remove this effect
+      }
+      return true; // Keep this effect
+    });
+    
+    if (effectsRemoved.length > 0) {
+      console.log(`[executeHeal] Removed effects: ${effectsRemoved.join(', ')}`);
+    }
+  }
+  
+  // 4. Return result
+  return {
+    healAmount: healAmount,
+    effectsRemoved: effectsRemoved,
+    damage: 0  // No damage dealt
+  };
+}
+```
+
+NOTE: Effect structure depends on your current implementation.
+Adjust "effect.type" vs "effect.id" based on existing code.
+
+═══════════════════════════════════════════════════════════════
+VERIFICATION CHECKLIST:
+═══════════════════════════════════════════════════════════════
+
+□ executeHeal() exists after executeKick()
+□ Heal formula: Random(1,2) + floor(knowledge/4)
+□ Heals ATTACKER (not defender!)
+□ Clamps to maxHealth
+□ Removes effects: [1, 4, 13, 24]
+□ Returns { healAmount, effectsRemoved, damage: 0 }
+□ simulateBattle() has "else if (attackId === 3)" for BOTH attacks
+□ Result object includes healAmount field
+□ Result object includes effectsRemoved field
+□ Response includes attackId: 3
+
+═══════════════════════════════════════════════════════════════
+TEST SCENARIOS:
+═══════════════════════════════════════════════════════════════
+
+Scenario 1: Basic Heal
+Card: knowledge=8, health=15/30
+Expected heal: 1-2 + floor(8/4) = 1-2 + 2 = 3-4 HP
+Final health: 18-19 HP
+
+Scenario 2: Overheal Protection
+Card: knowledge=12, health=28/30
+Expected heal: 1-2 + floor(12/4) = 1-2 + 3 = 4-5 HP
+Final health: 30 HP (clamped to maxHealth)
+
+Scenario 3: Effect Removal
+Card: has effects [{ type: 1 }, { type: 5 }, { type: 4 }]
+Expected: Remove effects 1 and 4, keep effect 5
+Result: effects = [{ type: 5 }]
+
+Expected Response:
+{
+  "battleResult": {
+    "attacks": {
+      "card1_id": {
+        "attackId": 3,
+        "damage": 0,
+        "healAmount": 4,
+        "effectsRemoved": [1, 4],
+        "effects": []
+      }
+    }
+  }
+}
+
+═══════════════════════════════════════════════════════════════
+REFERENCE:
+═══════════════════════════════════════════════════════════════
+
+Unity Implementation (Attack.cs line ~518):
+```csharp
+attacker.Heal(Random.Range(1, 2) + (attacker.knowledge / 4));
+attacker.RemoveEffectById(1);   // bleed
+attacker.RemoveEffectById(4);   // exposure
+attacker.RemoveEffectById(13);  // unknown
+attacker.RemoveEffectById(24);  // unknown
+```
+
+Server MUST replicate this EXACTLY!
+
+═══════════════════════════════════════════════════════════════

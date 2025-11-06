@@ -45,6 +45,13 @@ public class BattleResultProcessor : MonoBehaviour
     /// </summary>
     public void ProcessBattleResult(Dictionary<string, object> battleResult)
     {
+        Debug.LogWarning($"📦 [BATTLE_RESULT] ===== RAW SERVER RESPONSE ===== ");
+        foreach (var kvp in battleResult)
+        {
+            Debug.LogWarning($"📦 [BATTLE_RESULT] {kvp.Key}: {kvp.Value}");
+        }
+        Debug.LogWarning($"📦 [BATTLE_RESULT] ================================ ");
+        
         Debug.Log($"[BattleResultProcessor] Processing battle result (V5)");
         
         // Získaj karty
@@ -56,6 +63,9 @@ public class BattleResultProcessor : MonoBehaviour
             Debug.LogError("[BattleResultProcessor] Cannot apply result - cards not found");
             return;
         }
+        
+        Debug.LogWarning($"🎴 [CARDS] MY: {myCard.cardName} (cardId={myCard.cardId}, HP={myCard.health}/{myCard.maxHealth})");
+        Debug.LogWarning($"🎴 [CARDS] ENEMY: {enemyCard.cardName} (cardId={enemyCard.cardId}, HP={enemyCard.health}/{enemyCard.maxHealth})");
         
         // ✅ V5: Parsuj attacks object (indexované podľa cardId)
         if (!battleResult.ContainsKey("attacks"))
@@ -91,21 +101,31 @@ public class BattleResultProcessor : MonoBehaviour
         int myDamage = int.Parse(myAttackData["damage"].ToString());
         int enemyDamage = int.Parse(enemyAttackData["damage"].ToString());
         
-        Debug.Log($"[BattleResultProcessor] MyDamage={myDamage}, EnemyDamage={enemyDamage}");
+        // ✅ NEW: Získaj attackId pre správne animácie
+        int myAttackId = myAttackData.ContainsKey("attackId") ? int.Parse(myAttackData["attackId"].ToString()) : 1;
+        int enemyAttackId = enemyAttackData.ContainsKey("attackId") ? int.Parse(enemyAttackData["attackId"].ToString()) : 1;
+        
+        // ✅ V9: Získaj healAmount pre self-heal útoky (Attack ID 3, atď.)
+        int myHealAmount = myAttackData.ContainsKey("healAmount") ? int.Parse(myAttackData["healAmount"].ToString()) : 0;
+        int enemyHealAmount = enemyAttackData.ContainsKey("healAmount") ? int.Parse(enemyAttackData["healAmount"].ToString()) : 0;
+        
+        Debug.LogWarning($"[BattleResultProcessor] MyAttackId={myAttackId}, MyDamage={myDamage}, MyHeal={myHealAmount}, EnemyAttackId={enemyAttackId}, EnemyDamage={enemyDamage}, EnemyHeal={enemyHealAmount}");
         
         // ✅ Spusti animácie (HP sa updatne postupne!)
         // ✅ REFRESH selectedCards sa spustí AŽ PO animáciách
-        StartCoroutine(PlayBattleAnimationsAndRefresh(myCard, enemyCard, firstAttacker, myCardId, enemyCardId, myDamage, enemyDamage));
+        StartCoroutine(PlayBattleAnimationsAndRefresh(myCard, enemyCard, firstAttacker, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount));
     }
     
     /// <summary>
     /// Wrapper coroutine - animácie POTOM refresh
     /// V5: Používa cardId na identifikáciu, damage namiesto finalHealth
+    /// V8: Pridané attackId pre dynamické animácie
+    /// V9: Pridané healAmount pre self-heal animácie
     /// </summary>
-    private IEnumerator PlayBattleAnimationsAndRefresh(Kard myCard, Kard enemyCard, string firstAttacker, string myCardId, string enemyCardId, int myDamage, int enemyDamage)
+    private IEnumerator PlayBattleAnimationsAndRefresh(Kard myCard, Kard enemyCard, string firstAttacker, string myCardId, string enemyCardId, int myAttackId, int enemyAttackId, int myDamage, int enemyDamage, int myHealAmount, int enemyHealAmount)
     {
         // 1. Prehrá animácie (postupný HP update)
-        yield return StartCoroutine(PlayBattleAnimations(myCard, enemyCard, firstAttacker, myCardId, enemyCardId, myDamage, enemyDamage));
+        yield return StartCoroutine(PlayBattleAnimations(myCard, enemyCard, firstAttacker, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount));
         
         // 2. AŽ PO animáciách refreshni selectedCards z DB (pre buffs/effects)
         yield return StartCoroutine(RefreshCardsFromServer());
@@ -155,7 +175,12 @@ public class BattleResultProcessor : MonoBehaviour
                 
                 if (card != null)
                 {
+                    Debug.LogWarning($"🔄 [REFRESH] Updating {card.cardName} from server:");
+                    Debug.LogWarning($"🔄 [REFRESH]   - Current Kard.health: {card.health}/{card.maxHealth}");
+                    Debug.LogWarning($"🔄 [REFRESH]   - Server cardData.health: {cardData.health}/{cardData.maxHealth}");
+                    
                     // ✅ Zachytaj stat changes pre animácie
+                    int oldHealth = card.health;  // ✅ DEBUG: Track health change
                     int oldStrength = card.strength;
                     int oldDefense = card.defense;
                     int oldSpeed = card.speed;
@@ -169,6 +194,20 @@ public class BattleResultProcessor : MonoBehaviour
                     card.speed = cardData.speed;
                     card.knowledge = cardData.knowledge;
                     
+                    Debug.LogWarning($"🔄 [REFRESH]   - After update Kard.health: {card.health}/{card.maxHealth} (change: {card.health - oldHealth})");
+                    
+                    // ⚠️ CRITICAL: Sync HP bar after server refresh!
+                    if (playerId == fightSystem.myPlayerId)
+                    {
+                        playerLifeBar.SetHP(card.health);
+                        Debug.LogWarning($"🔄 [REFRESH] playerLifeBar.SetHP({card.health}) - MY card synced");
+                    }
+                    else
+                    {
+                        enemyLifeBar.SetHP(card.health);
+                        Debug.LogWarning($"🔄 [REFRESH] enemyLifeBar.SetHP({card.health}) - ENEMY card synced");
+                    }
+                    
                     // ✅ Animuj stat changes ak sa zmenili
                     if (cardAnimator != null)
                     {
@@ -178,13 +217,25 @@ public class BattleResultProcessor : MonoBehaviour
                         int knoChange = card.knowledge - oldKnowledge;
                         
                         if (strChange != 0)
+                        {
+                            Debug.LogWarning($"🔄 [REFRESH] STR changed: {oldStrength} → {card.strength} ({strChange:+#;-#;0})");
                             StartCoroutine(cardAnimator.AnimateStatChange(card, strChange, "STR"));
+                        }
                         if (defChange != 0)
+                        {
+                            Debug.LogWarning($"🔄 [REFRESH] DEF changed: {oldDefense} → {card.defense} ({defChange:+#;-#;0})");
                             StartCoroutine(cardAnimator.AnimateStatChange(card, defChange, "DEF"));
+                        }
                         if (spdChange != 0)
+                        {
+                            Debug.LogWarning($"🔄 [REFRESH] SPD changed: {oldSpeed} → {card.speed} ({spdChange:+#;-#;0})");
                             StartCoroutine(cardAnimator.AnimateStatChange(card, spdChange, "SPD"));
+                        }
                         if (knoChange != 0)
+                        {
+                            Debug.LogWarning($"🔄 [REFRESH] KNO changed: {oldKnowledge} → {card.knowledge} ({knoChange:+#;-#;0})");
                             StartCoroutine(cardAnimator.AnimateStatChange(card, knoChange, "KNO"));
+                        }
                     }
                     
                     // ✅ Aplikuj effects (burn, sleep, atď.)
@@ -208,12 +259,15 @@ public class BattleResultProcessor : MonoBehaviour
     /// <summary>
     /// Prehrá battle animácie s postupným HP updateom
     /// V5: Používa cardId na určenie kto útočil prvý
+    /// V8: Pridané attackId pre dynamické animácie (reuse Attack.cs metód)
+    /// V9: Pridané healAmount pre self-heal animácie
     /// </summary>
-    private IEnumerator PlayBattleAnimations(Kard myCard, Kard enemyCard, string firstAttacker, string myCardId, string enemyCardId, int myDamage, int enemyDamage)
+    private IEnumerator PlayBattleAnimations(Kard myCard, Kard enemyCard, string firstAttacker, string myCardId, string enemyCardId, int myAttackId, int enemyAttackId, int myDamage, int enemyDamage, int myHealAmount, int enemyHealAmount)
     {
         bool iAttackedFirst = (firstAttacker == myCardId);
         
-        Debug.Log($"[PlayBattleAnimations] FirstAttacker={firstAttacker}, MyCardId={myCardId}, IAttackedFirst={iAttackedFirst}");
+        Debug.LogWarning($"[PlayBattleAnimations] FirstAttacker={firstAttacker}, MyCardId={myCardId}, IAttackedFirst={iAttackedFirst}");
+        Debug.LogWarning($"[PlayBattleAnimations] MyAttackId={myAttackId}, EnemyAttackId={enemyAttackId}");
         
         AttackAnimations animations = attackComponent?.attackAnimations;
         if (animations == null)
@@ -225,77 +279,25 @@ public class BattleResultProcessor : MonoBehaviour
         if (iAttackedFirst)
         {
             // ✅ JA ÚTOČÍM PRVÝ
-            yield return StartCoroutine(ShowDialog($"{myCard.cardName} uses Punch!"));
-            yield return StartCoroutine(animations.PlayPunchAnimation(myCard.transform, enemyCard.transform));
-            
-            // ✅ APLIKUJ DAMAGE NA NEPRIATEĽA S ANIMÁCIOU
-            enemyCard.health -= myDamage;
-            if (enemyCard.health < 0) enemyCard.health = 0;
-            
-            if (cardAnimator != null && myDamage > 0)
-            {
-                yield return StartCoroutine(cardAnimator.AnimateDamage(enemyCard, myDamage));
-            }
-            enemyLifeBar.SetHP(enemyCard.health);
-            
-            yield return StartCoroutine(ShowDialog($"Hit! {myDamage} damage!"));
+            yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, myDamage, myHealAmount, true));
             
             // ✅ AK NEPRIATEĽ PREŽIL, JEHO ÚTOK
             if (enemyCard.health > 0)
             {
                 yield return new WaitForSeconds(0.5f);
-                yield return StartCoroutine(ShowDialog($"{enemyCard.cardName} uses Punch!"));
-                yield return StartCoroutine(animations.PlayPunchAnimation(enemyCard.transform, myCard.transform));
-                
-                // ✅ APLIKUJ DAMAGE NA MŇA S ANIMÁCIOU
-                myCard.health -= enemyDamage;
-                if (myCard.health < 0) myCard.health = 0;
-                
-                if (cardAnimator != null && enemyDamage > 0)
-                {
-                    yield return StartCoroutine(cardAnimator.AnimateDamage(myCard, enemyDamage));
-                }
-                playerLifeBar.SetHP(myCard.health);
-                
-                yield return StartCoroutine(ShowDialog($"Hit! {enemyDamage} damage!"));
+                yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, enemyDamage, enemyHealAmount, false));
             }
         }
         else
         {
             // ✅ NEPRIATEĽ ÚTOČÍ PRVÝ
-            yield return StartCoroutine(ShowDialog($"{enemyCard.cardName} uses Punch!"));
-            yield return StartCoroutine(animations.PlayPunchAnimation(enemyCard.transform, myCard.transform));
-            
-            // ✅ APLIKUJ DAMAGE NA MŇA S ANIMÁCIOU
-            myCard.health -= enemyDamage;
-            if (myCard.health < 0) myCard.health = 0;
-            
-            if (cardAnimator != null && enemyDamage > 0)
-            {
-                yield return StartCoroutine(cardAnimator.AnimateDamage(myCard, enemyDamage));
-            }
-            playerLifeBar.SetHP(myCard.health);
-            
-            yield return StartCoroutine(ShowDialog($"Hit! {enemyDamage} damage!"));
+            yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, enemyDamage, enemyHealAmount, false));
             
             // ✅ AK JA PREŽIJEM, MÔJ ÚTOK
             if (myCard.health > 0)
             {
                 yield return new WaitForSeconds(0.5f);
-                yield return StartCoroutine(ShowDialog($"{myCard.cardName} uses Punch!"));
-                yield return StartCoroutine(animations.PlayPunchAnimation(myCard.transform, enemyCard.transform));
-                
-                // ✅ APLIKUJ DAMAGE NA NEPRIATEĽA S ANIMÁCIOU
-                enemyCard.health -= myDamage;
-                if (enemyCard.health < 0) enemyCard.health = 0;
-                
-                if (cardAnimator != null && myDamage > 0)
-                {
-                    yield return StartCoroutine(cardAnimator.AnimateDamage(enemyCard, myDamage));
-                }
-                enemyLifeBar.SetHP(enemyCard.health);
-                
-                yield return StartCoroutine(ShowDialog($"Hit! {myDamage} damage!"));
+                yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, myDamage, myHealAmount, true));
             }
         }
         
@@ -315,6 +317,120 @@ public class BattleResultProcessor : MonoBehaviour
         // Skontroluj výsledok
         yield return new WaitForSeconds(1f);
         CheckBattleOutcome(myCard, enemyCard);
+    }
+    
+    /// <summary>
+    /// Vykoná animáciu pre konkrétny útok (reuse Attack.cs metód)
+    /// V8: Podporuje Attack ID 1 (Punch), 2 (Kick), 3 (Heal), ... rozširiteľné
+    /// V9: Heal support - self-heal attacks s healAmount + zelená HP animácia
+    /// </summary>
+    private IEnumerator ExecuteAttackAnimation(Kard attacker, Kard defender, int attackId, int damage, int healAmount, bool isMyAttack)
+    {
+        string attackName = GetAttackName(attackId);
+        AttackAnimations animations = attackComponent.attackAnimations;
+        
+        // ✅ Zobraz správu o útoku
+        yield return StartCoroutine(ShowDialog($"{attacker.cardName} uses {attackName}!"));
+        
+        // ✅ Prehrá animáciu podľa attackId
+        switch (attackId)
+        {
+            case 1: // Punch
+                yield return StartCoroutine(animations.PlayPunchAnimation(attacker.transform, defender.transform));
+                break;
+                
+            case 2: // Kick
+                yield return StartCoroutine(animations.PlayKickAnimation(attacker.transform, defender.transform));
+                break;
+                
+            case 3: // Heal (self-heal animation)
+                yield return StartCoroutine(animations.PlayHealAnimation(attacker.transform));
+                break;
+                
+            // ✅ TODO: Pridaj case 4, 5, 6... pre ďalšie útoky
+            
+            default:
+                Debug.LogWarning($"[ExecuteAttackAnimation] Unknown attackId={attackId}, using Punch animation");
+                yield return StartCoroutine(animations.PlayPunchAnimation(attacker.transform, defender.transform));
+                break;
+        }
+        
+        // ✅ V9: Special handling pre self-heal útoky (Attack ID 3 = Heal)
+        if (attackId == 3)
+        {
+            // ✅ Heal - zavolaj Kard.Heal() metódu (trigger zelená HP animácia!)
+            if (healAmount > 0)
+            {
+                Debug.LogWarning($"🩹 [HEAL] {attacker.cardName} heals for {healAmount} HP! (Before: {attacker.health}/{attacker.maxHealth})");
+                attacker.Heal(healAmount);  // ✅ Trigger zelená HP animácia + heal sound
+                Debug.LogWarning($"🩹 [HEAL] {attacker.cardName} after Heal(): HP={attacker.health}/{attacker.maxHealth}");
+                yield return StartCoroutine(ShowDialog($"{attacker.cardName} healed {healAmount} HP!"));
+                
+                // ✅ DEBUG: Manually sync HP bar after heal
+                Debug.LogWarning($"🩹 [HEAL] Updating HP bar for {(isMyAttack ? "MY" : "ENEMY")} card");
+                if (isMyAttack)
+                {
+                    playerLifeBar.SetHP(attacker.health);
+                    Debug.LogWarning($"🩹 [HEAL] playerLifeBar.SetHP({attacker.health}) called");
+                }
+                else
+                {
+                    enemyLifeBar.SetHP(attacker.health);
+                    Debug.LogWarning($"🩹 [HEAL] enemyLifeBar.SetHP({attacker.health}) called");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[ExecuteAttackAnimation] ⚠️ healAmount=0! Server didn't return healAmount!");
+                yield return StartCoroutine(ShowDialog($"{attacker.cardName} healed!"));
+            }
+        }
+        else
+        {
+            // ✅ Damage útoky (Punch, Kick, atď.)
+            Debug.LogWarning($"💥 [DAMAGE] {attacker.cardName} attacks {defender.cardName} for {damage} damage! (Defender HP before: {defender.health}/{defender.maxHealth})");
+            defender.health -= damage;
+            if (defender.health < 0) defender.health = 0;
+            Debug.LogWarning($"💥 [DAMAGE] {defender.cardName} after damage: HP={defender.health}/{defender.maxHealth}");
+            
+            if (cardAnimator != null && damage > 0)
+            {
+                yield return StartCoroutine(cardAnimator.AnimateDamage(defender, damage));
+            }
+            
+            // ✅ Update HP bar (môj alebo nepriateľov)
+            Debug.LogWarning($"💥 [DAMAGE] Updating HP bar for {(isMyAttack ? "ENEMY" : "MY")} card");
+            if (isMyAttack)
+            {
+                enemyLifeBar.SetHP(defender.health);
+                Debug.LogWarning($"💥 [DAMAGE] enemyLifeBar.SetHP({defender.health}) called");
+            }
+            else
+            {
+                playerLifeBar.SetHP(defender.health);
+                Debug.LogWarning($"💥 [DAMAGE] playerLifeBar.SetHP({defender.health}) called");
+            }
+            
+            yield return StartCoroutine(ShowDialog($"Hit! {damage} damage!"));
+        }
+    }
+    
+    /// <summary>
+    /// Vráti názov útoku pre attackId (pre dialog text)
+    /// </summary>
+    private string GetAttackName(int attackId)
+    {
+        switch (attackId)
+        {
+            case 1: return "Punch";
+            case 2: return "Kick";
+            case 3: return "Heal";
+            case 4: return "Forgiveness";
+            case 5: return "Crusade";
+            case 6: return "Water To Wine";
+            // ✅ TODO: Rozšíriť pre všetky útoky
+            default: return $"Attack#{attackId}";
+        }
     }
     
     /// <summary>
