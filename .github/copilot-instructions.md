@@ -1639,6 +1639,128 @@ Network indicator shows → Hides after success
 
 ---
 
+## ⚔️ Attack & Effect System (V9)
+
+### Implemented Attacks:
+
+#### Attack ID 1: Punch
+- **Damage:** 5 (base) - 2 (receiver defense)
+- **Effect:** 50% chance Sleep (duration=1)
+- **Notes:** Basic melee attack
+
+#### Attack ID 2: Kick
+- **Damage:** 7 (base) - 2 (receiver defense)
+- **Effect:** None
+- **Notes:** Higher damage, no effects
+
+#### Attack ID 3: Heal
+- **Damage:** 0 (no damage dealt)
+- **Effect:** Heals self for 4 HP
+- **Notes:** Cannot overheal (max = maxHealth)
+
+#### Attack ID 4: Forgiveness (NEW - V9)
+- **Damage:** 0 (no HP damage)
+- **Effect:** 100% Asceticism (duration=2) + Attack stat debuff (-1)
+- **Notes:** Peaceful attack, applies mental discipline effect
+- **Implementation:**
+  - Server: `executeForgiveness()` in `attackFunctions.js`
+  - Client: Uses existing `Attack.cs` animations
+  - No stacking: Ignores if target already has Asceticism or Sleep
+
+### Effect System:
+
+#### Effect Type 2: Asceticism (NEW - V9)
+- **Duration:** 2 turns (decrements when blocking: 2→1→0)
+- **Effect:** Blocks attacks + 1 HP self-damage per blocked attack
+- **Check Timing:** ONLY when card tries to attack (not at turn start)
+- **Recovery:** duration=0 → recovered=true, show END animation, icon removed, attack proceeds
+- **No Stacking:** Cannot have multiple Asceticism effects
+- **Mutual Exclusion:** Cannot coexist with Sleep (whichever applied first stays)
+- **Implementation:**
+  - Server: `checkAsceticismBlocking()` in `effectManager.js`
+  - Server: `willBeBlockedByAsceticism()` helper for Case selection (non-destructive check)
+  - Client: `PlayAsceticismStartAnimation()`, `PlayAsceticismBlockAnimation()`, `PlayAsceticismEndAnimation()`
+  - Fresh Effect Handling: Asceticism applied in same turn blocks counter-attack immediately
+
+**Asceticism Flow Example:**
+```
+Turn 1: Player uses Forgiveness → Enemy gets Asceticism (duration=2)
+Turn 2: Enemy tries to attack → BLOCKED, self-damage=1, duration 2→1
+Turn 3: Enemy tries to attack → BLOCKED, self-damage=1, duration 1→0
+Turn 4: Enemy tries to attack → RECOVERED (END animation, icon removed), attack proceeds
+```
+
+**Critical Implementation Details:**
+- Sleep checks ALL cards at turn start (decrements even if not attacking)
+- Asceticism checks ONLY when card attacks (per-attacker timing)
+- `willBeBlockedByAsceticism()` used for Case selection (doesn't modify effects)
+- `checkAsceticismBlocking()` called when card actually attacks (modifies effects: decrement, removal, self-damage)
+- Fresh Asceticism blocks counter-attack in same turn (duration decremented)
+
+#### Effect Type 3: Sleep
+- **Duration:** 1-2 turns (decrements: 2→1→0)
+- **Effect:** Blocks attack, no self-damage
+- **Check Timing:** At turn start for ALL cards
+- **Wake Up:** duration=0 → wokeUp=true, show wake animation, attack proceeds
+- **No Stacking:** Cannot stack Sleep effects
+- **Mutual Exclusion:** Cannot coexist with Asceticism
+
+### Effect No-Stacking Rules:
+
+**Rule:** Same effect type NEVER stacks!
+
+```javascript
+// Server (executeForgiveness):
+if (hasEffect(target, EffectTypes.ASCETICISM)) {
+  console.log("Already has Asceticism, IGNORING new application!");
+  return { damage: 0, effectApplied: null };  // Attack debuff still applied
+}
+
+// Server (executePunch/executeKick for Sleep):
+if (hasEffect(target, EffectTypes.SLEEP)) {
+  console.log("Already has Sleep, IGNORING new application!");
+  return { damage: calculatedDamage, didSleep: false };
+}
+```
+
+**Mutual Exclusion (Sleep ↔ Asceticism):**
+- If has Sleep → Cannot apply Asceticism
+- If has Asceticism → Cannot apply Sleep
+- First effect applied wins (stays until expires)
+
+**Priority:** EXISTING effect blocks NEW effect (no replacement)
+
+### Server Battle Flow (executeBattle.js):
+
+```javascript
+// 1. Determine first/second attacker by speed
+// 2. Sleep check - ALL cards at turn start
+const card1SleepCheck = checkSleepBlocking(card1, attackId1);
+const card2SleepCheck = checkSleepBlocking(card2, attackId2);
+
+// 3. Asceticism pre-check - determine Cases WITHOUT modifying effects
+const firstCardWillBeBlocked = willBeBlockedByAsceticism(firstCard);
+const secondCardWillBeBlocked = willBeBlockedByAsceticism(secondCard);
+
+// 4. Case selection:
+// Case 1: Both blocked → call checkAsceticismBlocking() for BOTH
+// Case 2: First blocked → call checkAsceticismBlocking() for first only
+// Case 4: Normal battle → 
+//   - Check firstCard Asceticism if duration=0 (recovery)
+//   - First attack executes
+//   - Check fresh effects on secondCard
+//   - Check existing Asceticism on secondCard (if not fresh)
+//   - Second attack executes (if not blocked)
+
+// 5. Result object includes:
+// - recovered: true/false (Asceticism recovery happened)
+// - selfDamage: 0 or 1 (Asceticism self-damage)
+// - blocked: true/false
+// - blockedBy: 2 (Asceticism) or 3 (Sleep)
+```
+
+---
+
 ## 📞 Support & Contact
 
 - GitHub Issues: [MegaTreskKarty/issues](https://github.com/jebozlesa/MegaTreskKarty/issues)
@@ -1657,11 +1779,23 @@ Network indicator shows → Hides after success
 
 ---
 
-**Last Updated:** 2025-11-05  
-**Version:** V8 (Attack Count System - Server Auto-Decrement & Cleanup)  
+**Last Updated:** 2025-12-20  
+**Version:** V9 (Forgiveness Attack + Asceticism Effect System)  
 **Current Branch:** Multiplayer  
 
-**Key Changes in V8:**
+**Key Changes in V9:**
+- ✅ **Attack ID 4: Forgiveness** - Peaceful attack (0 HP damage, -1 attack debuff, 100% Asceticism)
+- ✅ **Asceticism Effect** - Blocking effect with self-damage (duration=2, per-attacker timing)
+- ✅ **Effect No-Stacking** - Same effect types never stack (first applied wins)
+- ✅ **Mutual Exclusion** - Sleep ↔ Asceticism cannot coexist
+- ✅ **Fresh Effect Handling** - Effects applied in same turn block counter-attacks
+- ✅ **Recovery System** - duration=0 triggers END animation, icon removal, attack proceeds
+- ✅ **Per-Attacker Timing** - Asceticism checked ONLY when card attacks (unlike Sleep's global check)
+- ✅ **willBeBlockedByAsceticism()** - Non-destructive helper for Case selection
+- ✅ **Complete Animation System** - START, BLOCK, END animations for Asceticism
+- ✅ **Server Architecture** - Proper Case handling for first/second attacker scenarios
+
+**Key Changes in V8 (Previous):**
 - ✅ **Critical Bug Fix** - Attack counts now decrement correctly (attackSlot vs attackId fix)
 - ✅ **Server Auto-Decrement** - executeBattle.js automatically decrements attack counts after battles
 - ✅ **Comprehensive Cleanup** - Removed 6 deprecated files/components (client-side decrement system)

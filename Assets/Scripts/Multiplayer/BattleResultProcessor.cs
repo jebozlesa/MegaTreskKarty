@@ -138,6 +138,14 @@ public class BattleResultProcessor : MonoBehaviour
         bool myWokeUp = myAttackData.ContainsKey("wokeUp") && bool.Parse(myAttackData["wokeUp"].ToString());
         bool enemyWokeUp = enemyAttackData.ContainsKey("wokeUp") && bool.Parse(enemyAttackData["wokeUp"].ToString());
         
+        // ✅ V10: Skontroluj recovered flag (Asceticism recovery)
+        bool myRecovered = myAttackData.ContainsKey("recovered") && bool.Parse(myAttackData["recovered"].ToString());
+        bool enemyRecovered = enemyAttackData.ContainsKey("recovered") && bool.Parse(enemyAttackData["recovered"].ToString());
+        
+        // ✅ V10: Získaj selfDamage (Asceticism self-damage)
+        int mySelfDamage = myAttackData.ContainsKey("selfDamage") ? int.Parse(myAttackData["selfDamage"].ToString()) : 0;
+        int enemySelfDamage = enemyAttackData.ContainsKey("selfDamage") ? int.Parse(enemyAttackData["selfDamage"].ToString()) : 0;
+        
         // ✅ Získaj blockedBy field (typ effectu ktorý blokuje útok - numeric effect type ID)
         int? myBlockedBy = (myAttackData.ContainsKey("blockedBy") && myAttackData["blockedBy"] != null) 
             ? (int?)int.Parse(myAttackData["blockedBy"].ToString()) 
@@ -148,11 +156,13 @@ public class BattleResultProcessor : MonoBehaviour
         
         if (myAttackBlocked)
         {
-            Debug.LogWarning($"🛡️ [SLEEP] MY attack BLOCKED by Sleep! Remaining turns unknown (server-side)");
+            string effectName = GetEffectName(myBlockedBy ?? 0);
+            Debug.LogWarning($"🛡️ [BLOCK] MY attack BLOCKED by {effectName}! SelfDamage={mySelfDamage}");
         }
         if (enemyAttackBlocked)
         {
-            Debug.LogWarning($"🛡️ [SLEEP] ENEMY attack BLOCKED by Sleep!");
+            string effectName = GetEffectName(enemyBlockedBy ?? 0);
+            Debug.LogWarning($"🛡️ [BLOCK] ENEMY attack BLOCKED by {effectName}! SelfDamage={enemySelfDamage}");
         }
         if (myWokeUp)
         {
@@ -162,12 +172,20 @@ public class BattleResultProcessor : MonoBehaviour
         {
             Debug.LogWarning($"⏰ [SLEEP] ENEMY card WOKE UP from Sleep!");
         }
+        if (myRecovered)
+        {
+            Debug.LogWarning($"🙏 [ASCETICISM] MY card RECOVERED from Asceticism! Feels blessed again.");
+        }
+        if (enemyRecovered)
+        {
+            Debug.LogWarning($"🙏 [ASCETICISM] ENEMY card RECOVERED from Asceticism!");
+        }
         
-        Debug.LogWarning($"[BattleResultProcessor] MyAttackId={myAttackId}, MyDamage={myDamage}, MyHeal={myHealAmount}, MyBlocked={myAttackBlocked}, MyBlockedBy={myBlockedBy}, MyWokeUp={myWokeUp}, EnemyAttackId={enemyAttackId}, EnemyDamage={enemyDamage}, EnemyHeal={enemyHealAmount}, EnemyBlocked={enemyAttackBlocked}, EnemyBlockedBy={enemyBlockedBy}, EnemyWokeUp={enemyWokeUp}");
+        Debug.LogWarning($"[BattleResultProcessor] MyAttackId={myAttackId}, MyDamage={myDamage}, MyHeal={myHealAmount}, MySelfDamage={mySelfDamage}, MyBlocked={myAttackBlocked}, MyBlockedBy={myBlockedBy}, MyWokeUp={myWokeUp}, MyRecovered={myRecovered}, EnemyAttackId={enemyAttackId}, EnemyDamage={enemyDamage}, EnemyHeal={enemyHealAmount}, EnemySelfDamage={enemySelfDamage}, EnemyBlocked={enemyAttackBlocked}, EnemyBlockedBy={enemyBlockedBy}, EnemyWokeUp={enemyWokeUp}, EnemyRecovered={enemyRecovered}");
         
         // ✅ Spusti animácie (HP sa updatne postupne!)
         // ✅ REFRESH selectedCards sa spustí AŽ PO animáciách
-        StartCoroutine(PlayBattleAnimationsAndRefresh(myCard, enemyCard, firstAttacker, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myEffectApplied, enemyEffectApplied, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myBlockedBy, enemyBlockedBy));
+        StartCoroutine(PlayBattleAnimationsAndRefresh(myCard, enemyCard, firstAttacker, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myEffectApplied, enemyEffectApplied, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myBlockedBy, enemyBlockedBy));
     }
     
     /// <summary>
@@ -175,11 +193,12 @@ public class BattleResultProcessor : MonoBehaviour
     /// V5: Používa cardId na identifikáciu, damage namiesto finalHealth
     /// V8: Pridané attackId pre dynamické animácie
     /// V9: Pridané healAmount pre self-heal animácie + effectApplied pre effect ikony + Sleep blocking + blockedBy field
+    /// V10: Pridané recovered/selfDamage pre Asceticism effect
     /// </summary>
-    private IEnumerator PlayBattleAnimationsAndRefresh(Kard myCard, Kard enemyCard, string firstAttacker, string myCardId, string enemyCardId, int myAttackId, int enemyAttackId, int myDamage, int enemyDamage, int myHealAmount, int enemyHealAmount, Dictionary<string, object> myEffectApplied, Dictionary<string, object> enemyEffectApplied, bool myAttackBlocked, bool enemyAttackBlocked, bool myWokeUp, bool enemyWokeUp, int? myBlockedBy, int? enemyBlockedBy)
+    private IEnumerator PlayBattleAnimationsAndRefresh(Kard myCard, Kard enemyCard, string firstAttacker, string myCardId, string enemyCardId, int myAttackId, int enemyAttackId, int myDamage, int enemyDamage, int myHealAmount, int enemyHealAmount, Dictionary<string, object> myEffectApplied, Dictionary<string, object> enemyEffectApplied, bool myAttackBlocked, bool enemyAttackBlocked, bool myWokeUp, bool enemyWokeUp, bool myRecovered, bool enemyRecovered, int mySelfDamage, int enemySelfDamage, int? myBlockedBy, int? enemyBlockedBy)
     {
         // 1. Prehrá animácie (postupný HP update) + effect ikony V SPRÁVNOM PORADÍ
-        yield return StartCoroutine(PlayBattleAnimations(myCard, enemyCard, firstAttacker, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myEffectApplied, enemyEffectApplied, myBlockedBy, enemyBlockedBy));
+        yield return StartCoroutine(PlayBattleAnimations(myCard, enemyCard, firstAttacker, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myEffectApplied, enemyEffectApplied, myBlockedBy, enemyBlockedBy));
         
         // 2. ✅ Effect ikony sa zobrazujú UŽ v PlayBattleAnimations (MOVED)
         // Tento kód už nie je potrebný - effects sa zobrazujú v správnom momente počas battle flow
@@ -302,8 +321,51 @@ public class BattleResultProcessor : MonoBehaviour
                         {
                             Debug.Log($"[BattleResultProcessor] {card.cardName} has effect: {effect.type} (duration: {effect.duration})");
                             
-                            // TODO: Aplikuj visual effects (fire animation pre burn, ZZZ pre sleep, atď.)
-                            // TODO: Aplikuj gameplay effects cez Effects.cs system
+                            // ✅ V10: Pridaj effect ikony ak chýbajú (synchronizácia s DB)
+                            int effectType = int.Parse(effect.type.ToString());
+                            string effectName = GetEffectName(effectType);
+                            if (!string.IsNullOrEmpty(effectName))
+                            {
+                                // Check if icon already exists
+                                bool hasIcon = false;
+                                foreach (Transform child in card.effectIconContainer)
+                                {
+                                    if (child.name.StartsWith(effectName + "Icon"))
+                                    {
+                                        hasIcon = true;
+                                        break;
+                                    }
+                                }
+                                
+                                if (!hasIcon)
+                                {
+                                    Debug.LogWarning($"🔄 [REFRESH] Adding missing {effectName} icon to {card.cardName}");
+                                    card.AddEffectIcon(effectName);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // ✅ V10: Ak DB nemá žiadne effects, odstráň všetky ikony (cleanup)
+                        Debug.LogWarning($"🔄 [REFRESH] {card.cardName} has NO effects in DB - removing all effect icons");
+                        
+                        // Remove all effect icons
+                        List<Transform> iconsToRemove = new List<Transform>();
+                        foreach (Transform child in card.effectIconContainer)
+                        {
+                            iconsToRemove.Add(child);
+                        }
+                        
+                        foreach (Transform icon in iconsToRemove)
+                        {
+                            Debug.LogWarning($"🔄 [REFRESH] Removing orphaned icon: {icon.name}");
+                            Destroy(icon.gameObject);
+                        }
+                        
+                        if (iconsToRemove.Count > 0)
+                        {
+                            card.GetComponent<Kard>()?.GetType().GetMethod("RepositionEffectIcons", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(card, null);
                         }
                     }
                     
@@ -318,8 +380,9 @@ public class BattleResultProcessor : MonoBehaviour
     /// V5: Používa cardId na určenie kto útočil prvý
     /// V8: Pridané attackId pre dynamické animácie (reuse Attack.cs metód)
     /// V9: Pridané healAmount pre self-heal animácie + Sleep blocking (blocked/wokeUp flags) + effect ikony v správnom poradí + blockedBy field
+    /// V10: Pridané recovered/selfDamage pre Asceticism effect
     /// </summary>
-    private IEnumerator PlayBattleAnimations(Kard myCard, Kard enemyCard, string firstAttacker, string myCardId, string enemyCardId, int myAttackId, int enemyAttackId, int myDamage, int enemyDamage, int myHealAmount, int enemyHealAmount, bool myAttackBlocked, bool enemyAttackBlocked, bool myWokeUp, bool enemyWokeUp, Dictionary<string, object> myEffectApplied, Dictionary<string, object> enemyEffectApplied, int? myBlockedBy, int? enemyBlockedBy)
+    private IEnumerator PlayBattleAnimations(Kard myCard, Kard enemyCard, string firstAttacker, string myCardId, string enemyCardId, int myAttackId, int enemyAttackId, int myDamage, int enemyDamage, int myHealAmount, int enemyHealAmount, bool myAttackBlocked, bool enemyAttackBlocked, bool myWokeUp, bool enemyWokeUp, bool myRecovered, bool enemyRecovered, int mySelfDamage, int enemySelfDamage, Dictionary<string, object> myEffectApplied, Dictionary<string, object> enemyEffectApplied, int? myBlockedBy, int? enemyBlockedBy)
     {
         bool iAttackedFirst = (firstAttacker == myCardId);
         
@@ -336,6 +399,14 @@ public class BattleResultProcessor : MonoBehaviour
         if (iAttackedFirst)
         {
             // ✅ JA ÚTOČÍM PRVÝ
+            // ✅ V10: Skontroluj Asceticism recovery
+            if (myRecovered)
+            {
+                Debug.LogWarning($"🙏 [ASCETICISM] MY card RECOVERED from Asceticism before attack!");
+                yield return StartCoroutine(PlayRecoveryAnimation(myCard, "My card"));
+                yield return new WaitForSeconds(0.5f);
+            }
+            
             // ✅ V9: Skontroluj Sleep blocking/wake-up
             if (myWokeUp)
             {
@@ -357,8 +428,16 @@ public class BattleResultProcessor : MonoBehaviour
             }
             else
             {
-                // Útok blocked by effect (Sleep, Stun, atď.)
+                // ✅ V10: Útok blocked by effect (Sleep, Asceticism, atď.)
                 yield return StartCoroutine(PlayBlockAnimation(myCard, myBlockedBy, true));
+                
+                // ✅ V10: Ak je blocked Asceticism-om (type 2), aplikuj self-damage
+                if (myBlockedBy == 2 && mySelfDamage > 0)
+                {
+                    Debug.LogWarning($"🙏💔 [ASCETICISM] MY card takes {mySelfDamage} self-damage due to blocking!");
+                    myCard.health -= mySelfDamage;
+                    yield return StartCoroutine(PlaySelfDamageAnimation(myCard, mySelfDamage, true));
+                }
             }
             
             // ✅ AK NEPRIATEĽ PREŽIL, JEHO ÚTOK
@@ -366,7 +445,15 @@ public class BattleResultProcessor : MonoBehaviour
             {
                 yield return new WaitForSeconds(0.5f);
                 
-                // ✅ Nepriateľ wake-up check
+                // ✅ V10: Nepriateľ Asceticism recovery check
+                if (enemyRecovered)
+                {
+                    Debug.LogWarning($"🙏 [ASCETICISM] ENEMY card RECOVERED from Asceticism before counter-attack!");
+                    yield return StartCoroutine(PlayRecoveryAnimation(enemyCard, "Enemy card"));
+                    yield return new WaitForSeconds(0.5f);
+                }
+                
+                // ✅ V9: Nepriateľ wake-up check
                 if (enemyWokeUp)
                 {
                     yield return StartCoroutine(PlayWakeUpAnimation(enemyCard, false));
@@ -386,14 +473,30 @@ public class BattleResultProcessor : MonoBehaviour
                 }
                 else
                 {
-                    // Útok blocked by effect (Sleep, Stun, atď.)
+                    // ✅ V10: Útok blocked by effect (Sleep, Asceticism, atď.)
                     yield return StartCoroutine(PlayBlockAnimation(enemyCard, enemyBlockedBy, false));
+                    
+                    // ✅ V10: Ak je blocked Asceticism-om (type 2), aplikuj self-damage
+                    if (enemyBlockedBy == 2 && enemySelfDamage > 0)
+                    {
+                        Debug.LogWarning($"🙏💔 [ASCETICISM] ENEMY card takes {enemySelfDamage} self-damage due to blocking!");
+                        enemyCard.health -= enemySelfDamage;
+                        yield return StartCoroutine(PlaySelfDamageAnimation(enemyCard, enemySelfDamage, false));
+                    }
                 }
             }
         }
         else
         {
             // ✅ NEPRIATEĽ ÚTOČÍ PRVÝ
+            // ✅ V10: Nepriateľ Asceticism recovery check
+            if (enemyRecovered)
+            {
+                Debug.LogWarning($"🙏 [ASCETICISM] ENEMY card RECOVERED from Asceticism before attack!");
+                yield return StartCoroutine(PlayRecoveryAnimation(enemyCard, "Enemy card"));
+                yield return new WaitForSeconds(0.5f);
+            }
+            
             // ✅ V9: Nepriateľ wake-up check
             if (enemyWokeUp)
             {
@@ -413,8 +516,16 @@ public class BattleResultProcessor : MonoBehaviour
             }
             else
             {
-                // Útok blocked by effect (Sleep, Stun, atď.)
+                // ✅ V10: Útok blocked by effect (Sleep, Asceticism, atď.)
                 yield return StartCoroutine(PlayBlockAnimation(enemyCard, enemyBlockedBy, false));
+                
+                // ✅ V10: Ak je blocked Asceticism-om (type 2), aplikuj self-damage
+                if (enemyBlockedBy == 2 && enemySelfDamage > 0)
+                {
+                    Debug.LogWarning($"🙏💔 [ASCETICISM] ENEMY card takes {enemySelfDamage} self-damage due to blocking!");
+                    enemyCard.health -= enemySelfDamage;
+                    yield return StartCoroutine(PlaySelfDamageAnimation(enemyCard, enemySelfDamage, false));
+                }
             }
             
             // ✅ AK JA PREŽIJEM, MÔJ ÚTOK
@@ -422,7 +533,15 @@ public class BattleResultProcessor : MonoBehaviour
             {
                 yield return new WaitForSeconds(0.5f);
                 
-                // ✅ Môj wake-up check
+                // ✅ V10: Môj Asceticism recovery check
+                if (myRecovered)
+                {
+                    Debug.LogWarning($"🙏 [ASCETICISM] MY card RECOVERED from Asceticism before counter-attack!");
+                    yield return StartCoroutine(PlayRecoveryAnimation(myCard, "My card"));
+                    yield return new WaitForSeconds(0.5f);
+                }
+                
+                // ✅ V9: Môj wake-up check
                 if (myWokeUp)
                 {
                     yield return StartCoroutine(PlayWakeUpAnimation(myCard, true));
@@ -441,8 +560,16 @@ public class BattleResultProcessor : MonoBehaviour
                 }
                 else
                 {
-                    // Útok blocked by effect (Sleep, Stun, atď.)
+                    // ✅ V10: Útok blocked by effect (Sleep, Asceticism, atď.)
                     yield return StartCoroutine(PlayBlockAnimation(myCard, myBlockedBy, true));
+                    
+                    // ✅ V10: Ak je blocked Asceticism-om (type 2), aplikuj self-damage
+                    if (myBlockedBy == 2 && mySelfDamage > 0)
+                    {
+                        Debug.LogWarning($"🙏💔 [ASCETICISM] MY card takes {mySelfDamage} self-damage due to blocking!");
+                        myCard.health -= mySelfDamage;
+                        yield return StartCoroutine(PlaySelfDamageAnimation(myCard, mySelfDamage, true));
+                    }
                 }
             }
         }
@@ -493,7 +620,11 @@ public class BattleResultProcessor : MonoBehaviour
                 yield return StartCoroutine(animations.PlayHealAnimation(attacker.transform));
                 break;
                 
-            // ✅ TODO: Pridaj case 4, 5, 6... pre ďalšie útoky
+            case 4: // Forgiveness (self-animation on attacker)
+                yield return StartCoroutine(animations.PlayForgivenessAnimation(attacker.transform));
+                break;
+                
+            // ✅ TODO: Pridaj case 5, 6, 7... pre ďalšie útoky
             
             default:
                 Debug.LogWarning($"[ExecuteAttackAnimation] Unknown attackId={attackId}, using Punch animation");
@@ -530,6 +661,17 @@ public class BattleResultProcessor : MonoBehaviour
                 Debug.LogWarning($"[ExecuteAttackAnimation] ⚠️ healAmount=0! Server didn't return healAmount!");
                 yield return StartCoroutine(ShowDialog($"{attacker.cardName} healed!"));
             }
+        }
+        else if (attackId == 4)
+        {
+            // ✅ V10: Forgiveness - NO damage, len attack stat debuff + Asceticism effect
+            // Peaceful attack - "forgives your heresy"
+            Debug.LogWarning($"🙏 [FORGIVENESS] {attacker.cardName} forgives {defender.cardName}! Attack debuff=-1");
+            
+            // ✅ Attack stat debuff (-1 ATT visual effect) - NO HP damage!
+            defender.HandleAttack(-1);
+            
+            yield return StartCoroutine(ShowDialog($"{attacker.cardName} forgives your heresy!"));
         }
         else
         {
@@ -600,6 +742,12 @@ public class BattleResultProcessor : MonoBehaviour
         {
             switch (effectType)
             {
+                case 2: // Asceticism - INITIAL application (prayer/holy effect)
+                    Debug.LogWarning($"🙏 [ASCETICISM_INIT] Playing ASCETICISM START animation (initial Asceticism application)");
+                    yield return StartCoroutine(animations.PlayAscetismStartAnimation(card.transform));
+                    yield return StartCoroutine(ShowDialog($"{card.cardName} feels doomed!"));
+                    break;
+                    
                 case 3: // Sleep - INITIAL application (hviezdičky/knockout)
                     Debug.LogWarning($"⭐ [SLEEP_INIT] Playing KNOCKOUT animation (initial Sleep application)");
                     yield return StartCoroutine(animations.PlayKnockoutAnimation(card.transform));
@@ -651,6 +799,73 @@ public class BattleResultProcessor : MonoBehaviour
     }
     
     /// <summary>
+    /// Prehrá recovery animáciu (Asceticism duration = 0)
+    /// V10: Pridané pre Asceticism effect
+    /// </summary>
+    private IEnumerator PlayRecoveryAnimation(Kard card, string cardDescription)
+    {
+        Debug.LogWarning($"🙏 [RECOVERY] {cardDescription} ({card.cardName}) recovered from Asceticism!");
+        
+        AttackAnimations animations = attackComponent?.attackAnimations;
+        if (animations != null)
+        {
+            Debug.LogWarning($"🙏 [RECOVERY] Playing PlayAscetismEndAnimation...");
+            // ✅ Použij Asceticism end animáciu
+            yield return StartCoroutine(animations.PlayAscetismEndAnimation(card.transform));
+            Debug.LogWarning($"🙏 [RECOVERY] PlayAscetismEndAnimation finished");
+        }
+        else
+        {
+            Debug.LogError($"🙏 [RECOVERY] AttackAnimations is NULL!");
+        }
+        
+        // ✅ Odstráň Asceticism ikonu po recovery
+        string asceticismEffectName = GetEffectName(2); // 2 = Asceticism
+        Debug.LogWarning($"🙏 [RECOVERY] Effect name for type 2: {asceticismEffectName}");
+        
+        if (!string.IsNullOrEmpty(asceticismEffectName))
+        {
+            Debug.LogWarning($"🙏 [RECOVERY] Attempting to remove {asceticismEffectName} icon from {card.cardName}...");
+            yield return StartCoroutine(card.RemoveEffectIcon(asceticismEffectName));
+            Debug.LogWarning($"🙏 [RECOVERY] Removed {asceticismEffectName} icon from {card.cardName}");
+        }
+        else
+        {
+            Debug.LogError($"🙏 [RECOVERY] asceticismEffectName is NULL or EMPTY!");
+        }
+        
+        yield return StartCoroutine(ShowDialog($"{card.cardName} feels blessed again!"));
+    }
+    
+    /// <summary>
+    /// Prehrá self-damage animáciu (Asceticism blocking penalty)
+    /// V10: Pridané pre Asceticism effect
+    /// </summary>
+    private IEnumerator PlaySelfDamageAnimation(Kard card, int damage, bool isMyCard)
+    {
+        string cardOwner = isMyCard ? "MY" : "ENEMY";
+        Debug.LogWarning($"💔 [SELF_DAMAGE] {cardOwner} card ({card.cardName}) takes {damage} self-damage!");
+        
+        // ✅ Použij cardAnimator pre damage animáciu
+        if (cardAnimator != null && damage > 0)
+        {
+            yield return StartCoroutine(cardAnimator.AnimateDamage(card, damage));
+        }
+        
+        // ✅ Update HP bar
+        if (isMyCard)
+        {
+            playerLifeBar.SetHP(card.health);
+        }
+        else
+        {
+            enemyLifeBar.SetHP(card.health);
+        }
+        
+        yield return StartCoroutine(ShowDialog($"{card.cardName} suffers -{damage} HP!"));
+    }
+    
+    /// <summary>
     /// Prehrá blocking animáciu podľa typu effectu
     /// VOLÁ SA keď karta má aktívny blocking effect (Sleep, Stun, Freeze, atď.)
     /// </summary>
@@ -670,6 +885,12 @@ public class BattleResultProcessor : MonoBehaviour
         // ✅ Prehrá animáciu podľa numeric effect type ID
         switch (blockedBy)
         {
+            case 2: // ASCETICISM
+                Debug.LogWarning($"🙏 [ASCETICISM_ONGOING] Playing HURT ITSELF animation (ongoing Asceticism blocking)");
+                yield return StartCoroutine(animations.PlayConfusionHurtItselfAnimation(card.transform));
+                yield return StartCoroutine(ShowDialog($"{card.cardName} practizes asceticism..."));
+                break;
+                
             case 3: // SLEEP
                 Debug.LogWarning($"🐑 [SLEEP_ONGOING] Playing SLEEP animation (ongoing Sleep, not initial)");
                 yield return StartCoroutine(animations.PlaySleepAnimation(card.transform));
