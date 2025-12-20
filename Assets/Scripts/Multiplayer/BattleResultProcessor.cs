@@ -37,6 +37,11 @@ public class BattleResultProcessor : MonoBehaviour
         {
             Debug.LogError("[BattleResultProcessor] MultiplayerCardAnimator not assigned! Card animations will be skipped. Please set in Inspector.");
         }
+        
+        if (attackComponent == null)
+        {
+            Debug.LogError("[BattleResultProcessor] ❌ CRITICAL: attackComponent not assigned! Sleep animations and effects will NOT work! Please set in Inspector.");
+        }
     }
     
     /// <summary>
@@ -109,25 +114,77 @@ public class BattleResultProcessor : MonoBehaviour
         int myHealAmount = myAttackData.ContainsKey("healAmount") ? int.Parse(myAttackData["healAmount"].ToString()) : 0;
         int enemyHealAmount = enemyAttackData.ContainsKey("healAmount") ? int.Parse(enemyAttackData["healAmount"].ToString()) : 0;
         
-        Debug.LogWarning($"[BattleResultProcessor] MyAttackId={myAttackId}, MyDamage={myDamage}, MyHeal={myHealAmount}, EnemyAttackId={enemyAttackId}, EnemyDamage={enemyDamage}, EnemyHeal={enemyHealAmount}");
+        // ✅ V9: Získaj effectApplied (nový effect pridaný tento turn)
+        Dictionary<string, object> myEffectApplied = null;
+        Dictionary<string, object> enemyEffectApplied = null;
+        
+        if (myAttackData.ContainsKey("effectApplied") && myAttackData["effectApplied"] != null)
+        {
+            myEffectApplied = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
+                .DeserializeObject<Dictionary<string, object>>(myAttackData["effectApplied"].ToString());
+            Debug.LogWarning($"🎭 [EFFECT] MY card APPLIED effect to enemy: type={myEffectApplied["type"]}, duration={myEffectApplied["duration"]}");
+        }
+        
+        if (enemyAttackData.ContainsKey("effectApplied") && enemyAttackData["effectApplied"] != null)
+        {
+            enemyEffectApplied = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
+                .DeserializeObject<Dictionary<string, object>>(enemyAttackData["effectApplied"].ToString());
+            Debug.LogWarning($"🎭 [EFFECT] ENEMY card APPLIED effect to me: type={enemyEffectApplied["type"]}, duration={enemyEffectApplied["duration"]}");
+        }
+        
+        // ✅ V9: Skontroluj blocked/wokeUp flags (Sleep blocking system)
+        bool myAttackBlocked = myAttackData.ContainsKey("blocked") && bool.Parse(myAttackData["blocked"].ToString());
+        bool enemyAttackBlocked = enemyAttackData.ContainsKey("blocked") && bool.Parse(enemyAttackData["blocked"].ToString());
+        bool myWokeUp = myAttackData.ContainsKey("wokeUp") && bool.Parse(myAttackData["wokeUp"].ToString());
+        bool enemyWokeUp = enemyAttackData.ContainsKey("wokeUp") && bool.Parse(enemyAttackData["wokeUp"].ToString());
+        
+        // ✅ Získaj blockedBy field (typ effectu ktorý blokuje útok - numeric effect type ID)
+        int? myBlockedBy = (myAttackData.ContainsKey("blockedBy") && myAttackData["blockedBy"] != null) 
+            ? (int?)int.Parse(myAttackData["blockedBy"].ToString()) 
+            : null;
+        int? enemyBlockedBy = (enemyAttackData.ContainsKey("blockedBy") && enemyAttackData["blockedBy"] != null) 
+            ? (int?)int.Parse(enemyAttackData["blockedBy"].ToString()) 
+            : null;
+        
+        if (myAttackBlocked)
+        {
+            Debug.LogWarning($"🛡️ [SLEEP] MY attack BLOCKED by Sleep! Remaining turns unknown (server-side)");
+        }
+        if (enemyAttackBlocked)
+        {
+            Debug.LogWarning($"🛡️ [SLEEP] ENEMY attack BLOCKED by Sleep!");
+        }
+        if (myWokeUp)
+        {
+            Debug.LogWarning($"⏰ [SLEEP] MY card WOKE UP from Sleep! Attack executed.");
+        }
+        if (enemyWokeUp)
+        {
+            Debug.LogWarning($"⏰ [SLEEP] ENEMY card WOKE UP from Sleep!");
+        }
+        
+        Debug.LogWarning($"[BattleResultProcessor] MyAttackId={myAttackId}, MyDamage={myDamage}, MyHeal={myHealAmount}, MyBlocked={myAttackBlocked}, MyBlockedBy={myBlockedBy}, MyWokeUp={myWokeUp}, EnemyAttackId={enemyAttackId}, EnemyDamage={enemyDamage}, EnemyHeal={enemyHealAmount}, EnemyBlocked={enemyAttackBlocked}, EnemyBlockedBy={enemyBlockedBy}, EnemyWokeUp={enemyWokeUp}");
         
         // ✅ Spusti animácie (HP sa updatne postupne!)
         // ✅ REFRESH selectedCards sa spustí AŽ PO animáciách
-        StartCoroutine(PlayBattleAnimationsAndRefresh(myCard, enemyCard, firstAttacker, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount));
+        StartCoroutine(PlayBattleAnimationsAndRefresh(myCard, enemyCard, firstAttacker, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myEffectApplied, enemyEffectApplied, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myBlockedBy, enemyBlockedBy));
     }
     
     /// <summary>
     /// Wrapper coroutine - animácie POTOM refresh
     /// V5: Používa cardId na identifikáciu, damage namiesto finalHealth
     /// V8: Pridané attackId pre dynamické animácie
-    /// V9: Pridané healAmount pre self-heal animácie
+    /// V9: Pridané healAmount pre self-heal animácie + effectApplied pre effect ikony + Sleep blocking + blockedBy field
     /// </summary>
-    private IEnumerator PlayBattleAnimationsAndRefresh(Kard myCard, Kard enemyCard, string firstAttacker, string myCardId, string enemyCardId, int myAttackId, int enemyAttackId, int myDamage, int enemyDamage, int myHealAmount, int enemyHealAmount)
+    private IEnumerator PlayBattleAnimationsAndRefresh(Kard myCard, Kard enemyCard, string firstAttacker, string myCardId, string enemyCardId, int myAttackId, int enemyAttackId, int myDamage, int enemyDamage, int myHealAmount, int enemyHealAmount, Dictionary<string, object> myEffectApplied, Dictionary<string, object> enemyEffectApplied, bool myAttackBlocked, bool enemyAttackBlocked, bool myWokeUp, bool enemyWokeUp, int? myBlockedBy, int? enemyBlockedBy)
     {
-        // 1. Prehrá animácie (postupný HP update)
-        yield return StartCoroutine(PlayBattleAnimations(myCard, enemyCard, firstAttacker, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount));
+        // 1. Prehrá animácie (postupný HP update) + effect ikony V SPRÁVNOM PORADÍ
+        yield return StartCoroutine(PlayBattleAnimations(myCard, enemyCard, firstAttacker, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myEffectApplied, enemyEffectApplied, myBlockedBy, enemyBlockedBy));
         
-        // 2. AŽ PO animáciách refreshni selectedCards z DB (pre buffs/effects)
+        // 2. ✅ Effect ikony sa zobrazujú UŽ v PlayBattleAnimations (MOVED)
+        // Tento kód už nie je potrebný - effects sa zobrazujú v správnom momente počas battle flow
+        
+        // 3. AŽ PO animáciách refreshni selectedCards z DB (pre buffs/effects)
         yield return StartCoroutine(RefreshCardsFromServer());
     }
     
@@ -260,9 +317,9 @@ public class BattleResultProcessor : MonoBehaviour
     /// Prehrá battle animácie s postupným HP updateom
     /// V5: Používa cardId na určenie kto útočil prvý
     /// V8: Pridané attackId pre dynamické animácie (reuse Attack.cs metód)
-    /// V9: Pridané healAmount pre self-heal animácie
+    /// V9: Pridané healAmount pre self-heal animácie + Sleep blocking (blocked/wokeUp flags) + effect ikony v správnom poradí + blockedBy field
     /// </summary>
-    private IEnumerator PlayBattleAnimations(Kard myCard, Kard enemyCard, string firstAttacker, string myCardId, string enemyCardId, int myAttackId, int enemyAttackId, int myDamage, int enemyDamage, int myHealAmount, int enemyHealAmount)
+    private IEnumerator PlayBattleAnimations(Kard myCard, Kard enemyCard, string firstAttacker, string myCardId, string enemyCardId, int myAttackId, int enemyAttackId, int myDamage, int enemyDamage, int myHealAmount, int enemyHealAmount, bool myAttackBlocked, bool enemyAttackBlocked, bool myWokeUp, bool enemyWokeUp, Dictionary<string, object> myEffectApplied, Dictionary<string, object> enemyEffectApplied, int? myBlockedBy, int? enemyBlockedBy)
     {
         bool iAttackedFirst = (firstAttacker == myCardId);
         
@@ -279,25 +336,114 @@ public class BattleResultProcessor : MonoBehaviour
         if (iAttackedFirst)
         {
             // ✅ JA ÚTOČÍM PRVÝ
-            yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, myDamage, myHealAmount, true));
+            // ✅ V9: Skontroluj Sleep blocking/wake-up
+            if (myWokeUp)
+            {
+                // Zobraz wake-up animáciu pred útokom
+                yield return StartCoroutine(PlayWakeUpAnimation(myCard, true));
+            }
+            
+            if (!myAttackBlocked)
+            {
+                // Útok sa vykoná normálne
+                // ✅ FIX: myCard útočí enemyCard → použij enemyDamage (damage ktorý ENEMY dostane)
+                yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true));
+                
+                // ✅ V9: Ak JA útočím, použijem myEffectApplied (effect ktorý JA aplikujem NA enemy)
+                if (myEffectApplied != null)
+                {
+                    yield return StartCoroutine(DisplayEffectIcon(enemyCard, myEffectApplied, false));
+                }
+            }
+            else
+            {
+                // Útok blocked by effect (Sleep, Stun, atď.)
+                yield return StartCoroutine(PlayBlockAnimation(myCard, myBlockedBy, true));
+            }
             
             // ✅ AK NEPRIATEĽ PREŽIL, JEHO ÚTOK
             if (enemyCard.health > 0)
             {
                 yield return new WaitForSeconds(0.5f);
-                yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, enemyDamage, enemyHealAmount, false));
+                
+                // ✅ Nepriateľ wake-up check
+                if (enemyWokeUp)
+                {
+                    yield return StartCoroutine(PlayWakeUpAnimation(enemyCard, false));
+                }
+                
+                if (!enemyAttackBlocked)
+                {
+                    // ✅ FIX: enemyCard útočí myCard → použij myDamage (damage ktorý JA dostanem)
+                    yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, myDamage, enemyHealAmount, false));
+                    
+                    // ✅ V9: Ak enemy útočník aplikoval effect NA MŇA (defendera), zobraz effect ikonu
+                    // enemyEffectApplied = effect z enemyAttackData (enemy je útočník)
+                    if (enemyEffectApplied != null)
+                    {
+                        yield return StartCoroutine(DisplayEffectIcon(myCard, enemyEffectApplied, true));
+                    }
+                }
+                else
+                {
+                    // Útok blocked by effect (Sleep, Stun, atď.)
+                    yield return StartCoroutine(PlayBlockAnimation(enemyCard, enemyBlockedBy, false));
+                }
             }
         }
         else
         {
             // ✅ NEPRIATEĽ ÚTOČÍ PRVÝ
-            yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, enemyDamage, enemyHealAmount, false));
+            // ✅ V9: Nepriateľ wake-up check
+            if (enemyWokeUp)
+            {
+                yield return StartCoroutine(PlayWakeUpAnimation(enemyCard, false));
+            }
+            
+            if (!enemyAttackBlocked)
+            {
+                // ✅ FIX: enemyCard útočí myCard → použij myDamage (damage ktorý JA dostanem)
+                yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, myDamage, enemyHealAmount, false));
+                
+                // ✅ V9: Ak enemy útočník aplikoval effect NA MŇA (defendera), zobraz effect ikonu
+                if (enemyEffectApplied != null)
+                {
+                    yield return StartCoroutine(DisplayEffectIcon(myCard, enemyEffectApplied, true));
+                }
+            }
+            else
+            {
+                // Útok blocked by effect (Sleep, Stun, atď.)
+                yield return StartCoroutine(PlayBlockAnimation(enemyCard, enemyBlockedBy, false));
+            }
             
             // ✅ AK JA PREŽIJEM, MÔJ ÚTOK
             if (myCard.health > 0)
             {
                 yield return new WaitForSeconds(0.5f);
-                yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, myDamage, myHealAmount, true));
+                
+                // ✅ Môj wake-up check
+                if (myWokeUp)
+                {
+                    yield return StartCoroutine(PlayWakeUpAnimation(myCard, true));
+                }
+                
+                if (!myAttackBlocked)
+                {
+                    // ✅ FIX: myCard útočí enemyCard → použij enemyDamage (damage ktorý ENEMY dostane)
+                    yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true));
+                    
+                    // ✅ V9: Keď JA kontratujem, použijem myEffectApplied (effect ktorý JA aplikujem NA enemy)
+                    if (myEffectApplied != null)
+                    {
+                        yield return StartCoroutine(DisplayEffectIcon(enemyCard, myEffectApplied, false));
+                    }
+                }
+                else
+                {
+                    // Útok blocked by effect (Sleep, Stun, atď.)
+                    yield return StartCoroutine(PlayBlockAnimation(myCard, myBlockedBy, true));
+                }
             }
         }
         
@@ -412,6 +558,200 @@ public class BattleResultProcessor : MonoBehaviour
             }
             
             yield return StartCoroutine(ShowDialog($"Hit! {damage} damage!"));
+        }
+    }
+    
+    /// <summary>
+    /// Pridá len ikonu efektu bez animácie (V9.1: KO animácia sa hrá v ExecuteAttackAnimation)
+    /// </summary>
+    private IEnumerator AddEffectIconOnly(Kard card, Dictionary<string, object> effectData, bool isMyCard)
+    {
+        int effectType = int.Parse(effectData["type"].ToString());
+        int duration = int.Parse(effectData["duration"].ToString());
+        
+        Debug.LogWarning($"🎭 [EFFECT_ICON] Adding ICON ONLY on {card.cardName}: type={effectType}, duration={duration}");
+        
+        // Pridá effect ikonu (reuse Kard.AddEffectIcon)
+        string effectName = GetEffectName(effectType);
+        if (!string.IsNullOrEmpty(effectName))
+        {
+            card.AddEffectIcon(effectName);
+            Debug.LogWarning($"🎭 [EFFECT_ICON] Added {effectName} icon to {card.cardName}");
+        }
+        
+        yield return null;
+    }
+    
+    /// <summary>
+    /// Zobrazí effect ikonu na karte (V9: Sleep, Bleed, Burn, Poison...)
+    /// VOLÁ SA keď sa NOVÝ effect aplikuje (Turn 1 aplikácie)
+    /// DEPRECATED V9.1: Použite AddEffectIconOnly, KO animácia sa hrá v ExecuteAttackAnimation
+    /// </summary>
+    private IEnumerator DisplayEffectIcon(Kard card, Dictionary<string, object> effectData, bool isMyCard)
+    {
+        int effectType = int.Parse(effectData["type"].ToString());
+        int duration = int.Parse(effectData["duration"].ToString());
+        
+        Debug.LogWarning($"🎭 [EFFECT_ICON] Displaying NEW effect on {card.cardName}: type={effectType}, duration={duration}");
+        
+        // ✅ Prehrá INITIAL effect animation (knockout pre Sleep, blood spray pre Bleed, etc.)
+        AttackAnimations animations = attackComponent?.attackAnimations;
+        if (animations != null)
+        {
+            switch (effectType)
+            {
+                case 3: // Sleep - INITIAL application (hviezdičky/knockout)
+                    Debug.LogWarning($"⭐ [SLEEP_INIT] Playing KNOCKOUT animation (initial Sleep application)");
+                    yield return StartCoroutine(animations.PlayKnockoutAnimation(card.transform));
+                    yield return StartCoroutine(ShowDialog($"{card.cardName} falls asleep!"));
+                    break;
+                    
+                case 1: // Bleed (future)
+                    // yield return StartCoroutine(animations.PlayBleedStartAnimation(card.transform));
+                    // yield return StartCoroutine(ShowDialog($"{card.cardName} is bleeding!"));
+                    break;
+                    
+                // TODO: Pridaj ďalšie effect typy (Burn=16, Poison=24, etc.)
+            }
+        }
+        
+        // ✅ Pridá effect ikonu (reuse Kard.AddEffectIcon)
+        string effectName = GetEffectName(effectType);
+        if (!string.IsNullOrEmpty(effectName))
+        {
+            card.AddEffectIcon(effectName);
+            Debug.LogWarning($"🎭 [EFFECT_ICON] Added {effectName} icon to {card.cardName}");
+        }
+    }
+    
+    /// <summary>
+    /// Prehrá wake-up animáciu (Sleep duration = 0)
+    /// </summary>
+    private IEnumerator PlayWakeUpAnimation(Kard card, bool isMyCard)
+    {
+        string cardOwner = isMyCard ? "MY" : "ENEMY";
+        Debug.LogWarning($"⏰ [WAKE_UP] {cardOwner} card ({card.cardName}) is waking up!");
+        
+        AttackAnimations animations = attackComponent?.attackAnimations;
+        if (animations != null)
+        {
+            // Reuse singleplayer wake-up animation
+            yield return StartCoroutine(animations.PlaySleepEndAnimation(card.transform));
+        }
+        
+        // ✅ Odstráň Sleep ikonu po prebratí
+        string sleepEffectName = GetEffectName(3); // 3 = Sleep
+        if (!string.IsNullOrEmpty(sleepEffectName))
+        {
+            yield return StartCoroutine(card.RemoveEffectIcon(sleepEffectName));
+            Debug.LogWarning($"⏰ [WAKE_UP] Removed {sleepEffectName} icon from {card.cardName}");
+        }
+        
+        yield return StartCoroutine(ShowDialog($"{card.cardName} wakes up!"));
+    }
+    
+    /// <summary>
+    /// Prehrá blocking animáciu podľa typu effectu
+    /// VOLÁ SA keď karta má aktívny blocking effect (Sleep, Stun, Freeze, atď.)
+    /// </summary>
+    private IEnumerator PlayBlockAnimation(Kard card, int? blockedBy, bool isMyCard)
+    {
+        string cardOwner = isMyCard ? "MY" : "ENEMY";
+        string effectName = blockedBy.HasValue ? GetEffectName(blockedBy.Value) : "unknown effect";
+        Debug.LogWarning($"🛡️ [BLOCK] {cardOwner} card ({card.cardName}) blocked by effect type {blockedBy} ({effectName})!");
+        
+        AttackAnimations animations = attackComponent?.attackAnimations;
+        if (animations == null)
+        {
+            Debug.LogError("[BattleResultProcessor] AttackAnimations not found!");
+            yield break;
+        }
+        
+        // ✅ Prehrá animáciu podľa numeric effect type ID
+        switch (blockedBy)
+        {
+            case 3: // SLEEP
+                Debug.LogWarning($"🐑 [SLEEP_ONGOING] Playing SLEEP animation (ongoing Sleep, not initial)");
+                yield return StartCoroutine(animations.PlaySleepAnimation(card.transform));
+                yield return StartCoroutine(ShowDialog($"{card.cardName} is sleeping..."));
+                break;
+                
+            case 5: // STUN (example)
+                // TODO: Implementovať stun animáciu
+                // yield return StartCoroutine(animations.PlayStunAnimation(card.transform));
+                yield return StartCoroutine(ShowDialog($"{card.cardName} is stunned!"));
+                break;
+                
+            case 6: // FREEZE (example)
+                // TODO: Implementovať freeze animáciu
+                // yield return StartCoroutine(animations.PlayFreezeAnimation(card.transform));
+                yield return StartCoroutine(ShowDialog($"{card.cardName} is frozen!"));
+                break;
+                
+            default:
+                Debug.LogWarning($"[PlayBlockAnimation] Unknown effect type {blockedBy}, using default message");
+                yield return StartCoroutine(ShowDialog($"{card.cardName} cannot attack!"));
+                break;
+        }
+    }
+    
+    /// <summary>
+    /// DEPRECATED: Replaced by PlayBlockAnimation(blockedBy)
+    /// Prehrá Sleep blocking animáciu (útok blocked, duration decremented)
+    /// VOLÁ SA keď karta UŽ MÁ Sleep a útok je blokovaný (Turn 2+)
+    /// </summary>
+    [System.Obsolete("Use PlayBlockAnimation(card, blockedBy, isMyCard) instead")]
+    private IEnumerator PlaySleepBlockAnimation(Kard card, bool isMyCard)
+    {
+        string cardOwner = isMyCard ? "MY" : "ENEMY";
+        Debug.LogWarning($"💤 [SLEEP_BLOCK] {cardOwner} card ({card.cardName}) is sleeping, attack blocked!");
+        
+        AttackAnimations animations = attackComponent?.attackAnimations;
+        if (animations != null)
+        {
+            // ✅ Ovečka animácia (karta UŽ spí, nie prvá aplikácia)
+            Debug.LogWarning($"🐑 [SLEEP_ONGOING] Playing SLEEP animation (ongoing Sleep, not initial)");
+            yield return StartCoroutine(animations.PlaySleepAnimation(card.transform));
+        }
+        
+        yield return StartCoroutine(ShowDialog($"{card.cardName} is sleeping..."));
+    }
+    
+    /// <summary>
+    /// Vráti názov efektu pre effect type ID (používa Kard.GetEffectNameById logiku)
+    /// </summary>
+    private string GetEffectName(int effectType)
+    {
+        switch (effectType)
+        {
+            case 1: return "Bleed";
+            case 2: return "Asceticism";
+            case 3: return "Sleep";
+            case 4: return "Exposure";
+            case 5: return "Siege";
+            case 6: return "Fury";
+            case 7: return "Famine";
+            case 8: return "Electricity";
+            case 9: return "Tether";
+            case 10: return "Starving";
+            case 11: return "Envelop";
+            case 12: return "Blockade";
+            case 13: return "Depression";
+            case 14: return "ArtInspiration";
+            case 15: return "Autoportrait";
+            case 16: return "Burn";
+            case 17: return "Confusion";
+            case 18: return "Satellite";
+            case 19: return "Fear";
+            case 20: return "Horns";
+            case 21: return "Calm";
+            case 22: return "Reloading";
+            case 23: return "Trident";
+            case 24: return "Poison";
+            case 26: return "Curse";
+            default:
+                Debug.LogWarning($"[GetEffectName] Unknown effect type: {effectType}");
+                return null;
         }
     }
     

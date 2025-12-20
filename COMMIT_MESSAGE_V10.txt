@@ -1,0 +1,32 @@
+fix: Sleep effect zobrazený na nesprávnej karte - oprava effectApplied interpretácie
+
+PROBLÉM:
+Sleep effect (KO animácia + ikonka) sa zobrazoval na útočníkovi namiesto defendera.
+Keď Bruce Lee útočil Supera, Sleep sa zobrazil na Brucovi ❌
+
+ROOT CAUSE:
+Unity mal opačnú interpretáciu server response:
+- Server: effectApplied = effect ktorý karta APLIKOVALA na oponenta
+- Unity: effectApplied = effect ktorý karta DOSTALA
+→ Používal enemyEffectApplied keď mal myEffectApplied
+
+ZMENY:
+
+Unity (BattleResultProcessor.cs):
+- Oprava Attack Site 1: enemyEffectApplied → myEffectApplied
+- Oprava debug logov: "received" → "APPLIED to enemy"
+- Pridanie sleep icon cleanup v PlayWakeUpAnimation
+
+Server (executeBattle.js):
+- Pridanie wokeUp flag do všetkých scenárov (Case 1, 2, 3)
+
+Dokumentácia:
++ COPILOT_MULTIPLAYER_BATTLE_INSTRUCTIONS.txt - komplexná dokumentácia
++ SLEEP_EFFECT_FIX_V10.md - detailné zhrnutie opravy
+
+VÝSLEDOK:
+✅ Sleep sa zobrazí na správnej karte (defender)
+✅ KO animácia + ikonka fungujú správne
+✅ Sleep ikonka zmizne po prebudení
+✅ HP drop okamžitý
+✅ Všetky 4 attack sites správne mapované

@@ -1,0 +1,215 @@
+═══════════════════════════════════════════════════════════════
+  📋 COPILOT INSTRUCTIONS: Multiplayer Battle System
+═══════════════════════════════════════════════════════════════
+
+🎯 CRITICAL ARCHITECTURE UNDERSTANDING
+═══════════════════════════════════════════════════════════════
+
+SERVER RESPONSE STRUCTURE:
+```javascript
+{
+  battleResult: {
+    firstAttacker: "cardId_uuid",  // Kto útočil prvý (podľa speed)
+    attacks: {
+      [cardId]: {  // ⚠️ KAŽDÝ cardId = KARTA SAMOTNÁ (nie "victim")
+        attackId: 1,           // Aký útok TÁTO karta použila
+        damage: 2,             // ⚠️ Damage ktorý TÁTO karta DOSTALA!
+        blocked: false,        // Či útok TEJTO karty bol blokovaný
+        wokeUp: false,         // Či sa TÁTO karta prebudila
+        effectApplied: {...}, // ⚠️ Effect ktorý TÁTO karta APLIKOVALA!
+        effects: [...]         // Aktuálne effects NA TEJTO karte
+      }
+    }
+  }
+}
+```
+
+⚠️⚠️⚠️ KĽÚČOVÉ POCHOPENIE ⚠️⚠️⚠️
+• damage = čo karta DOSTALA (nie dala!)
+• effectApplied = čo karta APLIKOVALA na oponenta (nie dostala!)
+
+═══════════════════════════════════════════════════════════════
+UNITY PARSING (BattleResultProcessor.cs)
+═══════════════════════════════════════════════════════════════
+
+SPRÁVNE PARSOVANIE:
+```csharp
+// myAttackData = attacks[myCardId]
+// enemyAttackData = attacks[enemyCardId]
+
+int myDamage = myAttackData["damage"];        // Damage ktorý JA dostanem
+int enemyDamage = enemyAttackData["damage"];  // Damage ktorý ENEMY dostane
+
+Dictionary myEffectApplied = myAttackData["effectApplied"];     
+// ↑ Effect ktorý JA aplikujem NA enemy
+
+Dictionary enemyEffectApplied = enemyAttackData["effectApplied"];
+// ↑ Effect ktorý ENEMY aplikuje NA mňa
+```
+
+═══════════════════════════════════════════════════════════════
+4 ATTACK SITES - SPRÁVNE MAPOVANIE
+═══════════════════════════════════════════════════════════════
+
+Site 1: JA ÚTOČÍM PRVÝ
+```csharp
+if (firstAttacker == myCardId) {
+    // JA útočím → enemy dostáva damage
+    ExecuteAttackAnimation(myCard, enemyCard, myAttackId, 
+        enemyDamage,      // ✅ Enemy dostáva
+        myHealAmount, true);
+    
+    // JA aplikujem effect NA enemy
+    if (myEffectApplied != null) {  // ✅ myEffectApplied!
+        DisplayEffectIcon(enemyCard, myEffectApplied, false);
+    }
+}
+```
+
+Site 2: ENEMY KONTRATUJE (ak som prežil)
+```csharp
+if (enemyCard.health > 0) {
+    // Enemy útočí → JA dostanem damage
+    ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId,
+        myDamage,         // ✅ JA dostanem
+        enemyHealAmount, false);
+    
+    // Enemy aplikuje effect NA mňa
+    if (enemyEffectApplied != null) {  // ✅ enemyEffectApplied!
+        DisplayEffectIcon(myCard, enemyEffectApplied, true);
+    }
+}
+```
+
+Site 3: ENEMY ÚTOČÍ PRVÝ
+```csharp
+else { // Enemy útočí prvý
+    // Enemy útočí → JA dostanem damage
+    ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId,
+        myDamage,         // ✅ JA dostanem
+        enemyHealAmount, false);
+    
+    // Enemy aplikuje effect NA mňa
+    if (enemyEffectApplied != null) {  // ✅ enemyEffectApplied!
+        DisplayEffectIcon(myCard, enemyEffectApplied, true);
+    }
+}
+```
+
+Site 4: JA KONTRATUJEM (ak som prežil)
+```csharp
+if (myCard.health > 0) {
+    // JA útočím → enemy dostáva damage
+    ExecuteAttackAnimation(myCard, enemyCard, myAttackId,
+        enemyDamage,      // ✅ Enemy dostáva
+        myHealAmount, true);
+    
+    // JA aplikujem effect NA enemy
+    if (myEffectApplied != null) {  // ✅ myEffectApplied!
+        DisplayEffectIcon(enemyCard, myEffectApplied, false);
+    }
+}
+```
+
+═══════════════════════════════════════════════════════════════
+SLEEP EFFECT SYSTEM
+═══════════════════════════════════════════════════════════════
+
+SPRÁVNE PORADIE ANIMÁCIÍ:
+
+1. APLIKÁCIA SLEEP (effectApplied != null):
+   • Punch animácia na útočníkovi
+   • HP drop na defenderovi (OKAMŽITE!)
+   • KO animácia (hviezdy) na defenderovi ⭐
+   • Sleep ikonka 😴 sa pridá na defendera
+
+2. BLOCKING (blocked=true, blockedBy=3):
+   • Sleep animácia (ovečky) 🐑
+   • Text: "Card is sleeping"
+   • ŽIADNA KO animácia (nie je to nový efekt!)
+
+3. WAKE UP (wokeUp=true):
+   • Wake-up animácia
+   • Sleep ikonka ZMIZNE 😴 → prázdne
+   • Text: "Card wakes up!"
+
+KRITICKÉ KONTROLY:
+□ KO animácia LEN pri effectApplied != null
+□ Sleep animácia LEN pri blocked=true && blockedBy=3
+□ NIE oboje súčasne!
+□ wokeUp flag musí prísť zo servera (všetky scenáre)
+
+═══════════════════════════════════════════════════════════════
+ATTACK IMPLEMENTATIONS (Server)
+═══════════════════════════════════════════════════════════════
+
+ATTACK ID 1 - PUNCH:
+• Damage: floor(strength/2) - floor(defense/3), min 1
+• Sleep proc: 30% (Math.random() <= 0.3)
+• Sleep duration: 3 turns
+• ⚠️ Sleep sa NESTACKUJE - jeden hráč môže mať max 1 Sleep
+• ⚠️ Ak defender už má Sleep (aj duration=0), nový Sleep sa NEAPLIKUJE
+
+ATTACK ID 2 - KICK:
+• Damage: floor(speed/3) - floor(defense/3), min 1
+• Extra damage: 20% šanca na +4 damage
+• ⚠️ Extra damage je FIXED 4 (nie random)
+
+ATTACK ID 3 - HEAL:
+• Self-heal útok (heals attacker!)
+• Heal amount: Random(1,2) + floor(knowledge/4)
+• Removes effects: [1, 4, 13, 24] (bleed, exposure, unknown)
+• ⚠️ NEÚTOČÍ na defendera!
+
+═══════════════════════════════════════════════════════════════
+RESPONSE FIELDS (Server → Unity)
+═══════════════════════════════════════════════════════════════
+
+POVINNÉ FIELDS v attacks[cardId]:
+✅ attackId - attack ID ktorý karta použila
+✅ damage - damage ktorý karta dostala
+✅ blocked - či útok karty bol blokovaný
+✅ wokeUp - či sa karta prebudila (VŠETKY scenáre!)
+✅ effectApplied - effect ktorý karta aplikovala
+✅ effects - aktuálne effects na karte
+
+VOLITEĽNÉ FIELDS:
+• healAmount - self-heal amount (attack ID 3)
+• blockedBy - effect type ktorý blokoval (3=Sleep)
+• remainingDuration - zvyšná duration Sleep
+• effectsRemoved - array odstránených effects
+
+═══════════════════════════════════════════════════════════════
+COMMON MISTAKES ⚠️
+═══════════════════════════════════════════════════════════════
+
+❌ if (myEffectApplied != null) DisplayEffectIcon(myCard, ...)
+   → WRONG! myEffectApplied ide NA ENEMY!
+
+❌ ExecuteAttackAnimation(myCard, enemyCard, attackId, myDamage, ...)
+   → WRONG! myDamage je damage ktorý JA dostanem!
+
+❌ KO animácia pri blocked=true
+   → WRONG! KO je LEN pri novom effectApplied!
+
+❌ Server nevracia wokeUp pri bothBlocked
+   → WRONG! wokeUp musí byť VŽDY!
+
+❌ Sleep sa stackuje
+   → WRONG! Max 1 Sleep per player!
+
+═══════════════════════════════════════════════════════════════
+PRE-COMMIT CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+□ Všetky 4 attack sites používajú správne myDamage/enemyDamage
+□ Všetky 4 attack sites používajú správne myEffectApplied/enemyEffectApplied
+□ KO animácia sa volá LEN pri effectApplied != null
+□ Sleep animácia sa volá LEN pri blocked=true && blockedBy=3
+□ Server vracia wokeUp vo všetkých scenároch (bothBlocked, atď.)
+□ PlayWakeUpAnimation maže Sleep ikonku
+□ HP drop je počas ExecuteAttackAnimation, nie na konci
+□ Sleep sa nestackuje (checkSleepBlocking kontroluje)
+□ Debug logy hovorí "APPLIED effect to enemy" nie "received"
+
+═══════════════════════════════════════════════════════════════
