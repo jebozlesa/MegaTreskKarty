@@ -1639,6 +1639,51 @@ Network indicator shows → Hides after success
 
 ---
 
+## 📚 Version History & System Updates
+
+### V11: Card Generation System Refactor (December 2025)
+
+**Purpose:** Separate AI cards (Series 1) from player-obtainable cards (Series 2+)
+
+**Changes:**
+- **Card Series Logic:** Removed hardcoded "5x Series 1 + 1x Series 2" pack generation
+- **New System:** All marketplace pack cards are **Series 2+ ONLY** (no Series 1)
+- **Series 1 Reserved:** Series 1 is now **AI-exclusive** (Royal Battle enemies, Campaign)
+- **Royal Battle Rewards:** Generate Series 2+ cards (not Series 1)
+
+**Files Modified:**
+- `Assets/Scripts/CardGenerator.cs`:
+  - `GenerateCardPack()`: Removed `if (i == 5) series = 2` special 6th card logic
+  - `AddRandomCardCoroutine()`: Removed `WHERE Series = 1` SQL filter
+  - Added `GetRandomAvailableSeries()`: Returns Series 2+ for all player cards
+
+**Key Function:**
+```csharp
+private int GetRandomAvailableSeries()
+{
+    return 2; // Current: All player cards are Series 2
+    // Future expansion: Random selection from {2, 3, 4...} for rarity tiers
+}
+```
+
+**Database Structure:**
+- **CardDatabase:** Main card definitions (StyleID, PersonName, stats, Series)
+- **CardVisuals:** Visual variants per series (Color, Image path)
+- **CharacterAttacks:** Attack pool assignments per character (4-8 attacks)
+- **Location:** `Assets/StreamingAssets/MyDatabase.db` (source)
+- **Runtime:** `Application.persistentDataPath/MyDatabase.db` (copied on first launch)
+
+**Adding New Cards:**
+1. Add image to `Assets/Resources/Cards/[name].png`
+2. Insert into `CardDatabase` table (StyleID, stats, **Series 2+**)
+3. Insert into `CardVisuals` table (CharacterID, Series, Color, Image)
+4. Insert into `CharacterAttacks` table (CharacterID, AttackID pool)
+5. Delete runtime DB or reinstall to copy new version
+
+**Documentation:** See [CARD_CREATION_GUIDE.md](CARD_CREATION_GUIDE.md) for complete walkthrough
+
+---
+
 ## ⚔️ Attack & Effect System (V9)
 
 ### Implemented Attacks:

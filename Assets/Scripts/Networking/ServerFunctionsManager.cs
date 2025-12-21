@@ -467,4 +467,35 @@ public class ServerFunctionsManager : MonoBehaviour
         yield return new WaitForSeconds(retryDelay);
         CallFunctionWithRetry(functionName, parameters, callback, retriesLeft);
     }
+    
+    // ====================================
+    // V11: SERVER-SIDE CARD PACK GENERATION
+    // ====================================
+    
+    /// <summary>
+    /// ✅ V11: Otvor card pack na serveri (server-authoritative generation)
+    /// Server vygeneruje 6 kariet z themed packu a vráti ich
+    /// </summary>
+    /// <param name="playFabId">PlayFab ID hráča</param>
+    /// <param name="packIndex">Index themed packu (0, 1, 2)</param>
+    /// <param name="callback">Callback s vygenerovanými kartami</param>
+    public void OpenCardPack(string playFabId, int packIndex, Action<ExecuteFunctionResult> callback)
+    {
+        if (callback == null)
+        {
+            Debug.LogError("[ServerFunctionsManager] OpenCardPack: callback is null!");
+            return;
+        }
+        
+        Debug.LogWarning($"[ServerFunctionsManager] OpenCardPack: playFabId={playFabId}, packIndex={packIndex}");
+        
+        var parameters = new
+        {
+            playFabId = playFabId,
+            packIndex = packIndex
+        };
+        
+        // Call with retry (network safety)
+        CallFunctionWithRetry("openCardPack", parameters, callback);
+    }
 }

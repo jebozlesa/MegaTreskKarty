@@ -1719,6 +1719,53 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 803687907}
   m_CullTransparentMesh: 1
+--- !u!1 &823298947
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 823298949}
+  - component: {fileID: 823298948}
+  m_Layer: 0
+  m_Name: ServerFunctionsManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &823298948
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 823298947}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed25fe0a5a462db408eda59fa87ac5b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  networkErrorIndicator: {fileID: 0}
+  maxRetries: 3
+  retryDelay: 1
+--- !u!4 &823298949
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 823298947}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 709.91394, y: 1136.7048, z: -12.592686}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &830416420
 GameObject:
   m_ObjectHideFlags: 0
@@ -3869,6 +3916,7 @@ MonoBehaviour:
   cardGenerator: {fileID: 761120166}
   loveValue: {fileID: 1731123304}
   blockPanel: {fileID: 5914178751106246530}
+  serverFunctionsManager: {fileID: 823298948}
 --- !u!4 &1619798004
 Transform:
   m_ObjectHideFlags: 0
@@ -7219,3 +7267,4 @@ SceneRoots:
   - {fileID: 215069208}
   - {fileID: 198878068}
   - {fileID: 1619798004}
+  - {fileID: 823298949}

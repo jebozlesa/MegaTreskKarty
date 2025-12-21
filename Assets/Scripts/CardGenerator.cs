@@ -89,7 +89,7 @@ public class CardGenerator : MonoBehaviour
         }
     }
 
-    private IEnumerator ShowCardOnScreen(int id, string cardName, string image, Color32 color, int level)
+    public IEnumerator ShowCardOnScreen(int id, string cardName, string image, Color32 color, int level)
     {
         Debug.Log("ShowCardOnScreen(" + id + "," + cardName + "," + level + ")");
         // Vytvorte inštanciu karty
@@ -155,11 +155,9 @@ public class CardGenerator : MonoBehaviour
                 break;
             }
 
-            int series = 1;
-            if (i == 5) // Ak ešte nie je koniec, počkajte pol sekundy medzi kartami
-            {
-                series = 2;
-            }
+            // ✅ V11: Všetky karty z balíčka môžu byť hocaká séria (nie Series 1 - tá je len pre AI)
+            // Náhodne vyberieme sériu 2 alebo vyššiu (podľa dostupnosti v CardVisuals tabuľke)
+            int series = GetRandomAvailableSeries();
 
             int randomIndex = UnityEngine.Random.Range(0, pack.Count);
             int randomCardID = pack[randomIndex];
@@ -244,14 +242,15 @@ public class CardGenerator : MonoBehaviour
         dbConnection.Open();
 
         IDbCommand dbCommand = dbConnection.CreateCommand();
-        dbCommand.CommandText = "SELECT COUNT(*) FROM CardDatabase WHERE Series = 1";
+        // ✅ V11: Royal Battle rewards môžu byť hocaká séria (nie Series 1 - tá je len pre AI)
+        dbCommand.CommandText = "SELECT COUNT(*) FROM CardDatabase";
         int cardCount = int.Parse(dbCommand.ExecuteScalar().ToString());
 
         int randomIndex = UnityEngine.Random.Range(1, cardCount + 1);
         dbCommand.Dispose();
 
-        //randomIndex = 31;  // docasne - vymazat resp. zakomentovat ked netreeba                                         <============  RANDOM INDEX
-        yield return StartCoroutine(AddCardById(randomIndex, 2));
+        int series = GetRandomAvailableSeries();
+        yield return StartCoroutine(AddCardById(randomIndex, series));
 
         dbConnection.Close();
     }
@@ -366,6 +365,22 @@ public class CardGenerator : MonoBehaviour
         }
 
         return visual;
+    }
+
+    /// <summary>
+    /// ✅ V11: Vráti náhodné číslo série (okrem Series 1, ktorá je rezervovaná pre AI)
+    /// Ak máš v databáze Series 2, 3, 4... táto funkcia náhodne vyberie jednu z nich.
+    /// Ak máš len Series 2, vždy vráti 2.
+    /// </summary>
+    private int GetRandomAvailableSeries()
+    {
+        // Pre jednoduchosť momentálne vrátime Series 2
+        // Ak v budúcnosti pridáš Series 3, 4, 5... môžeš zmeniť na náhodný výber
+        return 2;
+        
+        // BUDÚCE ROZŠÍRENIE (ak budeš mať viac sérií):
+        // int[] availableSeries = new int[] { 2, 3, 4 }; // Definuj aké série máš
+        // return availableSeries[UnityEngine.Random.Range(0, availableSeries.Length)];
     }
 
     private List<int> GetAttacksForCharacter(int styleID)
