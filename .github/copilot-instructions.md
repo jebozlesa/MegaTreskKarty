@@ -48,6 +48,95 @@
 
 ---
 
+## 🆔 CRITICAL: ID-Based Player & Card Identification (V11)
+
+**User Mandate:**
+> "dopln do instrukcii aby sa hraci a karty v hre definovali na zaklade ich id, nikde nie ako first second, 1 alebo 2 alebo ekvivalenty"
+
+### ✅ **ALWAYS Use ID-Based Identification:**
+
+1. **Cards** - Identify by `cardId` (unique UUID)
+   - ✅ `firstAttackerCardId`, `secondAttackerCardId`, `myCardId`, `enemyCardId`
+   - ✅ `attackerCard.cardId`, `defenderCard.cardId`
+   - ❌ NEVER: `card1`, `card2`, `firstCard`, `secondCard` (ambiguous positions)
+   - ❌ NEVER: `isCard1First`, `card1Speed > card2Speed` (confusing)
+
+2. **Players** - Identify by `playerId` (unique string)
+   - ✅ `player1.playerId`, `player2.playerId`, `myPlayerId`, `enemyPlayerId`
+   - ❌ NEVER: `player1`, `player2`, `firstPlayer`, `secondPlayer` (ambiguous positions)
+
+3. **Battle Roles** - Use semantic role names with IDs
+   - ✅ `firstAttacker: { cardId: "uuid", ... }` (role object with ID)
+   - ✅ `secondAttacker: { cardId: "uuid", ... }` (role object with ID)
+   - ✅ `iAmFirstAttacker = (firstAttackerCardId == myCardId)` (one boolean for role determination)
+   - ❌ NEVER: Ternary hell like `isCard1First ? card1.damage : card2.damage`
+
+4. **Response Format** - V11 ID-based structure
+   ```javascript
+   // ✅ CORRECT (V11)
+   {
+     firstAttacker: {
+       cardId: "uuid",
+       damageReceived: 5,  // Clear: what I took
+       damageDealt: 2,     // Clear: what I gave
+       blocked: true,
+       blockedBy: 3
+     },
+     secondAttacker: { cardId: "uuid", ... }
+   }
+   
+   // ❌ WRONG (DEPRECATED V10)
+   {
+     firstAttacker: "uuid_string",  // Just an ID, no data
+     attacks: {
+       "card1_uuid": { damage: 5, blocked: false },  // Confusing!
+       "card2_uuid": { damage: 0, blocked: true }
+     }
+   }
+   ```
+
+### 🚫 **Forbidden Patterns:**
+
+```csharp
+// ❌ BAD - Position-based (ambiguous)
+var card1 = selectedCards[0];
+var card2 = selectedCards[1];
+if (card1.speed > card2.speed) { ... }
+
+// ✅ GOOD - Role-based with IDs
+var myCard = selectedCards.Find(c => c.cardId == myCardId);
+var enemyCard = selectedCards.Find(c => c.cardId == enemyCardId);
+var iAmFaster = (myCard.speed > enemyCard.speed);
+```
+
+```javascript
+// ❌ BAD - isCard1First ternary hell
+const damage = isCard1First ? firstResult.damage : secondResult.damage;
+const blocked = isCard1First ? false : (secondResult.blocked || false);
+
+// ✅ GOOD - Direct role assignment
+firstAttacker: {
+  damageDealt: firstResult.damage,
+  blocked: false  // First attacker never blocked
+},
+secondAttacker: {
+  damageDealt: secondResult.damage,
+  blocked: secondResult.blocked  // May be blocked by fresh/existing effects
+}
+```
+
+### 📚 **Why This Matters:**
+
+1. **Eliminates Confusion** - No mental mapping of positions to roles
+2. **Prevents Bugs** - Sleep animation bug was caused by position-based logic
+3. **Clear Semantics** - `damageReceived` vs `damageDealt` is self-documenting
+4. **Easier Debugging** - Logs show IDs, not ambiguous positions
+5. **KISS Principle** - Simpler code = fewer bugs = easier maintenance
+
+**Reference:** See `mega-tresk-server/docs/V11_ID_BASED_RESPONSE_REFACTOR.md` for complete refactoring details.
+
+---
+
 ## 📖 CRITICAL: Always Study Attached Documentation
 
 **User Mandate:**
@@ -1777,8 +1866,13 @@ if (hasEffect(target, EffectTypes.SLEEP)) {
 
 ### Server Battle Flow (executeBattle.js):
 
+**V11 Note:** Server internally uses `firstCard`/`secondCard` for battle simulation (speed-based), but **response format** uses ID-based `firstAttacker`/`secondAttacker` objects. Client never sees internal simulation variables.
+
 ```javascript
-// 1. Determine first/second attacker by speed
+// 1. Determine attack order by speed (internal simulation only)
+const firstCard = (card1.speed > card2.speed) ? card1 : card2;
+const secondCard = (firstCard === card1) ? card2 : card1;
+
 // 2. Sleep check - ALL cards at turn start
 const card1SleepCheck = checkSleepBlocking(card1, attackId1);
 const card2SleepCheck = checkSleepBlocking(card2, attackId2);
@@ -1824,11 +1918,22 @@ const secondCardWillBeBlocked = willBeBlockedByAsceticism(secondCard);
 
 ---
 
-**Last Updated:** 2025-12-20  
-**Version:** V9 (Forgiveness Attack + Asceticism Effect System)  
+**Last Updated:** 2025-12-30  
+**Version:** V11 (ID-Based Response Format Refactor)  
 **Current Branch:** Multiplayer  
 
-**Key Changes in V9:**
+**Key Changes in V11 (CURRENT):**
+- ✅ **ID-Based Identification** - Players & cards identified by IDs, not positions (first/second/1/2)
+- ✅ **Response Format Refactor** - `firstAttacker`/`secondAttacker` objects with cardId, damageReceived, damageDealt
+- ✅ **Sleep Animation Bug Fix** - Blocked attacks now show correct blocking animation (not 0 damage attack)
+- ✅ **Eliminated isCard1First Logic** - No more position-based ternary confusion
+- ✅ **Clear Semantics** - `damageReceived` (what I took) vs `damageDealt` (what I gave)
+- ✅ **Client Role Determination** - One boolean `iAmFirstAttacker` determines all data access
+- ✅ **Server Simplification** - Direct role assignment instead of card1/card2 mapping
+- ✅ **KISS Principle Applied** - Simpler code, fewer bugs, easier debugging
+- ✅ **Documentation** - Complete refactoring guide in V11_ID_BASED_RESPONSE_REFACTOR.md
+
+**Key Changes in V9 (Previous):**
 - ✅ **Attack ID 4: Forgiveness** - Peaceful attack (0 HP damage, -1 attack debuff, 100% Asceticism)
 - ✅ **Asceticism Effect** - Blocking effect with self-damage (duration=2, per-attacker timing)
 - ✅ **Effect No-Stacking** - Same effect types never stack (first applied wins)
@@ -1838,7 +1943,7 @@ const secondCardWillBeBlocked = willBeBlockedByAsceticism(secondCard);
 - ✅ **Per-Attacker Timing** - Asceticism checked ONLY when card attacks (unlike Sleep's global check)
 - ✅ **willBeBlockedByAsceticism()** - Non-destructive helper for Case selection
 - ✅ **Complete Animation System** - START, BLOCK, END animations for Asceticism
-- ✅ **Server Architecture** - Proper Case handling for first/second attacker scenarios
+- ✅ **Server Architecture** - Proper Case handling for battle scenarios (both blocked, first blocked, normal)
 
 **Key Changes in V8 (Previous):**
 - ✅ **Critical Bug Fix** - Attack counts now decrement correctly (attackSlot vs attackId fix)

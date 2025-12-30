@@ -2,7 +2,24 @@
   📋 COPILOT INSTRUCTIONS: Multiplayer Battle System
 ═══════════════════════════════════════════════════════════════
 
-🎯 CRITICAL ARCHITECTURE UNDERSTANDING
+⚠️⚠️⚠️ DEPRECATED - V10 FORMAT ⚠️⚠️⚠️
+
+This document describes V10 response format using attacks[cardId] dictionary.
+
+CURRENT VERSION: V11 (ID-Based Response Format)
+MIGRATION GUIDE: mega-tresk-server/docs/V11_ID_BASED_RESPONSE_REFACTOR.md
+CURRENT RULES: .github/copilot-instructions.md
+
+V11 CHANGES:
+- ✅ firstAttacker/secondAttacker objects (not dictionary)
+- ✅ damageReceived/damageDealt (not ambiguous "damage")
+- ✅ ID-based identification (no more first/second/1/2)
+- ❌ attacks[cardId] dictionary removed
+- ❌ isCard1First logic eliminated
+
+═══════════════════════════════════════════════════════════════
+
+🎯 CRITICAL ARCHITECTURE UNDERSTANDING (V10 - DEPRECATED)
 ═══════════════════════════════════════════════════════════════
 
 SERVER RESPONSE STRUCTURE:

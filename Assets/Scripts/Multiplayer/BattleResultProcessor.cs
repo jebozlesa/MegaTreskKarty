@@ -72,39 +72,39 @@ public class BattleResultProcessor : MonoBehaviour
         Debug.LogWarning($"🎴 [CARDS] MY: {myCard.cardName} (cardId={myCard.cardId}, HP={myCard.health}/{myCard.maxHealth})");
         Debug.LogWarning($"🎴 [CARDS] ENEMY: {enemyCard.cardName} (cardId={enemyCard.cardId}, HP={enemyCard.health}/{enemyCard.maxHealth})");
         
-        // ✅ V5: Parsuj attacks object (indexované podľa cardId)
-        if (!battleResult.ContainsKey("attacks"))
+        // ✅ V11: Parse NEW ID-based response format (firstAttacker, secondAttacker)
+        if (!battleResult.ContainsKey("firstAttacker") || !battleResult.ContainsKey("secondAttacker"))
         {
-            Debug.LogError("[BattleResultProcessor] Missing 'attacks' in battleResult!");
+            Debug.LogError("[BattleResultProcessor] Missing 'firstAttacker' or 'secondAttacker' in battleResult!");
             return;
         }
         
-        var attacksJson = battleResult["attacks"].ToString();
-        var attacks = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
-            .DeserializeObject<Dictionary<string, object>>(attacksJson);
+        var firstAttackerJson = battleResult["firstAttacker"].ToString();
+        var secondAttackerJson = battleResult["secondAttacker"].ToString();
         
-        string firstAttacker = battleResult["firstAttacker"].ToString();
+        var firstAttackerData = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
+            .DeserializeObject<Dictionary<string, object>>(firstAttackerJson);
+        var secondAttackerData = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
+            .DeserializeObject<Dictionary<string, object>>(secondAttackerJson);
         
-        // ✅ Nájdi damage pre moju kartu a nepriateľa pomocou cardId
+        string firstAttackerCardId = firstAttackerData["cardId"].ToString();
+        string secondAttackerCardId = secondAttackerData["cardId"].ToString();
+        
         string myCardId = myCard.cardId;
         string enemyCardId = enemyCard.cardId;
         
-        Debug.Log($"[BattleResultProcessor] MyCardId={myCardId}, EnemyCardId={enemyCardId}");
-        Debug.Log($"[BattleResultProcessor] FirstAttacker={firstAttacker}");
+        // ✅ Determine which role I am (first or second attacker)
+        bool iAmFirstAttacker = (firstAttackerCardId == myCardId);
         
-        if (!attacks.ContainsKey(myCardId) || !attacks.ContainsKey(enemyCardId))
-        {
-            Debug.LogError($"[BattleResultProcessor] Missing attack data for cards! attacks keys: {string.Join(", ", attacks.Keys)}");
-            return;
-        }
+        var myAttackData = iAmFirstAttacker ? firstAttackerData : secondAttackerData;
+        var enemyAttackData = iAmFirstAttacker ? secondAttackerData : firstAttackerData;
         
-        var myAttackData = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
-            .DeserializeObject<Dictionary<string, object>>(attacks[myCardId].ToString());
-        var enemyAttackData = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
-            .DeserializeObject<Dictionary<string, object>>(attacks[enemyCardId].ToString());
+        Debug.LogWarning($"🎯 [ROLE] I am {(iAmFirstAttacker ? "FIRST" : "SECOND")} attacker");
+        Debug.LogWarning($"🎯 [ROLE] FirstAttacker={firstAttackerCardId}, SecondAttacker={secondAttackerCardId}");
         
-        int myDamage = int.Parse(myAttackData["damage"].ToString());
-        int enemyDamage = int.Parse(enemyAttackData["damage"].ToString());
+        // ✅ NEW: Use damageReceived (what I took) instead of damage
+        int myDamage = int.Parse(myAttackData["damageReceived"].ToString());
+        int enemyDamage = int.Parse(enemyAttackData["damageReceived"].ToString());
         
         // ✅ NEW: Získaj attackId pre správne animácie
         int myAttackId = myAttackData.ContainsKey("attackId") ? int.Parse(myAttackData["attackId"].ToString()) : 1;
@@ -181,11 +181,12 @@ public class BattleResultProcessor : MonoBehaviour
             Debug.LogWarning($"🙏 [ASCETICISM] ENEMY card RECOVERED from Asceticism!");
         }
         
-        Debug.LogWarning($"[BattleResultProcessor] MyAttackId={myAttackId}, MyDamage={myDamage}, MyHeal={myHealAmount}, MySelfDamage={mySelfDamage}, MyBlocked={myAttackBlocked}, MyBlockedBy={myBlockedBy}, MyWokeUp={myWokeUp}, MyRecovered={myRecovered}, EnemyAttackId={enemyAttackId}, EnemyDamage={enemyDamage}, EnemyHeal={enemyHealAmount}, EnemySelfDamage={enemySelfDamage}, EnemyBlocked={enemyAttackBlocked}, EnemyBlockedBy={enemyBlockedBy}, EnemyWokeUp={enemyWokeUp}, EnemyRecovered={enemyRecovered}");
+        Debug.LogWarning($"[BattleResultProcessor] MyAttackId={myAttackId}, MyDamageReceived={myDamage}, MyHeal={myHealAmount}, MySelfDamage={mySelfDamage}, MyBlocked={myAttackBlocked}, MyBlockedBy={myBlockedBy}, MyWokeUp={myWokeUp}, MyRecovered={myRecovered}, EnemyAttackId={enemyAttackId}, EnemyDamageReceived={enemyDamage}, EnemyHeal={enemyHealAmount}, EnemySelfDamage={enemySelfDamage}, EnemyBlocked={enemyAttackBlocked}, EnemyBlockedBy={enemyBlockedBy}, EnemyWokeUp={enemyWokeUp}, EnemyRecovered={enemyRecovered}");
         
         // ✅ Spusti animácie (HP sa updatne postupne!)
         // ✅ REFRESH selectedCards sa spustí AŽ PO animáciách
-        StartCoroutine(PlayBattleAnimationsAndRefresh(myCard, enemyCard, firstAttacker, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myEffectApplied, enemyEffectApplied, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myBlockedBy, enemyBlockedBy));
+        // ✅ V11: firstAttacker replaced with firstAttackerCardId (clear ID-based role)
+        StartCoroutine(PlayBattleAnimationsAndRefresh(myCard, enemyCard, firstAttackerCardId, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myEffectApplied, enemyEffectApplied, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myBlockedBy, enemyBlockedBy));
     }
     
     /// <summary>
@@ -195,10 +196,14 @@ public class BattleResultProcessor : MonoBehaviour
     /// V9: Pridané healAmount pre self-heal animácie + effectApplied pre effect ikony + Sleep blocking + blockedBy field
     /// V10: Pridané recovered/selfDamage pre Asceticism effect
     /// </summary>
-    private IEnumerator PlayBattleAnimationsAndRefresh(Kard myCard, Kard enemyCard, string firstAttacker, string myCardId, string enemyCardId, int myAttackId, int enemyAttackId, int myDamage, int enemyDamage, int myHealAmount, int enemyHealAmount, Dictionary<string, object> myEffectApplied, Dictionary<string, object> enemyEffectApplied, bool myAttackBlocked, bool enemyAttackBlocked, bool myWokeUp, bool enemyWokeUp, bool myRecovered, bool enemyRecovered, int mySelfDamage, int enemySelfDamage, int? myBlockedBy, int? enemyBlockedBy)
+    /// <summary>
+    /// ✅ V11: Updated to ID-based response format
+    /// Orchestrates battle animations and subsequent card refresh
+    /// </summary>
+    private IEnumerator PlayBattleAnimationsAndRefresh(Kard myCard, Kard enemyCard, string firstAttackerCardId, string myCardId, string enemyCardId, int myAttackId, int enemyAttackId, int myDamage, int enemyDamage, int myHealAmount, int enemyHealAmount, Dictionary<string, object> myEffectApplied, Dictionary<string, object> enemyEffectApplied, bool myAttackBlocked, bool enemyAttackBlocked, bool myWokeUp, bool enemyWokeUp, bool myRecovered, bool enemyRecovered, int mySelfDamage, int enemySelfDamage, int? myBlockedBy, int? enemyBlockedBy)
     {
         // 1. Prehrá animácie (postupný HP update) + effect ikony V SPRÁVNOM PORADÍ
-        yield return StartCoroutine(PlayBattleAnimations(myCard, enemyCard, firstAttacker, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myEffectApplied, enemyEffectApplied, myBlockedBy, enemyBlockedBy));
+        yield return StartCoroutine(PlayBattleAnimations(myCard, enemyCard, firstAttackerCardId, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myEffectApplied, enemyEffectApplied, myBlockedBy, enemyBlockedBy));
         
         // 2. ✅ Effect ikony sa zobrazujú UŽ v PlayBattleAnimations (MOVED)
         // Tento kód už nie je potrebný - effects sa zobrazujú v správnom momente počas battle flow
@@ -382,11 +387,15 @@ public class BattleResultProcessor : MonoBehaviour
     /// V9: Pridané healAmount pre self-heal animácie + Sleep blocking (blocked/wokeUp flags) + effect ikony v správnom poradí + blockedBy field
     /// V10: Pridané recovered/selfDamage pre Asceticism effect
     /// </summary>
-    private IEnumerator PlayBattleAnimations(Kard myCard, Kard enemyCard, string firstAttacker, string myCardId, string enemyCardId, int myAttackId, int enemyAttackId, int myDamage, int enemyDamage, int myHealAmount, int enemyHealAmount, bool myAttackBlocked, bool enemyAttackBlocked, bool myWokeUp, bool enemyWokeUp, bool myRecovered, bool enemyRecovered, int mySelfDamage, int enemySelfDamage, Dictionary<string, object> myEffectApplied, Dictionary<string, object> enemyEffectApplied, int? myBlockedBy, int? enemyBlockedBy)
+    /// <summary>
+    /// ✅ V11: Updated to ID-based response format (firstAttackerCardId instead of firstAttacker)
+    /// Orchestrates battle animation sequence based on attack order
+    /// </summary>
+    private IEnumerator PlayBattleAnimations(Kard myCard, Kard enemyCard, string firstAttackerCardId, string myCardId, string enemyCardId, int myAttackId, int enemyAttackId, int myDamage, int enemyDamage, int myHealAmount, int enemyHealAmount, bool myAttackBlocked, bool enemyAttackBlocked, bool myWokeUp, bool enemyWokeUp, bool myRecovered, bool enemyRecovered, int mySelfDamage, int enemySelfDamage, Dictionary<string, object> myEffectApplied, Dictionary<string, object> enemyEffectApplied, int? myBlockedBy, int? enemyBlockedBy)
     {
-        bool iAttackedFirst = (firstAttacker == myCardId);
+        bool iAttackedFirst = (firstAttackerCardId == myCardId);
         
-        Debug.LogWarning($"[PlayBattleAnimations] FirstAttacker={firstAttacker}, MyCardId={myCardId}, IAttackedFirst={iAttackedFirst}");
+        Debug.LogWarning($"[PlayBattleAnimations] FirstAttackerCardId={firstAttackerCardId}, MyCardId={myCardId}, IAttackedFirst={iAttackedFirst}");
         Debug.LogWarning($"[PlayBattleAnimations] MyAttackId={myAttackId}, EnemyAttackId={enemyAttackId}");
         
         AttackAnimations animations = attackComponent?.attackAnimations;

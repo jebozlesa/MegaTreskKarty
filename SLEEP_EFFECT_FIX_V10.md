@@ -1,6 +1,12 @@
 # Sleep Effect Fix V10 - Oprava effectApplied interpretácie
 
-## 🐛 Problém
+**⚠️ DEPRECATED:** This document describes V10 implementation using `attacks[cardId]` format.  
+**Current Version:** V11 uses ID-based `firstAttacker`/`secondAttacker` objects.  
+**Migration Guide:** See `mega-tresk-server/docs/V11_ID_BASED_RESPONSE_REFACTOR.md`
+
+---
+
+## 🐛 Problém (V10)
 Sleep effect sa zobrazoval na **nesprávnej karte** - keď Bruce Lee útočil Supera, Sleep ikonka a KO animácia sa zobrazila na **Brucovi** namiesto **Supera**.
 
 ## 🔍 Root Cause
