@@ -637,7 +637,11 @@ public class BattleResultProcessor : MonoBehaviour
                 yield return StartCoroutine(animations.PlayCrusadeAnimation(attacker.transform, defender.transform));
                 break;
                 
-            // ✅ TODO: Pridaj case 6, 7, 8... pre ďalšie útoky
+            case 6: // Water To Wine (self-buff animation)
+                yield return StartCoroutine(animations.PlayWaterToWineAnimation(attacker.transform));
+                break;
+                
+            // ✅ TODO: Pridaj case 7, 8, 9... pre ďalšie útoky
             
             default:
                 Debug.LogWarning($"[ExecuteAttackAnimation] Unknown attackId={attackId}, using Punch animation");
@@ -1002,6 +1006,7 @@ public class BattleResultProcessor : MonoBehaviour
             case 4: return "Forgiveness";
             case 5: return "Crusade";
             case 6: return "Water To Wine";
+            case 7: return "Car Hit";
             // ✅ TODO: Rozšíriť pre všetky útoky
             default: return $"Attack#{attackId}";
         }

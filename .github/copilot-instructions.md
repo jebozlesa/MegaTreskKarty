@@ -1794,7 +1794,9 @@ private int GetRandomAvailableSeries()
 
 #### Attack ID 4: Forgiveness (NEW - V9)
 - **Damage:** 0 (no HP damage)
-- **Effect:** 100% Asceticism (duration=2) + Attack stat debuff (-1)
+- **Effect:** Asceticism with charisma-based chance + Attack stat debuff (-1)
+  - Chance: `min(75%, charisma/30)` - Max 75%, scaled by charisma stat
+  - Duration: 1-3 turns (random)
 - **Notes:** Peaceful attack, applies mental discipline effect
 - **Implementation:**
   - Server: `executeForgiveness()` in `attackFunctions.js`
@@ -1809,6 +1811,19 @@ private int GetRandomAvailableSeries()
   - Server: `executeCrusade()` in `attackFunctions.js`
   - Client: `PlayCrusadeAnimation()` in `AttackAnimations.cs`
   - Debuff is permanent (saved to MongoDB card stats)
+  - Defense cannot go below 0
+
+#### Attack ID 6: Water To Wine (NEW - V11)
+- **Damage:** 0 (self-buff only)
+- **Effect:** Permanent stat changes to ATTACKER
+  - Attack stat: +2
+  - Strength stat: +1
+  - Defense stat: -1
+- **Notes:** Self-buff attack (transforms water to wine)
+- **Implementation:**
+  - Server: `executeWaterToWine()` in `attackFunctions.js`
+  - Client: `PlayWaterToWineAnimation()` in `AttackAnimations.cs` (self-animation)
+  - All stat changes are permanent (saved to MongoDB)
   - Defense cannot go below 0
 
 ### Effect System:
