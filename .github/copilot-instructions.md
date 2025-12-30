@@ -1801,6 +1801,16 @@ private int GetRandomAvailableSeries()
   - Client: Uses existing `Attack.cs` animations
   - No stacking: Ignores if target already has Asceticism or Sleep
 
+#### Attack ID 5: Crusade (NEW - V11)
+- **Damage:** `5 + (strength/4) - (defense/4)`, min 1
+- **Effect:** `(attack/50)%` chance for permanent -2 defense debuff
+- **Notes:** Balanced damage + stat debuff mechanic
+- **Implementation:**
+  - Server: `executeCrusade()` in `attackFunctions.js`
+  - Client: `PlayCrusadeAnimation()` in `AttackAnimations.cs`
+  - Debuff is permanent (saved to MongoDB card stats)
+  - Defense cannot go below 0
+
 ### Effect System:
 
 #### Effect Type 2: Asceticism (NEW - V9)

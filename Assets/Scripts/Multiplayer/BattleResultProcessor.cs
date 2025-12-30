@@ -633,7 +633,11 @@ public class BattleResultProcessor : MonoBehaviour
                 yield return StartCoroutine(animations.PlayForgivenessAnimation(attacker.transform));
                 break;
                 
-            // ✅ TODO: Pridaj case 5, 6, 7... pre ďalšie útoky
+            case 5: // Crusade
+                yield return StartCoroutine(animations.PlayCrusadeAnimation(attacker.transform, defender.transform));
+                break;
+                
+            // ✅ TODO: Pridaj case 6, 7, 8... pre ďalšie útoky
             
             default:
                 Debug.LogWarning($"[ExecuteAttackAnimation] Unknown attackId={attackId}, using Punch animation");

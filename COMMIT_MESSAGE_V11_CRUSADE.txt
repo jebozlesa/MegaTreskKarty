@@ -1,0 +1,72 @@
+feat: Attack ID 5 (Crusade) implementovaný v multiplayeri
+
+ATTACK ID 5: CRUSADE
+- Damage: 5 + (strength/4) - (defense/4), min 1
+- Effect: (attack/50)% šanca na permanent -2 defense debuff
+- Mechanika: Balanced damage + stat debuff
+
+IMPLEMENTÁCIA:
+
+Server (mega-tresk-server):
+✅ api/attacks/attackFunctions.js
+   + executeCrusade(attackerCard, defenderCard)
+   + Damage calculation: 5 + STR/4 - DEF/4
+   + Defense debuff: -2 permanent (uložené do MongoDB)
+   + Šanca: attack stat / 50, max 100%
+
+✅ api/executeBattle.js
+   + Import executeCrusade
+   + Attack ID 5 handling v Case 4 (normal battle)
+   + Attack ID 5 handling v Case 2 (first blocked)
+   + Attack ID 5 handling v second attack
+
+Unity (MegaTreskKarty):
+✅ Assets/Scripts/Multiplayer/BattleResultProcessor.cs
+   + case 5: PlayCrusadeAnimation() v ExecuteAttackAnimation()
+   + GetAttackName(5) → "Crusade"
+
+✅ .github/copilot-instructions.md
+   + Attack ID 5 dokumentácia
+   + Damage formula
+   + Defense debuff mechanika
+   + Implementation notes
+
+ANIMÁCIA:
+✅ AttackAnimations.PlayCrusadeAnimation() už existuje v singleplayeri
+✅ Reused pre multiplayer (konzistencia)
+
+STAT TRACKING:
+✅ Attack stat už trackovaný v openCardPack.js (V11 card generation)
+✅ MongoDB selectedCards obsahujú všetky stats vrátane attack
+✅ Defense debuff je permanent (uložený do card.defense)
+
+TESTING NOTES:
+- Karta s attack=25 má 50% šancu na debuff
+- Karta s attack=50+ má 100% šancu na debuff
+- Defense debuff je permanent (zostáva aj po smrti/revival)
+- Debuff sa ukladá do MongoDB automaticky cez saveSelectedCards()
+
+VÝSLEDOK:
+✅ Attack ID 5 plne funkčný v multiplayeri
+✅ Server-authoritative damage calculation
+✅ Permanent stat debuff system
+✅ Existing animations reused
+✅ Documented in copilot-instructions.md
+
+PRÍKLAD USAGE:
+```
+Turn 1: Bruce Lee (attack=40) uses Crusade → Superman
+        Damage: 5 + (30/4) - (20/4) = 5 + 7 - 5 = 7 HP
+        Debuff chance: 40/50 = 80%
+        ✅ Debuff applied! Superman defense: 20 → 18
+
+Turn 2: Superman now has permanent -2 defense debuff
+        All future attacks deal more damage to Superman
+```
+
+FILES CHANGED:
+- mega-tresk-server/api/attacks/attackFunctions.js
+- mega-tresk-server/api/executeBattle.js
+- MegaTreskKarty/Assets/Scripts/Multiplayer/BattleResultProcessor.cs
+- MegaTreskKarty/.github/copilot-instructions.md
+- MegaTreskKarty/COMMIT_MESSAGE_V11_CRUSADE.txt
