@@ -1262,6 +1262,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed25fe0a5a462db408eda59fa87ac5b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  networkErrorIndicator: {fileID: 0}
+  maxRetries: 3
+  retryDelay: 1
 --- !u!4 &742543446
 Transform:
   m_ObjectHideFlags: 0
@@ -1439,7 +1442,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 53be4a7f62e0ff54a9cad534b3336eef, type: 3}
+  m_Sprite: {fileID: -7783813424544337531, guid: 53be4a7f62e0ff54a9cad534b3336eef, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

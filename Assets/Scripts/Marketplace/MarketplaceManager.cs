@@ -16,11 +16,38 @@ public class MarketplaceManager : MonoBehaviour
     
     [Header("V11: Server-Side Card Generation")]
     public ServerFunctionsManager serverFunctionsManager;  // ✅ NEW: For calling openCardPack API
+    
+    [Header("Intro/Shop Screens")]
+    public GameObject introScreen;  // Prvý obrázok + dialog
+    public GameObject shopScreen;   // Druhý obrázok + Scroll s balíčkami
 
     void Start()
     {
         if (PlayerPrefs.GetInt("HasCompletedTutorialMarketplace", 0) == 0) { tutorial.SetActive(true); }
+        
+        // Show intro screen on start
+        ShowIntroScreen();
+        
         StartCoroutine(GetPlayerCurrencyBalance());
+    }
+    
+    /// <summary>
+    /// Zobraz intro screen (prvý obrázok + dialog)
+    /// </summary>
+    void ShowIntroScreen()
+    {
+        if (introScreen != null) introScreen.SetActive(true);
+        if (shopScreen != null) shopScreen.SetActive(false);
+    }
+    
+    /// <summary>
+    /// Prejdi na shop screen (druhý obrázok + Scroll)
+    /// Volaj túto metódu z Yes tlačidla cez Inspector
+    /// </summary>
+    public void ShowShopScreen()
+    {
+        if (introScreen != null) introScreen.SetActive(false);
+        if (shopScreen != null) shopScreen.SetActive(true);
     }
 
     public void StartGenerateCardPack(int packIndex)
