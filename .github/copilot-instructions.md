@@ -203,6 +203,59 @@ User: "How do attack counts work?"
    - ❌ User má Info logs disabled v Unity Console
    - ✅ Použij iba pre ultra-verbose logs ktoré user nemusí vidieť
 
+---
+
+## ⏱️ CRITICAL: Effect Timing (V ťahu hráča)
+
+**User Mandate:**
+> "vsetky efekty a utoky sa odohravaju v tahu hraca, zaciatok a koniec kola su pre utoky v podstate irelevantne"
+
+### ✅ **Effect Processing Rules:**
+
+1. **Efekty sa VŽDY spracovávajú V ŤAHU HRÁČA** - nie na začiatku/konci kola
+   - ❌ NEVER: "Process effects for both players at round start"
+   - ✅ ALWAYS: "Process effects when player attacks (in their turn)"
+
+2. **Processing Order (v ťahu attackera PRED útokom):**
+   - Priority 1: Bleed (damage effects)
+   - Priority 1: Exposure (damage effects, rovnaká priorita ako Bleed)
+   - Priority 2: Sleep/Asceticism check (blocking effects)
+   - Priority 3: Execute attack
+
+3. **Turn-Based Flow:**
+   ```
+   Player 1 Turn:
+     1. Process Player 1's effects (Bleed, Exposure)
+     2. Check Player 1's blocking (Sleep, Asceticism)
+     3. Execute Player 1's attack → applies effects to Player 2
+   
+   Player 2 Turn (counter-attack):
+     1. Process Player 2's effects (Bleed, Exposure)
+     2. Check Player 2's blocking (Sleep, Asceticism)
+     3. Execute Player 2's attack → applies effects to Player 1
+   ```
+
+4. **No Global Round Processing:**
+   - ❌ Neexistuje "round start" pre oba hráčov súčasne
+   - ✅ Každý hráč má svoj "turn" kde sa jeho efekty spracujú
+
+**Príklad:**
+```javascript
+// ❌ ZLÉ - efekty na začiatku kola
+function startRound() {
+  processEffects(player1);
+  processEffects(player2);
+}
+
+// ✅ SPRÁVNE - efekty v ťahu hráča
+function executeBattle(attacker, defender) {
+  processBleedEffects(attacker);      // Attacker's Bleed PRED útokom
+  processExposureEffects(attacker);   // Attacker's Exposure PRED útokom
+  checkSleepBlocking(attacker);       // Blokuje útok?
+  executeAttack(attacker, defender);  // Útok (môže aplikovať efekty na defendera)
+}
+```
+
 **Príklad správneho logovania:**
 ```csharp
 // ✅ SPRÁVNE - viditeľné v Console

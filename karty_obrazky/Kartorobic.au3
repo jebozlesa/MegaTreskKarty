@@ -77,11 +77,11 @@ Sleep(1000)
 ScaleActiveLayer(528, 768, 1)
 
 CreateLayerRect(32, 540, 496, 740, 70)
-CreateLayerRect(32,  40, 496, 760, 70)
+CreateLayerRect(32,  40, 496, 740, 70)
 
 AlternativesLoop()
 
-SaveCardXCF()
+;SaveCardXCF()
 
 
 

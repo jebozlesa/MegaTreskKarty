@@ -268,6 +268,14 @@ public class BattleResultProcessor : MonoBehaviour
             }
         }
         
+        // ✅ V11.2: Získaj exposureDamage (Exposure effect damage from radiation)
+        int myExposureDamage = myAttackData.ContainsKey("exposureDamage") ? int.Parse(myAttackData["exposureDamage"].ToString()) : 0;
+        int enemyExposureDamage = enemyAttackData.ContainsKey("exposureDamage") ? int.Parse(enemyAttackData["exposureDamage"].ToString()) : 0;
+        
+        // ✅ V11.2: Získaj exposureRemoved (Was Exposure removed by 20% proc?)
+        bool myExposureRemoved = myAttackData.ContainsKey("exposureRemoved") && bool.Parse(myAttackData["exposureRemoved"].ToString());
+        bool enemyExposureRemoved = enemyAttackData.ContainsKey("exposureRemoved") && bool.Parse(enemyAttackData["exposureRemoved"].ToString());
+        
         // ✅ Získaj blockedBy field (typ effectu ktorý blokuje útok - numeric effect type ID)
         int? myBlockedBy = (myAttackData.ContainsKey("blockedBy") && myAttackData["blockedBy"] != null) 
             ? (int?)int.Parse(myAttackData["blockedBy"].ToString()) 
@@ -303,14 +311,14 @@ public class BattleResultProcessor : MonoBehaviour
             Debug.LogWarning($"🙏 [ASCETICISM] ENEMY card RECOVERED from Asceticism!");
         }
         
-        Debug.LogWarning($"[BattleResultProcessor] MyAttackId={myAttackId}, MyDamageReceived={myDamage}, MyHeal={myHealAmount}, MySelfDamage={mySelfDamage}, MyBleedDamage={myBleedDamage}, MyBleedCount={myBleedDamages.Count}, MyAttackerSelfDamage={myAttackerSelfDamage}, MyBlocked={myAttackBlocked}, MyBlockedBy={myBlockedBy}, MyWokeUp={myWokeUp}, MyRecovered={myRecovered}, MyEffects={myEffectsApplied.Count}, MySelfEffects={myAttackerEffects.Count}, EnemyAttackId={enemyAttackId}, EnemyDamageReceived={enemyDamage}, EnemyHeal={enemyHealAmount}, EnemySelfDamage={enemySelfDamage}, EnemyBleedDamage={enemyBleedDamage}, EnemyBleedCount={enemyBleedDamages.Count}, EnemyAttackerSelfDamage={enemyAttackerSelfDamage}, EnemyBlocked={enemyAttackBlocked}, EnemyBlockedBy={enemyBlockedBy}, EnemyWokeUp={enemyWokeUp}, EnemyRecovered={enemyRecovered}, EnemyEffects={enemyEffectsApplied.Count}, EnemySelfEffects={enemyAttackerEffects.Count}");
+        Debug.LogWarning($"[BattleResultProcessor] MyAttackId={myAttackId}, MyDamageReceived={myDamage}, MyHeal={myHealAmount}, MySelfDamage={mySelfDamage}, MyBleedDamage={myBleedDamage}, MyBleedCount={myBleedDamages.Count}, MyExposureDamage={myExposureDamage}, MyExposureRemoved={myExposureRemoved}, MyAttackerSelfDamage={myAttackerSelfDamage}, MyBlocked={myAttackBlocked}, MyBlockedBy={myBlockedBy}, MyWokeUp={myWokeUp}, MyRecovered={myRecovered}, MyEffects={myEffectsApplied.Count}, MySelfEffects={myAttackerEffects.Count}, EnemyAttackId={enemyAttackId}, EnemyDamageReceived={enemyDamage}, EnemyHeal={enemyHealAmount}, EnemySelfDamage={enemySelfDamage}, EnemyBleedDamage={enemyBleedDamage}, EnemyBleedCount={enemyBleedDamages.Count}, EnemyExposureDamage={enemyExposureDamage}, EnemyExposureRemoved={enemyExposureRemoved}, EnemyAttackerSelfDamage={enemyAttackerSelfDamage}, EnemyBlocked={enemyAttackBlocked}, EnemyBlockedBy={enemyBlockedBy}, EnemyWokeUp={enemyWokeUp}, EnemyRecovered={enemyRecovered}, EnemyEffects={enemyEffectsApplied.Count}, EnemySelfEffects={enemyAttackerEffects.Count}");
         
         // ✅ Spusti animácie (HP sa updatne postupne!)
         // ✅ REFRESH selectedCards sa spustí AŽ PO animáciách
         // ✅ V11: firstAttacker replaced with firstAttackerCardId (clear ID-based role)
         // ✅ V11.1: Added effectsApplied arrays + attackerSelfDamage for AoE/recoil attacks
-        // ✅ V11.2: Added bleedDamages arrays for individual Bleed animations
-        StartCoroutine(PlayBattleAnimationsAndRefresh(myCard, enemyCard, firstAttackerCardId, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myEffectsApplied, enemyEffectsApplied, myAttackerEffects, enemyAttackerEffects, myAttackerSelfDamage, enemyAttackerSelfDamage, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myBlockedBy, enemyBlockedBy, myBleedDamages, enemyBleedDamages));
+        // ✅ V11.2: Added bleedDamages arrays for individual Bleed animations + exposureDamage/exposureRemoved
+        StartCoroutine(PlayBattleAnimationsAndRefresh(myCard, enemyCard, firstAttackerCardId, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myEffectsApplied, enemyEffectsApplied, myAttackerEffects, enemyAttackerEffects, myAttackerSelfDamage, enemyAttackerSelfDamage, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myBlockedBy, enemyBlockedBy, myBleedDamages, enemyBleedDamages, myExposureDamage, myExposureRemoved, enemyExposureDamage, enemyExposureRemoved));
     }
     
     /// <summary>
@@ -351,10 +359,14 @@ public class BattleResultProcessor : MonoBehaviour
         int? myBlockedBy, 
         int? enemyBlockedBy,
         List<int> myBleedDamages,
-        List<int> enemyBleedDamages)
+        List<int> enemyBleedDamages,
+        int myExposureDamage,
+        bool myExposureRemoved,
+        int enemyExposureDamage,
+        bool enemyExposureRemoved)
     {
         // 1. Prehrá animácie (postupný HP update) + effect ikony V SPRÁVNOM PORADÍ
-        yield return StartCoroutine(PlayBattleAnimations(myCard, enemyCard, firstAttackerCardId, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myEffectsApplied, enemyEffectsApplied, myAttackerEffects, enemyAttackerEffects, myAttackerSelfDamage, enemyAttackerSelfDamage, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myBlockedBy, enemyBlockedBy, myBleedDamages, enemyBleedDamages));
+        yield return StartCoroutine(PlayBattleAnimations(myCard, enemyCard, firstAttackerCardId, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myEffectsApplied, enemyEffectsApplied, myAttackerEffects, enemyAttackerEffects, myAttackerSelfDamage, enemyAttackerSelfDamage, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myBlockedBy, enemyBlockedBy, myBleedDamages, enemyBleedDamages, myExposureDamage, myExposureRemoved, enemyExposureDamage, enemyExposureRemoved));
         
         // 2. ✅ Effect ikony sa zobrazujú UŽ v PlayBattleAnimations (MOVED)
         // Tento kód už nie je potrebný - effects sa zobrazujú v správnom momente počas battle flow
@@ -569,7 +581,11 @@ public class BattleResultProcessor : MonoBehaviour
         int? myBlockedBy, 
         int? enemyBlockedBy,
         List<int> myBleedDamages,
-        List<int> enemyBleedDamages)
+        List<int> enemyBleedDamages,
+        int myExposureDamage,
+        bool myExposureRemoved,
+        int enemyExposureDamage,
+        bool enemyExposureRemoved)
     {
         bool iAttackedFirst = (firstAttackerCardId == myCardId);
         
@@ -602,6 +618,15 @@ public class BattleResultProcessor : MonoBehaviour
                         yield return new WaitForSeconds(0.3f);  // Small delay between Bleeds
                     }
                 }
+            }
+            
+            // ✅ PRIORITY 1: Exposure damage (same priority as Bleed)
+            if (myExposureDamage > 0 || myExposureRemoved)
+            {
+                Debug.LogWarning($"☢️ [EXPOSURE] MY card - damage={myExposureDamage}, removed={myExposureRemoved}");
+                myCard.health -= myExposureDamage;
+                yield return StartCoroutine(PlayExposureAnimation(myCard, myExposureDamage, myExposureRemoved, true));
+                yield return new WaitForSeconds(0.3f);
             }
             
             // ✅ PRIORITY 3: Skontroluj Asceticism recovery (blocking effect)
@@ -689,6 +714,15 @@ public class BattleResultProcessor : MonoBehaviour
                     }
                 }
                 
+                // ✅ PRIORITY 1: Exposure damage (same priority as Bleed)
+                if (enemyExposureDamage > 0 || enemyExposureRemoved)
+                {
+                    Debug.LogWarning($"☢️ [EXPOSURE] ENEMY card - damage={enemyExposureDamage}, removed={enemyExposureRemoved}");
+                    enemyCard.health -= enemyExposureDamage;
+                    yield return StartCoroutine(PlayExposureAnimation(enemyCard, enemyExposureDamage, enemyExposureRemoved, false));
+                    yield return new WaitForSeconds(0.3f);
+                }
+                
                 // ✅ PRIORITY 3: Nepriateľ Asceticism recovery check (blocking effect)
                 if (enemyRecovered)
                 {
@@ -768,6 +802,15 @@ public class BattleResultProcessor : MonoBehaviour
                 }
             }
             
+            // ✅ PRIORITY 1: Exposure damage (same priority as Bleed)
+            if (enemyExposureDamage > 0 || enemyExposureRemoved)
+            {
+                Debug.LogWarning($"☢️ [EXPOSURE] ENEMY card - damage={enemyExposureDamage}, removed={enemyExposureRemoved}");
+                enemyCard.health -= enemyExposureDamage;
+                yield return StartCoroutine(PlayExposureAnimation(enemyCard, enemyExposureDamage, enemyExposureRemoved, false));
+                yield return new WaitForSeconds(0.3f);
+            }
+            
             // ✅ PRIORITY 3: Nepriateľ Asceticism recovery check (blocking effect)
             if (enemyRecovered)
             {
@@ -845,6 +888,15 @@ public class BattleResultProcessor : MonoBehaviour
                             yield return new WaitForSeconds(0.3f);  // Small delay between Bleeds
                         }
                     }
+                }
+                
+                // ✅ PRIORITY 1: Exposure damage (same priority as Bleed)
+                if (myExposureDamage > 0 || myExposureRemoved)
+                {
+                    Debug.LogWarning($"☢️ [EXPOSURE] MY card - damage={myExposureDamage}, removed={myExposureRemoved}");
+                    myCard.health -= myExposureDamage;
+                    yield return StartCoroutine(PlayExposureAnimation(myCard, myExposureDamage, myExposureRemoved, true));
+                    yield return new WaitForSeconds(0.3f);
                 }
                 
                 // ✅ PRIORITY 3: Môj Asceticism recovery check (blocking effect)
@@ -967,7 +1019,7 @@ public class BattleResultProcessor : MonoBehaviour
                         playerLifeBar.SetHP(defender.health);
                     }
                     
-                    yield return StartCoroutine(ShowDialog($"Hit! {damage} damage!"));
+                    yield return StartCoroutine(ShowDialog($"Puf! punch from {attacker.cardName}"));
                 }
                 break;
                 
@@ -994,7 +1046,7 @@ public class BattleResultProcessor : MonoBehaviour
                         playerLifeBar.SetHP(defender.health);
                     }
                     
-                    yield return StartCoroutine(ShowDialog($"Hit! {damage} damage!"));
+                    yield return StartCoroutine(ShowDialog($"Plesk! kick from {attacker.cardName}"));
                 }
                 break;
                 
@@ -1015,7 +1067,7 @@ public class BattleResultProcessor : MonoBehaviour
                         enemyLifeBar.SetHP(attacker.health);
                     }
                     
-                    yield return StartCoroutine(ShowDialog($"{attacker.cardName} healed {healAmount} HP!"));
+                    yield return StartCoroutine(ShowDialog($"{attacker.cardName} Heals himself"));
                 }
                 break;
                 
@@ -1024,7 +1076,7 @@ public class BattleResultProcessor : MonoBehaviour
                 // Debuff efekt - aplikuj -1 attack
                 Debug.LogWarning($"🙏 [FORGIVENESS] {attacker.cardName} → {defender.cardName}: -1 attack");
                 defender.HandleAttack(-1);
-                yield return StartCoroutine(ShowDialog($"{attacker.cardName} forgives your heresy!"));
+                yield return StartCoroutine(ShowDialog($"{attacker.cardName} forgives your heresy"));
                 break;
                 
             case 5: // Crusade
@@ -1050,7 +1102,7 @@ public class BattleResultProcessor : MonoBehaviour
                         playerLifeBar.SetHP(defender.health);
                     }
                     
-                    yield return StartCoroutine(ShowDialog($"In the name of Christ! {damage} damage!"));
+                    yield return StartCoroutine(ShowDialog($"In the name of Christ!!! damage was done"));
                 }
                 break;
                 
@@ -1061,7 +1113,7 @@ public class BattleResultProcessor : MonoBehaviour
                 attacker.HandleAttack(2);   // +2 attack
                 attacker.HandleStrength(1); // +1 strength
                 attacker.HandleDefense(-1); // -1 defense
-                yield return StartCoroutine(ShowDialog($"{attacker.cardName} changes water to wine!"));
+                yield return StartCoroutine(ShowDialog($"{attacker.cardName} changes his water to wine"));
                 break;
                 
             case 7: // CarHit (AoE damage + effects on both attacker and defender)
@@ -1100,8 +1152,8 @@ public class BattleResultProcessor : MonoBehaviour
                 // ✅ Update HP bars AFTER damage application
                 if (isMyAttack)
                 {
-                    enemyLifeBar.SetHP(defender.health);
                     playerLifeBar.SetHP(attacker.health);
+                    enemyLifeBar.SetHP(defender.health);
                 }
                 else
                 {
@@ -1109,10 +1161,45 @@ public class BattleResultProcessor : MonoBehaviour
                     enemyLifeBar.SetHP(attacker.health);
                 }
                 
+                // Show dialog for CarHit impact
                 yield return StartCoroutine(ShowDialog($"Tresk! hit by {attacker.cardName}'s car"));
                 break;
                 
-            // ✅ TODO: Pridaj case 8, 9... pre ďalšie útoky
+            case 8: // MonkeyWrench (strength-based damage + speed crit + knowledge Sleep)
+                yield return StartCoroutine(animations.PlayMonkeyWrenchAnimation(attacker.transform, defender.transform));
+                // Damage útoky - aplikuj damage + HP bar update
+                if (damage > 0)
+                {
+                    Debug.LogWarning($"💥 [MONKEYWRENCH] {attacker.cardName} → {defender.cardName}: {damage} damage");
+                    defender.health -= damage;
+                    if (defender.health < 0) defender.health = 0;
+                    
+                    if (cardAnimator != null)
+                    {
+                        yield return StartCoroutine(cardAnimator.AnimateDamage(defender, damage));
+                    }
+                    
+                    if (isMyAttack)
+                    {
+                        enemyLifeBar.SetHP(defender.health);
+                    }
+                    else
+                    {
+                        playerLifeBar.SetHP(defender.health);
+                    }
+                    
+                    yield return StartCoroutine(ShowDialog($"{attacker.cardName} hits with Monkey Wrench"));
+                }
+                break;
+                
+            case 9: // Radiation (no damage, only Exposure effects)
+                yield return StartCoroutine(animations.PlayRadioactivityAnimation(attacker.transform));
+                // No HP damage - pure effect attack!
+                // Effects are handled in effect application section below
+                Debug.LogWarning($"☢️ [RADIATION] {attacker.cardName} uses Radiation on {defender.cardName} (no direct damage)");
+                break;
+                
+            // ✅ TODO: Pridaj case 10, 11... pre ďalšie útoky
             
             default:
                 Debug.LogWarning($"[ExecuteAttackAnimation] Unknown attackId={attackId}, using Punch animation");
@@ -1362,6 +1449,66 @@ public class BattleResultProcessor : MonoBehaviour
     }
     
     /// <summary>
+    /// Prehrá Exposure animáciu - damage alebo removal
+    /// V11.2: PRIORITY 1 - Exposure processing (escalating radiation damage)
+    /// </summary>
+    private IEnumerator PlayExposureAnimation(Kard card, int damage, bool removed, bool isMyCard)
+    {
+        string cardOwner = isMyCard ? "MY" : "ENEMY";
+        
+        AttackAnimations animations = attackComponent?.attackAnimations;
+        
+        if (removed)
+        {
+            // 20% proc - Exposure removed!
+            Debug.LogWarning($"☢️ [EXPOSURE] {cardOwner} card ({card.cardName})'s irradiation is gone! (20% removal proc)");
+            
+            if (animations != null)
+            {
+                yield return StartCoroutine(animations.PlayExposureEndAnimation(card.transform));
+            }
+            
+            // ✅ Odstráň Exposure ikonu
+            string exposureEffectName = GetEffectName(4); // 4 = Exposure
+            if (!string.IsNullOrEmpty(exposureEffectName))
+            {
+                yield return StartCoroutine(card.RemoveEffectIcon(exposureEffectName));
+                Debug.LogWarning($"☢️ [EXPOSURE] Removed {exposureEffectName} icon from {card.cardName}");
+            }
+            
+            yield return StartCoroutine(ShowDialog($"{card.cardName}'s irradiation is gone"));
+        }
+        else if (damage > 0)
+        {
+            // 80% proc - Take escalating damage
+            Debug.LogWarning($"☢️ [EXPOSURE] {cardOwner} card ({card.cardName}) is irradiated! -{damage} HP");
+            
+            if (animations != null)
+            {
+                yield return StartCoroutine(animations.PlayExposureAnimation(card.transform));
+            }
+            
+            // ✅ Použij cardAnimator pre damage animáciu
+            if (cardAnimator != null)
+            {
+                yield return StartCoroutine(cardAnimator.AnimateDamage(card, damage));
+            }
+            
+            // ✅ Update HP bar
+            if (isMyCard)
+            {
+                playerLifeBar.SetHP(card.health);
+            }
+            else
+            {
+                enemyLifeBar.SetHP(card.health);
+            }
+            
+            yield return StartCoroutine(ShowDialog($"{card.cardName} is irradiated"));
+        }
+    }
+    
+    /// <summary>
     /// Prehrá blocking animáciu podľa typu effectu
     /// VOLÁ SA keď karta má aktívny blocking effect (Sleep, Stun, Freeze, atď.)
     /// </summary>
@@ -1486,6 +1633,8 @@ public class BattleResultProcessor : MonoBehaviour
             case 5: return "Crusade";
             case 6: return "Water To Wine";
             case 7: return "Car Hit";
+            case 8: return "Monkey Wrench";
+            case 9: return "Radiation";
             // ✅ TODO: Rozšíriť pre všetky útoky
             default: return $"Attack#{attackId}";
         }
