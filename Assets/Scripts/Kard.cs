@@ -614,7 +614,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
 
 
-    private void RepositionEffectIcons()
+    public void RepositionEffectIcons()
 {
     int index = 0;
     //float iconWidth = 80f; // Šírka ikonky
