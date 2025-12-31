@@ -621,6 +621,9 @@ public class BattleResultProcessor : MonoBehaviour
             
             if (!myAttackBlocked)
             {
+                // ✅ Set color to BLUE for entire attack sequence (like singleplayer)
+                if (dialogText != null) dialogText.color = Color.blue;
+                
                 // Útok sa vykoná normálne
                 // ✅ FIX: myCard útočí enemyCard → použij enemyDamage (damage ktorý ENEMY dostane)
                 yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true, myAttackerSelfDamage));
@@ -664,6 +667,9 @@ public class BattleResultProcessor : MonoBehaviour
             if (enemyCard.health > 0)
             {
                 yield return new WaitForSeconds(0.5f);
+                
+                // ✅ Set dialog color to RED for enemy attack (like singleplayer)
+                if (dialogText != null) dialogText.color = Color.red;
                 
                 // ✅ PRIORITY 1: Enemy Bleed damage FIRST
                 // ✅ V11.2: Play INDIVIDUAL Bleed animations for each Bleed effect
@@ -741,6 +747,9 @@ public class BattleResultProcessor : MonoBehaviour
         else
         {
             // ✅ NEPRIATEĽ ÚTOČÍ PRVÝ
+            // ✅ Set dialog color to RED for enemy attack (like singleplayer)
+            if (dialogText != null) dialogText.color = Color.red;
+            
             // ✅ PRIORITY 1: Enemy Bleed damage FIRST
             // ✅ V11.2: Play INDIVIDUAL Bleed animations for each Bleed effect
             if (enemyBleedDamages != null && enemyBleedDamages.Count > 0)
@@ -817,6 +826,9 @@ public class BattleResultProcessor : MonoBehaviour
             {
                 yield return new WaitForSeconds(0.5f);
                 
+                // ✅ Set color to BLUE for entire attack sequence (like singleplayer)
+                if (dialogText != null) dialogText.color = Color.blue;
+                
                 // ✅ PRIORITY 1: My Bleed damage FIRST
                 // ✅ V11.2: Play INDIVIDUAL Bleed animations for each Bleed effect
                 if (myBleedDamages != null && myBleedDamages.Count > 0)
@@ -891,6 +903,12 @@ public class BattleResultProcessor : MonoBehaviour
             }
         }
         
+        // ✅ Reset dialog color to BLACK after battle (for neutral messages like "Choose your attack")
+        if (dialogText != null) dialogText.color = Color.black;
+        
+        // ✅ V11.2: Immediately show "Preparing next turn..." to mask color transition
+        yield return StartCoroutine(ShowDialog("Preparing next turn..."));
+        
         // ✅ V5: HP sa updatuje postupne počas animácií, žiadna finálna sync!
         // selectedCards refresh sa volá v PlayBattleAnimationsAndRefresh
         
@@ -920,7 +938,7 @@ public class BattleResultProcessor : MonoBehaviour
         string attackName = GetAttackName(attackId);
         AttackAnimations animations = attackComponent.attackAnimations;
         
-        // ✅ Zobraz správu o útoku
+        // ✅ Zobraz správu o útoku (color už nastavená PRED sekvenciu)
         yield return StartCoroutine(ShowDialog($"{attacker.cardName} uses {attackName}!"));
         
         // ✅ Prehrá animáciu + OKAMŽITE aplikuje efekty (VŠETKY útoky rovnako!)
@@ -1481,6 +1499,7 @@ public class BattleResultProcessor : MonoBehaviour
         if (dialogText != null)
         {
             dialogText.text = message;
+            // Color is set BEFORE attack sequence (like singleplayer), not per-message
         }
         yield return new WaitForSeconds(1.5f);
     }
