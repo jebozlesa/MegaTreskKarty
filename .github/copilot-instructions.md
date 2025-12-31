@@ -1864,9 +1864,15 @@ Turn 4: Enemy tries to attack → RECOVERED (END animation, icon removed), attac
 - **No Stacking:** Cannot stack Sleep effects
 - **Mutual Exclusion:** Cannot coexist with Asceticism
 
-### Effect No-Stacking Rules:
+### Effect Stacking Rules:
 
-**Rule:** Same effect type NEVER stacks!
+**Design Philosophy:** Effects mirror reality - players should understand WHY effects behave as they do.
+
+#### Blocking Effects (NO STACKING):
+- **Sleep (Type 3):** Cannot stack - môžeš spať len raz naraz
+- **Asceticism (Type 2):** Cannot stack - jeden duchovný stav
+- **Rule:** First blocking effect applied wins, blocks new applications
+- **Mutual Exclusion:** Sleep ↔ Asceticism cannot coexist
 
 ```javascript
 // Server (executeForgiveness):
@@ -1882,12 +1888,27 @@ if (hasEffect(target, EffectTypes.SLEEP)) {
 }
 ```
 
-**Mutual Exclusion (Sleep ↔ Asceticism):**
-- If has Sleep → Cannot apply Asceticism
-- If has Asceticism → Cannot apply Sleep
-- First effect applied wins (stays until expires)
+#### Damage-Over-Time Effects (YES STACKING):
+- **Bleed (Type 1):** CAN stack - viac rán = viac krvácajúcich rán
+- **Reason:** Realistic - each wound bleeds independently
+- **Implementation:** `applyEffect(card, EffectTypes.BLEED, { allowStacking: true })`
+- **Effect Behavior:** Each bleed effect decrements separately, damage = duration value
 
-**Priority:** EXISTING effect blocks NEW effect (no replacement)
+```javascript
+// Server (executeCarHit):
+const bleedEffect = applyEffect(defenderCard, EffectTypes.BLEED, {
+  duration: 4,
+  allowStacking: true  // ✅ Multiple bleeds can coexist
+});
+
+// Result: Card can have effects = [
+//   { type: 1, duration: 4 },  // First bleed (4 turns)
+//   { type: 1, duration: 2 }   // Second bleed (2 turns)
+// ]
+// Turn X: Takes 4+2=6 damage, both decrement → 3+1=4 damage next turn
+```
+
+**Priority:** EXISTING blocking effect prevents NEW blocking effect (no replacement)
 
 ### Server Battle Flow (executeBattle.js):
 

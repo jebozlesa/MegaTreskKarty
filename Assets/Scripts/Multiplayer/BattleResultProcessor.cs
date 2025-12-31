@@ -623,7 +623,7 @@ public class BattleResultProcessor : MonoBehaviour
             {
                 // Útok sa vykoná normálne
                 // ✅ FIX: myCard útočí enemyCard → použij enemyDamage (damage ktorý ENEMY dostane)
-                yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true));
+                yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true, myAttackerSelfDamage));
                 
                 // ✅ V11.1: Display multiple effects on defender
                 if (myEffectsApplied != null && myEffectsApplied.Count > 0)
@@ -632,7 +632,8 @@ public class BattleResultProcessor : MonoBehaviour
                 }
                 
                 // ✅ V11.1: Attacker self-damage (CarHit recoil)
-                if (myAttackerSelfDamage > 0)
+                // Skip for CarHit (attackId 7) - already handled in case 7
+                if (myAttackerSelfDamage > 0 && myAttackId != 7)
                 {
                     Debug.LogWarning($"💥 [SELF-DAMAGE] MY card takes {myAttackerSelfDamage} recoil damage!");
                     myCard.health -= myAttackerSelfDamage;
@@ -699,7 +700,7 @@ public class BattleResultProcessor : MonoBehaviour
                 if (!enemyAttackBlocked)
                 {
                     // ✅ FIX: enemyCard útočí myCard → použij myDamage (damage ktorý JA dostanem)
-                    yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, myDamage, enemyHealAmount, false));
+                    yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, myDamage, enemyHealAmount, false, enemyAttackerSelfDamage));
                     
                     // ✅ V11.1: Display multiple effects on defender (me)
                     if (enemyEffectsApplied != null && enemyEffectsApplied.Count > 0)
@@ -708,7 +709,8 @@ public class BattleResultProcessor : MonoBehaviour
                     }
                     
                     // ✅ V11.1: Enemy attacker self-damage
-                    if (enemyAttackerSelfDamage > 0)
+                    // Skip for CarHit (attackId 7) - already handled in case 7
+                    if (enemyAttackerSelfDamage > 0 && enemyAttackId != 7)
                     {
                         Debug.LogWarning($"💥 [SELF-DAMAGE] ENEMY card takes {enemyAttackerSelfDamage} recoil damage!");
                         enemyCard.health -= enemyAttackerSelfDamage;
@@ -774,7 +776,7 @@ public class BattleResultProcessor : MonoBehaviour
             if (!enemyAttackBlocked)
             {
                 // ✅ FIX: enemyCard útočí myCard → použij myDamage (damage ktorý JA dostanem)
-                yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, myDamage, enemyHealAmount, false));
+                yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, myDamage, enemyHealAmount, false, enemyAttackerSelfDamage));
                 
                 // ✅ V11.1: Display multiple effects on defender (me)
                 if (enemyEffectsApplied != null && enemyEffectsApplied.Count > 0)
@@ -850,7 +852,7 @@ public class BattleResultProcessor : MonoBehaviour
                 if (!myAttackBlocked)
                 {
                     // ✅ FIX: myCard útočí enemyCard → použij enemyDamage (damage ktorý ENEMY dostane)
-                    yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true));
+                    yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true, myAttackerSelfDamage));
                     
                     // ✅ V11.1: Display multiple effects on defender (enemy)
                     if (myEffectsApplied != null && myEffectsApplied.Count > 0)
@@ -859,7 +861,8 @@ public class BattleResultProcessor : MonoBehaviour
                     }
                     
                     // ✅ V11.1: My attacker self-damage
-                    if (myAttackerSelfDamage > 0)
+                    // Skip for CarHit (attackId 7) - already handled in case 7
+                    if (myAttackerSelfDamage > 0 && myAttackId != 7)
                     {
                         Debug.LogWarning($"💥 [SELF-DAMAGE] MY card takes {myAttackerSelfDamage} recoil damage!");
                         myCard.health -= myAttackerSelfDamage;
@@ -910,8 +913,9 @@ public class BattleResultProcessor : MonoBehaviour
     /// Vykoná animáciu pre konkrétny útok (reuse Attack.cs metód)
     /// V8: Podporuje Attack ID 1 (Punch), 2 (Kick), 3 (Heal), ... rozširiteľné
     /// V9: Heal support - self-heal attacks s healAmount + zelená HP animácia
+    /// V11.2: CarHit - attackerSelfDamage pre súčasné animácie damage
     /// </summary>
-    private IEnumerator ExecuteAttackAnimation(Kard attacker, Kard defender, int attackId, int damage, int healAmount, bool isMyAttack)
+    private IEnumerator ExecuteAttackAnimation(Kard attacker, Kard defender, int attackId, int damage, int healAmount, bool isMyAttack, int attackerSelfDamage = 0)
     {
         string attackName = GetAttackName(attackId);
         AttackAnimations animations = attackComponent.attackAnimations;
@@ -1045,25 +1049,46 @@ public class BattleResultProcessor : MonoBehaviour
             case 7: // CarHit (AoE damage + effects on both attacker and defender)
                 yield return StartCoroutine(animations.PlayCarHitAnimation(attacker.transform, defender.transform));
                 
-                // Apply damage to defender
+                // ✅ Play BOTH damage animations SIMULTANEOUSLY (parallel coroutines)
+                // Store original HP for visual effects
+                if (damage > 0 && cardAnimator != null)
+                {
+                    StartCoroutine(cardAnimator.AnimateDamage(defender, damage));
+                }
+                
+                if (attackerSelfDamage > 0 && cardAnimator != null)
+                {
+                    StartCoroutine(cardAnimator.AnimateDamage(attacker, attackerSelfDamage));
+                }
+                
+                // Wait for animations to complete
+                yield return new WaitForSeconds(0.5f);
+                
+                // ✅ Apply damage to BOTH cards SIMULTANEOUSLY (AFTER animations)
+                // Defender damage
                 if (damage > 0)
                 {
                     defender.health -= damage;
                     if (defender.health < 0) defender.health = 0;
-                    
-                    if (cardAnimator != null)
-                    {
-                        yield return StartCoroutine(cardAnimator.AnimateDamage(defender, damage));
-                    }
-                    
-                    if (isMyAttack)
-                    {
-                        enemyLifeBar.SetHP(defender.health);
-                    }
-                    else
-                    {
-                        playerLifeBar.SetHP(defender.health);
-                    }
+                }
+                
+                // Attacker self-damage (from parameter)
+                if (attackerSelfDamage > 0)
+                {
+                    attacker.health -= attackerSelfDamage;
+                    if (attacker.health < 0) attacker.health = 0;
+                }
+                
+                // ✅ Update HP bars AFTER damage application
+                if (isMyAttack)
+                {
+                    enemyLifeBar.SetHP(defender.health);
+                    playerLifeBar.SetHP(attacker.health);
+                }
+                else
+                {
+                    playerLifeBar.SetHP(defender.health);
+                    enemyLifeBar.SetHP(attacker.health);
                 }
                 
                 yield return StartCoroutine(ShowDialog($"Tresk! hit by {attacker.cardName}'s car"));
