@@ -980,250 +980,83 @@ public class BattleResultProcessor : MonoBehaviour
     }
     
     /// <summary>
-    /// Vykoná animáciu pre konkrétny útok (reuse Attack.cs metód)
+    /// Vykoná animáciu pre konkrétny útok (router pattern)
     /// V8: Podporuje Attack ID 1 (Punch), 2 (Kick), 3 (Heal), ... rozširiteľné
     /// V9: Heal support - self-heal attacks s healAmount + zelená HP animácia
     /// V11.2: CarHit - attackerSelfDamage pre súčasné animácie damage
+    /// V12: Modular - každý útok má svoj handler v AttackHandlers/ folder
     /// </summary>
     private IEnumerator ExecuteAttackAnimation(Kard attacker, Kard defender, int attackId, int damage, int healAmount, bool isMyAttack, int attackerSelfDamage = 0)
     {
-        string attackName = GetAttackName(attackId);
         AttackAnimations animations = attackComponent.attackAnimations;
         
-        // ✅ Zobraz správu o útoku (color už nastavená PRED sekvenciu)
-        yield return StartCoroutine(ShowDialog($"{attacker.cardName} uses {attackName}!"));
-        
-        // ✅ Prehrá animáciu + OKAMŽITE aplikuje efekty (VŠETKY útoky rovnako!)
+        // ✅ Router pattern - delegate to attack handlers
         switch (attackId)
         {
             case 1: // Punch
-                yield return StartCoroutine(animations.PlayPunchAnimation(attacker.transform, defender.transform));
-                // Damage útoky - aplikuj damage + HP bar update
-                if (damage > 0)
-                {
-                    Debug.LogWarning($"💥 [PUNCH] {attacker.cardName} → {defender.cardName}: {damage} damage");
-                    defender.health -= damage;
-                    if (defender.health < 0) defender.health = 0;
-                    
-                    if (cardAnimator != null)
-                    {
-                        yield return StartCoroutine(cardAnimator.AnimateDamage(defender, damage));
-                    }
-                    
-                    if (isMyAttack)
-                    {
-                        enemyLifeBar.SetHP(defender.health);
-                    }
-                    else
-                    {
-                        playerLifeBar.SetHP(defender.health);
-                    }
-                    
-                    yield return StartCoroutine(ShowDialog($"Puf! punch from {attacker.cardName}"));
-                }
+                yield return Attack1Handler.Execute(
+                    attacker, defender, damage, isMyAttack,
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
                 break;
                 
             case 2: // Kick
-                yield return StartCoroutine(animations.PlayKickAnimation(attacker.transform, defender.transform));
-                // Damage útoky - aplikuj damage + HP bar update
-                if (damage > 0)
-                {
-                    Debug.LogWarning($"💥 [KICK] {attacker.cardName} → {defender.cardName}: {damage} damage");
-                    defender.health -= damage;
-                    if (defender.health < 0) defender.health = 0;
-                    
-                    if (cardAnimator != null)
-                    {
-                        yield return StartCoroutine(cardAnimator.AnimateDamage(defender, damage));
-                    }
-                    
-                    if (isMyAttack)
-                    {
-                        enemyLifeBar.SetHP(defender.health);
-                    }
-                    else
-                    {
-                        playerLifeBar.SetHP(defender.health);
-                    }
-                    
-                    yield return StartCoroutine(ShowDialog($"Plesk! kick from {attacker.cardName}"));
-                }
+                yield return Attack2Handler.Execute(
+                    attacker, defender, damage, isMyAttack,
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
                 break;
                 
-            case 3: // Heal (self-heal)
-                yield return StartCoroutine(animations.PlayHealAnimation(attacker.transform));
-                // Heal efekt - aplikuj heal + HP bar update
-                if (healAmount > 0)
-                {
-                    Debug.LogWarning($"🩹 [HEAL] {attacker.cardName} heals for {healAmount} HP!");
-                    attacker.Heal(healAmount);
-                    
-                    if (isMyAttack)
-                    {
-                        playerLifeBar.SetHP(attacker.health);
-                    }
-                    else
-                    {
-                        enemyLifeBar.SetHP(attacker.health);
-                    }
-                    
-                    yield return StartCoroutine(ShowDialog($"{attacker.cardName} Heals himself"));
-                }
+            case 3: // Heal
+                yield return Attack3Handler.Execute(
+                    attacker, defender, healAmount, isMyAttack,
+                    animations, playerLifeBar, enemyLifeBar, ShowDialog);
                 break;
                 
-            case 4: // Forgiveness (attack debuff)
-                yield return StartCoroutine(animations.PlayForgivenessAnimation(attacker.transform));
-                // Debuff efekt - aplikuj -1 attack
-                Debug.LogWarning($"🙏 [FORGIVENESS] {attacker.cardName} → {defender.cardName}: -1 attack");
-                defender.HandleAttack(-1);
-                yield return StartCoroutine(ShowDialog($"{attacker.cardName} forgives your heresy"));
+            case 4: // Forgiveness
+                yield return Attack4Handler.Execute(
+                    attacker, defender, animations, ShowDialog);
                 break;
                 
             case 5: // Crusade
-                yield return StartCoroutine(animations.PlayCrusadeAnimation(attacker.transform, defender.transform));
-                // Damage útoky - aplikuj damage + HP bar update
-                if (damage > 0)
-                {
-                    Debug.LogWarning($"💥 [CRUSADE] {attacker.cardName} → {defender.cardName}: {damage} damage");
-                    defender.health -= damage;
-                    if (defender.health < 0) defender.health = 0;
-                    
-                    if (cardAnimator != null)
-                    {
-                        yield return StartCoroutine(cardAnimator.AnimateDamage(defender, damage));
-                    }
-                    
-                    if (isMyAttack)
-                    {
-                        enemyLifeBar.SetHP(defender.health);
-                    }
-                    else
-                    {
-                        playerLifeBar.SetHP(defender.health);
-                    }
-                    
-                    yield return StartCoroutine(ShowDialog($"In the name of Christ!!! damage was done"));
-                }
+                yield return Attack5Handler.Execute(
+                    attacker, defender, damage, isMyAttack,
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
                 break;
                 
-            case 6: // Water To Wine (self-buff)
-                yield return StartCoroutine(animations.PlayWaterToWineAnimation(attacker.transform));
-                // Buff efekt - aplikuj stat changes
-                Debug.LogWarning($"🍷 [WATER TO WINE] {attacker.cardName} transforms water to wine!");
-                attacker.HandleAttack(2);   // +2 attack
-                attacker.HandleStrength(1); // +1 strength
-                attacker.HandleDefense(-1); // -1 defense
-                yield return StartCoroutine(ShowDialog($"{attacker.cardName} changes his water to wine"));
+            case 6: // Water To Wine
+                yield return Attack6Handler.Execute(
+                    attacker, animations, ShowDialog);
                 break;
                 
-            case 7: // CarHit (AoE damage + effects on both attacker and defender)
-                yield return StartCoroutine(animations.PlayCarHitAnimation(attacker.transform, defender.transform));
-                
-                // ✅ Play BOTH damage animations SIMULTANEOUSLY (parallel coroutines)
-                // Store original HP for visual effects
-                if (damage > 0 && cardAnimator != null)
-                {
-                    StartCoroutine(cardAnimator.AnimateDamage(defender, damage));
-                }
-                
-                if (attackerSelfDamage > 0 && cardAnimator != null)
-                {
-                    StartCoroutine(cardAnimator.AnimateDamage(attacker, attackerSelfDamage));
-                }
-                
-                // Wait for animations to complete
-                yield return new WaitForSeconds(0.5f);
-                
-                // ✅ Apply damage to BOTH cards SIMULTANEOUSLY (AFTER animations)
-                // Defender damage
-                if (damage > 0)
-                {
-                    defender.health -= damage;
-                    if (defender.health < 0) defender.health = 0;
-                }
-                
-                // Attacker self-damage (from parameter)
-                if (attackerSelfDamage > 0)
-                {
-                    attacker.health -= attackerSelfDamage;
-                    if (attacker.health < 0) attacker.health = 0;
-                }
-                
-                // ✅ Update HP bars AFTER damage application
-                if (isMyAttack)
-                {
-                    playerLifeBar.SetHP(attacker.health);
-                    enemyLifeBar.SetHP(defender.health);
-                }
-                else
-                {
-                    playerLifeBar.SetHP(defender.health);
-                    enemyLifeBar.SetHP(attacker.health);
-                }
-                
-                // Show dialog for CarHit impact
-                yield return StartCoroutine(ShowDialog($"Tresk! hit by {attacker.cardName}'s car"));
+            case 7: // CarHit
+                yield return Attack7Handler.Execute(
+                    attacker, defender, damage, attackerSelfDamage, isMyAttack,
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
                 break;
                 
-            case 8: // MonkeyWrench (strength-based damage + speed crit + knowledge Sleep)
-                yield return StartCoroutine(animations.PlayMonkeyWrenchAnimation(attacker.transform, defender.transform));
-                // Damage útoky - aplikuj damage + HP bar update
-                if (damage > 0)
-                {
-                    Debug.LogWarning($"💥 [MONKEYWRENCH] {attacker.cardName} → {defender.cardName}: {damage} damage");
-                    defender.health -= damage;
-                    if (defender.health < 0) defender.health = 0;
-                    
-                    if (cardAnimator != null)
-                    {
-                        yield return StartCoroutine(cardAnimator.AnimateDamage(defender, damage));
-                    }
-                    
-                    if (isMyAttack)
-                    {
-                        enemyLifeBar.SetHP(defender.health);
-                    }
-                    else
-                    {
-                        playerLifeBar.SetHP(defender.health);
-                    }
-                    
-                    yield return StartCoroutine(ShowDialog($"{attacker.cardName} hits with Monkey Wrench"));
-                }
+            case 8: // MonkeyWrench
+                yield return Attack8Handler.Execute(
+                    attacker, defender, damage, isMyAttack,
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
                 break;
                 
-            case 9: // Radiation (no damage, only Exposure effects)
-                yield return StartCoroutine(animations.PlayRadioactivityAnimation(attacker.transform));
-                // No HP damage - pure effect attack!
-                // Effects are handled in effect application section below
-                Debug.LogWarning($"☢️ [RADIATION] {attacker.cardName} uses Radiation on {defender.cardName} (no direct damage)");
+            case 9: // Radiation
+                yield return Attack9Handler.Execute(
+                    attacker, defender, animations, ShowDialog);
+                break;
+            
+            case 10: // Scratch
+                yield return Attack10Handler.Execute(
+                    attacker, defender, damage, isMyAttack,
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
                 break;
                 
-            // ✅ TODO: Pridaj case 10, 11... pre ďalšie útoky
+            // ✅ TODO: Add case 11-123 - just add 3 lines per attack!
             
             default:
-                Debug.LogWarning($"[ExecuteAttackAnimation] Unknown attackId={attackId}, using Punch animation");
-                yield return StartCoroutine(animations.PlayPunchAnimation(attacker.transform, defender.transform));
-                // Default damage handling
-                if (damage > 0)
-                {
-                    defender.health -= damage;
-                    if (defender.health < 0) defender.health = 0;
-                    
-                    if (cardAnimator != null)
-                    {
-                        yield return StartCoroutine(cardAnimator.AnimateDamage(defender, damage));
-                    }
-                    
-                    if (isMyAttack)
-                    {
-                        enemyLifeBar.SetHP(defender.health);
-                    }
-                    else
-                    {
-                        playerLifeBar.SetHP(defender.health);
-                    }
-                }
+                Debug.LogWarning($"[ExecuteAttackAnimation] Unknown attackId={attackId}, using Punch as fallback");
+                yield return Attack1Handler.Execute(
+                    attacker, defender, damage, isMyAttack,
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
                 break;
         }
     }

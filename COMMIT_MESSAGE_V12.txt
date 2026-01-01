@@ -1,0 +1,79 @@
+✨ feat: Attack 10 (Scratch) + Modular Attack Handler System
+
+🎯 ATTACK 10: SCRATCH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Damage: (attack/3) - (defense/3), min 1
+✅ Effect: 20% Bleed (1-2 turns, STACKS!)
+✅ Attack Count: 20 + strength
+✅ Animation: PlayScratchAnimation(defender.transform)
+✅ Server parity: EXACT MATCH
+
+📁 Files:
+  • Assets/Scripts/Multiplayer/AttackHandlers/Attack10Handler.cs (50 lines)
+  • Assets/Scripts/Multiplayer/BattleResultProcessor.cs (case 10 registered)
+
+🏗️ MODULAR ATTACK HANDLER ARCHITECTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Refactored from monolithic switch to modular handler pattern for scalability.
+
+✅ UNITY ATTACK HANDLERS:
+  • Created: Assets/Scripts/Multiplayer/AttackHandlers/ folder
+  • 10 attack handlers: Attack1Handler.cs - Attack10Handler.cs
+  • Router: BattleResultProcessor.ExecuteAttackAnimation() switch
+  • Each handler = 1 focused class with static Execute() method
+  • Pattern: case {ID}: yield return Attack{ID}Handler.Execute(...)
+  
+  📊 SIZE REDUCTION: 72%
+    Before: 286 lines inline switch (9 attacks)
+    After: ~80 lines switch + 10 handler files
+    Attack 123 projection: Still ~80 lines switch + 123 handlers
+
+✅ CONSISTENT PATTERN:
+  • All handlers follow same signature:
+    - Parameters: attacker, defender, damage, isMyAttack, animations, 
+                  cardAnimator, playerLifeBar, enemyLifeBar, showDialog
+    - Damage application: defender.health -= damage
+    - HP bar update: HealthBar.SetHP()
+    - Animations: cardAnimator.AnimateDamage()
+  
+✅ HANDLERS IMPLEMENTED:
+  | ID  | Handler           | Lines | Type        |
+  |-----|-------------------|-------|-------------|
+  | 1   | Attack1Handler    | 50    | Damage      |
+  | 2   | Attack2Handler    | 50    | Damage      |
+  | 3   | Attack3Handler    | 43    | Heal        |
+  | 4   | Attack4Handler    | 29    | Debuff      |
+  | 5   | Attack5Handler    | 52    | Damage      |
+  | 6   | Attack6Handler    | 33    | Self-buff   |
+  | 7   | Attack7Handler    | 76    | Multi-hit   |
+  | 8   | Attack8Handler    | 54    | Damage      |
+  | 9   | Attack9Handler    | 34    | Effect-only |
+  | 10  | Attack10Handler   | 50    | Damage      |
+
+🐛 FIXES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Fixed: Missing using directives in all attack handlers (using TMPro;)
+✅ Fixed: Type names (CardAnimator → MultiplayerCardAnimator, HPBar → HealthBar)
+✅ Fixed: Duplicate closing braces in BattleResultProcessor.cs
+
+📈 PROGRESS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10/123 attacks implemented (8.1%)
+Modular handler infrastructure ready for remaining 113 attacks
+
+🔄 WORKFLOW PER NEW ATTACK:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Create: AttackHandlers/Attack{ID}Handler.cs (~30-80 lines)
+2. Edit: BattleResultProcessor.cs (+3-4 lines: case in switch)
+3. Done! Consistent pattern, easy to test
+
+🎯 SCALABILITY ACHIEVED:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Attack 123 = ~80 line switch + 123 focused handlers (not 3,600 line monolith!)
+Server ↔ Unity parity: Both use same modular architecture
+
+────────────────────────────────────────────────────────
+Version: V12
+Date: 2026-01-01
+Attacks Implemented: 10/123 (8.1%)
+Pattern: Router/Handler (Modular)

@@ -1,0 +1,88 @@
+# Attack Handlers
+
+Modulárna štruktúra pre attack animácie a logiku v multiplayer systéme.
+
+## 📁 Štruktúra
+
+```
+AttackHandlers/
+  Attack1Handler.cs   - Punch (Sleep 20%)
+  Attack2Handler.cs   - Kick (Crit 20%)
+  Attack3Handler.cs   - Heal (Self-heal + cleanse)
+  Attack4Handler.cs   - Forgiveness (Asceticism 75%)
+  Attack5Handler.cs   - Crusade (STR damage + DEF debuff)
+  Attack6Handler.cs   - WaterToWine (Self buff)
+  Attack7Handler.cs   - CarHit (Random damage, multi-effect)
+  Attack8Handler.cs   - MonkeyWrench (STR/2 + crit/sleep)
+  Attack9Handler.cs   - Radiation (Exposure risk)
+  Attack10Handler.cs  - Scratch (Bleed 20%)
+  Attack11Handler.cs  - TODO (113 remaining)
+  ...
+  Attack123Handler.cs
+```
+
+## 📝 Pattern
+
+Každý handler má static Execute() metódu:
+
+```csharp
+public class Attack{ID}Handler
+{
+    public static IEnumerator Execute(
+        Kard attacker,
+        Kard defender,
+        int damage,
+        bool isMyAttack,
+        AttackAnimations animations,
+        CardAnimator cardAnimator,
+        HPBar playerLifeBar,
+        HPBar enemyLifeBar,
+        System.Func<string, IEnumerator> showDialog)
+    {
+        yield return showDialog($"{attacker.cardName} uses AttackName!");
+        yield return animations.PlayAttackAnimation(...);
+        
+        // Apply damage/heal/buffs/debuffs
+        // Update HP bars
+        // Show result dialog
+    }
+}
+```
+
+## 🔄 Routing
+
+`BattleResultProcessor.cs` → `ExecuteAttackAnimation()` volá handler:
+
+```csharp
+switch (attackId)
+{
+    case 1:
+        yield return Attack1Handler.Execute(...);
+        break;
+    case 2:
+        yield return Attack2Handler.Execute(...);
+        break;
+    // ... 123 cases total
+}
+```
+
+## 🎯 Pridať Attack 10+
+
+1. **Create handler:** `Attack10Handler.cs`
+2. **Add case:** BattleResultProcessor.cs (+3 lines)
+3. **Done!**
+
+## 📊 Výhody
+
+- **Modulárnosť:** 123 súborov po ~30-100 lines vs 1 switch 2000+ lines
+- **Údržba:** Každý útok samostatne testovateľný
+- **Škálovateľnosť:** Attack 123 = 123 handlers + minimal router
+- **Čitateľnosť:** Attack9Handler.cs = iba Radiation logic
+
+## 🔗 Server Parity
+
+Rovnaká štruktúra ako server:
+- **Server:** `api/attacks/implementations/attack{ID}.js`
+- **Unity:** `AttackHandlers/Attack{ID}Handler.cs`
+
+Progress: 9/123 attacks (7.3%)
