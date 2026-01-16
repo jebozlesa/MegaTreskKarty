@@ -647,7 +647,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
             case 2:
                 return "asceticism";
             case 3:
-                return "sleep";
+                return "sleep";  // Boredom sleep from attack 11
             case 4:
                 return "exposure";
             case 5:
@@ -692,6 +692,8 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
                 return "poison";
             case 26:
                 return "curse";
+            case 27:
+                return "knockout";  // Boredom sleep from attack 11
             // Pridajte ďalšie efekty podľa potreby
             default:
                 Debug.LogError("Neznámy efekt s ID: " + id);

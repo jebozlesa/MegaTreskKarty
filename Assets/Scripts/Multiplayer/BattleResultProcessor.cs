@@ -7,6 +7,30 @@ using PlayFab.ClientModels;
 using Newtonsoft.Json.Linq;
 
 /// <summary>
+/// Stat changes pre jeden útok (buffs na útočníka + debuffs na obrancu)
+/// </summary>
+public struct AttackStatChanges
+{
+    // Self-buffs on attacker (e.g. WaterToWine)
+    public int attackerAttack;
+    public int attackerStrength;
+    public int attackerDefense;
+    public int attackerKnowledge;
+    public int attackerSpeed;
+    public int attackerCharisma;
+    
+    // Debuffs on defender (e.g. Crusade, ScientificLecture)
+    public int defenderAttack;
+    public int defenderStrength;
+    public int defenderDefense;
+    public int defenderKnowledge;
+    public int defenderSpeed;
+    public int defenderCharisma;
+    
+    public static AttackStatChanges Zero => new AttackStatChanges();
+}
+
+/// <summary>
 /// Zodpovedný za spracovanie battle výsledkov zo servera
 /// Aplikuje HP zmeny, hrá animácie a určuje víťaza
 /// V5: BattleResult identifikuje karty cez cardId namiesto player1/player2
@@ -113,6 +137,58 @@ public class BattleResultProcessor : MonoBehaviour
         // ✅ V9: Získaj healAmount pre self-heal útoky (Attack ID 3, atď.)
         int myHealAmount = myAttackData.ContainsKey("healAmount") ? int.Parse(myAttackData["healAmount"].ToString()) : 0;
         int enemyHealAmount = enemyAttackData.ContainsKey("healAmount") ? int.Parse(enemyAttackData["healAmount"].ToString()) : 0;
+        
+        // ✅ V12: Parse attack result (server decides which animation to play)
+        string myAttackResult = (myAttackData.ContainsKey("attackResult") && myAttackData["attackResult"] != null) 
+            ? myAttackData["attackResult"].ToString() : null;
+        string enemyAttackResult = (enemyAttackData.ContainsKey("attackResult") && enemyAttackData["attackResult"] != null) 
+            ? enemyAttackData["attackResult"].ToString() : null;
+        
+        // ✅ V12: Získaj stat changes (buffs/debuffs) - použitie struct pre čistý kód
+        AttackStatChanges myStatChanges = new AttackStatChanges
+        {
+            // Self-buffs (WaterToWine bufuje útočníka)
+            attackerAttack = myAttackData.ContainsKey("attackBuff") ? int.Parse(myAttackData["attackBuff"].ToString()) : 0,
+            attackerStrength = myAttackData.ContainsKey("strengthBuff") ? int.Parse(myAttackData["strengthBuff"].ToString()) : 0,
+            attackerDefense = myAttackData.ContainsKey("defenseBuff") ? int.Parse(myAttackData["defenseBuff"].ToString()) : 0,
+            attackerKnowledge = myAttackData.ContainsKey("knowledgeBuff") ? int.Parse(myAttackData["knowledgeBuff"].ToString()) : 0,
+            attackerSpeed = myAttackData.ContainsKey("speedBuff") ? int.Parse(myAttackData["speedBuff"].ToString()) : 0,
+            attackerCharisma = myAttackData.ContainsKey("charismaBuff") ? int.Parse(myAttackData["charismaBuff"].ToString()) : 0,
+            
+            // Debuffs (Crusade/ScientificLecture debufujú obrancu - enemy pri mojom útoku)
+            defenderAttack = myAttackData.ContainsKey("attackDebuff") ? int.Parse(myAttackData["attackDebuff"].ToString()) : 0,
+            defenderStrength = myAttackData.ContainsKey("strengthDebuff") ? int.Parse(myAttackData["strengthDebuff"].ToString()) : 0,
+            defenderDefense = myAttackData.ContainsKey("defenseDebuff") ? int.Parse(myAttackData["defenseDebuff"].ToString()) : 0,
+            defenderKnowledge = myAttackData.ContainsKey("knowledgeDebuff") ? int.Parse(myAttackData["knowledgeDebuff"].ToString()) : 0,
+            defenderSpeed = myAttackData.ContainsKey("speedDebuff") ? int.Parse(myAttackData["speedDebuff"].ToString()) : 0,
+            defenderCharisma = myAttackData.ContainsKey("charismaDebuff") ? int.Parse(myAttackData["charismaDebuff"].ToString()) : 0
+        };
+        
+        Debug.LogWarning($"📊 [MY_STATS] Attacker buffs: ATK={myStatChanges.attackerAttack} STR={myStatChanges.attackerStrength} DEF={myStatChanges.attackerDefense} KNO={myStatChanges.attackerKnowledge} SPD={myStatChanges.attackerSpeed} CHA={myStatChanges.attackerCharisma}");
+        Debug.LogWarning($"📊 [MY_STATS] Defender debuffs: ATK={myStatChanges.defenderAttack} STR={myStatChanges.defenderStrength} DEF={myStatChanges.defenderDefense} KNO={myStatChanges.defenderKnowledge} SPD={myStatChanges.defenderSpeed} CHA={myStatChanges.defenderCharisma}");
+        
+        AttackStatChanges enemyStatChanges = new AttackStatChanges
+        {
+            attackerAttack = enemyAttackData.ContainsKey("attackBuff") ? int.Parse(enemyAttackData["attackBuff"].ToString()) : 0,
+            attackerStrength = enemyAttackData.ContainsKey("strengthBuff") ? int.Parse(enemyAttackData["strengthBuff"].ToString()) : 0,
+            attackerDefense = enemyAttackData.ContainsKey("defenseBuff") ? int.Parse(enemyAttackData["defenseBuff"].ToString()) : 0,
+            attackerKnowledge = enemyAttackData.ContainsKey("knowledgeBuff") ? int.Parse(enemyAttackData["knowledgeBuff"].ToString()) : 0,
+            attackerSpeed = enemyAttackData.ContainsKey("speedBuff") ? int.Parse(enemyAttackData["speedBuff"].ToString()) : 0,
+            attackerCharisma = enemyAttackData.ContainsKey("charismaBuff") ? int.Parse(enemyAttackData["charismaBuff"].ToString()) : 0,
+            
+            defenderAttack = enemyAttackData.ContainsKey("attackDebuff") ? int.Parse(enemyAttackData["attackDebuff"].ToString()) : 0,
+            defenderStrength = enemyAttackData.ContainsKey("strengthDebuff") ? int.Parse(enemyAttackData["strengthDebuff"].ToString()) : 0,
+            defenderDefense = enemyAttackData.ContainsKey("defenseDebuff") ? int.Parse(enemyAttackData["defenseDebuff"].ToString()) : 0,
+            defenderKnowledge = enemyAttackData.ContainsKey("knowledgeDebuff") ? int.Parse(enemyAttackData["knowledgeDebuff"].ToString()) : 0,
+            defenderSpeed = enemyAttackData.ContainsKey("speedDebuff") ? int.Parse(enemyAttackData["speedDebuff"].ToString()) : 0,
+            defenderCharisma = enemyAttackData.ContainsKey("charismaDebuff") ? int.Parse(enemyAttackData["charismaDebuff"].ToString()) : 0
+        };
+        
+        Debug.LogWarning($"📊 [ENEMY_STATS] Attacker buffs: ATK={enemyStatChanges.attackerAttack} STR={enemyStatChanges.attackerStrength} DEF={enemyStatChanges.attackerDefense} KNO={enemyStatChanges.attackerKnowledge} SPD={enemyStatChanges.attackerSpeed} CHA={enemyStatChanges.attackerCharisma}");
+        Debug.LogWarning($"📊 [ENEMY_STATS] Defender debuffs: ATK={enemyStatChanges.defenderAttack} STR={enemyStatChanges.defenderStrength} DEF={enemyStatChanges.defenderDefense} KNO={enemyStatChanges.defenderKnowledge} SPD={enemyStatChanges.defenderSpeed} CHA={enemyStatChanges.defenderCharisma}");
+        
+        Debug.LogWarning($"📊 [STAT_CHANGES] MY attack stat changes: attackerKno={myStatChanges.attackerKnowledge}, defenderKno={myStatChanges.defenderKnowledge}");
+        Debug.LogWarning($"📊 [STAT_CHANGES] ENEMY attack stat changes: attackerKno={enemyStatChanges.attackerKnowledge}, defenderKno={enemyStatChanges.defenderKnowledge}");
         
         // ✅ V9: Získaj effectApplied (nový effect pridaný tento turn) - SINGLE EFFECT (backward compatibility)
         Dictionary<string, object> myEffectApplied = null;
@@ -318,7 +394,8 @@ public class BattleResultProcessor : MonoBehaviour
         // ✅ V11: firstAttacker replaced with firstAttackerCardId (clear ID-based role)
         // ✅ V11.1: Added effectsApplied arrays + attackerSelfDamage for AoE/recoil attacks
         // ✅ V11.2: Added bleedDamages arrays for individual Bleed animations + exposureDamage/exposureRemoved
-        StartCoroutine(PlayBattleAnimationsAndRefresh(myCard, enemyCard, firstAttackerCardId, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myEffectsApplied, enemyEffectsApplied, myAttackerEffects, enemyAttackerEffects, myAttackerSelfDamage, enemyAttackerSelfDamage, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myBlockedBy, enemyBlockedBy, myBleedDamages, enemyBleedDamages, myExposureDamage, myExposureRemoved, enemyExposureDamage, enemyExposureRemoved));
+        // ✅ V12: Added stat changes structs for clean parameter passing
+        StartCoroutine(PlayBattleAnimationsAndRefresh(myCard, enemyCard, firstAttackerCardId, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myStatChanges, enemyStatChanges, myEffectsApplied, enemyEffectsApplied, myAttackerEffects, enemyAttackerEffects, myAttackerSelfDamage, enemyAttackerSelfDamage, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myBlockedBy, enemyBlockedBy, myBleedDamages, enemyBleedDamages, myExposureDamage, myExposureRemoved, enemyExposureDamage, enemyExposureRemoved, myAttackResult, enemyAttackResult));
     }
     
     /// <summary>
@@ -342,6 +419,8 @@ public class BattleResultProcessor : MonoBehaviour
         int enemyDamage, 
         int myHealAmount, 
         int enemyHealAmount, 
+        AttackStatChanges myStatChanges,
+        AttackStatChanges enemyStatChanges,
         List<Dictionary<string, object>> myEffectsApplied,
         List<Dictionary<string, object>> enemyEffectsApplied,
         List<Dictionary<string, object>> myAttackerEffects,
@@ -363,10 +442,12 @@ public class BattleResultProcessor : MonoBehaviour
         int myExposureDamage,
         bool myExposureRemoved,
         int enemyExposureDamage,
-        bool enemyExposureRemoved)
+        bool enemyExposureRemoved,
+        string myAttackResult,
+        string enemyAttackResult)
     {
         // 1. Prehrá animácie (postupný HP update) + effect ikony V SPRÁVNOM PORADÍ
-        yield return StartCoroutine(PlayBattleAnimations(myCard, enemyCard, firstAttackerCardId, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myEffectsApplied, enemyEffectsApplied, myAttackerEffects, enemyAttackerEffects, myAttackerSelfDamage, enemyAttackerSelfDamage, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myBlockedBy, enemyBlockedBy, myBleedDamages, enemyBleedDamages, myExposureDamage, myExposureRemoved, enemyExposureDamage, enemyExposureRemoved));
+        yield return StartCoroutine(PlayBattleAnimations(myCard, enemyCard, firstAttackerCardId, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myStatChanges, enemyStatChanges, myEffectsApplied, enemyEffectsApplied, myAttackerEffects, enemyAttackerEffects, myAttackerSelfDamage, enemyAttackerSelfDamage, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myBlockedBy, enemyBlockedBy, myBleedDamages, enemyBleedDamages, myExposureDamage, myExposureRemoved, enemyExposureDamage, enemyExposureRemoved, myAttackResult, enemyAttackResult));
         
         // 2. ✅ Effect ikony sa zobrazujú UŽ v PlayBattleAnimations (MOVED)
         // Tento kód už nie je potrebný - effects sa zobrazujú v správnom momente počas battle flow
@@ -564,6 +645,8 @@ public class BattleResultProcessor : MonoBehaviour
         int enemyDamage, 
         int myHealAmount, 
         int enemyHealAmount, 
+        AttackStatChanges myStatChanges,
+        AttackStatChanges enemyStatChanges,
         List<Dictionary<string, object>> myEffectsApplied,
         List<Dictionary<string, object>> enemyEffectsApplied,
         List<Dictionary<string, object>> myAttackerEffects,
@@ -585,7 +668,9 @@ public class BattleResultProcessor : MonoBehaviour
         int myExposureDamage,
         bool myExposureRemoved,
         int enemyExposureDamage,
-        bool enemyExposureRemoved)
+        bool enemyExposureRemoved,
+        string myAttackResult,
+        string enemyAttackResult)
     {
         bool iAttackedFirst = (firstAttackerCardId == myCardId);
         
@@ -649,9 +734,25 @@ public class BattleResultProcessor : MonoBehaviour
                 // ✅ Set color to BLUE for entire attack sequence (like singleplayer)
                 if (dialogText != null) dialogText.color = Color.blue;
                 
-                // Útok sa vykoná normálne
-                // ✅ FIX: myCard útočí enemyCard → použij enemyDamage (damage ktorý ENEMY dostane)
-                yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true, myAttackerSelfDamage));
+                // ✅ Execute attack animation
+                yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true, myAttackerSelfDamage, myEffectsApplied, myAttackResult));
+                
+                Debug.LogWarning($"📊 [APPLYING_STATS] My turn - attackerKno={myStatChanges.attackerKnowledge}, defenderKno={myStatChanges.defenderKnowledge}");
+                
+                // ✅ V12: Apply stat changes IMMEDIATELY after attack
+                if (myStatChanges.attackerAttack != 0) myCard.HandleAttack(myStatChanges.attackerAttack);
+                if (myStatChanges.attackerStrength != 0) myCard.HandleStrength(myStatChanges.attackerStrength);
+                if (myStatChanges.attackerDefense != 0) myCard.HandleDefense(myStatChanges.attackerDefense);
+                if (myStatChanges.attackerKnowledge != 0) { Debug.LogWarning($"📚 Applying my self-knowledge buff: {myStatChanges.attackerKnowledge}"); myCard.HandleKnowledge(myStatChanges.attackerKnowledge); }
+                if (myStatChanges.attackerSpeed != 0) myCard.HandleSpeed(myStatChanges.attackerSpeed);
+                if (myStatChanges.attackerCharisma != 0) myCard.HandleCharisma(myStatChanges.attackerCharisma);
+                
+                if (myStatChanges.defenderAttack != 0) enemyCard.HandleAttack(myStatChanges.defenderAttack);
+                if (myStatChanges.defenderStrength != 0) enemyCard.HandleStrength(myStatChanges.defenderStrength);
+                if (myStatChanges.defenderDefense != 0) enemyCard.HandleDefense(myStatChanges.defenderDefense);
+                if (myStatChanges.defenderKnowledge != 0) { Debug.LogWarning($"📚 Applying defender knowledge change: {myStatChanges.defenderKnowledge} to ENEMY card"); enemyCard.HandleKnowledge(myStatChanges.defenderKnowledge); }
+                if (myStatChanges.defenderSpeed != 0) enemyCard.HandleSpeed(myStatChanges.defenderSpeed);
+                if (myStatChanges.defenderCharisma != 0) enemyCard.HandleCharisma(myStatChanges.defenderCharisma);
                 
                 // ✅ V11.1: Display multiple effects on defender
                 if (myEffectsApplied != null && myEffectsApplied.Count > 0)
@@ -740,7 +841,26 @@ public class BattleResultProcessor : MonoBehaviour
                 if (!enemyAttackBlocked)
                 {
                     // ✅ FIX: enemyCard útočí myCard → použij myDamage (damage ktorý JA dostanem)
-                    yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, myDamage, enemyHealAmount, false, enemyAttackerSelfDamage));
+                    yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, myDamage, enemyHealAmount, false, enemyAttackerSelfDamage, enemyEffectsApplied, enemyAttackResult));
+                    
+                    Debug.LogWarning($"📊 [APPLYING_STATS] Enemy turn - attackerKno={enemyStatChanges.attackerKnowledge}, defenderKno={enemyStatChanges.defenderKnowledge}");
+                    
+                    // ✅ V12: Apply stat changes IMMEDIATELY after attack (POČAS enemy tahu!)
+                    // Attacker self-buffs (enemy buffs himself)
+                    if (enemyStatChanges.attackerAttack != 0) enemyCard.HandleAttack(enemyStatChanges.attackerAttack);
+                    if (enemyStatChanges.attackerStrength != 0) enemyCard.HandleStrength(enemyStatChanges.attackerStrength);
+                    if (enemyStatChanges.attackerDefense != 0) enemyCard.HandleDefense(enemyStatChanges.attackerDefense);
+                    if (enemyStatChanges.attackerKnowledge != 0) { Debug.LogWarning($"📚 Applying enemy self-knowledge buff: {enemyStatChanges.attackerKnowledge}"); enemyCard.HandleKnowledge(enemyStatChanges.attackerKnowledge); }
+                    if (enemyStatChanges.attackerSpeed != 0) enemyCard.HandleSpeed(enemyStatChanges.attackerSpeed);
+                    if (enemyStatChanges.attackerCharisma != 0) enemyCard.HandleCharisma(enemyStatChanges.attackerCharisma);
+                    
+                    // Defender debuffs (enemy debuffs me)
+                    if (enemyStatChanges.defenderAttack != 0) myCard.HandleAttack(enemyStatChanges.defenderAttack);
+                    if (enemyStatChanges.defenderStrength != 0) myCard.HandleStrength(enemyStatChanges.defenderStrength);
+                    if (enemyStatChanges.defenderDefense != 0) myCard.HandleDefense(enemyStatChanges.defenderDefense);
+                    if (enemyStatChanges.defenderKnowledge != 0) { Debug.LogWarning($"📚 Applying defender knowledge change: {enemyStatChanges.defenderKnowledge} to MY card"); myCard.HandleKnowledge(enemyStatChanges.defenderKnowledge); }
+                    if (enemyStatChanges.defenderSpeed != 0) myCard.HandleSpeed(enemyStatChanges.defenderSpeed);
+                    if (enemyStatChanges.defenderCharisma != 0) myCard.HandleCharisma(enemyStatChanges.defenderCharisma);
                     
                     // ✅ V11.1: Display multiple effects on defender (me)
                     if (enemyEffectsApplied != null && enemyEffectsApplied.Count > 0)
@@ -828,7 +948,24 @@ public class BattleResultProcessor : MonoBehaviour
             if (!enemyAttackBlocked)
             {
                 // ✅ FIX: enemyCard útočí myCard → použij myDamage (damage ktorý JA dostanem)
-                yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, myDamage, enemyHealAmount, false, enemyAttackerSelfDamage));
+                yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, myDamage, enemyHealAmount, false, enemyAttackerSelfDamage, enemyEffectsApplied, enemyAttackResult));
+                
+                Debug.LogWarning($"📊 [APPLYING_STATS] Enemy turn - attackerKno={enemyStatChanges.attackerKnowledge}, defenderKno={enemyStatChanges.defenderKnowledge}");
+                
+                // ✅ V12: Apply stat changes IMMEDIATELY after attack
+                if (enemyStatChanges.attackerAttack != 0) enemyCard.HandleAttack(enemyStatChanges.attackerAttack);
+                if (enemyStatChanges.attackerStrength != 0) enemyCard.HandleStrength(enemyStatChanges.attackerStrength);
+                if (enemyStatChanges.attackerDefense != 0) enemyCard.HandleDefense(enemyStatChanges.attackerDefense);
+                if (enemyStatChanges.attackerKnowledge != 0) { Debug.LogWarning($"📚 Applying enemy self-knowledge buff: {enemyStatChanges.attackerKnowledge}"); enemyCard.HandleKnowledge(enemyStatChanges.attackerKnowledge); }
+                if (enemyStatChanges.attackerSpeed != 0) enemyCard.HandleSpeed(enemyStatChanges.attackerSpeed);
+                if (enemyStatChanges.attackerCharisma != 0) enemyCard.HandleCharisma(enemyStatChanges.attackerCharisma);
+                
+                if (enemyStatChanges.defenderAttack != 0) myCard.HandleAttack(enemyStatChanges.defenderAttack);
+                if (enemyStatChanges.defenderStrength != 0) myCard.HandleStrength(enemyStatChanges.defenderStrength);
+                if (enemyStatChanges.defenderDefense != 0) myCard.HandleDefense(enemyStatChanges.defenderDefense);
+                if (enemyStatChanges.defenderKnowledge != 0) { Debug.LogWarning($"📚 Applying defender knowledge change: {enemyStatChanges.defenderKnowledge} to MY card"); myCard.HandleKnowledge(enemyStatChanges.defenderKnowledge); }
+                if (enemyStatChanges.defenderSpeed != 0) myCard.HandleSpeed(enemyStatChanges.defenderSpeed);
+                if (enemyStatChanges.defenderCharisma != 0) myCard.HandleCharisma(enemyStatChanges.defenderCharisma);
                 
                 // ✅ V11.1: Display multiple effects on defender (me)
                 if (enemyEffectsApplied != null && enemyEffectsApplied.Count > 0)
@@ -916,7 +1053,26 @@ public class BattleResultProcessor : MonoBehaviour
                 if (!myAttackBlocked)
                 {
                     // ✅ FIX: myCard útočí enemyCard → použij enemyDamage (damage ktorý ENEMY dostane)
-                    yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true, myAttackerSelfDamage));
+                    yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true, myAttackerSelfDamage, myEffectsApplied, myAttackResult));
+                    
+                    Debug.LogWarning($"📊 [APPLYING_STATS] My turn - attackerKno={myStatChanges.attackerKnowledge}, defenderKno={myStatChanges.defenderKnowledge}");
+                    
+                    // ✅ V12: Apply stat changes IMMEDIATELY after attack (POČAS môjho tahu!)
+                    // Attacker self-buffs (I buff myself)
+                    if (myStatChanges.attackerAttack != 0) myCard.HandleAttack(myStatChanges.attackerAttack);
+                    if (myStatChanges.attackerStrength != 0) myCard.HandleStrength(myStatChanges.attackerStrength);
+                    if (myStatChanges.attackerDefense != 0) myCard.HandleDefense(myStatChanges.attackerDefense);
+                    if (myStatChanges.attackerKnowledge != 0) { Debug.LogWarning($"📚 Applying my self-knowledge buff: {myStatChanges.attackerKnowledge}"); myCard.HandleKnowledge(myStatChanges.attackerKnowledge); }
+                    if (myStatChanges.attackerSpeed != 0) myCard.HandleSpeed(myStatChanges.attackerSpeed);
+                    if (myStatChanges.attackerCharisma != 0) myCard.HandleCharisma(myStatChanges.attackerCharisma);
+                    
+                    // Defender debuffs (I debuff enemy)
+                    if (myStatChanges.defenderAttack != 0) enemyCard.HandleAttack(myStatChanges.defenderAttack);
+                    if (myStatChanges.defenderStrength != 0) enemyCard.HandleStrength(myStatChanges.defenderStrength);
+                    if (myStatChanges.defenderDefense != 0) enemyCard.HandleDefense(myStatChanges.defenderDefense);
+                    if (myStatChanges.defenderKnowledge != 0) { Debug.LogWarning($"📚 Applying defender knowledge change: {myStatChanges.defenderKnowledge} to ENEMY card"); enemyCard.HandleKnowledge(myStatChanges.defenderKnowledge); }
+                    if (myStatChanges.defenderSpeed != 0) enemyCard.HandleSpeed(myStatChanges.defenderSpeed);
+                    if (myStatChanges.defenderCharisma != 0) enemyCard.HandleCharisma(myStatChanges.defenderCharisma);
                     
                     // ✅ V11.1: Display multiple effects on defender (enemy)
                     if (myEffectsApplied != null && myEffectsApplied.Count > 0)
@@ -986,7 +1142,7 @@ public class BattleResultProcessor : MonoBehaviour
     /// V11.2: CarHit - attackerSelfDamage pre súčasné animácie damage
     /// V12: Modular - každý útok má svoj handler v AttackHandlers/ folder
     /// </summary>
-    private IEnumerator ExecuteAttackAnimation(Kard attacker, Kard defender, int attackId, int damage, int healAmount, bool isMyAttack, int attackerSelfDamage = 0)
+    private IEnumerator ExecuteAttackAnimation(Kard attacker, Kard defender, int attackId, int damage, int healAmount, bool isMyAttack, int attackerSelfDamage = 0, List<Dictionary<string, object>> effectsApplied = null, string attackResult = null)
     {
         AttackAnimations animations = attackComponent.attackAnimations;
         
@@ -1049,8 +1205,15 @@ public class BattleResultProcessor : MonoBehaviour
                     attacker, defender, damage, isMyAttack,
                     animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
                 break;
+            
+            case 11: // Scientific Lecture
+                yield return Attack11Handler.Execute(
+                    attacker, defender, damage, isMyAttack,
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog,
+                    attackResult);  // ✅ Server decides animation, client is dumb renderer
+                break;
                 
-            // ✅ TODO: Add case 11-123 - just add 3 lines per attack!
+            // ✅ TODO: Add case 12-123 - just add 3 lines per attack!
             
             default:
                 Debug.LogWarning($"[ExecuteAttackAnimation] Unknown attackId={attackId}, using Punch as fallback");
@@ -1127,8 +1290,13 @@ public class BattleResultProcessor : MonoBehaviour
                     yield return StartCoroutine(ShowDialog($"{card.cardName} feels doomed!"));
                     break;
                     
-                case 3: // Sleep - INITIAL application (hviezdičky/knockout)
-                    Debug.LogWarning($"⭐ [SLEEP_INIT] Playing KNOCKOUT animation (initial Sleep application)");
+                case 3: // Sleep (from Boredom) - NO initial animation (Boredom already shown)
+                    Debug.LogWarning($"😴 [SLEEP] Boredom sleep applied, no KO animation (already shown)");
+                    // No animation - Boredom was already displayed in Attack.cs
+                    break;
+                    
+                case 27: // Knockout - INITIAL application (hviezdičky/knockout)
+                    Debug.LogWarning($"⭐ [KNOCKOUT_INIT] Playing KNOCKOUT animation (initial Knockout application)");
                     yield return StartCoroutine(animations.PlayKnockoutAnimation(card.transform));
                     yield return StartCoroutine(ShowDialog($"{card.cardName} falls asleep!"));
                     break;
@@ -1431,7 +1599,7 @@ public class BattleResultProcessor : MonoBehaviour
             case 8: return "Electricity";
             case 9: return "Tether";
             case 10: return "Starving";
-            case 11: return "Envelop";
+            case 11: return "ScientificLecture";
             case 12: return "Blockade";
             case 13: return "Depression";
             case 14: return "ArtInspiration";
