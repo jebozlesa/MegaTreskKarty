@@ -1218,8 +1218,14 @@ public class BattleResultProcessor : MonoBehaviour
                     attacker, defender, damage, isMyAttack,
                     animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
                 break;
+            
+            case 13: // One Inch Punch
+                yield return Attack13Handler.Execute(
+                    attacker, defender, damage, isMyAttack,
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
+                break;
                 
-            // ✅ TODO: Add case 13-123 - just add 3 lines per attack!
+            // ✅ TODO: Add case 14-123 - just add 3 lines per attack!
             
             default:
                 Debug.LogWarning($"[ExecuteAttackAnimation] Unknown attackId={attackId}, using Punch as fallback");
@@ -1645,6 +1651,7 @@ public class BattleResultProcessor : MonoBehaviour
             case 10: return "Scratch";
             case 11: return "Scientific Lecture";
             case 12: return "Chi Sau";
+            case 13: return "One Inch Punch";
             // ✅ TODO: Rozšíriť pre všetky útoky
             default: return $"Attack#{attackId}";
         }
