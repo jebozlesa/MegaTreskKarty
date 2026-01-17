@@ -160,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      napoleon4_0: -4354694348035001231
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

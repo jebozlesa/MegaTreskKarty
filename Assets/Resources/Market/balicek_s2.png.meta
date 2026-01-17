@@ -160,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      balicek_s2_0: -2534971775183276609
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

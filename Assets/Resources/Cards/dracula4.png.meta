@@ -160,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      dracula4_0: 2377267331103463082
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

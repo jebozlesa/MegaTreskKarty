@@ -160,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      brucelee4_0: -4915046620369584334
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

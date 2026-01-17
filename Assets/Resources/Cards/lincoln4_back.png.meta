@@ -160,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      lincoln4_back_0: -5437473655814916899
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

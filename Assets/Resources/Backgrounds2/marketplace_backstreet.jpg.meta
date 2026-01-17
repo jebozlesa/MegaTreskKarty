@@ -160,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      marketplace_backstreet_0: 673565693323022754
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

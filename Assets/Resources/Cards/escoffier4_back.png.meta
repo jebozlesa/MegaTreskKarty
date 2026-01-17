@@ -160,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      escoffier4_back_0: 45890437777902845
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
