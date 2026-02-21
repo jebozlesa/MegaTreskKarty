@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
@@ -18,7 +19,8 @@ public class Attack1Handler
         MultiplayerCardAnimator cardAnimator,
         HealthBar playerLifeBar,
         HealthBar enemyLifeBar,
-        System.Func<string, IEnumerator> showDialog)
+        System.Func<string, IEnumerator> showDialog,
+        List<Dictionary<string, object>> effectsApplied = null)
     {
         yield return showDialog($"{attacker.cardName} uses Punch!");
         yield return animations.PlayPunchAnimation(attacker.transform, defender.transform);
@@ -45,6 +47,18 @@ public class Attack1Handler
             }
             
             yield return showDialog($"Puf! punch from {attacker.cardName}");
+        }
+        
+        // ✅ Initial effect animation (KO for Sleep/Knockout)
+        if (effectsApplied != null && effectsApplied.Count > 0)
+        {
+            var sleepEffect = effectsApplied.Find(e => e["type"].ToString() == "27" || e["type"].ToString() == "3");
+            if (sleepEffect != null)
+            {
+                Debug.LogWarning($"⭐ [PUNCH_KO] Playing KNOCKOUT animation");
+                yield return animations.PlayKnockoutAnimation(defender.transform);
+                yield return showDialog($"{defender.cardName} falls asleep!");
+            }
         }
     }
 }

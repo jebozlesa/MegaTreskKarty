@@ -735,7 +735,7 @@ public class BattleResultProcessor : MonoBehaviour
                 if (dialogText != null) dialogText.color = Color.blue;
                 
                 // ✅ Execute attack animation
-                yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true, myAttackerSelfDamage, myEffectsApplied, myAttackResult));
+                yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true, myAttackerSelfDamage, myEffectsApplied, myAttackResult, myAttackerEffects));
                 
                 Debug.LogWarning($"📊 [APPLYING_STATS] My turn - attackerKno={myStatChanges.attackerKnowledge}, defenderKno={myStatChanges.defenderKnowledge}");
                 
@@ -841,7 +841,7 @@ public class BattleResultProcessor : MonoBehaviour
                 if (!enemyAttackBlocked)
                 {
                     // ✅ FIX: enemyCard útočí myCard → použij myDamage (damage ktorý JA dostanem)
-                    yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, myDamage, enemyHealAmount, false, enemyAttackerSelfDamage, enemyEffectsApplied, enemyAttackResult));
+                    yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, myDamage, enemyHealAmount, false, enemyAttackerSelfDamage, enemyEffectsApplied, enemyAttackResult, enemyAttackerEffects));
                     
                     Debug.LogWarning($"📊 [APPLYING_STATS] Enemy turn - attackerKno={enemyStatChanges.attackerKnowledge}, defenderKno={enemyStatChanges.defenderKnowledge}");
                     
@@ -948,7 +948,7 @@ public class BattleResultProcessor : MonoBehaviour
             if (!enemyAttackBlocked)
             {
                 // ✅ FIX: enemyCard útočí myCard → použij myDamage (damage ktorý JA dostanem)
-                yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, myDamage, enemyHealAmount, false, enemyAttackerSelfDamage, enemyEffectsApplied, enemyAttackResult));
+                yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, myDamage, enemyHealAmount, false, enemyAttackerSelfDamage, enemyEffectsApplied, enemyAttackResult, enemyAttackerEffects));
                 
                 Debug.LogWarning($"📊 [APPLYING_STATS] Enemy turn - attackerKno={enemyStatChanges.attackerKnowledge}, defenderKno={enemyStatChanges.defenderKnowledge}");
                 
@@ -1053,7 +1053,7 @@ public class BattleResultProcessor : MonoBehaviour
                 if (!myAttackBlocked)
                 {
                     // ✅ FIX: myCard útočí enemyCard → použij enemyDamage (damage ktorý ENEMY dostane)
-                    yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true, myAttackerSelfDamage, myEffectsApplied, myAttackResult));
+                    yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true, myAttackerSelfDamage, myEffectsApplied, myAttackResult, myAttackerEffects));
                     
                     Debug.LogWarning($"📊 [APPLYING_STATS] My turn - attackerKno={myStatChanges.attackerKnowledge}, defenderKno={myStatChanges.defenderKnowledge}");
                     
@@ -1141,8 +1141,9 @@ public class BattleResultProcessor : MonoBehaviour
     /// V9: Heal support - self-heal attacks s healAmount + zelená HP animácia
     /// V11.2: CarHit - attackerSelfDamage pre súčasné animácie damage
     /// V12: Modular - každý útok má svoj handler v AttackHandlers/ folder
+    /// V14: attackerEffects - effects applied to attacker SELF (backfire Sleep from UpInSmoke)
     /// </summary>
-    private IEnumerator ExecuteAttackAnimation(Kard attacker, Kard defender, int attackId, int damage, int healAmount, bool isMyAttack, int attackerSelfDamage = 0, List<Dictionary<string, object>> effectsApplied = null, string attackResult = null)
+    private IEnumerator ExecuteAttackAnimation(Kard attacker, Kard defender, int attackId, int damage, int healAmount, bool isMyAttack, int attackerSelfDamage = 0, List<Dictionary<string, object>> effectsApplied = null, string attackResult = null, List<Dictionary<string, object>> attackerEffects = null)
     {
         AttackAnimations animations = attackComponent.attackAnimations;
         
@@ -1152,7 +1153,8 @@ public class BattleResultProcessor : MonoBehaviour
             case 1: // Punch
                 yield return Attack1Handler.Execute(
                     attacker, defender, damage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog,
+                    effectsApplied);
                 break;
                 
             case 2: // Kick
@@ -1169,7 +1171,8 @@ public class BattleResultProcessor : MonoBehaviour
                 
             case 4: // Forgiveness
                 yield return Attack4Handler.Execute(
-                    attacker, defender, animations, ShowDialog);
+                    attacker, defender, animations, ShowDialog,
+                    effectsApplied);
                 break;
                 
             case 5: // Crusade
@@ -1186,7 +1189,8 @@ public class BattleResultProcessor : MonoBehaviour
             case 7: // CarHit
                 yield return Attack7Handler.Execute(
                     attacker, defender, damage, attackerSelfDamage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog,
+                    effectsApplied, attackerEffects);
                 break;
                 
             case 8: // MonkeyWrench
@@ -1203,7 +1207,8 @@ public class BattleResultProcessor : MonoBehaviour
             case 10: // Scratch
                 yield return Attack10Handler.Execute(
                     attacker, defender, damage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog,
+                    effectsApplied);
                 break;
             
             case 11: // Scientific Lecture
@@ -1224,8 +1229,15 @@ public class BattleResultProcessor : MonoBehaviour
                     attacker, defender, damage, isMyAttack,
                     animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
                 break;
+            
+            case 14: // Up In Smoke
+                yield return Attack14Handler.Execute(
+                    attacker, defender, healAmount, isMyAttack,
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog,
+                    attackerEffects);
+                break;
                 
-            // ✅ TODO: Add case 14-123 - just add 3 lines per attack!
+            // ✅ TODO: Add case 15-123 - just add 3 lines per attack!
             
             default:
                 Debug.LogWarning($"[ExecuteAttackAnimation] Unknown attackId={attackId}, using Punch as fallback");
@@ -1288,40 +1300,10 @@ public class BattleResultProcessor : MonoBehaviour
         int effectType = int.Parse(effectData["type"].ToString());
         int duration = int.Parse(effectData["duration"].ToString());
         
-        Debug.LogWarning($"🎭 [EFFECT_ICON] Displaying NEW effect on {card.cardName}: type={effectType}, duration={duration}");
+        Debug.LogWarning($"🎭 [EFFECT_ICON] Adding effect icon to {card.cardName}: type={effectType}, duration={duration}");
         
-        // ✅ Prehrá INITIAL effect animation (knockout pre Sleep, blood spray pre Bleed, etc.)
-        AttackAnimations animations = attackComponent?.attackAnimations;
-        if (animations != null)
-        {
-            switch (effectType)
-            {
-                case 2: // Asceticism - INITIAL application (prayer/holy effect)
-                    Debug.LogWarning($"🙏 [ASCETICISM_INIT] Playing ASCETICISM START animation (initial Asceticism application)");
-                    yield return StartCoroutine(animations.PlayAscetismStartAnimation(card.transform));
-                    yield return StartCoroutine(ShowDialog($"{card.cardName} feels doomed!"));
-                    break;
-                    
-                case 3: // Sleep (from Boredom) - NO initial animation (Boredom already shown)
-                    Debug.LogWarning($"😴 [SLEEP] Boredom sleep applied, no KO animation (already shown)");
-                    // No animation - Boredom was already displayed in Attack.cs
-                    break;
-                    
-                case 27: // Knockout - INITIAL application (hviezdičky/knockout)
-                    Debug.LogWarning($"⭐ [KNOCKOUT_INIT] Playing KNOCKOUT animation (initial Knockout application)");
-                    yield return StartCoroutine(animations.PlayKnockoutAnimation(card.transform));
-                    yield return StartCoroutine(ShowDialog($"{card.cardName} falls asleep!"));
-                    break;
-                    
-                case 1: // Bleed - INITIAL application (blood spray)
-                    Debug.LogWarning($"🩸 [BLEED_INIT] Playing BLEED START animation (initial Bleed application)");
-                    yield return StartCoroutine(animations.PlayBleedStartAnimation(card.transform));
-                    yield return StartCoroutine(ShowDialog($"{card.cardName} is bleeding!"));
-                    break;
-                    
-                // TODO: Pridaj ďalšie effect typy (Burn=16, Poison=24, etc.)
-            }
-        }
+        // ✅ V14: Initial effect animations moved to Attack Handlers
+        // DisplayEffectIcon now ONLY adds icons, NO animations
         
         // ✅ Pridá effect ikonu (reuse Kard.AddEffectIcon)
         string effectName = GetEffectName(effectType);
@@ -1331,6 +1313,8 @@ public class BattleResultProcessor : MonoBehaviour
             card.RepositionEffectIcons();
             Debug.LogWarning($"🎭 [EFFECT_ICON] Added {effectName} icon to {card.cardName}");
         }
+        
+        yield break;
     }
     
     /// <summary>
@@ -1652,6 +1636,7 @@ public class BattleResultProcessor : MonoBehaviour
             case 11: return "Scientific Lecture";
             case 12: return "Chi Sau";
             case 13: return "One Inch Punch";
+            case 14: return "Up In Smoke";
             // ✅ TODO: Rozšíriť pre všetky útoky
             default: return $"Attack#{attackId}";
         }

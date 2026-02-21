@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
@@ -20,7 +21,9 @@ public class Attack7Handler
         MultiplayerCardAnimator cardAnimator,
         HealthBar playerLifeBar,
         HealthBar enemyLifeBar,
-        System.Func<string, IEnumerator> showDialog)
+        System.Func<string, IEnumerator> showDialog,
+        List<Dictionary<string, object>> effectsApplied = null,
+        List<Dictionary<string, object>> attackerEffects = null)
     {
         yield return showDialog($"{attacker.cardName} uses CarHit!");
         yield return animations.PlayCarHitAnimation(attacker.transform, defender.transform);
@@ -65,5 +68,53 @@ public class Attack7Handler
         }
         
         yield return showDialog($"Tresk! hit by {attacker.cardName}'s car");
+        
+        // ✅ Initial effect animations for DEFENDER (Sleep/Bleed from car crash)
+        if (effectsApplied != null && effectsApplied.Count > 0)
+        {
+            foreach (var effect in effectsApplied)
+            {
+                string effectType = effect["type"].ToString();
+                
+                if (effectType == "3" || effectType == "27") // Sleep/Knockout
+                {
+                    Debug.LogWarning($"⭐ [CARHIT_KO] Defender falls asleep from crash!");
+                    yield return animations.PlayKnockoutAnimation(defender.transform);
+                    yield return showDialog($"{defender.cardName} knocked out!");
+                }
+                else if (effectType == "1") // Bleed
+                {
+                    Debug.LogWarning($"🩸 [CARHIT_BLEED] Defender is bleeding from crash!");
+                    yield return animations.PlayBleedStartAnimation(defender.transform);
+                    yield return showDialog($"{defender.cardName} is bleeding!");
+                }
+                
+                yield return new WaitForSeconds(0.3f);
+            }
+        }
+        
+        // ✅ Initial effect animations for ATTACKER RECOIL (Sleep/Bleed from crash damage)
+        if (attackerEffects != null && attackerEffects.Count > 0)
+        {
+            foreach (var effect in attackerEffects)
+            {
+                string effectType = effect["type"].ToString();
+                
+                if (effectType == "3" || effectType == "27") // Sleep/Knockout
+                {
+                    Debug.LogWarning($"⭐💥 [CARHIT_RECOIL_KO] Attacker knocked out from recoil!");
+                    yield return animations.PlayKnockoutAnimation(attacker.transform);
+                    yield return showDialog($"{attacker.cardName} knocked out by recoil!");
+                }
+                else if (effectType == "1") // Bleed
+                {
+                    Debug.LogWarning($"🩸💥 [CARHIT_RECOIL_BLEED] Attacker bleeding from recoil!");
+                    yield return animations.PlayBleedStartAnimation(attacker.transform);
+                    yield return showDialog($"{attacker.cardName} bleeding from crash!");
+                }
+                
+                yield return new WaitForSeconds(0.3f);
+            }
+        }
     }
 }

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
@@ -14,7 +15,8 @@ public class Attack4Handler
         Kard attacker,
         Kard defender,
         AttackAnimations animations,
-        System.Func<string, IEnumerator> showDialog)
+        System.Func<string, IEnumerator> showDialog,
+        List<Dictionary<string, object>> effectsApplied = null)
     {
         yield return showDialog($"{attacker.cardName} uses Forgiveness!");
         yield return animations.PlayForgivenessAnimation(attacker.transform);
@@ -23,5 +25,17 @@ public class Attack4Handler
         Debug.LogWarning($"🙏 [FORGIVENESS] {attacker.cardName} → {defender.cardName}: -1 attack");
         defender.HandleAttack(-1);
         yield return showDialog($"{attacker.cardName} forgives your heresy");
+        
+        // ✅ Initial effect animation (Asceticism)
+        if (effectsApplied != null && effectsApplied.Count > 0)
+        {
+            var asceticismEffect = effectsApplied.Find(e => e["type"].ToString() == "2");
+            if (asceticismEffect != null)
+            {
+                Debug.LogWarning($"🙏 [ASCETICISM_INIT] Playing ASCETICISM START animation");
+                yield return animations.PlayAscetismStartAnimation(defender.transform);
+                yield return showDialog($"{defender.cardName} feels doomed!");
+            }
+        }
     }
 }

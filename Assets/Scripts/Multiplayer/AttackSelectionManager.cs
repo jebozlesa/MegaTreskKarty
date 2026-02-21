@@ -55,8 +55,6 @@ public class AttackSelectionManager : MonoBehaviour
         currentAttackCounts = attackCounts;
         selectedAttackType = 0;
 
-        Debug.Log($"🎴 [PrepareAttackSelection] Card={card.cardName}, attack1={card.attack1}, attack2={card.attack2}, attack3={card.attack3}, attack4={card.attack4}");
-
         // ✅ NEVYPĹŇAJ dialogText tu - správy nastavujú MultiplayerBoardManager a BattleResultProcessor
         // Predchádzajúca správa je vždy relevantná ("Choose your attack", "Choose fighter!", atď.)
 
@@ -146,8 +144,6 @@ public class AttackSelectionManager : MonoBehaviour
             return;
         }
 
-        Debug.Log($"🔥 [ConfirmAttackSelection] BEFORE GetAttackId: selectedAttackType={selectedAttackType}");
-
         // Vytvor dáta o útoku
         var attackData = new SelectedAttackData
         {
@@ -156,8 +152,6 @@ public class AttackSelectionManager : MonoBehaviour
             attackCount = GetAttackCount(selectedAttackType),
             cardId = currentCard.cardId
         };
-
-        Debug.Log($"🔥 [ConfirmAttackSelection] AFTER: attackType={attackData.attackType}, attackId={attackData.attackId}, attackCount={attackData.attackCount}");
 
         // Pošli dáta do fight systému na ďalšie spracovanie
         fightSystem.OnAttackConfirmed(attackData);
@@ -171,7 +165,7 @@ public class AttackSelectionManager : MonoBehaviour
     /// </summary>
     private int GetAttackId(int attackType)
     {
-        int attackId = attackType switch
+        return attackType switch
         {
             1 => currentCard.attack1,
             2 => currentCard.attack2,
@@ -179,10 +173,6 @@ public class AttackSelectionManager : MonoBehaviour
             4 => currentCard.attack4,
             _ => 0
         };
-        
-        Debug.Log($"🎯 [GetAttackId] attackType={attackType}, attackId={attackId}, card.attack1={currentCard.attack1}, attack2={currentCard.attack2}, attack3={currentCard.attack3}, attack4={currentCard.attack4}");
-        
-        return attackId;
     }
 
     /// <summary>

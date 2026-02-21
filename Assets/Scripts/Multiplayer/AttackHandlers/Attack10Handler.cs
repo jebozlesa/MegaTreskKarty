@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
@@ -18,7 +19,8 @@ public class Attack10Handler
         MultiplayerCardAnimator cardAnimator,
         HealthBar playerLifeBar,
         HealthBar enemyLifeBar,
-        System.Func<string, IEnumerator> showDialog)
+        System.Func<string, IEnumerator> showDialog,
+        List<Dictionary<string, object>> effectsApplied = null)
     {
         yield return showDialog($"{attacker.cardName} uses Scratch!");
         yield return animations.PlayScratchAnimation(defender.transform);
@@ -47,6 +49,16 @@ public class Attack10Handler
         
         yield return showDialog($"{attacker.cardName} scratches opponent!");
         
-        // Note: Bleed effect handled by server (20% chance, 1-2 turns)
+        // ✅ Initial effect animation (Bleed)
+        if (effectsApplied != null && effectsApplied.Count > 0)
+        {
+            var bleedEffect = effectsApplied.Find(e => e["type"].ToString() == "1");
+            if (bleedEffect != null)
+            {
+                Debug.LogWarning($"🩸 [BLEED_INIT] Playing BLEED START animation");
+                yield return animations.PlayBleedStartAnimation(defender.transform);
+                yield return showDialog($"{defender.cardName} is bleeding!");
+            }
+        }
     }
 }
