@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
@@ -19,7 +20,8 @@ public class Attack8Handler
         MultiplayerCardAnimator cardAnimator,
         HealthBar playerLifeBar,
         HealthBar enemyLifeBar,
-        System.Func<string, IEnumerator> showDialog)
+        System.Func<string, IEnumerator> showDialog,
+        List<Dictionary<string, object>> effectsApplied = null)
     {
         yield return showDialog($"{attacker.cardName} uses MonkeyWrench!");
         yield return animations.PlayMonkeyWrenchAnimation(attacker.transform, defender.transform);
@@ -46,6 +48,17 @@ public class Attack8Handler
             }
             
             yield return showDialog($"{attacker.cardName} hits with Monkey Wrench");
+        }
+
+        if (effectsApplied != null && effectsApplied.Count > 0)
+        {
+            var sleepEffect = effectsApplied.Find(e => e["type"].ToString() == "27");
+            if (sleepEffect != null)
+            {
+                Debug.LogWarning($"⭐ [MONKEYWRENCH_KO] Playing KNOCKOUT animation");
+                yield return animations.PlayKnockoutAnimation(defender.transform);
+                yield return showDialog($"{defender.cardName} falls asleep!");
+            }
         }
     }
 }

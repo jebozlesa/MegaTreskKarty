@@ -55,7 +55,8 @@ public class ServerFunctionsManager : MonoBehaviour
             
             callback?.Invoke(result);
         }, error => {
-            Debug.LogError(error.GenerateErrorReport());
+            // Transient cloud/network failures are often resolved by retry.
+            Debug.LogWarning(error.GenerateErrorReport());
             
             // ❌ Chyba - zobraz error indikátor
             ShowNetworkError($"Server error: {functionName}");

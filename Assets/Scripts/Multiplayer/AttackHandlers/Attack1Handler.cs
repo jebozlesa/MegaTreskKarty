@@ -52,7 +52,7 @@ public class Attack1Handler
         // ✅ Initial effect animation (KO for Sleep/Knockout)
         if (effectsApplied != null && effectsApplied.Count > 0)
         {
-            var sleepEffect = effectsApplied.Find(e => e["type"].ToString() == "27" || e["type"].ToString() == "3");
+            var sleepEffect = effectsApplied.Find(e => e["type"].ToString() == "27");
             if (sleepEffect != null)
             {
                 Debug.LogWarning($"⭐ [PUNCH_KO] Playing KNOCKOUT animation");

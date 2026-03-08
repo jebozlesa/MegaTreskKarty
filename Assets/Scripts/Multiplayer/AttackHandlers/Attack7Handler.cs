@@ -76,7 +76,7 @@ public class Attack7Handler
             {
                 string effectType = effect["type"].ToString();
                 
-                if (effectType == "3" || effectType == "27") // Sleep/Knockout
+                if (effectType == "27") // Knockout
                 {
                     Debug.LogWarning($"⭐ [CARHIT_KO] Defender falls asleep from crash!");
                     yield return animations.PlayKnockoutAnimation(defender.transform);
@@ -100,7 +100,7 @@ public class Attack7Handler
             {
                 string effectType = effect["type"].ToString();
                 
-                if (effectType == "3" || effectType == "27") // Sleep/Knockout
+                if (effectType == "27") // Knockout
                 {
                     Debug.LogWarning($"⭐💥 [CARHIT_RECOIL_KO] Attacker knocked out from recoil!");
                     yield return animations.PlayKnockoutAnimation(attacker.transform);

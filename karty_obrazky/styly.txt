@@ -1,0 +1,89 @@
+1) “Spider-Verse” komiksový print (Ben-Day dots, halftone, ink)
+
+Vibe: dynamika, výbuchy, diagonály, výrazné linky, textúra tlače.
+Pre CCG: top na čitateľnosť (silné siluety), vieš odlíšiť frakcie farbou “ink”.
+Použi na: agresívne frakcie, “spelly”, rýchle efekty.
+
+2) “Arcane” painterly + textúra + dramatické svetlo
+
+Vibe: maľba, špina, atmosféra, vysoký kontrast, filmové nasvietenie.
+Pre CCG: luxusný “premium set”, ale treba držať jednotné hodnoty (value) aby to nebolo šedé.
+Použi na: hrdinovia, legendy, story edície.
+
+3) “Samurai Jack” / minimalizmus s plochami farieb
+
+Vibe: veľké čisté tvary, málo detailu, ikonické pózy.
+Pre CCG: extrémne čitateľné aj v malom, lacné na produkciu.
+Použi na: “core set”, tutorial set, mobil.
+
+4) “Primal” / drsná animovaná kresba, surové textúry
+
+Vibe: hrubá linka, expresívne tváre, primal energia.
+Pre CCG: výborné pre brutálne unitky/monštrá.
+Použi na: beasty, barbarov, krvavé edície.
+
+5) “Klaus” look (2D s “objemom” cez shading)
+
+Vibe: teplé svetlá, mäkký objem, ale stále kreslené.
+Pre CCG: pôsobí moderne a “family-friendly”, dobré pre široké publikum.
+Použi na: civilizácie, mestá, “order” frakcie.
+
+6) Moebius / “ligne claire” sci-fi (čistá linka, pastel)
+
+Vibe: čistota, futurizmus, európsky komiks.
+Pre CCG: super pre worldbuilding a “exotické kontinenty”.
+Použi na: sci-fi frakcie, púštne planéty, cestovateľské edície.
+
+7) Ukiyo-e / japonská drevorezová estetika
+
+Vibe: ploché farby, výrazná kontúra, ornamenty, vlny, oblaky.
+Pre CCG: okamžite rozpoznateľné; výborné na “tematický set”.
+Použi na: vodu, veterné kúzla, samurajov, yokai.
+
+8) Stredoveké iluminované manuskripty / “marginalia”
+
+Vibe: pergamen, zlaté akcenty, ornamentálny rám, bizarné okraje.
+Pre CCG: perfektné pre fantasy / “ancient lore” set.
+Použi na: kňazov, relikvie, “holy” mechaniky.
+
+9) Woodcut / linoryt (čiernobiela grafika + 1 akcent farby)
+
+Vibe: rytina, šrafovanie, tvrdý kontrast.
+Pre CCG: ultra čitateľné; lacné na variácie; veľmi “adult” vibe.
+Použi na: horor, lov, inkvizícia, western.
+
+10) Soviet/Constructivist propaganda poster
+
+Vibe: geometria, diagonály, silné typografické prvky, obmedzená paleta.
+Pre CCG: ideálne na frakcie a “rarity language” (kompozícia sama kričí raritu).
+Použi na: industrial, worker-guild, “collective” frakcie.
+
+11) Film noir / detektívny komiks (silné tiene, dym, neon akcent)
+
+Vibe: vysoký kontrast, siluety, dážď, odlesky.
+Pre CCG: veľmi atmosférické, ale musíš strážiť, aby sa nestratili detaily.
+Použi na: rogues, assassins, urban set.
+
+12) Stop-motion look (Fantastic Mr. Fox / hmatateľné textúry)
+
+Vibe: látky, papier, šitie, “ručné” materiály.
+Pre CCG: unikátne a zapamätateľné, výborné pre “cute but deep” hru.
+Použi na: zvieracie frakcie, “storybook” edície.
+
+13) Darkest-Dungeon ink (šrafovanie + krvavé akcenty)
+
+Vibe: agresívny ink, špina, stres, gotika.
+Pre CCG: okamžite zjednotí set a dá mu “hardcore” identitu.
+Použi na: cursed, undead, sanity mechaniky.
+
+14) Tarot/occult art nouveau (Mucha vibe)
+
+Vibe: ornamenty, symetria, rámiky, symbolika.
+Pre CCG: kartová hra + tarot = prirodzený match; skvelé na “legendary” set.
+Použi na: bohovia, veštby, “fate” mechaniky.
+
+15) “Flat icon” + siluety (čistý moderný produktový štýl)
+
+Vibe: čisté tvary, minimálne textúry, UX-friendly.
+Pre CCG: extrémne funkčné pre competitive play, e-sport vibe.
+Použi na: varianty skinov, “ranked” edície.

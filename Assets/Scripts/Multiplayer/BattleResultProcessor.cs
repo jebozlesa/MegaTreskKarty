@@ -43,6 +43,7 @@ public class BattleResultProcessor : MonoBehaviour
     public MultiplayerService multiplayerService;  // ✅ For refreshing selectedCards
     public MultiplayerCardAnimator cardAnimator;    // ✅ NEW: Card animations (damage, stats, shake)
     public MultiplayerKillCounterManager killCounterManager;  // ✅ NEW: Kill counter tracking
+    private BattleRoundCoordinator roundCoordinator;
     
     [Header("UI References")]
     public TMP_Text dialogText;
@@ -66,6 +67,7 @@ public class BattleResultProcessor : MonoBehaviour
         {
             Debug.LogError("[BattleResultProcessor] ❌ CRITICAL: attackComponent not assigned! Sleep animations and effects will NOT work! Please set in Inspector.");
         }
+        roundCoordinator = new BattleRoundCoordinator(fightSystem, multiplayerService, killCounterManager, dialogText);
     }
     
     /// <summary>
@@ -97,304 +99,163 @@ public class BattleResultProcessor : MonoBehaviour
         Debug.LogWarning($"🎴 [CARDS] ENEMY: {enemyCard.cardName} (cardId={enemyCard.cardId}, HP={enemyCard.health}/{enemyCard.maxHealth})");
         
         // ✅ V11: Parse NEW ID-based response format (firstAttacker, secondAttacker)
-        if (!battleResult.ContainsKey("firstAttacker") || !battleResult.ContainsKey("secondAttacker"))
+        if (!BattleResultParser.TryParse(battleResult, myCard.cardId, out var parsed, out var parseError))
         {
-            Debug.LogError("[BattleResultProcessor] Missing 'firstAttacker' or 'secondAttacker' in battleResult!");
+            Debug.LogError($"[BattleResultProcessor] Parse failed: {parseError}");
             return;
         }
-        
-        var firstAttackerJson = battleResult["firstAttacker"].ToString();
-        var secondAttackerJson = battleResult["secondAttacker"].ToString();
-        
-        var firstAttackerData = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
-            .DeserializeObject<Dictionary<string, object>>(firstAttackerJson);
-        var secondAttackerData = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
-            .DeserializeObject<Dictionary<string, object>>(secondAttackerJson);
-        
-        string firstAttackerCardId = firstAttackerData["cardId"].ToString();
-        string secondAttackerCardId = secondAttackerData["cardId"].ToString();
-        
+
+        string firstAttackerCardId = parsed.FirstAttackerCardId;
+        string secondAttackerCardId = parsed.SecondAttackerCardId;
+
         string myCardId = myCard.cardId;
         string enemyCardId = enemyCard.cardId;
-        
-        // ✅ Determine which role I am (first or second attacker)
-        bool iAmFirstAttacker = (firstAttackerCardId == myCardId);
-        
-        var myAttackData = iAmFirstAttacker ? firstAttackerData : secondAttackerData;
-        var enemyAttackData = iAmFirstAttacker ? secondAttackerData : firstAttackerData;
-        
-        Debug.LogWarning($"🎯 [ROLE] I am {(iAmFirstAttacker ? "FIRST" : "SECOND")} attacker");
-        Debug.LogWarning($"🎯 [ROLE] FirstAttacker={firstAttackerCardId}, SecondAttacker={secondAttackerCardId}");
-        
-        // ✅ NEW: Use damageReceived (what I took) instead of damage
-        int myDamage = int.Parse(myAttackData["damageReceived"].ToString());
-        int enemyDamage = int.Parse(enemyAttackData["damageReceived"].ToString());
-        
-        // ✅ NEW: Získaj attackId pre správne animácie
-        int myAttackId = myAttackData.ContainsKey("attackId") ? int.Parse(myAttackData["attackId"].ToString()) : 1;
-        int enemyAttackId = enemyAttackData.ContainsKey("attackId") ? int.Parse(enemyAttackData["attackId"].ToString()) : 1;
-        
-        // ✅ V9: Získaj healAmount pre self-heal útoky (Attack ID 3, atď.)
-        int myHealAmount = myAttackData.ContainsKey("healAmount") ? int.Parse(myAttackData["healAmount"].ToString()) : 0;
-        int enemyHealAmount = enemyAttackData.ContainsKey("healAmount") ? int.Parse(enemyAttackData["healAmount"].ToString()) : 0;
-        
-        // ✅ V12: Parse attack result (server decides which animation to play)
-        string myAttackResult = (myAttackData.ContainsKey("attackResult") && myAttackData["attackResult"] != null) 
-            ? myAttackData["attackResult"].ToString() : null;
-        string enemyAttackResult = (enemyAttackData.ContainsKey("attackResult") && enemyAttackData["attackResult"] != null) 
-            ? enemyAttackData["attackResult"].ToString() : null;
-        
-        // ✅ V12: Získaj stat changes (buffs/debuffs) - použitie struct pre čistý kód
-        AttackStatChanges myStatChanges = new AttackStatChanges
+
+        bool iAmFirstAttacker = parsed.IAmFirstAttacker;
+
+        Debug.LogWarning($"[ROLE] I am {(iAmFirstAttacker ? "FIRST" : "SECOND")} attacker");
+        Debug.LogWarning($"[ROLE] FirstAttacker={firstAttackerCardId}, SecondAttacker={secondAttackerCardId}");
+
+        int myDamage = parsed.MyDamage;
+        int enemyDamage = parsed.EnemyDamage;
+
+        int myAttackId = parsed.MyAttackId;
+        int enemyAttackId = parsed.EnemyAttackId;
+
+        int myHealAmount = parsed.MyHealAmount;
+        int enemyHealAmount = parsed.EnemyHealAmount;
+
+        string myAttackResult = parsed.MyAttackResult;
+        string enemyAttackResult = parsed.EnemyAttackResult;
+
+        AttackStatChanges myStatChanges = parsed.MyStatChanges;
+        AttackStatChanges enemyStatChanges = parsed.EnemyStatChanges;
+
+        Debug.LogWarning($"[MY_STATS] Attacker buffs: ATK={myStatChanges.attackerAttack} STR={myStatChanges.attackerStrength} DEF={myStatChanges.attackerDefense} KNO={myStatChanges.attackerKnowledge} SPD={myStatChanges.attackerSpeed} CHA={myStatChanges.attackerCharisma}");
+        Debug.LogWarning($"[MY_STATS] Defender debuffs: ATK={myStatChanges.defenderAttack} STR={myStatChanges.defenderStrength} DEF={myStatChanges.defenderDefense} KNO={myStatChanges.defenderKnowledge} SPD={myStatChanges.defenderSpeed} CHA={myStatChanges.defenderCharisma}");
+        Debug.LogWarning($"[ENEMY_STATS] Attacker buffs: ATK={enemyStatChanges.attackerAttack} STR={enemyStatChanges.attackerStrength} DEF={enemyStatChanges.attackerDefense} KNO={enemyStatChanges.attackerKnowledge} SPD={enemyStatChanges.attackerSpeed} CHA={enemyStatChanges.attackerCharisma}");
+        Debug.LogWarning($"[ENEMY_STATS] Defender debuffs: ATK={enemyStatChanges.defenderAttack} STR={enemyStatChanges.defenderStrength} DEF={enemyStatChanges.defenderDefense} KNO={enemyStatChanges.defenderKnowledge} SPD={enemyStatChanges.defenderSpeed} CHA={enemyStatChanges.defenderCharisma}");
+
+        Dictionary<string, object> myEffectApplied = parsed.MyEffectApplied;
+        Dictionary<string, object> enemyEffectApplied = parsed.EnemyEffectApplied;
+
+        if (myEffectApplied != null)
         {
-            // Self-buffs (WaterToWine bufuje útočníka)
-            attackerAttack = myAttackData.ContainsKey("attackBuff") ? int.Parse(myAttackData["attackBuff"].ToString()) : 0,
-            attackerStrength = myAttackData.ContainsKey("strengthBuff") ? int.Parse(myAttackData["strengthBuff"].ToString()) : 0,
-            attackerDefense = myAttackData.ContainsKey("defenseBuff") ? int.Parse(myAttackData["defenseBuff"].ToString()) : 0,
-            attackerKnowledge = myAttackData.ContainsKey("knowledgeBuff") ? int.Parse(myAttackData["knowledgeBuff"].ToString()) : 0,
-            attackerSpeed = myAttackData.ContainsKey("speedBuff") ? int.Parse(myAttackData["speedBuff"].ToString()) : 0,
-            attackerCharisma = myAttackData.ContainsKey("charismaBuff") ? int.Parse(myAttackData["charismaBuff"].ToString()) : 0,
-            
-            // Debuffs (Crusade/ScientificLecture debufujú obrancu - enemy pri mojom útoku)
-            defenderAttack = myAttackData.ContainsKey("attackDebuff") ? int.Parse(myAttackData["attackDebuff"].ToString()) : 0,
-            defenderStrength = myAttackData.ContainsKey("strengthDebuff") ? int.Parse(myAttackData["strengthDebuff"].ToString()) : 0,
-            defenderDefense = myAttackData.ContainsKey("defenseDebuff") ? int.Parse(myAttackData["defenseDebuff"].ToString()) : 0,
-            defenderKnowledge = myAttackData.ContainsKey("knowledgeDebuff") ? int.Parse(myAttackData["knowledgeDebuff"].ToString()) : 0,
-            defenderSpeed = myAttackData.ContainsKey("speedDebuff") ? int.Parse(myAttackData["speedDebuff"].ToString()) : 0,
-            defenderCharisma = myAttackData.ContainsKey("charismaDebuff") ? int.Parse(myAttackData["charismaDebuff"].ToString()) : 0
-        };
-        
-        Debug.LogWarning($"📊 [MY_STATS] Attacker buffs: ATK={myStatChanges.attackerAttack} STR={myStatChanges.attackerStrength} DEF={myStatChanges.attackerDefense} KNO={myStatChanges.attackerKnowledge} SPD={myStatChanges.attackerSpeed} CHA={myStatChanges.attackerCharisma}");
-        Debug.LogWarning($"📊 [MY_STATS] Defender debuffs: ATK={myStatChanges.defenderAttack} STR={myStatChanges.defenderStrength} DEF={myStatChanges.defenderDefense} KNO={myStatChanges.defenderKnowledge} SPD={myStatChanges.defenderSpeed} CHA={myStatChanges.defenderCharisma}");
-        
-        AttackStatChanges enemyStatChanges = new AttackStatChanges
-        {
-            attackerAttack = enemyAttackData.ContainsKey("attackBuff") ? int.Parse(enemyAttackData["attackBuff"].ToString()) : 0,
-            attackerStrength = enemyAttackData.ContainsKey("strengthBuff") ? int.Parse(enemyAttackData["strengthBuff"].ToString()) : 0,
-            attackerDefense = enemyAttackData.ContainsKey("defenseBuff") ? int.Parse(enemyAttackData["defenseBuff"].ToString()) : 0,
-            attackerKnowledge = enemyAttackData.ContainsKey("knowledgeBuff") ? int.Parse(enemyAttackData["knowledgeBuff"].ToString()) : 0,
-            attackerSpeed = enemyAttackData.ContainsKey("speedBuff") ? int.Parse(enemyAttackData["speedBuff"].ToString()) : 0,
-            attackerCharisma = enemyAttackData.ContainsKey("charismaBuff") ? int.Parse(enemyAttackData["charismaBuff"].ToString()) : 0,
-            
-            defenderAttack = enemyAttackData.ContainsKey("attackDebuff") ? int.Parse(enemyAttackData["attackDebuff"].ToString()) : 0,
-            defenderStrength = enemyAttackData.ContainsKey("strengthDebuff") ? int.Parse(enemyAttackData["strengthDebuff"].ToString()) : 0,
-            defenderDefense = enemyAttackData.ContainsKey("defenseDebuff") ? int.Parse(enemyAttackData["defenseDebuff"].ToString()) : 0,
-            defenderKnowledge = enemyAttackData.ContainsKey("knowledgeDebuff") ? int.Parse(enemyAttackData["knowledgeDebuff"].ToString()) : 0,
-            defenderSpeed = enemyAttackData.ContainsKey("speedDebuff") ? int.Parse(enemyAttackData["speedDebuff"].ToString()) : 0,
-            defenderCharisma = enemyAttackData.ContainsKey("charismaDebuff") ? int.Parse(enemyAttackData["charismaDebuff"].ToString()) : 0
-        };
-        
-        Debug.LogWarning($"📊 [ENEMY_STATS] Attacker buffs: ATK={enemyStatChanges.attackerAttack} STR={enemyStatChanges.attackerStrength} DEF={enemyStatChanges.attackerDefense} KNO={enemyStatChanges.attackerKnowledge} SPD={enemyStatChanges.attackerSpeed} CHA={enemyStatChanges.attackerCharisma}");
-        Debug.LogWarning($"📊 [ENEMY_STATS] Defender debuffs: ATK={enemyStatChanges.defenderAttack} STR={enemyStatChanges.defenderStrength} DEF={enemyStatChanges.defenderDefense} KNO={enemyStatChanges.defenderKnowledge} SPD={enemyStatChanges.defenderSpeed} CHA={enemyStatChanges.defenderCharisma}");
-        
-        Debug.LogWarning($"📊 [STAT_CHANGES] MY attack stat changes: attackerKno={myStatChanges.attackerKnowledge}, defenderKno={myStatChanges.defenderKnowledge}");
-        Debug.LogWarning($"📊 [STAT_CHANGES] ENEMY attack stat changes: attackerKno={enemyStatChanges.attackerKnowledge}, defenderKno={enemyStatChanges.defenderKnowledge}");
-        
-        // ✅ V9: Získaj effectApplied (nový effect pridaný tento turn) - SINGLE EFFECT (backward compatibility)
-        Dictionary<string, object> myEffectApplied = null;
-        Dictionary<string, object> enemyEffectApplied = null;
-        
-        if (myAttackData.ContainsKey("effectApplied") && myAttackData["effectApplied"] != null)
-        {
-            myEffectApplied = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
-                .DeserializeObject<Dictionary<string, object>>(myAttackData["effectApplied"].ToString());
-            Debug.LogWarning($"🎭 [EFFECT] MY card APPLIED effect to enemy: type={myEffectApplied["type"]}, duration={myEffectApplied["duration"]}");
+            Debug.LogWarning($"[EFFECT] MY card APPLIED effect to enemy: type={myEffectApplied["type"]}, duration={myEffectApplied["duration"]}");
         }
-        
-        if (enemyAttackData.ContainsKey("effectApplied") && enemyAttackData["effectApplied"] != null)
+
+        if (enemyEffectApplied != null)
         {
-            enemyEffectApplied = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
-                .DeserializeObject<Dictionary<string, object>>(enemyAttackData["effectApplied"].ToString());
-            Debug.LogWarning($"🎭 [EFFECT] ENEMY card APPLIED effect to me: type={enemyEffectApplied["type"]}, duration={enemyEffectApplied["duration"]}");
+            Debug.LogWarning($"[EFFECT] ENEMY card APPLIED effect to me: type={enemyEffectApplied["type"]}, duration={enemyEffectApplied["duration"]}");
         }
-        
-        // ✅ V11.1: Multiple effects support (CarHit, AoE attacks)
-        List<Dictionary<string, object>> myEffectsApplied = new List<Dictionary<string, object>>();
-        List<Dictionary<string, object>> enemyEffectsApplied = new List<Dictionary<string, object>>();
-        
-        if (myAttackData.ContainsKey("effectsApplied") && myAttackData["effectsApplied"] != null)
-        {
-            var effectsArray = myAttackData["effectsApplied"] as List<object>;
-            if (effectsArray != null)
-            {
-                foreach (var effect in effectsArray)
-                {
-                    var effectDict = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
-                        .DeserializeObject<Dictionary<string, object>>(effect.ToString());
-                    myEffectsApplied.Add(effectDict);
-                }
-                Debug.LogWarning($"🎭 [EFFECTS] MY card applied {myEffectsApplied.Count} effects to enemy");
-            }
-        }
-        // Fallback: if no array but single effect exists, use it
-        else if (myEffectApplied != null)
-        {
-            myEffectsApplied.Add(myEffectApplied);
-        }
-        
-        if (enemyAttackData.ContainsKey("effectsApplied") && enemyAttackData["effectsApplied"] != null)
-        {
-            var effectsArray = enemyAttackData["effectsApplied"] as List<object>;
-            if (effectsArray != null)
-            {
-                foreach (var effect in effectsArray)
-                {
-                    var effectDict = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
-                        .DeserializeObject<Dictionary<string, object>>(effect.ToString());
-                    enemyEffectsApplied.Add(effectDict);
-                }
-                Debug.LogWarning($"🎭 [EFFECTS] ENEMY card applied {enemyEffectsApplied.Count} effects to me");
-            }
-        }
-        else if (enemyEffectApplied != null)
-        {
-            enemyEffectsApplied.Add(enemyEffectApplied);
-        }
-        
-        // ✅ V11.1: Attacker self-effects (CarHit recoil, AoE self-damage attacks)
-        List<Dictionary<string, object>> myAttackerEffects = new List<Dictionary<string, object>>();
-        List<Dictionary<string, object>> enemyAttackerEffects = new List<Dictionary<string, object>>();
-        
-        if (myAttackData.ContainsKey("attackerEffectsApplied") && myAttackData["attackerEffectsApplied"] != null)
-        {
-            var effectsArray = myAttackData["attackerEffectsApplied"] as List<object>;
-            if (effectsArray != null)
-            {
-                foreach (var effect in effectsArray)
-                {
-                    var effectDict = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
-                        .DeserializeObject<Dictionary<string, object>>(effect.ToString());
-                    myAttackerEffects.Add(effectDict);
-                }
-                Debug.LogWarning($"💥 [SELF-EFFECTS] MY card applied {myAttackerEffects.Count} effects to SELF");
-            }
-        }
-        
-        if (enemyAttackData.ContainsKey("attackerEffectsApplied") && enemyAttackData["attackerEffectsApplied"] != null)
-        {
-            var effectsArray = enemyAttackData["attackerEffectsApplied"] as List<object>;
-            if (effectsArray != null)
-            {
-                foreach (var effect in effectsArray)
-                {
-                    var effectDict = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
-                        .DeserializeObject<Dictionary<string, object>>(effect.ToString());
-                    enemyAttackerEffects.Add(effectDict);
-                }
-                Debug.LogWarning($"💥 [SELF-EFFECTS] ENEMY card applied {enemyAttackerEffects.Count} effects to SELF");
-            }
-        }
-        
-        // ✅ V11.1: Attacker self-damage (CarHit recoil, etc.)
-        int myAttackerSelfDamage = myAttackData.ContainsKey("attackerSelfDamage") ? int.Parse(myAttackData["attackerSelfDamage"].ToString()) : 0;
-        int enemyAttackerSelfDamage = enemyAttackData.ContainsKey("attackerSelfDamage") ? int.Parse(enemyAttackData["attackerSelfDamage"].ToString()) : 0;
-        
+
+        List<Dictionary<string, object>> myEffectsApplied = parsed.MyEffectsApplied;
+        List<Dictionary<string, object>> enemyEffectsApplied = parsed.EnemyEffectsApplied;
+
+        List<Dictionary<string, object>> myAttackerEffects = parsed.MyAttackerEffects;
+        List<Dictionary<string, object>> enemyAttackerEffects = parsed.EnemyAttackerEffects;
+
+        int myAttackerSelfDamage = parsed.MyAttackerSelfDamage;
+        int enemyAttackerSelfDamage = parsed.EnemyAttackerSelfDamage;
+
         if (myAttackerSelfDamage > 0)
         {
-            Debug.LogWarning($"💥 [SELF-DAMAGE] MY card takes {myAttackerSelfDamage} self-damage!");
+            Debug.LogWarning($"[SELF-DAMAGE] MY card takes {myAttackerSelfDamage} self-damage!");
         }
         if (enemyAttackerSelfDamage > 0)
         {
-            Debug.LogWarning($"💥 [SELF-DAMAGE] ENEMY card takes {enemyAttackerSelfDamage} self-damage!");
+            Debug.LogWarning($"[SELF-DAMAGE] ENEMY card takes {enemyAttackerSelfDamage} self-damage!");
         }
-        
-        // ✅ V9: Skontroluj blocked/wokeUp flags (Sleep blocking system)
-        bool myAttackBlocked = myAttackData.ContainsKey("blocked") && bool.Parse(myAttackData["blocked"].ToString());
-        bool enemyAttackBlocked = enemyAttackData.ContainsKey("blocked") && bool.Parse(enemyAttackData["blocked"].ToString());
-        bool myWokeUp = myAttackData.ContainsKey("wokeUp") && bool.Parse(myAttackData["wokeUp"].ToString());
-        bool enemyWokeUp = enemyAttackData.ContainsKey("wokeUp") && bool.Parse(enemyAttackData["wokeUp"].ToString());
-        
-        // ✅ V10: Skontroluj recovered flag (Asceticism recovery)
-        bool myRecovered = myAttackData.ContainsKey("recovered") && bool.Parse(myAttackData["recovered"].ToString());
-        bool enemyRecovered = enemyAttackData.ContainsKey("recovered") && bool.Parse(enemyAttackData["recovered"].ToString());
-        
-        // ✅ V10: Získaj selfDamage (Asceticism self-damage)
-        int mySelfDamage = myAttackData.ContainsKey("selfDamage") ? int.Parse(myAttackData["selfDamage"].ToString()) : 0;
-        int enemySelfDamage = enemyAttackData.ContainsKey("selfDamage") ? int.Parse(enemyAttackData["selfDamage"].ToString()) : 0;
-        
-        // ✅ V11.2: Získaj bleedDamage (Bleed effect total damage - fallback)
-        int myBleedDamage = myAttackData.ContainsKey("bleedDamage") ? int.Parse(myAttackData["bleedDamage"].ToString()) : 0;
-        int enemyBleedDamage = enemyAttackData.ContainsKey("bleedDamage") ? int.Parse(enemyAttackData["bleedDamage"].ToString()) : 0;
-        
-        // ✅ V11.2: Získaj bleedDamages array (individual Bleed damages for separate animations)
-        List<int> myBleedDamages = new List<int>();
-        List<int> enemyBleedDamages = new List<int>();
-        
-        if (myAttackData.ContainsKey("bleedDamages") && myAttackData["bleedDamages"] != null)
-        {
-            var myBleedArray = myAttackData["bleedDamages"] as List<object>;
-            if (myBleedArray != null)
-            {
-                foreach (var dmg in myBleedArray)
-                {
-                    myBleedDamages.Add(int.Parse(dmg.ToString()));
-                }
-            }
-        }
-        
-        if (enemyAttackData.ContainsKey("bleedDamages") && enemyAttackData["bleedDamages"] != null)
-        {
-            var enemyBleedArray = enemyAttackData["bleedDamages"] as List<object>;
-            if (enemyBleedArray != null)
-            {
-                foreach (var dmg in enemyBleedArray)
-                {
-                    enemyBleedDamages.Add(int.Parse(dmg.ToString()));
-                }
-            }
-        }
-        
-        // ✅ V11.2: Získaj exposureDamage (Exposure effect damage from radiation)
-        int myExposureDamage = myAttackData.ContainsKey("exposureDamage") ? int.Parse(myAttackData["exposureDamage"].ToString()) : 0;
-        int enemyExposureDamage = enemyAttackData.ContainsKey("exposureDamage") ? int.Parse(enemyAttackData["exposureDamage"].ToString()) : 0;
-        
-        // ✅ V11.2: Získaj exposureRemoved (Was Exposure removed by 20% proc?)
-        bool myExposureRemoved = myAttackData.ContainsKey("exposureRemoved") && bool.Parse(myAttackData["exposureRemoved"].ToString());
-        bool enemyExposureRemoved = enemyAttackData.ContainsKey("exposureRemoved") && bool.Parse(enemyAttackData["exposureRemoved"].ToString());
-        
-        // ✅ Získaj blockedBy field (typ effectu ktorý blokuje útok - numeric effect type ID)
-        int? myBlockedBy = (myAttackData.ContainsKey("blockedBy") && myAttackData["blockedBy"] != null) 
-            ? (int?)int.Parse(myAttackData["blockedBy"].ToString()) 
-            : null;
-        int? enemyBlockedBy = (enemyAttackData.ContainsKey("blockedBy") && enemyAttackData["blockedBy"] != null) 
-            ? (int?)int.Parse(enemyAttackData["blockedBy"].ToString()) 
-            : null;
-        
+
+        bool myAttackBlocked = parsed.MyAttackBlocked;
+        bool enemyAttackBlocked = parsed.EnemyAttackBlocked;
+        bool myWokeUp = parsed.MyWokeUp;
+        bool enemyWokeUp = parsed.EnemyWokeUp;
+
+        bool myRecovered = parsed.MyRecovered;
+        bool enemyRecovered = parsed.EnemyRecovered;
+
+        int mySelfDamage = parsed.MySelfDamage;
+        int enemySelfDamage = parsed.EnemySelfDamage;
+
+        int myBleedDamage = parsed.MyBleedDamage;
+        int enemyBleedDamage = parsed.EnemyBleedDamage;
+
+        List<int> myBleedDamages = parsed.MyBleedDamages;
+        List<int> enemyBleedDamages = parsed.EnemyBleedDamages;
+
+        int myExposureDamage = parsed.MyExposureDamage;
+        int enemyExposureDamage = parsed.EnemyExposureDamage;
+
+        bool myExposureRemoved = parsed.MyExposureRemoved;
+        bool enemyExposureRemoved = parsed.EnemyExposureRemoved;
+
+        int? myBlockedBy = parsed.MyBlockedBy;
+        int? enemyBlockedBy = parsed.EnemyBlockedBy;
+
         if (myAttackBlocked)
         {
             string effectName = GetEffectName(myBlockedBy ?? 0);
-            Debug.LogWarning($"🛡️ [BLOCK] MY attack BLOCKED by {effectName}! SelfDamage={mySelfDamage}");
+            Debug.LogWarning($"[BLOCK] MY attack BLOCKED by {effectName}! SelfDamage={mySelfDamage}");
         }
         if (enemyAttackBlocked)
         {
             string effectName = GetEffectName(enemyBlockedBy ?? 0);
-            Debug.LogWarning($"🛡️ [BLOCK] ENEMY attack BLOCKED by {effectName}! SelfDamage={enemySelfDamage}");
+            Debug.LogWarning($"[BLOCK] ENEMY attack BLOCKED by {effectName}! SelfDamage={enemySelfDamage}");
         }
         if (myWokeUp)
         {
-            Debug.LogWarning($"⏰ [SLEEP] MY card WOKE UP from Sleep! Attack executed.");
+            Debug.LogWarning($"[SLEEP] MY card WOKE UP from Sleep! Attack executed.");
         }
         if (enemyWokeUp)
         {
-            Debug.LogWarning($"⏰ [SLEEP] ENEMY card WOKE UP from Sleep!");
+            Debug.LogWarning($"[SLEEP] ENEMY card WOKE UP from Sleep!");
         }
         if (myRecovered)
         {
-            Debug.LogWarning($"🙏 [ASCETICISM] MY card RECOVERED from Asceticism! Feels blessed again.");
+            Debug.LogWarning($"[ASCETICISM] MY card RECOVERED from Asceticism! Feels blessed again.");
         }
         if (enemyRecovered)
         {
-            Debug.LogWarning($"🙏 [ASCETICISM] ENEMY card RECOVERED from Asceticism!");
+            Debug.LogWarning($"[ASCETICISM] ENEMY card RECOVERED from Asceticism!");
         }
-        
+
         Debug.LogWarning($"[BattleResultProcessor] MyAttackId={myAttackId}, MyDamageReceived={myDamage}, MyHeal={myHealAmount}, MySelfDamage={mySelfDamage}, MyBleedDamage={myBleedDamage}, MyBleedCount={myBleedDamages.Count}, MyExposureDamage={myExposureDamage}, MyExposureRemoved={myExposureRemoved}, MyAttackerSelfDamage={myAttackerSelfDamage}, MyBlocked={myAttackBlocked}, MyBlockedBy={myBlockedBy}, MyWokeUp={myWokeUp}, MyRecovered={myRecovered}, MyEffects={myEffectsApplied.Count}, MySelfEffects={myAttackerEffects.Count}, EnemyAttackId={enemyAttackId}, EnemyDamageReceived={enemyDamage}, EnemyHeal={enemyHealAmount}, EnemySelfDamage={enemySelfDamage}, EnemyBleedDamage={enemyBleedDamage}, EnemyBleedCount={enemyBleedDamages.Count}, EnemyExposureDamage={enemyExposureDamage}, EnemyExposureRemoved={enemyExposureRemoved}, EnemyAttackerSelfDamage={enemyAttackerSelfDamage}, EnemyBlocked={enemyAttackBlocked}, EnemyBlockedBy={enemyBlockedBy}, EnemyWokeUp={enemyWokeUp}, EnemyRecovered={enemyRecovered}, EnemyEffects={enemyEffectsApplied.Count}, EnemySelfEffects={enemyAttackerEffects.Count}");
-        
-        // ✅ Spusti animácie (HP sa updatne postupne!)
-        // ✅ REFRESH selectedCards sa spustí AŽ PO animáciách
-        // ✅ V11: firstAttacker replaced with firstAttackerCardId (clear ID-based role)
-        // ✅ V11.1: Added effectsApplied arrays + attackerSelfDamage for AoE/recoil attacks
-        // ✅ V11.2: Added bleedDamages arrays for individual Bleed animations + exposureDamage/exposureRemoved
-        // ✅ V12: Added stat changes structs for clean parameter passing
+
+        // ? Spusti anim�cie (HP sa updatne postupne!)
+        // ? REFRESH selectedCards sa spust� A� PO anim�ci�ch
+        // ? V11: firstAttacker replaced with firstAttackerCardId (clear ID-based role)
+        // ? V11.1: Added effectsApplied arrays + attackerSelfDamage for AoE/recoil attacks
+        // ? V11.2: Added bleedDamages arrays for individual Bleed animations + exposureDamage/exposureRemoved
+        // ? V12: Added stat changes structs for clean parameter passing
+        // M10: V2 hard mode support (no fallback when timelineV2 is missing/invalid).
+        bool timelineHardMode = BattleTimelinePilotPolicy.IsHardModeEnabled();
+        if (BattleTimelinePilotPolicy.ShouldRunTimeline(battleResult, parsed, out var timelineMode))
+        {
+            if (BattleTimelineBuilder.TryBuild(battleResult, out var timelineSteps, out var timelineError))
+            {
+                Debug.Log($"[TimelinePilot] Enabled for this turn, mode={timelineMode}, steps={timelineSteps.Count}");
+                StartCoroutine(PlayTimelinePilotAndRefresh(myCard, enemyCard, myCardId, enemyCardId, timelineSteps));
+                return;
+            }
+
+            if (timelineHardMode)
+            {
+                Debug.LogError($"[TimelinePilot][HARD] Timeline build failed (mode={timelineMode}). Legacy fallback is disabled. Error: {timelineError}");
+                StartCoroutine(ShowDialog("TimelineV2 error (hard mode). Legacy fallback disabled."));
+                return;
+            }
+
+            Debug.LogWarning($"[TimelinePilot] Timeline build failed (mode={timelineMode}), falling back to legacy flow: {timelineError}");
+        }
+
+        if (timelineHardMode && (timelineMode == "v2_hard_missing" || timelineMode == "v2_no_payload"))
+        {
+            Debug.LogError($"[TimelinePilot][HARD] Missing timelineV2 payload (mode={timelineMode}). Legacy fallback is disabled.");
+            StartCoroutine(ShowDialog("Missing timelineV2 (hard mode). Legacy fallback disabled."));
+            return;
+        }
+
         StartCoroutine(PlayBattleAnimationsAndRefresh(myCard, enemyCard, firstAttackerCardId, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myStatChanges, enemyStatChanges, myEffectsApplied, enemyEffectsApplied, myAttackerEffects, enemyAttackerEffects, myAttackerSelfDamage, enemyAttackerSelfDamage, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myBlockedBy, enemyBlockedBy, myBleedDamages, enemyBleedDamages, myExposureDamage, myExposureRemoved, enemyExposureDamage, enemyExposureRemoved, myAttackResult, enemyAttackResult));
     }
     
@@ -459,6 +320,228 @@ public class BattleResultProcessor : MonoBehaviour
     /// <summary>
     /// Načíta fresh selectedCards z DB po battle
     /// </summary>
+
+    private IEnumerator PlayTimelinePilotAndRefresh(
+        Kard myCard,
+        Kard enemyCard,
+        string myCardId,
+        string enemyCardId,
+        List<BattleStep> steps)
+    {
+        yield return StartCoroutine(PlayTimelinePilot(myCard, enemyCard, myCardId, enemyCardId, steps));
+        yield return StartCoroutine(RefreshCardsFromServer());
+    }
+
+    private IEnumerator PlayTimelinePilot(
+        Kard myCard,
+        Kard enemyCard,
+        string myCardId,
+        string enemyCardId,
+        List<BattleStep> steps)
+    {
+        int executedAttacks = 0;
+
+        for (int i = 0; i < steps.Count; i++)
+        {
+            BattleStep step = steps[i];
+            if (step == null)
+            {
+                continue;
+            }
+
+            Kard actor = GetCardById(step.ActorCardId, myCard, enemyCard, myCardId, enemyCardId);
+            Kard target = GetCardById(step.TargetCardId, myCard, enemyCard, myCardId, enemyCardId);
+            bool isMyActor = actor != null && actor.cardId == myCardId;
+
+            switch (step.Type)
+            {
+                case BattleStepType.BleedTick:
+                    if (actor != null && step.Amount > 0)
+                    {
+                        actor.health -= step.Amount;
+                        yield return StartCoroutine(PlaySingleBleedAnimation(actor, step.Amount, isMyActor));
+                        yield return new WaitForSeconds(0.3f);
+                    }
+                    break;
+
+                case BattleStepType.ExposureTick:
+                    if (actor != null && step.Amount > 0)
+                    {
+                        actor.health -= step.Amount;
+                        yield return StartCoroutine(PlayExposureAnimation(actor, step.Amount, false, isMyActor));
+                        yield return new WaitForSeconds(0.3f);
+                    }
+                    break;
+
+                case BattleStepType.ExposureRemoved:
+                    if (actor != null)
+                    {
+                        yield return StartCoroutine(PlayExposureAnimation(actor, 0, true, isMyActor));
+                        yield return new WaitForSeconds(0.3f);
+                    }
+                    break;
+
+                case BattleStepType.Recovery:
+                    if (actor != null)
+                    {
+                        yield return StartCoroutine(PlayRecoveryAnimation(actor, isMyActor ? "My card" : "Enemy card"));
+                        yield return new WaitForSeconds(0.5f);
+                    }
+                    break;
+
+                case BattleStepType.WakeUp:
+                    if (actor != null)
+                    {
+                        yield return StartCoroutine(PlayWakeUpAnimation(actor, isMyActor));
+                    }
+                    break;
+
+                case BattleStepType.Attack:
+                    if (actor == null || target == null)
+                    {
+                        break;
+                    }
+
+                    if (step.Skipped || step.Blocked)
+                    {
+                        Debug.Log($"[TimelinePilot] Skipping attackId={step.AttackId}, actor={step.ActorCardId}, skipped={step.Skipped}, blocked={step.Blocked}");
+                        break;
+                    }
+
+                    if (actor.health <= 0 || target.health <= 0)
+                    {
+                        break;
+                    }
+
+                    if (executedAttacks > 0)
+                    {
+                        yield return new WaitForSeconds(0.5f);
+                    }
+
+                    if (dialogText != null)
+                    {
+                        dialogText.color = isMyActor ? Color.blue : Color.red;
+                    }
+
+                    int damage = GetAttackDamageFromTimeline(steps, i, step.ActorCardId, step.TargetCardId);
+                    int heal = GetAttackHealFromTimeline(steps, i, step.ActorCardId);
+
+                    yield return StartCoroutine(ExecuteAttackAnimation(actor, target, step.AttackId, damage, heal, isMyActor, 0, step.EffectsApplied, step.AttackResult, step.AttackerEffectsApplied));
+                    executedAttacks++;
+                    break;
+
+                case BattleStepType.Blocked:
+                    if (actor != null)
+                    {
+                        yield return StartCoroutine(PlayBlockAnimation(actor, step.BlockedBy, isMyActor));
+                    }
+                    break;
+
+                case BattleStepType.SelfDamage:
+                    if (actor != null && step.Amount > 0)
+                    {
+                        actor.health -= step.Amount;
+                        yield return StartCoroutine(PlaySelfDamageAnimation(actor, step.Amount, isMyActor));
+                    }
+                    break;
+
+                case BattleStepType.EffectApplied:
+                    if (target != null)
+                    {
+                        var effectData = new Dictionary<string, object>
+                        {
+                            { "type", step.EffectType },
+                            { "duration", step.Duration },
+                            { "source", step.Source }
+                        };
+                        yield return StartCoroutine(AddEffectIconOnly(target, effectData, target.cardId == myCardId));
+                    }
+                    break;
+
+                case BattleStepType.Damage:
+                case BattleStepType.Heal:
+                case BattleStepType.Death:
+                default:
+                    break;
+            }
+        }
+
+        if (dialogText != null)
+        {
+            dialogText.color = Color.black;
+        }
+
+        yield return StartCoroutine(ShowDialog("Preparing next turn..."));
+
+        if (cardAnimator != null)
+        {
+            Vector3 playerBoardPos = fightSystem.playerBoard != null ? fightSystem.playerBoard.transform.position : myCard.transform.position;
+            Vector3 enemyBoardPos = fightSystem.enemyBoard != null ? fightSystem.enemyBoard.transform.position : enemyCard.transform.position;
+
+            StartCoroutine(cardAnimator.ResetCardPosition(myCard, playerBoardPos, Quaternion.identity));
+            StartCoroutine(cardAnimator.ResetCardPosition(enemyCard, enemyBoardPos, Quaternion.identity));
+        }
+
+        yield return new WaitForSeconds(1f);
+        CheckBattleOutcome(myCard, enemyCard);
+    }
+    private static int GetAttackDamageFromTimeline(List<BattleStep> steps, int attackIndex, string attackerCardId, string defenderCardId)
+    {
+        for (int i = attackIndex + 1; i < steps.Count; i++)
+        {
+            BattleStep next = steps[i];
+            if (next.Type == BattleStepType.Attack)
+            {
+                break;
+            }
+
+            if (next.Type == BattleStepType.Damage &&
+                next.Source == "attack" &&
+                next.ActorCardId == attackerCardId &&
+                next.TargetCardId == defenderCardId)
+            {
+                return next.Amount;
+            }
+        }
+
+        return 0;
+    }
+
+    private static int GetAttackHealFromTimeline(List<BattleStep> steps, int attackIndex, string attackerCardId)
+    {
+        for (int i = attackIndex + 1; i < steps.Count; i++)
+        {
+            BattleStep next = steps[i];
+            if (next.Type == BattleStepType.Attack)
+            {
+                break;
+            }
+
+            if (next.Type == BattleStepType.Heal &&
+                next.ActorCardId == attackerCardId &&
+                next.TargetCardId == attackerCardId)
+            {
+                return next.Amount;
+            }
+        }
+
+        return 0;
+    }
+
+    private static Kard GetCardById(string cardId, Kard myCard, Kard enemyCard, string myCardId, string enemyCardId)
+    {
+        if (cardId == myCardId)
+        {
+            return myCard;
+        }
+
+        if (cardId == enemyCardId)
+        {
+            return enemyCard;
+        }
+
+        return null;
+    }
     private IEnumerator RefreshCardsFromServer()
     {
         if (multiplayerService == null)
@@ -1196,7 +1279,7 @@ public class BattleResultProcessor : MonoBehaviour
             case 8: // MonkeyWrench
                 yield return Attack8Handler.Execute(
                     attacker, defender, damage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog, effectsApplied);
                 break;
                 
             case 9: // Radiation
@@ -1532,7 +1615,12 @@ public class BattleResultProcessor : MonoBehaviour
                 break;
                 
             case 3: // SLEEP
-                Debug.LogWarning($"🐑 [SLEEP_ONGOING] Playing SLEEP animation (ongoing Sleep, not initial)");
+                Debug.LogWarning($"?? [SLEEP_ONGOING] Playing SLEEP animation (ongoing Sleep, not initial)");
+                yield return StartCoroutine(animations.PlaySleepAnimation(card.transform));
+                yield return StartCoroutine(ShowDialog($"{card.cardName} is sleeping..."));
+                break;
+            case 27: // KNOCKOUT -> ongoing flow behaves like sleep
+                Debug.LogWarning($"?? [KNOCKOUT_ONGOING_AS_SLEEP] Playing SLEEP animation (ongoing Knockout)");
                 yield return StartCoroutine(animations.PlaySleepAnimation(card.transform));
                 yield return StartCoroutine(ShowDialog($"{card.cardName} is sleeping..."));
                 break;
@@ -1588,6 +1676,7 @@ public class BattleResultProcessor : MonoBehaviour
             case 1: return "Bleed";
             case 2: return "Asceticism";
             case 3: return "Sleep";
+            case 27: return "Sleep"; // Knockout currently reuses Sleep icon
             case 4: return "Exposure";
             case 5: return "Siege";
             case 6: return "Fury";
@@ -1669,218 +1758,40 @@ public class BattleResultProcessor : MonoBehaviour
     /// </summary>
     private void CheckBattleOutcome(Kard myCard, Kard enemyCard)
     {
+        if (roundCoordinator == null)
+        {
+            roundCoordinator = new BattleRoundCoordinator(fightSystem, multiplayerService, killCounterManager, dialogText);
+        }
+
         bool myCardDead = myCard.health <= 0;
         bool enemyCardDead = enemyCard.health <= 0;
-        
+
         if (myCardDead && enemyCardDead)
         {
-            // ✅ Obe karty zomreli - Draw alebo PLAYERDEATH pre oboch
-            dialogText.text = "Both cards destroyed!";
+            if (dialogText != null) dialogText.text = "Both cards destroyed!";
             Debug.Log("[BattleResultProcessor] Both cards died - checking remaining cards");
-            
-            StartCoroutine(HandleBothCardsDeath(myCard, enemyCard));
+            StartCoroutine(roundCoordinator.HandleBothCardsDeath(myCard, enemyCard));
         }
         else if (myCardDead)
         {
-            // ✅ Len moja karta zomrela
             Debug.Log("[BattleResultProcessor] My card died - checking if I have more cards");
-            
-            StartCoroutine(HandlePlayerCardDeath(myCard));
+            StartCoroutine(roundCoordinator.HandlePlayerCardDeath(myCard));
         }
         else if (enemyCardDead)
         {
-            // ✅ Len enemy karta zomrela
-            dialogText.text = "Enemy card destroyed!";
+            if (dialogText != null) dialogText.text = "Enemy card destroyed!";
             Debug.Log("[BattleResultProcessor] Enemy card died");
-            
-            StartCoroutine(HandleEnemyCardDeath(enemyCard));
+            StartCoroutine(roundCoordinator.HandleEnemyCardDeath(enemyCard));
         }
         else
         {
-            // ✅ Obe karty žijú - pokračuj v battle
             Debug.Log("[BattleResultProcessor] Battle continues - preparing next turn");
-            
-            StartCoroutine(PrepareNextTurn());
+            StartCoroutine(roundCoordinator.PrepareNextTurn());
         }
     }
     
     /// <summary>
     /// Pripraví ďalší turn - ready check systém + reset UI
-    /// </summary>
-    private IEnumerator PrepareNextTurn()
-    {
-        // ✅ Žiadna pauza - priama plynulosť!
-        
-        // ✅ Označ sa ako ready pre ďalší turn
-        yield return StartCoroutine(MarkReadyForNextTurn());
-        
-        // ✅ Reset UI pre ďalší attack selection
-        ResetAttackSelectionUI();
-        
-        dialogText.text = MultiplayerUI.MSG_CHOOSE_ATTACK;
-    }
-    
-    /// <summary>
-    /// Označí hráča ako ready pre ďalší turn a čaká na opponent
-    /// </summary>
-    private IEnumerator MarkReadyForNextTurn()
-    {
-        var serverFunctions = fightSystem.serverFunctionsManager;
-        if (serverFunctions == null)
-        {
-            Debug.LogError("[BattleResultProcessor] ServerFunctionsManager not found!");
-            yield break;
-        }
-        
-        Debug.Log("[BattleResultProcessor] Marking ready for next turn...");
-        
-        bool isCompleted = false;
-        bool bothReady = false;
-        
-        // Pošli ready signál na server
-        serverFunctions.MarkReadyForNextTurn(fightSystem.roomCode, fightSystem.myPlayerId, result => {
-            if (result?.FunctionResult != null)
-            {
-                var resultData = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
-                    .DeserializeObject<Dictionary<string, object>>(result.FunctionResult.ToString());
-                
-                if (resultData.ContainsKey("bothPlayersReady"))
-                {
-                    bothReady = (bool)resultData["bothPlayersReady"];
-                    Debug.Log($"[BattleResultProcessor] Ready check result: bothReady={bothReady}");
-                }
-            }
-            isCompleted = true;
-        });
-        
-        yield return new WaitUntil(() => isCompleted);
-        
-        if (bothReady)
-        {
-            Debug.Log("[BattleResultProcessor] Both players ready immediately - no polling needed!");
-            // Immediately proceed to next turn
-            yield break; // Use yield break instead of return in IEnumerator
-        }
-        else
-        {
-            dialogText.text = "Waiting for opponent to be ready...";
-            
-            // Polling kým nie sú obaja ready
-            yield return StartCoroutine(PollForNextTurnReady());
-        }
-    }
-    
-    /// <summary>
-    /// Polling - čaká kým nie sú obaja hráči ready pre ďalší turn
-    /// ✅ RACE CONDITION FIX: Retries marking ready if detected as false in DB
-    /// </summary>
-    private IEnumerator PollForNextTurnReady()
-    {
-        var serverFunctions = fightSystem.serverFunctionsManager;
-        int pollAttempts = 0;
-        const int MAX_POLL_ATTEMPTS = 30; // 30 sekúnd timeout
-        const int RETRY_MARK_READY_AFTER_POLLS = 3; // Retry every 3rd poll if I'm false
-        
-        while (pollAttempts < MAX_POLL_ATTEMPTS)
-        {
-            yield return new WaitForSeconds(1f);
-            pollAttempts++;
-            
-            bool isCompleted = false;
-            bool bothReady = false;
-            bool iAmMarkedReady = true; // Assume true until proven false
-            
-            // Check ready status
-            serverFunctions.CheckNextTurnReady(fightSystem.roomCode, result => {
-                if (result?.FunctionResult != null)
-                {
-                    var resultData = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
-                        .DeserializeObject<Dictionary<string, object>>(result.FunctionResult.ToString());
-                    
-                    if (resultData.ContainsKey("bothPlayersReady"))
-                    {
-                        bothReady = (bool)resultData["bothPlayersReady"];
-                    }
-                    
-                    // ✅ RACE CONDITION FIX: Check if I'm marked as ready in DB
-                    if (resultData.ContainsKey("playersReady"))
-                    {
-                        var playersReady = resultData["playersReady"] as Dictionary<string, object>;
-                        if (playersReady != null && playersReady.ContainsKey(fightSystem.myPlayerId))
-                        {
-                            iAmMarkedReady = (bool)playersReady[fightSystem.myPlayerId];
-                            if (!iAmMarkedReady)
-                            {
-                                Debug.LogWarning($"[BattleResultProcessor] Poll #{pollAttempts}: I'm NOT marked ready in DB!");
-                            }
-                        }
-                    }
-                }
-                isCompleted = true;
-            });
-            
-            yield return new WaitUntil(() => isCompleted);
-            
-            if (bothReady)
-            {
-                Debug.Log("[BattleResultProcessor] Both players ready after polling!");
-                break;
-            }
-            
-            // ✅ RETRY MECHANISM: If I'm false in DB, retry marking ready every 3rd poll
-            if (!iAmMarkedReady && pollAttempts % RETRY_MARK_READY_AFTER_POLLS == 0)
-            {
-                Debug.LogWarning($"[BattleResultProcessor] Retrying MarkReadyForNextTurn (attempt {pollAttempts / RETRY_MARK_READY_AFTER_POLLS})");
-                
-                bool retryCompleted = false;
-                serverFunctions.MarkReadyForNextTurn(fightSystem.roomCode, fightSystem.myPlayerId, result => {
-                    if (result?.FunctionResult != null)
-                    {
-                        var retryData = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
-                            .DeserializeObject<Dictionary<string, object>>(result.FunctionResult.ToString());
-                        Debug.Log($"[BattleResultProcessor] Retry result: {result.FunctionResult}");
-                    }
-                    retryCompleted = true;
-                });
-                
-                yield return new WaitUntil(() => retryCompleted);
-            }
-        }
-        
-        if (pollAttempts >= MAX_POLL_ATTEMPTS)
-        {
-            Debug.LogError("[BattleResultProcessor] Timeout waiting for opponent to be ready");
-            dialogText.text = "Opponent disconnected?";
-        }
-    }
-    
-    /// <summary>
-    /// Reset attack selection UI pre ďalší turn
-    /// </summary>
-    private void ResetAttackSelectionUI()
-    {
-        var attackSelectionManager = fightSystem.attackSelectionManager;
-        if (attackSelectionManager != null)
-        {
-            attackSelectionManager.ResetSelection();
-            Debug.Log("[BattleResultProcessor] Attack selection UI reset for next turn");
-        }
-        else
-        {
-            Debug.LogWarning("[BattleResultProcessor] AttackSelectionManager not found!");
-        }
-        
-        // ✅ Re-enable attack selection pre aktuálnu kartu
-        Kard myCard = fightSystem.player?.cardInGame;
-        if (myCard != null && fightSystem.attackCountLoader != null)
-        {
-            // Znovu načítaj attack counts (server už ich decrementoval v executeBattle)
-            fightSystem.LoadAttackCounts(myCard);
-        }
-    }
-    
-    /// <summary>
-    /// Vymaže mŕtvu kartu z boardu a zo servera (selectedCards)
     /// </summary>
     private IEnumerator HandleCardDeath(Kard deadCard, bool isMyCard)
     {
@@ -2218,3 +2129,6 @@ public class BattleResultProcessor : MonoBehaviour
         }
     }
 }
+
+
+
