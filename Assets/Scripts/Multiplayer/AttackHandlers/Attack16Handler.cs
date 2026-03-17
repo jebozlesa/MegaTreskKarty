@@ -1,14 +1,12 @@
 using System.Collections;
 using UnityEngine;
-using TMPro;
 
 /// <summary>
-/// Attack ID 13: One Inch Punch
-/// Damage: 3 + (speed/4) - (defense/4)
-/// Effect: Critical hit based on knowledge (knowledge/20 = crit chance, max 100%)
-/// Crit damage: +strength/2
+/// Attack ID 16: Revolver
+/// Hit chance handled on server.
+/// Client only renders hit/miss based on attackResult (fallback by damage).
 /// </summary>
-public class Attack13Handler
+public class Attack16Handler
 {
     public static IEnumerator Execute(
         Kard attacker,
@@ -19,23 +17,34 @@ public class Attack13Handler
         MultiplayerCardAnimator cardAnimator,
         HealthBar playerLifeBar,
         HealthBar enemyLifeBar,
-        System.Func<string, IEnumerator> showDialog)
+        System.Func<string, IEnumerator> showDialog,
+        string attackResult = null)
     {
-        yield return showDialog($"{attacker.cardName} uses One Inch Punch!");
-        yield return animations.PlayOneInchPunchAnimation(attacker.transform, defender.transform);
-        
-        // Apply damage
+        bool hit = attackResult == "hit";
+        if (string.IsNullOrEmpty(attackResult))
+        {
+            hit = damage > 0;
+        }
+
+        yield return showDialog($"{attacker.cardName} uses Revolver");
+        yield return animations.PlayRevolverAnimation(attacker.transform, defender.transform, hit);
+
+        if (!hit)
+        {
+            yield return showDialog("Bang! aaaand miss");
+            yield break;
+        }
+
         if (damage > 0)
         {
-            Debug.LogWarning($"[HIT] [ONE_INCH_PUNCH] {attacker.cardName} -> {defender.cardName}: {damage} damage");
             defender.health -= damage;
             if (defender.health < 0) defender.health = 0;
-            
+
             if (cardAnimator != null)
             {
                 yield return cardAnimator.AnimateDamage(defender, damage);
             }
-            
+
             if (isMyAttack)
             {
                 enemyLifeBar.SetHP(defender.health);
@@ -44,8 +53,8 @@ public class Attack13Handler
             {
                 playerLifeBar.SetHP(defender.health);
             }
-            
-            yield return showDialog($"{attacker.cardName} pokes enemy with finger");
         }
+
+        yield return showDialog($"Bang! {attacker.cardName} hits target");
     }
 }

@@ -3,13 +3,13 @@ using UnityEngine;
 using TMPro;
 
 /// <summary>
-/// Spravuje animácie kariet v multiplayer režime
+/// Spravuje animacie kariet v multiplayer rezime
 /// Separation of concerns - FightSystemMultiplayer deleguje na tento komponent
 /// </summary>
 public class MultiplayerCardAnimator : MonoBehaviour
 {
     [Header("Animation Settings")]
-    [Tooltip("VOLITEĽNÉ: Prefab pre text animácie (STR, ATT, HP, atď.). Ak nie je nastavený, použije sa Kard.notsureGO")]
+    [Tooltip("VOLITELNE: Prefab pre text animacie (STR, ATT, HP, atd.). Ak nie je nastaveny, pouzije sa Kard.notsureGO")]
     public GameObject effectAnimationPrefab;
     
     [Header("Colors")]
@@ -20,10 +20,10 @@ public class MultiplayerCardAnimator : MonoBehaviour
     public Color32 purpleColor = new Color32(128, 0, 128, 255); // Experience
 
     /// <summary>
-    /// Animuje damage na karte - shake + červené HP čísla
+    /// Animuje damage na karte - shake + cervene HP cisla
     /// </summary>
-    /// <param name="card">Karta ktorá dostáva damage</param>
-    /// <param name="damageAmount">Množstvo damage</param>
+    /// <param name="card">Karta ktora dostava damage</param>
+    /// <param name="damageAmount">Mnozstvo damage</param>
     public IEnumerator AnimateDamage(Kard card, int damageAmount)
     {
         if (card == null)
@@ -37,20 +37,20 @@ public class MultiplayerCardAnimator : MonoBehaviour
         
         Debug.Log($"[MultiplayerCardAnimator] Animating {damageAmount} damage on {card.cardName}");
         
-        // Spusti oba efekty súčasne
+        // Spusti oba efekty sucasne
         var shakeCoroutine = StartCoroutine(ShakeCard(card, (float)damageAmount));
         var effectCoroutine = StartCoroutine(PlayEffectAnimation(card, damageAmount, "HP", redColor));
         
-        // Počkaj kým sa oba dokončia
+        // Pockaj kym sa oba dokoncia
         yield return shakeCoroutine;
         yield return effectCoroutine;
     }
     
     /// <summary>
-    /// Animuje heal na karte - zelené HP čísla
+    /// Animuje heal na karte - zelene HP cisla
     /// </summary>
-    /// <param name="card">Karta ktorá sa healuje</param>
-    /// <param name="healAmount">Množstvo heal</param>
+    /// <param name="card">Karta ktora sa healuje</param>
+    /// <param name="healAmount">Mnozstvo heal</param>
     public IEnumerator AnimateHeal(Kard card, int healAmount)
     {
         if (card == null)
@@ -68,11 +68,11 @@ public class MultiplayerCardAnimator : MonoBehaviour
     }
     
     /// <summary>
-    /// Animuje zmenu statu - červené/zelené písmená podľa zmeny
+    /// Animuje zmenu statu - cervene/zelene pismena podla zmeny
     /// </summary>
     /// <param name="card">Karta</param>
     /// <param name="statChange">Zmena statu (+ alebo -)</param>
-    /// <param name="statName">Názov statu (STR, DEF, SPD, ATT, KNO, CHA)</param>
+    /// <param name="statName">Nazov statu (STR, DEF, SPD, ATT, KNO, CHA)</param>
     public IEnumerator AnimateStatChange(Kard card, int statChange, string statName)
     {
         if (card == null)
@@ -81,7 +81,7 @@ public class MultiplayerCardAnimator : MonoBehaviour
             yield break;
         }
         
-        if (statChange == 0) yield break; // Žiadna zmena
+        if (statChange == 0) yield break; // Ziadna zmena
         
         Color32 color = (statChange > 0) ? greenColor : redColor;
         
@@ -91,11 +91,11 @@ public class MultiplayerCardAnimator : MonoBehaviour
     }
     
     /// <summary>
-    /// Resetuje pozíciu karty na pôvodné miesto (po battle)
+    /// Resetuje poziciu karty na povodne miesto (po battle)
     /// </summary>
     /// <param name="card">Karta na reset</param>
-    /// <param name="targetPosition">Cieľová pozícia</param>
-    /// <param name="targetRotation">Cieľová rotácia</param>
+    /// <param name="targetPosition">Cielova pozicia</param>
+    /// <param name="targetRotation">Cielova rotacia</param>
     public IEnumerator ResetCardPosition(Kard card, Vector3 targetPosition, Quaternion targetRotation)
     {
         if (card == null)
@@ -118,7 +118,7 @@ public class MultiplayerCardAnimator : MonoBehaviour
             yield return null;
         }
         
-        // Presná finálna pozícia
+        // Presna finalna pozicia
         card.transform.position = targetPosition;
         card.transform.rotation = targetRotation;
         
@@ -128,7 +128,7 @@ public class MultiplayerCardAnimator : MonoBehaviour
     // ========== PRIVATE METHODS ==========
     
     /// <summary>
-    /// Shake animácia karty (rovnaká ako v Kard.cs)
+    /// Shake animacia karty (rovnaka ako v Kard.cs)
     /// </summary>
     private IEnumerator ShakeCard(Kard card, float damageAmount)
     {
@@ -166,41 +166,45 @@ public class MultiplayerCardAnimator : MonoBehaviour
             yield return null;
         }
 
-        // Presná finálna pozícia
+        // Presna finalna pozicia
         card.transform.position = originalPosition;
         card.transform.rotation = originalRotation;
     }
     
     /// <summary>
-    /// Animuje text efekt (HP, STR, atď.) letiací od karty
+    /// Animuje text efekt (HP, STR, atd.) letiaci od karty
     /// </summary>
     private IEnumerator PlayEffectAnimation(Kard card, int amount, string text, Color32 color)
     {
+        Debug.Log($"[MultiplayerCardAnimator] PlayEffectAnimation start: card={card.cardName}, text={text}, amount={amount}, color={color}");
+
         for (int i = 0; i < amount; i++)
         {
             yield return new WaitForSeconds(0.1f);
+            Debug.Log($"[MultiplayerCardAnimator] Spawning effect {i + 1}/{amount}: card={card.cardName}, text={text}");
             StartCoroutine(CreateSingleEffectAnimation(card, text, color));
         }
     }
     
     /// <summary>
-    /// Vytvorí jeden text efekt letiací od karty
+    /// Vytvori jeden text efekt letiaci od karty
     /// </summary>
     private IEnumerator CreateSingleEffectAnimation(Kard card, string text, Color32 color)
     {
-        // ✅ Pokús sa použiť existujúci Kard.notsureGO ak existuje
+        // [OK] Pokus sa pouzit existujuci Kard.notsureGO ak existuje
         GameObject effectObject = null;
         
         if (card.notsureGO != null && card.notsureText != null)
         {
-            // Použij originálny systém z Kard.cs
+            // Pouzij originalny system z Kard.cs
             card.notsureText.text = text;
             card.notsureText.color = color;
             effectObject = Instantiate(card.notsureGO, card.transform);
+            Debug.Log($"[MultiplayerCardAnimator] CreateSingleEffectAnimation: using card.notsureGO for {card.cardName}, text={text}");
         }
         else if (effectAnimationPrefab != null)
         {
-            // Fallback na vlastný prefab
+            // Fallback na vlastny prefab
             effectObject = Instantiate(effectAnimationPrefab, card.transform);
             var textComponent = effectObject.GetComponentInChildren<TMP_Text>();
             if (textComponent != null)
@@ -208,16 +212,17 @@ public class MultiplayerCardAnimator : MonoBehaviour
                 textComponent.text = text;
                 textComponent.color = color;
             }
+            Debug.Log($"[MultiplayerCardAnimator] CreateSingleEffectAnimation: using effectAnimationPrefab for {card.cardName}, text={text}");
         }
         else
         {
-            Debug.LogWarning("[MultiplayerCardAnimator] No effect animation prefab assigned!");
+            Debug.LogWarning($"[MultiplayerCardAnimator] No effect animation prefab assigned for {card.cardName}, text={text}");
             yield break;
         }
         
         if (effectObject == null) yield break;
         
-        // Animácia letu
+        // Animacia letu
         float angle = Random.Range(0f, Mathf.PI * 2f);
         float radius = 50f;
         Vector2 randomPosition = new Vector2(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius);
@@ -226,6 +231,8 @@ public class MultiplayerCardAnimator : MonoBehaviour
         Vector2 direction = (effectObject.transform.position - card.transform.position).normalized;
         float distance = 50f;
         float elapsedTime = 0f;
+        
+        Debug.Log($"[MultiplayerCardAnimator] Effect text spawned: card={card.cardName}, text={text}, startPos={effectObject.transform.position}, direction={direction}");
         
         while (elapsedTime < 3f)
         {

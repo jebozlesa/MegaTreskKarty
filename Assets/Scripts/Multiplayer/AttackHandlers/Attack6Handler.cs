@@ -21,7 +21,7 @@ public class Attack6Handler
         yield return animations.PlayWaterToWineAnimation(attacker.transform);
         
         // Buff effect - apply stat changes
-        Debug.LogWarning($"🍷 [WATER TO WINE] {attacker.cardName} transforms water to wine!");
+        Debug.LogWarning($"[WINE] [WATER TO WINE] {attacker.cardName} transforms water to wine!");
         attacker.HandleAttack(2);   // +2 attack
         attacker.HandleStrength(1); // +1 strength
         attacker.HandleDefense(-1); // -1 defense

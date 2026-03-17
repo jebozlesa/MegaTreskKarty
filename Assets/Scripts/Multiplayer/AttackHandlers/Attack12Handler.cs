@@ -23,7 +23,7 @@ public class Attack12Handler
     {
         yield return showDialog($"{attacker.cardName} attacks with sticky hands!");
         
-        // ✅ Use damage as visual multiply - higher damage = more strikes shown
+        // [OK] Use damage as visual multiply - higher damage = more strikes shown
         // Clamp to reasonable range (1-9) for animation
         int visualMultiply = Mathf.Clamp(damage, 1, 9);
         
@@ -47,6 +47,6 @@ public class Attack12Handler
         // Animate damage
         yield return cardAnimator.AnimateDamage(defender, damage);
         
-        Debug.Log($"[Attack12] {attacker.cardName} → Chi Sau ({visualMultiply} strikes) → {defender.cardName}: {damage} damage");
+        Debug.Log($"[Attack12] {attacker.cardName} -> Chi Sau ({visualMultiply} strikes) -> {defender.cardName}: {damage} damage");
     }
 }

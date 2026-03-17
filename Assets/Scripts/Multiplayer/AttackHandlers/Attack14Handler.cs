@@ -29,7 +29,7 @@ public class Attack14Handler
         // Self-heal
         if (healAmount > 0)
         {
-            Debug.LogWarning($"💚 [UP_IN_SMOKE] {attacker.cardName} heals {healAmount} HP");
+            Debug.LogWarning($" [UP_IN_SMOKE] {attacker.cardName} heals {healAmount} HP");
             attacker.health += healAmount;
             if (attacker.health > attacker.maxHealth) 
             {
@@ -61,13 +61,13 @@ public class Attack14Handler
             var sleepEffect = attackerEffects.Find(e => e["type"].ToString() == "3");
             if (sleepEffect != null)
             {
-                Debug.LogWarning($"💨🍺 [BACKFIRE] {attacker.cardName} BACKFIRE! Falls asleep!");
+                Debug.LogWarning($" [BACKFIRE] {attacker.cardName} BACKFIRE! Falls asleep!");
                 
-                // ✅ INITIAL ANIMATION (súčasť útoku, nie efektu!)
+                // [OK] INITIAL ANIMATION (sucast utoku, nie efektu!)
                 yield return animations.PlayDrunkAnimation(attacker.transform);
                 yield return showDialog($"{attacker.cardName} falls asleep");
                 
-                // Effect icon sa pridá automaticky neskôr v DisplayMultipleEffects()
+                // Effect icon sa prida automaticky neskor v DisplayMultipleEffects()
             }
         }
     }

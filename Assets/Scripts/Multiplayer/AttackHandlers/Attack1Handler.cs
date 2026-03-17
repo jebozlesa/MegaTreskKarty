@@ -28,7 +28,7 @@ public class Attack1Handler
         // Damage attack - apply damage + HP bar update
         if (damage > 0)
         {
-            Debug.LogWarning($"💥 [PUNCH] {attacker.cardName} → {defender.cardName}: {damage} damage");
+            Debug.LogWarning($"[HIT] [PUNCH] {attacker.cardName} -> {defender.cardName}: {damage} damage");
             defender.health -= damage;
             if (defender.health < 0) defender.health = 0;
             
@@ -49,13 +49,13 @@ public class Attack1Handler
             yield return showDialog($"Puf! punch from {attacker.cardName}");
         }
         
-        // ✅ Initial effect animation (KO for Sleep/Knockout)
+        // [OK] Initial effect animation (KO for Sleep/Knockout)
         if (effectsApplied != null && effectsApplied.Count > 0)
         {
             var sleepEffect = effectsApplied.Find(e => e["type"].ToString() == "27");
             if (sleepEffect != null)
             {
-                Debug.LogWarning($"⭐ [PUNCH_KO] Playing KNOCKOUT animation");
+                Debug.LogWarning($"[STAR] [PUNCH_KO] Playing KNOCKOUT animation");
                 yield return animations.PlayKnockoutAnimation(defender.transform);
                 yield return showDialog($"{defender.cardName} falls asleep!");
             }

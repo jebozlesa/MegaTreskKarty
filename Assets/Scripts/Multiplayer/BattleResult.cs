@@ -2,21 +2,21 @@ using System;
 using System.Collections.Generic;
 
 /// <summary>
-/// Jednoduchý výsledok z útoku pre multiplayer
+/// Jednoduchy vysledok z utoku pre multiplayer
 /// </summary>
 [Serializable]
 public class BattleResult
 {
-    // Informácie o damage
-    public int damageDealt;           // Koľko damage bolo udelené
-    public bool didSleep;             // Či sa aplikoval sleep efekt (20% šanca pri Punch)
-    public int sleepDuration;         // Ak didSleep=true, na koľko kôl
+    // Informacie o damage
+    public int damageDealt;           // Kolko damage bolo udelene
+    public bool didSleep;             // Ci sa aplikoval sleep efekt (20% sanca pri Punch)
+    public int sleepDuration;         // Ak didSleep=true, na kolko kol
     
-    // Finálne HP hodnoty
-    public int attackerHealth;        // HP útočníka po útoku
-    public int defenderHealth;        // HP obrancu po útoku
+    // Finalne HP hodnoty
+    public int attackerHealth;        // HP utocnika po utoku
+    public int defenderHealth;        // HP obrancu po utoku
     
-    // Ktorý hráč útočil prvý (podľa priority/speed)
+    // Ktory hrac utocil prvy (podla priority/speed)
     public string firstAttacker;      // "player1" alebo "player2"
     
     // Success flag
@@ -24,8 +24,8 @@ public class BattleResult
 }
 
 /// <summary>
-/// Dáta odosielané na server pre simuláciu útoku
-/// ✅ V3 - MINIMÁLNY PAYLOAD (iba IDs)
+/// Data odosielane na server pre simulaciu utoku
+/// [OK] V3 - MINIMALNY PAYLOAD (iba IDs)
 /// Server trackuje HP v battleState.playerHealths
 /// </summary>
 [Serializable]
@@ -33,12 +33,12 @@ public class AttackSubmission
 {
     public string playerId;
     public string roomCode;
-    public string cardId;             // ID karty (server načíta stats z DB)
-    public int attackId;              // ID útoku (1 = Punch)
-    public int attackSlot;            // Slot útoku (1-4) - pre attack count decrement
+    public string cardId;             // ID karty (server nacita stats z DB)
+    public int attackId;              // ID utoku (1 = Punch)
+    public int attackSlot;            // Slot utoku (1-4) - pre attack count decrement
     
-    // DEPRECATED - server trackuje HP sám v room.battleState
-    // Ponechané pre backward compatibility, ale server ich ignoruje
+    // DEPRECATED - server trackuje HP sam v room.battleState
+    // Ponechane pre backward compatibility, ale server ich ignoruje
     public int currentHealth;         // IGNORED by server v3
     public int attackerHealth;        // IGNORED
     public int attackerMaxHealth;     // IGNORED
@@ -47,7 +47,7 @@ public class AttackSubmission
     public int attackerSpeed;         // IGNORED
     public int attackerMagic;         // IGNORED
     
-    // Stats obrancu (budú potrebné pre výpočet)
+    // Stats obrancu (budu potrebne pre vypocet)
     public int defenderHealth;
     public int defenderMaxHealth;
     public int defenderStrength;
@@ -57,13 +57,13 @@ public class AttackSubmission
 }
 
 /// <summary>
-/// Jednoduchý wrapper pre attack selection data
+/// Jednoduchy wrapper pre attack selection data
 /// </summary>
 [Serializable]
 public class SelectedAttackData
 {
-    public int attackType;     // 1-4 (ktoré tlačidlo)
-    public int attackId;       // ID útoku (napr. 1 = Punch)
-    public int attackCount;    // Zobrazovaný počet (damage preview)
+    public int attackType;     // 1-4 (ktore tlacidlo)
+    public int attackId;       // ID utoku (napr. 1 = Punch)
+    public int attackCount;    // Zobrazovany pocet (damage preview)
     public string cardId;      // ID karty
 }

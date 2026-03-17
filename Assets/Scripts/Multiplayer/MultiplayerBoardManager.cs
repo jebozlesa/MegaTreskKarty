@@ -16,8 +16,8 @@ public class MultiplayerBoardManager : MonoBehaviour
     private SelectedCardData localSelectedCardData;
     private SelectedCardData opponentSelectedCardData;
     private bool isSubmittingSelection;
-    public CancellationTokenSource opponentSelectionCancellation; // ✅ public for BattleResultProcessor reuse
-    public bool opponentCardRevealed; // ✅ public for BattleResultProcessor reuse
+    public CancellationTokenSource opponentSelectionCancellation; // [OK] public for BattleResultProcessor reuse
+    public bool opponentCardRevealed; // [OK] public for BattleResultProcessor reuse
 
     public bool IsProcessingSelection => isSubmittingSelection;
 
@@ -117,7 +117,7 @@ public class MultiplayerBoardManager : MonoBehaviour
         }
     }
 
-    // ✅ public for BattleResultProcessor reuse (enemy card replacement after death)
+    // [OK] public for BattleResultProcessor reuse (enemy card replacement after death)
     public async Task WaitForOpponentSelectionAsync()
     {
         opponentSelectedCardData = null;
@@ -196,7 +196,7 @@ public class MultiplayerBoardManager : MonoBehaviour
         return string.Empty;
     }
 
-    // ✅ public for BattleResultProcessor reuse (enemy card replacement after death)
+    // [OK] public for BattleResultProcessor reuse (enemy card replacement after death)
     public void RevealCards()
     {
         if (opponentCardRevealed)
@@ -248,7 +248,7 @@ public class MultiplayerBoardManager : MonoBehaviour
         {
             fightSystem.state = FightStateMultiplayer.TURN;
             
-            // ✅ Teraz povoľ attack buttony - obe karty sú revealed
+            // [OK] Teraz povol attack buttony - obe karty su revealed
             if (fightSystem.attackSelectionManager != null)
             {
                 fightSystem.attackSelectionManager.EnableAttackButtonsAfterReveal();

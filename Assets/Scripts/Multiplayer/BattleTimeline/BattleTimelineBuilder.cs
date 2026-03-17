@@ -133,6 +133,7 @@ public static class BattleTimelineBuilder
         step.AttackId = GetIntAny(data, 0, "attackId", "AttackId");
         step.AttackResult = GetStringAny(data, "attackResult", "AttackResult");
         step.Amount = GetIntAny(data, 0, "amount", "Amount");
+        step.StatName = GetStringAny(data, "statName", "StatName");
         step.EffectType = GetIntAny(data, 0, "effectType", "EffectType");
         step.Duration = GetIntAny(data, 0, "duration", "Duration");
         step.Blocked = GetBoolAny(data, false, "blocked", "Blocked");
@@ -329,6 +330,7 @@ public static class BattleTimelineBuilder
 
         if (!deadBeforeAttack)
         {
+            AppendStatChanges(attacker, attackerCardId, defenderCardId, steps);
             AppendAppliedEffects(effectsApplied, attackerCardId, defenderCardId, steps);
             AppendAppliedEffects(attackerEffectsApplied, attackerCardId, attackerCardId, steps);
         }
@@ -370,6 +372,52 @@ public static class BattleTimelineBuilder
             });
             deadCards.Add(attackerCardId);
         }
+    }
+
+    private static void AppendStatChanges(
+        Dictionary<string, object> attacker,
+        string attackerCardId,
+        string defenderCardId,
+        List<BattleStep> steps)
+    {
+        AppendStatChange(attacker, "attackBuff", attackerCardId, attackerCardId, "ATT", steps);
+        AppendStatChange(attacker, "strengthBuff", attackerCardId, attackerCardId, "STR", steps);
+        AppendStatChange(attacker, "defenseBuff", attackerCardId, attackerCardId, "DEF", steps);
+        AppendStatChange(attacker, "knowledgeBuff", attackerCardId, attackerCardId, "KNO", steps);
+        AppendStatChange(attacker, "speedBuff", attackerCardId, attackerCardId, "SPD", steps);
+        AppendStatChange(attacker, "charismaBuff", attackerCardId, attackerCardId, "CHA", steps);
+
+        AppendStatChange(attacker, "attackDebuff", attackerCardId, defenderCardId, "ATT", steps);
+        AppendStatChange(attacker, "strengthDebuff", attackerCardId, defenderCardId, "STR", steps);
+        AppendStatChange(attacker, "defenseDebuff", attackerCardId, defenderCardId, "DEF", steps);
+        AppendStatChange(attacker, "knowledgeDebuff", attackerCardId, defenderCardId, "KNO", steps);
+        AppendStatChange(attacker, "speedDebuff", attackerCardId, defenderCardId, "SPD", steps);
+        AppendStatChange(attacker, "charismaDebuff", attackerCardId, defenderCardId, "CHA", steps);
+    }
+
+    private static void AppendStatChange(
+        Dictionary<string, object> attacker,
+        string key,
+        string attackerCardId,
+        string targetCardId,
+        string statName,
+        List<BattleStep> steps)
+    {
+        int amount = GetInt(attacker, key, 0);
+        if (amount == 0)
+        {
+            return;
+        }
+
+        steps.Add(new BattleStep
+        {
+            Type = BattleStepType.StatChange,
+            ActorCardId = attackerCardId,
+            TargetCardId = targetCardId,
+            Amount = amount,
+            StatName = statName,
+            Source = "attack"
+        });
     }
 
     private static void AppendDeathIfNeeded(

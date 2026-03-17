@@ -4,7 +4,7 @@ using UnityEngine;
 using PlayFab;
 
 /// <summary>
-/// Zodpovedný za odosielanie útokov na server a čakanie na výsledky
+/// Zodpovedny za odosielanie utokov na server a cakanie na vysledky
 /// </summary>
 public class BattleSubmitter : MonoBehaviour
 {
@@ -15,11 +15,11 @@ public class BattleSubmitter : MonoBehaviour
     
     private bool isWaitingForBattle = false;
     private int pollAttempts = 0;
-    private const int MAX_POLL_ATTEMPTS = 60; // 60 sekúnd timeout
-    private string lastSubmittedCardId; // ✅ Uložený cardId pre polling
+    private const int MAX_POLL_ATTEMPTS = 60; // 60 sekund timeout
+    private string lastSubmittedCardId; // [OK] Ulozeny cardId pre polling
     
     /// <summary>
-    /// Odošle útok na server a spustí polling pre výsledok
+    /// Odosle utok na server a spusti polling pre vysledok
     /// </summary>
     public void SubmitAttack(string roomCode, string playerId, string cardId, int attackId, int attackSlot)
     {
@@ -31,11 +31,11 @@ public class BattleSubmitter : MonoBehaviour
         
         isWaitingForBattle = true;
         pollAttempts = 0;
-        lastSubmittedCardId = cardId; // ✅ Ulož cardId pre polling
+        lastSubmittedCardId = cardId; // [OK] Uloz cardId pre polling
         
         Debug.Log($"[BattleSubmitter] Submitting attack: roomCode={roomCode}, cardId={cardId}, attackId={attackId}, attackSlot={attackSlot}");
         
-        // ✅ V3 - MINIMÁLNY PAYLOAD: iba cardId + attackId + attackSlot
+        // [OK] V3 - MINIMALNY PAYLOAD: iba cardId + attackId + attackSlot
         // Server trackuje HP v room.battleState.playerHealths
         var submission = new AttackSubmission
         {
@@ -43,11 +43,11 @@ public class BattleSubmitter : MonoBehaviour
             roomCode = roomCode,
             cardId = cardId,
             attackId = attackId,
-            attackSlot = attackSlot,  // ✅ NOVÉ - pre attack count decrement
+            attackSlot = attackSlot,  // [OK] NOVE - pre attack count decrement
             
             // DEPRECATED - server v3 tieto fieldy IGNORUJE
-            // Ponechané kvôli backward compatibility s staršími server verziami
-            currentHealth = 0,  // Server má HP v battleState
+            // Ponechane kvoli backward compatibility s starsimi server verziami
+            currentHealth = 0,  // Server ma HP v battleState
             attackerHealth = 0,
             defenderHealth = 0,
             attackerMaxHealth = 0,
@@ -62,7 +62,7 @@ public class BattleSubmitter : MonoBehaviour
             defenderMagic = 0
         };
         
-        // Odošli na server
+        // Odosli na server
         serverFunctionsManager.ExecuteBattle(roomCode, playerId, submission, result =>
         {
             OnBattleResponse(result);
@@ -91,7 +91,7 @@ public class BattleSubmitter : MonoBehaviour
         {
             Debug.Log("[BattleSubmitter] Both players ready - battle executed!");
             
-            // Spracuj výsledok
+            // Spracuj vysledok
             if (resultData.ContainsKey("battleResult"))
             {
                 var battleResult = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
@@ -104,17 +104,17 @@ public class BattleSubmitter : MonoBehaviour
         }
         else
         {
-            // Čakaj na druhého hráča
+            // Cakaj na druheho hraca
             int playersReady = resultData.ContainsKey("playersReady") ? int.Parse(resultData["playersReady"].ToString()) : 0;
             Debug.Log($"[BattleSubmitter] Waiting for opponent... ({playersReady}/2)");
             
-            // Pokračuj v pollingu
+            // Pokracuj v pollingu
             StartCoroutine(PollForBattleResult());
         }
     }
     
     /// <summary>
-    /// Polling - čaká kým nie sú obaja hráči ready
+    /// Polling - caka kym nie su obaja hraci ready
     /// </summary>
     private IEnumerator PollForBattleResult()
     {
@@ -134,7 +134,7 @@ public class BattleSubmitter : MonoBehaviour
         {
             playerId = fightSystem.myPlayerId,
             roomCode = fightSystem.roomCode,
-            cardId = lastSubmittedCardId, // ✅ Použij uložený cardId!
+            cardId = lastSubmittedCardId, // [OK] Pouzij ulozeny cardId!
             attackId = 0, // Special value pre "check status only"
             attackSlot = 0 // Dummy value pre polling
         };

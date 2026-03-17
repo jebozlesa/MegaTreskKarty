@@ -1,8 +1,8 @@
 # Attack Handlers
 
-Modulárna štruktúra pre attack animácie a logiku v multiplayer systéme.
+Modularna struktura pre attack animacie a logiku v multiplayer systeme.
 
-## 📁 Štruktúra
+##  Struktura
 
 ```
 AttackHandlers/
@@ -21,9 +21,9 @@ AttackHandlers/
   Attack123Handler.cs
 ```
 
-## 📝 Pattern
+##  Pattern
 
-Každý handler má static Execute() metódu:
+Kazdy handler ma static Execute() metodu:
 
 ```csharp
 public class Attack{ID}Handler
@@ -49,9 +49,9 @@ public class Attack{ID}Handler
 }
 ```
 
-## 🔄 Routing
+## [RETRY] Routing
 
-`BattleResultProcessor.cs` → `ExecuteAttackAnimation()` volá handler:
+`BattleResultProcessor.cs` -> `ExecuteAttackAnimation()` vola handler:
 
 ```csharp
 switch (attackId)
@@ -66,22 +66,22 @@ switch (attackId)
 }
 ```
 
-## 🎯 Pridať Attack 10+
+##  Pridat Attack 10+
 
 1. **Create handler:** `Attack10Handler.cs`
 2. **Add case:** BattleResultProcessor.cs (+3 lines)
 3. **Done!**
 
-## 📊 Výhody
+##  Vyhody
 
-- **Modulárnosť:** 123 súborov po ~30-100 lines vs 1 switch 2000+ lines
-- **Údržba:** Každý útok samostatne testovateľný
-- **Škálovateľnosť:** Attack 123 = 123 handlers + minimal router
-- **Čitateľnosť:** Attack9Handler.cs = iba Radiation logic
+- **Modularnost:** 123 suborov po ~30-100 lines vs 1 switch 2000+ lines
+- **Udrzba:** Kazdy utok samostatne testovatelny
+- **Skalovatelnost:** Attack 123 = 123 handlers + minimal router
+- **Citatelnost:** Attack9Handler.cs = iba Radiation logic
 
-## 🔗 Server Parity
+##  Server Parity
 
-Rovnaká štruktúra ako server:
+Rovnaka struktura ako server:
 - **Server:** `api/attacks/implementations/attack{ID}.js`
 - **Unity:** `AttackHandlers/Attack{ID}Handler.cs`
 

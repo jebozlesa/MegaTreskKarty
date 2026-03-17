@@ -6,7 +6,7 @@ using PlayFab.CloudScriptModels;
 using Newtonsoft.Json;
 
 /// <summary>
-/// Načítava počty útokov zo servera a zobrazuje ich v UI
+/// Nacitava pocty utokov zo servera a zobrazuje ich v UI
 /// </summary>
 public class AttackCountLoader : MonoBehaviour
 {
@@ -16,15 +16,15 @@ public class AttackCountLoader : MonoBehaviour
     public TMP_Text button4CountText;
 
     public ServerFunctionsManager serverFunctionsManager;
-    public FightSystemMultiplayer fightSystem; // ✅ V8: Reference to get roomCode & playerId
+    public FightSystemMultiplayer fightSystem; // [OK] V8: Reference to get roomCode & playerId
 
     private bool isLoading = false;
 
     /// <summary>
-    /// Načíta počty útokov pre danú kartu zo servera
+    /// Nacita pocty utokov pre danu kartu zo servera
     /// </summary>
-    /// <param name="card">Karta, ktorej útoky sa majú spočítať</param>
-    /// <param name="onComplete">Callback po úspešnom načítaní (voliteľný)</param>
+    /// <param name="card">Karta, ktorej utoky sa maju spocitat</param>
+    /// <param name="onComplete">Callback po uspesnom nacitani (volitelny)</param>
     public void LoadAttackCounts(Kard card, Action<AttackCountsResult> onComplete = null)
     {
         if (card == null)
@@ -54,8 +54,8 @@ public class AttackCountLoader : MonoBehaviour
         // Add timeout protection - reset isLoading after 15 seconds
         StartCoroutine(ResetLoadingStateAfterTimeout());
 
-        // ✅ V8: Volaj getAttackCounts (čítaj z DB), NIE calculateAttackCounts!
-        // Server má attackCounts už uložené v room.attackCounts[playerId][cardId]
+        // [OK] V8: Volaj getAttackCounts (citaj z DB), NIE calculateAttackCounts!
+        // Server ma attackCounts uz ulozene v room.attackCounts[playerId][cardId]
         if (fightSystem == null)
         {
             Debug.LogError("[AttackCountLoader] FightSystemMultiplayer reference missing!");
@@ -92,7 +92,7 @@ public class AttackCountLoader : MonoBehaviour
 
             try
             {
-                // Parsuj výsledok
+                // Parsuj vysledok
                 var jsonResult = JsonConvert.SerializeObject(result.FunctionResult);
                 var attackCounts = JsonConvert.DeserializeObject<AttackCountsResult>(jsonResult);
 
@@ -106,7 +106,7 @@ public class AttackCountLoader : MonoBehaviour
 
                 Debug.Log($"[AttackCountLoader] Received attack counts: {attackCounts.count1}, {attackCounts.count2}, {attackCounts.count3}, {attackCounts.count4}");
 
-                // Zobraz počty v UI
+                // Zobraz pocty v UI
                 DisplayAttackCounts(attackCounts);
 
                 onComplete?.Invoke(attackCounts);
@@ -121,7 +121,7 @@ public class AttackCountLoader : MonoBehaviour
     }
 
     /// <summary>
-    /// Zobrazí počty útokov v UI
+    /// Zobrazi pocty utokov v UI
     /// </summary>
     private void DisplayAttackCounts(AttackCountsResult counts)
     {
@@ -129,7 +129,7 @@ public class AttackCountLoader : MonoBehaviour
     }
     
     /// <summary>
-    /// Public metóda pre update count textov (použiteľná z iných tried)
+    /// Public metoda pre update count textov (pouzitelna z inych tried)
     /// </summary>
     public void UpdateCountTexts(AttackCountsResult counts)
     {
@@ -155,7 +155,7 @@ public class AttackCountLoader : MonoBehaviour
     }
 
     /// <summary>
-    /// Vymaže všetky počty útokov z UI
+    /// Vymaze vsetky pocty utokov z UI
     /// </summary>
     public void ClearAttackCounts()
     {
@@ -181,9 +181,9 @@ public class AttackCountLoader : MonoBehaviour
 }
 
 /// <summary>
-/// ❌ DEPRECATED: Dáta karty potrebné pre výpočet útokov
-/// V8: Server už automaticky počíta counts pri setSelectedCard
-/// Táto trieda sa už nepoužíva, zostáva len kvôli kompatibilite
+/// [ERR] DEPRECATED: Data karty potrebne pre vypocet utokov
+/// V8: Server uz automaticky pocita counts pri setSelectedCard
+/// Tato trieda sa uz nepouziva, zostava len kvoli kompatibilite
 /// </summary>
 [Serializable]
 public class CardStatsForCalculation
@@ -201,7 +201,7 @@ public class CardStatsForCalculation
 }
 
 /// <summary>
-/// Výsledok výpočtu počtov útokov zo servera
+/// Vysledok vypoctu poctov utokov zo servera
 /// </summary>
 [Serializable]
 public class AttackCountsResult

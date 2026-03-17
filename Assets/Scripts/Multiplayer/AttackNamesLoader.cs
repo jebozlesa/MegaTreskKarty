@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine.UI;
 
 /// <summary>
-/// Načítava a zobrazuje názvy útokov vybranej karty
+/// Nacitava a zobrazuje nazvy utokov vybranej karty
 /// </summary>
 public class AttackNamesLoader : MonoBehaviour
 {
@@ -20,9 +20,9 @@ public class AttackNamesLoader : MonoBehaviour
     public AttackDescriptions attackDescriptions;
 
     /// <summary>
-    /// Načíta a zobrazí názvy útokov pre danú kartu
+    /// Nacita a zobrazi nazvy utokov pre danu kartu
     /// </summary>
-    /// <param name="card">Karta, ktorej útoky sa majú zobraziť</param>
+    /// <param name="card">Karta, ktorej utoky sa maju zobrazit</param>
     public void LoadAttackNames(Kard card)
     {
         if (card == null)
@@ -38,7 +38,7 @@ public class AttackNamesLoader : MonoBehaviour
             return;
         }
 
-        // Načítaj názov pre každý útok
+        // Nacitaj nazov pre kazdy utok
         LoadAttackName(card.attack1, button1Text, button1);
         LoadAttackName(card.attack2, button2Text, button2);
         LoadAttackName(card.attack3, button3Text, button3);
@@ -48,7 +48,7 @@ public class AttackNamesLoader : MonoBehaviour
     }
 
     /// <summary>
-    /// Načíta názov konkrétneho útoku
+    /// Nacita nazov konkretneho utoku
     /// </summary>
     private void LoadAttackName(int attackId, TMP_Text buttonText, Button button)
     {
@@ -61,7 +61,7 @@ public class AttackNamesLoader : MonoBehaviour
             return;
         }
 
-        // Získaj názov útoku z AttackDescriptions
+        // Ziskaj nazov utoku z AttackDescriptions
         string attackName = attackDescriptions.GetAttackName(attackId);
         
         if (!string.IsNullOrEmpty(attackName))
@@ -84,7 +84,7 @@ public class AttackNamesLoader : MonoBehaviour
     }
 
     /// <summary>
-    /// Vymaže všetky názvy útokov
+    /// Vymaze vsetky nazvy utokov
     /// </summary>
     public void ClearAttackNames()
     {

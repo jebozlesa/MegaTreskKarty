@@ -28,7 +28,7 @@ public class Attack7Handler
         yield return showDialog($"{attacker.cardName} uses CarHit!");
         yield return animations.PlayCarHitAnimation(attacker.transform, defender.transform);
         
-        // ✅ Play BOTH damage animations SIMULTANEOUSLY (parallel coroutines)
+        // [OK] Play BOTH damage animations SIMULTANEOUSLY (parallel coroutines)
         if (damage > 0 && cardAnimator != null)
         {
             attacker.StartCoroutine(cardAnimator.AnimateDamage(defender, damage));
@@ -42,7 +42,7 @@ public class Attack7Handler
         // Wait for animations to complete
         yield return new WaitForSeconds(0.5f);
         
-        // ✅ Apply damage to BOTH cards SIMULTANEOUSLY (AFTER animations)
+        // [OK] Apply damage to BOTH cards SIMULTANEOUSLY (AFTER animations)
         if (damage > 0)
         {
             defender.health -= damage;
@@ -55,7 +55,7 @@ public class Attack7Handler
             if (attacker.health < 0) attacker.health = 0;
         }
         
-        // ✅ Update HP bars AFTER damage application
+        // [OK] Update HP bars AFTER damage application
         if (isMyAttack)
         {
             playerLifeBar.SetHP(attacker.health);
@@ -69,7 +69,7 @@ public class Attack7Handler
         
         yield return showDialog($"Tresk! hit by {attacker.cardName}'s car");
         
-        // ✅ Initial effect animations for DEFENDER (Sleep/Bleed from car crash)
+        // [OK] Initial effect animations for DEFENDER (Sleep/Bleed from car crash)
         if (effectsApplied != null && effectsApplied.Count > 0)
         {
             foreach (var effect in effectsApplied)
@@ -78,13 +78,13 @@ public class Attack7Handler
                 
                 if (effectType == "27") // Knockout
                 {
-                    Debug.LogWarning($"⭐ [CARHIT_KO] Defender falls asleep from crash!");
+                    Debug.LogWarning($"[STAR] [CARHIT_KO] Defender falls asleep from crash!");
                     yield return animations.PlayKnockoutAnimation(defender.transform);
                     yield return showDialog($"{defender.cardName} knocked out!");
                 }
                 else if (effectType == "1") // Bleed
                 {
-                    Debug.LogWarning($"🩸 [CARHIT_BLEED] Defender is bleeding from crash!");
+                    Debug.LogWarning($"[BLEED] [CARHIT_BLEED] Defender is bleeding from crash!");
                     yield return animations.PlayBleedStartAnimation(defender.transform);
                     yield return showDialog($"{defender.cardName} is bleeding!");
                 }
@@ -93,7 +93,7 @@ public class Attack7Handler
             }
         }
         
-        // ✅ Initial effect animations for ATTACKER RECOIL (Sleep/Bleed from crash damage)
+        // [OK] Initial effect animations for ATTACKER RECOIL (Sleep/Bleed from crash damage)
         if (attackerEffects != null && attackerEffects.Count > 0)
         {
             foreach (var effect in attackerEffects)
@@ -102,13 +102,13 @@ public class Attack7Handler
                 
                 if (effectType == "27") // Knockout
                 {
-                    Debug.LogWarning($"⭐💥 [CARHIT_RECOIL_KO] Attacker knocked out from recoil!");
+                    Debug.LogWarning($"[STAR][HIT] [CARHIT_RECOIL_KO] Attacker knocked out from recoil!");
                     yield return animations.PlayKnockoutAnimation(attacker.transform);
                     yield return showDialog($"{attacker.cardName} knocked out by recoil!");
                 }
                 else if (effectType == "1") // Bleed
                 {
-                    Debug.LogWarning($"🩸💥 [CARHIT_RECOIL_BLEED] Attacker bleeding from recoil!");
+                    Debug.LogWarning($"[BLEED][HIT] [CARHIT_RECOIL_BLEED] Attacker bleeding from recoil!");
                     yield return animations.PlayBleedStartAnimation(attacker.transform);
                     yield return showDialog($"{attacker.cardName} bleeding from crash!");
                 }

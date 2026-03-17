@@ -28,7 +28,7 @@ public class Attack10Handler
         // Damage attack - apply damage + HP bar update
         if (damage > 0)
         {
-            Debug.LogWarning($"💥 [SCRATCH] {attacker.cardName} → {defender.cardName}: {damage} damage");
+            Debug.LogWarning($"[HIT] [SCRATCH] {attacker.cardName} -> {defender.cardName}: {damage} damage");
             defender.health -= damage;
             if (defender.health < 0) defender.health = 0;
             
@@ -49,13 +49,13 @@ public class Attack10Handler
         
         yield return showDialog($"{attacker.cardName} scratches opponent!");
         
-        // ✅ Initial effect animation (Bleed)
+        // [OK] Initial effect animation (Bleed)
         if (effectsApplied != null && effectsApplied.Count > 0)
         {
             var bleedEffect = effectsApplied.Find(e => e["type"].ToString() == "1");
             if (bleedEffect != null)
             {
-                Debug.LogWarning($"🩸 [BLEED_INIT] Playing BLEED START animation");
+                Debug.LogWarning($"[BLEED] [BLEED_INIT] Playing BLEED START animation");
                 yield return animations.PlayBleedStartAnimation(defender.transform);
                 yield return showDialog($"{defender.cardName} is bleeding!");
             }

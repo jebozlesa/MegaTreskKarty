@@ -29,7 +29,7 @@ public class Attack8Handler
         // Damage attack - apply damage + HP bar update
         if (damage > 0)
         {
-            Debug.LogWarning($"💥 [MONKEYWRENCH] {attacker.cardName} → {defender.cardName}: {damage} damage");
+            Debug.LogWarning($"[HIT] [MONKEYWRENCH] {attacker.cardName} -> {defender.cardName}: {damage} damage");
             defender.health -= damage;
             if (defender.health < 0) defender.health = 0;
             
@@ -55,7 +55,7 @@ public class Attack8Handler
             var sleepEffect = effectsApplied.Find(e => e["type"].ToString() == "27");
             if (sleepEffect != null)
             {
-                Debug.LogWarning($"⭐ [MONKEYWRENCH_KO] Playing KNOCKOUT animation");
+                Debug.LogWarning($"[STAR] [MONKEYWRENCH_KO] Playing KNOCKOUT animation");
                 yield return animations.PlayKnockoutAnimation(defender.transform);
                 yield return showDialog($"{defender.cardName} falls asleep!");
             }

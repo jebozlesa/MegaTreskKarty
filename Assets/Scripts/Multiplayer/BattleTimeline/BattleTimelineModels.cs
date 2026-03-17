@@ -4,6 +4,7 @@ using System.Collections.Generic;
 public enum BattleStepType
 {
     Attack,
+    StatChange,
     Blocked,
     Damage,
     BleedTick,
@@ -28,6 +29,7 @@ public class BattleStep
     public List<Dictionary<string, object>> EffectsApplied;
     public List<Dictionary<string, object>> AttackerEffectsApplied;
     public int Amount;
+    public string StatName;
     public int EffectType;
     public int Duration;
     public bool Blocked;

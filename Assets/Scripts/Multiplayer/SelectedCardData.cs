@@ -24,14 +24,14 @@ public class SelectedCardData
     public int attack3;
     public int attack4;
     public int[] color;
-    public EffectData[] effects;  // ✅ Support pre effects (burn, sleep, atď.)
+    public EffectData[] effects;  // [OK] Support pre effects (burn, sleep, atd.)
     
     [System.Serializable]
     public class EffectData
     {
-        public string type;        // "burn", "sleep", "stun", atď.
-        public int duration;       // Počet turno v
-        public int appliedTurn;    // Kedy bol aplikovaný
+        public string type;        // "burn", "sleep", "stun", atd.
+        public int duration;       // Pocet turno v
+        public int appliedTurn;    // Kedy bol aplikovany
         public int value;          // Optional value (napr. burn damage per turn)
     }
 
@@ -76,7 +76,7 @@ public class SelectedCardData
             attack3 = card.attack3,
             attack4 = card.attack4,
             color = resolvedColor,
-            effects = null  // ✅ Effects budú z DB pri refresh
+            effects = null  // [OK] Effects budu z DB pri refresh
         };
 
         return data;
@@ -111,7 +111,7 @@ public class SelectedCardData
             attack3 = payload.Value<int?>("attack3") ?? 0,
             attack4 = payload.Value<int?>("attack4") ?? 0,
             color = payload["color"] is JArray colorArray ? colorArray.ToObject<int[]>() : null,
-            effects = ParseEffects(payload["effects"])  // ✅ Parse effects z servera
+            effects = ParseEffects(payload["effects"])  // [OK] Parse effects z servera
         };
     }
     

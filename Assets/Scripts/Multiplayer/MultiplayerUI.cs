@@ -4,7 +4,7 @@ using TMPro;
 
 public class MultiplayerUI : MonoBehaviour
 {
-    // ✅ Konštanty pre dialog messages - centrálne miesto pre všetky UI texty
+    // [OK] Konstanty pre dialog messages - centralne miesto pre vsetky UI texty
     public const string MSG_CHOOSE_ATTACK = "Choose your attack!";
     public const string MSG_WAITING_OPPONENT = "Waiting for opponent...";
     public const string MSG_LOADING = "Loading...";
@@ -16,7 +16,7 @@ public class MultiplayerUI : MonoBehaviour
     public TMP_Text statusText;
     public Button exitButton;
 
-    // Verejné metódy pre volanie z FightSystemMultiplayer
+    // Verejne metody pre volanie z FightSystemMultiplayer
     public void UpdatePlayerInfo(string playerName, string enemyName)
     {
         playerNameText.text = playerName;
@@ -38,5 +38,5 @@ public class MultiplayerUI : MonoBehaviour
         }
     }
 
-    // Pridať ďalšie metódy podľa potreby (ShowCards, ShowVictory, ShowDefeat, ...)
+    // Pridat dalsie metody podla potreby (ShowCards, ShowVictory, ShowDefeat, ...)
 }

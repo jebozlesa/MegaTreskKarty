@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine.UI;
 
 /// <summary>
-/// Spravuje výber útokov v multiplayerovom režime
+/// Spravuje vyber utokov v multiplayerovom rezime
 /// </summary>
 public class AttackSelectionManager : MonoBehaviour
 {
@@ -21,55 +21,55 @@ public class AttackSelectionManager : MonoBehaviour
     public AttackDescriptions attackDescriptions;
     public FightSystemMultiplayer fightSystem;
 
-    // Aktuálne vybraný útok
+    // Aktualne vybrany utok
     private int selectedAttackType = 0; // 1-4
     private Kard currentCard = null;
     private AttackCountsResult currentAttackCounts = null;
 
     void Start()
     {
-        // Pripoj listenery na tlačidlá útokov
+        // Pripoj listenery na tlacidla utokov
         if (button1 != null) button1.onClick.AddListener(() => OnAttackButtonClicked(1));
         if (button2 != null) button2.onClick.AddListener(() => OnAttackButtonClicked(2));
         if (button3 != null) button3.onClick.AddListener(() => OnAttackButtonClicked(3));
         if (button4 != null) button4.onClick.AddListener(() => OnAttackButtonClicked(4));
 
-        // Pripoj listener na confirm tlačidlo
+        // Pripoj listener na confirm tlacidlo
         if (confirmButton != null)
         {
             confirmButton.onClick.AddListener(OnConfirmAttackClicked);
         }
 
-        // Začni s disablovaným confirm tlačidlom
+        // Zacni s disablovanym confirm tlacidlom
         SetConfirmButtonState(false);
     }
 
     /// <summary>
-    /// Pripraví UI pre výber útoku
+    /// Pripravi UI pre vyber utoku
     /// </summary>
-    /// <param name="card">Karta, ktorá bude útočiť</param>
-    /// <param name="attackCounts">Počty útokov pre danú kartu</param>
+    /// <param name="card">Karta, ktora bude utocit</param>
+    /// <param name="attackCounts">Pocty utokov pre danu kartu</param>
     public void PrepareAttackSelection(Kard card, AttackCountsResult attackCounts)
     {
         currentCard = card;
         currentAttackCounts = attackCounts;
         selectedAttackType = 0;
 
-        // ✅ NEVYPĹŇAJ dialogText tu - správy nastavujú MultiplayerBoardManager a BattleResultProcessor
-        // Predchádzajúca správa je vždy relevantná ("Choose your attack", "Choose fighter!", atď.)
+        // [OK] NEVYPLNAJ dialogText tu - spravy nastavuju MultiplayerBoardManager a BattleResultProcessor
+        // Predchadzajuca sprava je vzdy relevantna ("Choose your attack", "Choose fighter!", atd.)
 
-        // ✅ OCHRANA: Povoľ buttony IBA ak je stav TURN (obe karty sú revealed)
+        // [OK] OCHRANA: Povol buttony IBA ak je stav TURN (obe karty su revealed)
         if (fightSystem != null && fightSystem.state == FightStateMultiplayer.TURN)
         {
-            // Nastav interaktivitu tlačidiel podľa toho, či majú count > 0
+            // Nastav interaktivitu tlacidiel podla toho, ci maju count > 0
             SetAttackButtonsInteractable(attackCounts);
-            Debug.Log("[AttackSelectionManager] ✅ Attack selection enabled - both cards revealed");
+            Debug.Log("[AttackSelectionManager] [OK] Attack selection enabled - both cards revealed");
         }
         else
         {
-            // Obe karty ešte nie sú revealed - drž buttony disabled
+            // Obe karty este nie su revealed - drz buttony disabled
             DisableAttackSelection();
-            Debug.LogWarning("[AttackSelectionManager] ⏸️ Attack buttons disabled - waiting for opponent card reveal");
+            Debug.LogWarning("[AttackSelectionManager]  Attack buttons disabled - waiting for opponent card reveal");
         }
         
         SetConfirmButtonState(false);
@@ -78,7 +78,7 @@ public class AttackSelectionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Handler pre kliknutie na tlačidlo útoku
+    /// Handler pre kliknutie na tlacidlo utoku
     /// </summary>
     private void OnAttackButtonClicked(int attackType)
     {
@@ -94,23 +94,23 @@ public class AttackSelectionManager : MonoBehaviour
             return;
         }
 
-        // Ulož vybraný útok
+        // Uloz vybrany utok
         selectedAttackType = attackType;
 
-        // Zobraz popis útoku v dialogu
+        // Zobraz popis utoku v dialogu
         if (attackDescriptions != null && dialogText != null)
         {
             attackDescriptions.DisplayAttackMultiplayer(currentCard, attackType, dialogText, GetAttackCount(attackType));
         }
 
-        // Aktivuj confirm tlačidlo
+        // Aktivuj confirm tlacidlo
         SetConfirmButtonState(true);
 
         Debug.Log($"[AttackSelectionManager] Attack {attackType} selected");
     }
 
     /// <summary>
-    /// Handler pre potvrdenie výberu útoku
+    /// Handler pre potvrdenie vyberu utoku
     /// </summary>
     private void OnConfirmAttackClicked()
     {
@@ -128,13 +128,13 @@ public class AttackSelectionManager : MonoBehaviour
 
         Debug.Log($"[AttackSelectionManager] Confirming attack {selectedAttackType}");
 
-        // Tu bude logika pre odoslanie útoku na server
+        // Tu bude logika pre odoslanie utoku na server
         // TODO: Implement server communication
         ConfirmAttackSelection();
     }
 
     /// <summary>
-    /// Potvrď výber útoku a priprav ho na odoslanie
+    /// Potvrd vyber utoku a priprav ho na odoslanie
     /// </summary>
     private void ConfirmAttackSelection()
     {
@@ -144,7 +144,7 @@ public class AttackSelectionManager : MonoBehaviour
             return;
         }
 
-        // Vytvor dáta o útoku
+        // Vytvor data o utoku
         var attackData = new SelectedAttackData
         {
             attackType = selectedAttackType,
@@ -153,15 +153,15 @@ public class AttackSelectionManager : MonoBehaviour
             cardId = currentCard.cardId
         };
 
-        // Pošli dáta do fight systému na ďalšie spracovanie
+        // Posli data do fight systemu na dalsie spracovanie
         fightSystem.OnAttackConfirmed(attackData);
 
-        // Disable UI po potvrdení
+        // Disable UI po potvrdeni
         DisableAttackSelection();
     }
 
     /// <summary>
-    /// Získaj ID útoku pre daný typ (1-4)
+    /// Ziskaj ID utoku pre dany typ (1-4)
     /// </summary>
     private int GetAttackId(int attackType)
     {
@@ -176,7 +176,7 @@ public class AttackSelectionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Získaj count útoku pre daný typ
+    /// Ziskaj count utoku pre dany typ
     /// </summary>
     private int GetAttackCount(int attackType)
     {
@@ -193,7 +193,7 @@ public class AttackSelectionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Skontroluj, či je možné vybrať daný útok
+    /// Skontroluj, ci je mozne vybrat dany utok
     /// </summary>
     private bool CanSelectAttack(int attackType)
     {
@@ -204,7 +204,7 @@ public class AttackSelectionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Nastav interaktivitu tlačidiel útokov
+    /// Nastav interaktivitu tlacidiel utokov
     /// </summary>
     private void SetAttackButtonsInteractable(AttackCountsResult counts)
     {
@@ -215,7 +215,7 @@ public class AttackSelectionManager : MonoBehaviour
     }
     
     /// <summary>
-    /// Public metóda pre update attack counts (volané po decrement)
+    /// Public metoda pre update attack counts (volane po decrement)
     /// </summary>
     public void UpdateAttackCounts(AttackCountsResult newCounts)
     {
@@ -227,11 +227,11 @@ public class AttackSelectionManager : MonoBehaviour
         
         currentAttackCounts = newCounts;
         
-        // Re-enable buttony s novými counts
+        // Re-enable buttony s novymi counts
         if (currentCard != null && fightSystem != null && fightSystem.state == FightStateMultiplayer.TURN)
         {
             SetAttackButtonsInteractable(newCounts);
-            Debug.LogWarning($"[AttackSelectionManager] ✅ Attack counts updated: {newCounts.count1}, {newCounts.count2}, {newCounts.count3}, {newCounts.count4}");
+            Debug.LogWarning($"[AttackSelectionManager] [OK] Attack counts updated: {newCounts.count1}, {newCounts.count2}, {newCounts.count3}, {newCounts.count4}");
         }
         else
         {
@@ -240,7 +240,7 @@ public class AttackSelectionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Nastav stav confirm tlačidla
+    /// Nastav stav confirm tlacidla
     /// </summary>
     private void SetConfirmButtonState(bool enabled)
     {
@@ -251,7 +251,7 @@ public class AttackSelectionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Disable UI po potvrdení výberu
+    /// Disable UI po potvrdeni vyberu
     /// </summary>
     private void DisableAttackSelection()
     {
@@ -269,7 +269,7 @@ public class AttackSelectionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Enable attack buttony po reveal-nutí oboch kariet (volá sa z RevealCards)
+    /// Enable attack buttony po reveal-nuti oboch kariet (vola sa z RevealCards)
     /// </summary>
     public void EnableAttackButtonsAfterReveal()
     {
@@ -279,13 +279,13 @@ public class AttackSelectionManager : MonoBehaviour
             return;
         }
         
-        // Teraz sú obe karty revealed - povoľ attack buttony
+        // Teraz su obe karty revealed - povol attack buttony
         SetAttackButtonsInteractable(currentAttackCounts);
-        Debug.LogWarning("[AttackSelectionManager] ✅ Attack buttons enabled - both cards revealed!");
+        Debug.LogWarning("[AttackSelectionManager] [OK] Attack buttons enabled - both cards revealed!");
     }
     
     /// <summary>
-    /// Reset selection state pre nový turn
+    /// Reset selection state pre novy turn
     /// </summary>
     public void ResetSelection()
     {
@@ -298,7 +298,7 @@ public class AttackSelectionManager : MonoBehaviour
             dialogText.text = "";
         }
 
-        // ✅ Reset tlačidiel do disabled stavu
+        // [OK] Reset tlacidiel do disabled stavu
         SetConfirmButtonState(false);
         SetAllAttackButtonsInteractable(false);
         
@@ -306,7 +306,7 @@ public class AttackSelectionManager : MonoBehaviour
     }
     
     /// <summary>
-    /// Nastaví všetky attack tlačidlá na enabled/disabled
+    /// Nastavi vsetky attack tlacidla na enabled/disabled
     /// </summary>
     private void SetAllAttackButtonsInteractable(bool enabled)
     {
@@ -317,7 +317,7 @@ public class AttackSelectionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Získaj aktuálne vybraný typ útoku
+    /// Ziskaj aktualne vybrany typ utoku
     /// </summary>
     public int GetSelectedAttackType()
     {

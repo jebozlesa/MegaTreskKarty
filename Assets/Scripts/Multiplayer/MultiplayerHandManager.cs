@@ -101,7 +101,7 @@ public class MultiplayerHandManager : MonoBehaviour
                 Attack2 = cardData["Attack2"]?.ToObject<int>() ?? 0,
                 Attack3 = cardData["Attack3"]?.ToObject<int>() ?? 0,
                 Attack4 = cardData["Attack4"]?.ToObject<int>() ?? 0
-                // ...dopln ďalšie polia podľa potreby
+                // ...dopln dalsie polia podla potreby
             };
                 if (!string.IsNullOrEmpty(card.CardID))
                 {
@@ -132,7 +132,7 @@ public class MultiplayerHandManager : MonoBehaviour
         kardComponent.styleId = cardData.StyleID;
         kardComponent.cardName = cardData.PersonName;
         kardComponent.health = cardData.Health;
-        kardComponent.maxHealth = cardData.MaxHealth;  // ✅ Initialize maxHealth for HealthBar!
+        kardComponent.maxHealth = cardData.MaxHealth;  // [OK] Initialize maxHealth for HealthBar!
         kardComponent.strength = cardData.Strength;
         kardComponent.speed = cardData.Speed;
         kardComponent.attack = cardData.Attack;

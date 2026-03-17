@@ -5,7 +5,7 @@ using TMPro;
 
 /// <summary>
 /// Attack 11: Scientific Lecture
-/// Effect: Knowledge check → +1 Knowledge buff OR Sleep (boredom)
+/// Effect: Knowledge check -> +1 Knowledge buff OR Sleep (boredom)
 /// No damage
 /// </summary>
 public class Attack11Handler
@@ -20,38 +20,38 @@ public class Attack11Handler
         HealthBar playerLifeBar,
         HealthBar enemyLifeBar,
         System.Func<string, IEnumerator> showDialog,
-        string attackResult = null)  // ✅ Server tells us what happened
+        string attackResult = null)  // [OK] Server tells us what happened
     {
         yield return showDialog($"{attacker.cardName} explaining science!!!");
         
         // Play Scientific Lecture animation on attacker
         yield return animations.PlayScientificLectureAnimation(attacker.transform);
         
-        // ✅ If attackResult is null/empty, attacker was blocked BEFORE executing attack
-        // (e.g. defender has Sleep/Asceticism) → Show "no effect" after lecture animation
+        // [OK] If attackResult is null/empty, attacker was blocked BEFORE executing attack
+        // (e.g. defender has Sleep/Asceticism) -> Show "no effect" after lecture animation
         if (string.IsNullOrEmpty(attackResult))
         {
-            Debug.Log($"[Attack11] Attack blocked (defender has effect) → No effect");
+            Debug.Log($"[Attack11] Attack blocked (defender has effect) -> No effect");
             yield return animations.PlayAnimationNotEffective(defender.transform);
             yield return showDialog("Attack has no effect");
             yield break;
         }
         
-        // ✅ CLIENT IS DUMB RENDERER - Server decides which animation to play
+        // [OK] CLIENT IS DUMB RENDERER - Server decides which animation to play
         switch (attackResult)
         {
             case "impressed":
                 // SUCCESS: Defender is interested, gains +1 Knowledge
                 yield return animations.PlayAnimationImpressed(defender.transform);
                 yield return showDialog($"{defender.cardName} is interested in science");
-                Debug.Log($"[Attack11] {defender.cardName} is interested → +1 Knowledge");
+                Debug.Log($"[Attack11] {defender.cardName} is interested -> +1 Knowledge");
                 break;
                 
             case "bored":
                 // FAILURE: Defender is bored, will fall asleep
                 yield return animations.PlayBoredomAnimation(defender.transform);
                 yield return showDialog($"{defender.cardName} falls asleep by boredom");
-                Debug.Log($"[Attack11] {defender.cardName} is bored → Sleep");
+                Debug.Log($"[Attack11] {defender.cardName} is bored -> Sleep");
                 break;
                 
             case "blocked":

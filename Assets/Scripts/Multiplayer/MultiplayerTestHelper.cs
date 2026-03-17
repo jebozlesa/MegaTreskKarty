@@ -3,7 +3,7 @@ using Newtonsoft.Json.Linq;
 
 /// <summary>
 /// Helper script pre testovanie multiplayer funkcionalite
-/// Pridajte ho do niektorej scény a použite na debugovanie
+/// Pridajte ho do niektorej sceny a pouzite na debugovanie
 /// </summary>
 public class MultiplayerTestHelper : MonoBehaviour
 {

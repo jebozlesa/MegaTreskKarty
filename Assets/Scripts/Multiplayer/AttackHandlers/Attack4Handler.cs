@@ -22,17 +22,17 @@ public class Attack4Handler
         yield return animations.PlayForgivenessAnimation(attacker.transform);
         
         // Debuff effect - apply -1 attack
-        Debug.LogWarning($"🙏 [FORGIVENESS] {attacker.cardName} → {defender.cardName}: -1 attack");
+        Debug.LogWarning($" [FORGIVENESS] {attacker.cardName} -> {defender.cardName}: -1 attack");
         defender.HandleAttack(-1);
         yield return showDialog($"{attacker.cardName} forgives your heresy");
         
-        // ✅ Initial effect animation (Asceticism)
+        // [OK] Initial effect animation (Asceticism)
         if (effectsApplied != null && effectsApplied.Count > 0)
         {
             var asceticismEffect = effectsApplied.Find(e => e["type"].ToString() == "2");
             if (asceticismEffect != null)
             {
-                Debug.LogWarning($"🙏 [ASCETICISM_INIT] Playing ASCETICISM START animation");
+                Debug.LogWarning($" [ASCETICISM_INIT] Playing ASCETICISM START animation");
                 yield return animations.PlayAscetismStartAnimation(defender.transform);
                 yield return showDialog($"{defender.cardName} feels doomed!");
             }

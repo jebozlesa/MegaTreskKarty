@@ -26,7 +26,7 @@ public class Attack5Handler
         // Damage attack - apply damage + HP bar update
         if (damage > 0)
         {
-            Debug.LogWarning($"💥 [CRUSADE] {attacker.cardName} → {defender.cardName}: {damage} damage");
+            Debug.LogWarning($"[HIT] [CRUSADE] {attacker.cardName} -> {defender.cardName}: {damage} damage");
             defender.health -= damage;
             if (defender.health < 0) defender.health = 0;
             

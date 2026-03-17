@@ -23,6 +23,6 @@ public class Attack9Handler
         
         // No HP damage - pure effect attack!
         // Effects are handled in effect application section
-        Debug.LogWarning($"☢️ [RADIATION] {attacker.cardName} uses Radiation on {defender.cardName} (no direct damage)");
+        Debug.LogWarning($"[RADIATION] [RADIATION] {attacker.cardName} uses Radiation on {defender.cardName} (no direct damage)");
     }
 }

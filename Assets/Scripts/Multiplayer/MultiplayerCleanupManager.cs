@@ -2,13 +2,13 @@ using UnityEngine;
 using System.Collections;
 
 /// <summary>
-/// Globálny manager pre cleanup starých multiplayer miestností
-/// Pridajte tento script do hlavného menu alebo ako singleton
+/// Globalny manager pre cleanup starych multiplayer miestnosti
+/// Pridajte tento script do hlavneho menu alebo ako singleton
 /// </summary>
 public class MultiplayerCleanupManager : MonoBehaviour
 {
     [Header("Cleanup Settings")]
-    [SerializeField] private float cleanupInterval = 300f; // 5 minút
+    [SerializeField] private float cleanupInterval = 300f; // 5 minut
     [SerializeField] private bool autoCleanupOnStart = true;
     [SerializeField] private bool periodicCleanup = true;
     
@@ -39,13 +39,13 @@ public class MultiplayerCleanupManager : MonoBehaviour
     {
         if (autoCleanupOnStart)
         {
-            // Okamžitý cleanup pri štarte
+            // Okamzity cleanup pri starte
             PerformCleanup();
         }
         
         if (periodicCleanup)
         {
-            // Spustenie periodického cleanup
+            // Spustenie periodickeho cleanup
             StartPeriodicCleanup();
         }
     }
@@ -123,7 +123,7 @@ public class MultiplayerCleanupManager : MonoBehaviour
         }
     }
 
-    // === VEREJNÉ METÓDY PRE UI ===
+    // === VEREJNE METODY PRE UI ===
     
     [ContextMenu("Manual Cleanup")]
     public void ManualCleanup()
@@ -136,18 +136,18 @@ public class MultiplayerCleanupManager : MonoBehaviour
         cleanupInterval = seconds;
         if (periodicCleanup && cleanupCoroutine != null)
         {
-            // Reštartuj s novým intervalom
+            // Restartuj s novym intervalom
             StartPeriodicCleanup();
         }
     }
 
-    // === INTEGRÁCIA S APLIKAČNÝMI EVENTAMI ===
+    // === INTEGRACIA S APLIKACNYMI EVENTAMI ===
     
     void OnApplicationPause(bool pauseStatus)
     {
         if (!pauseStatus)
         {
-            // Aplikácia sa obnovuje - urob cleanup
+            // Aplikacia sa obnovuje - urob cleanup
             PerformCleanup();
         }
     }
@@ -156,7 +156,7 @@ public class MultiplayerCleanupManager : MonoBehaviour
     {
         if (hasFocus)
         {
-            // Aplikácia získava focus - urob cleanup
+            // Aplikacia ziskava focus - urob cleanup
             PerformCleanup();
         }
     }

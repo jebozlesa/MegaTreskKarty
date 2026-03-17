@@ -2,16 +2,16 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Vizuálny indikátor pre kill counter - mení farbu Image komponentu
+/// Vizualny indikator pre kill counter - meni farbu Image komponentu
 /// </summary>
 public class KillCounterUI : MonoBehaviour
 {
     [Header("Settings")]
-    [Tooltip("Zelená farba pre živý stav")]
-    public Color aliveColor = new Color(0.2f, 0.8f, 0.2f, 1f); // Zelená
+    [Tooltip("Zelena farba pre zivy stav")]
+    public Color aliveColor = new Color(0.2f, 0.8f, 0.2f, 1f); // Zelena
     
-    [Tooltip("Červená farba pre dead stav")]
-    public Color deadColor = new Color(0.8f, 0.2f, 0.2f, 1f); // Červená
+    [Tooltip("Cervena farba pre dead stav")]
+    public Color deadColor = new Color(0.8f, 0.2f, 0.2f, 1f); // Cervena
     
     [Header("References")]
     private Image imageComponent;
@@ -28,12 +28,12 @@ public class KillCounterUI : MonoBehaviour
     
     void Start()
     {
-        // Nastav na zelenú na začiatku
+        // Nastav na zelenu na zaciatku
         SetAlive();
     }
     
     /// <summary>
-    /// Nastav štvorček na živý stav (zelená)
+    /// Nastav stvorcek na zivy stav (zelena)
     /// </summary>
     public void SetAlive()
     {
@@ -46,7 +46,7 @@ public class KillCounterUI : MonoBehaviour
     }
     
     /// <summary>
-    /// Nastav štvorček na dead stav (červená)
+    /// Nastav stvorcek na dead stav (cervena)
     /// </summary>
     public void SetDead()
     {
@@ -59,7 +59,7 @@ public class KillCounterUI : MonoBehaviour
     }
     
     /// <summary>
-    /// Skontroluj či je tento indikátor dead
+    /// Skontroluj ci je tento indikator dead
     /// </summary>
     public bool IsDead => isDead;
 }

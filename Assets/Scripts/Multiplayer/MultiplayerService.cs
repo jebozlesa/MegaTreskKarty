@@ -12,13 +12,13 @@ using System.Threading.Tasks;
 
 public class MultiplayerService : MonoBehaviour
 {
-    // Vytvorenie kariet v ruke hráča v multiplayeri podľa údajov z miestnosti
+    // Vytvorenie kariet v ruke hraca v multiplayeri podla udajov z miestnosti
 
     [Header("UI References")]
     public TMP_Text playerNameText;
     public TMP_Text enemyNameText;
     public TMP_Text statusText;
-    public Button exitButton; // Nové tlačidlo Exit
+    public Button exitButton; // Nove tlacidlo Exit
 
     [Header("Server Manager")]
     public ServerFunctionsManager serverFunctionsManager;
@@ -26,7 +26,7 @@ public class MultiplayerService : MonoBehaviour
     private string myPlayerId;
     private string roomCode;
     
-    // ✅ Public getters pre BattleResultProcessor a ostatné komponenty
+    // [OK] Public getters pre BattleResultProcessor a ostatne komponenty
     public string RoomCode => roomCode;
     public string MyPlayerId => myPlayerId;
     
@@ -35,7 +35,7 @@ public class MultiplayerService : MonoBehaviour
     private Coroutine heartbeatCoroutine;
 
     [Header("Heartbeat Settings")]
-    [SerializeField] private float heartbeatInterval = 30f; // 30 sekúnd
+    [SerializeField] private float heartbeatInterval = 30f; // 30 sekund
 
     public MultiplayerHandManager handManager;
     public FightSystemMultiplayer fightSystem;
@@ -56,10 +56,10 @@ public class MultiplayerService : MonoBehaviour
             return;
         }
 
-        // Načítanie informácií o hráčoch a balíčkov
+        // Nacitanie informacii o hracoch a balickov
         await LoadPlayersInfoAsync();
 
-        // Spustenie heartbeat systému
+        // Spustenie heartbeat systemu
         StartHeartbeat();
 
         if (isWaitingForOpponent)
@@ -68,7 +68,7 @@ public class MultiplayerService : MonoBehaviour
             pollingCoroutine = StartCoroutine(PollForOpponent());
         }
 
-        // Zavolaj callback až keď je všetko hotové
+        // Zavolaj callback az ked je vsetko hotove
         onGameInitialized?.Invoke();
     }
 
@@ -116,18 +116,18 @@ public class MultiplayerService : MonoBehaviour
 
     void OnDestroy()
     {
-        // Zastavíme všetky systémy
+        // Zastavime vsetky systemy
         StopHeartbeat();
         if (pollingCoroutine != null)
         {
             StopCoroutine(pollingCoroutine);
         }
 
-        // Opustime miestnosť pri zatvorení (emergency cleanup)
+        // Opustime miestnost pri zatvoreni (emergency cleanup)
         if (serverFunctionsManager != null && !string.IsNullOrEmpty(myPlayerId))
         {
-            // Pri emergency cleanup len opustime miestnosť
-            // MarkRoomAsCompleted sa zavolá len pri manuálnom exite
+            // Pri emergency cleanup len opustime miestnost
+            // MarkRoomAsCompleted sa zavola len pri manualnom exite
             serverFunctionsManager.LeaveRoom(myPlayerId, null);
         }
     }
@@ -154,7 +154,7 @@ public class MultiplayerService : MonoBehaviour
 
     void LoadPlayersInfo()
     {
-        // Použijeme joinOrCreateRoom ktoré funguje a vráti aktuálne informácie o miestnosti
+        // Pouzijeme joinOrCreateRoom ktore funguje a vrati aktualne informacie o miestnosti
         string username = PlayerPrefs.GetString("username", myPlayerId);
         serverFunctionsManager.JoinOrCreateRoom(myPlayerId, username, async result =>
         {
@@ -167,16 +167,16 @@ public class MultiplayerService : MonoBehaviour
                     {
                         var room = functionResult["room"];
 
-                        // Spracovanie playersInfo ak existuje (nové API)
+                        // Spracovanie playersInfo ak existuje (nove API)
                         if (room["playersInfo"] != null)
                         {
                             JArray playersInfo = room["playersInfo"] as JArray;
                             ProcessPlayersInfo(playersInfo);
 
-                            // Načítanie balíčkov hráčov
+                            // Nacitanie balickov hracov
                             await LoadPlayerDecks(myPlayerId, roomCode);
 
-                            // // Vytvorenie kariet v ruke hráča podľa údajov z miestnosti
+                            // // Vytvorenie kariet v ruke hraca podla udajov z miestnosti
                             // if (room["playerDecks"] != null && room["playerDecks"][myPlayerId] != null && room["playerDecks"][myPlayerId]["cards"] != null && !cardsCreated)
                             // {
                             //     JArray cardsArray = room["playerDecks"][myPlayerId]["cards"] as JArray;
@@ -201,7 +201,7 @@ public class MultiplayerService : MonoBehaviour
     }
     // void CreateCards()
     // {
-    //     //if (cardsCreated) return; // Už sme vytvorili karty
+    //     //if (cardsCreated) return; // Uz sme vytvorili karty
 
     //     serverFunctionsManager.GetRoomPlayersInfo(roomCode, result =>
     //     {
@@ -214,7 +214,7 @@ public class MultiplayerService : MonoBehaviour
     //                 {
     //                     var room = functionResult["room"];
 
-    //                     // Vytvorenie kariet v ruke hráča podľa údajov z miestnosti
+    //                     // Vytvorenie kariet v ruke hraca podla udajov z miestnosti
     //                     if (room["playerDecks"] != null && room["playerDecks"][myPlayerId] != null && room["playerDecks"][myPlayerId]["cards"] != null && !cardsCreated)
     //                     {
     //                         JArray cardsArray = room["playerDecks"][myPlayerId]["cards"] as JArray;
@@ -238,7 +238,7 @@ public class MultiplayerService : MonoBehaviour
     // {
     //     if (handManager == null || fightSystem == null || fightSystem.player == null)
     //     {
-    //         Debug.LogError("HandManager alebo FightSystem/player nie je dostupný!");
+    //         Debug.LogError("HandManager alebo FightSystem/player nie je dostupny!");
     //         return;
     //     }
     //     Player player = fightSystem.player;
@@ -258,7 +258,7 @@ public class MultiplayerService : MonoBehaviour
     //             Attack2 = cardData["Attack2"]?.ToObject<int>() ?? 0,
     //             Attack3 = cardData["Attack3"]?.ToObject<int>() ?? 0,
     //             Attack4 = cardData["Attack4"]?.ToObject<int>() ?? 0
-    //             // ...dopln ďalšie polia podľa potreby
+    //             // ...dopln dalsie polia podla potreby
     //         };
     //         handManager.CreateCardInGame(card, playerGO, player);
     //     }
@@ -269,7 +269,7 @@ public class MultiplayerService : MonoBehaviour
         string myUsername = PlayerPrefs.GetString("username", myPlayerId);
         string opponentUsername = "";
 
-        // Nájdeme informácie o hráčoch
+        // Najdeme informacie o hracoch
         foreach (JObject playerInfo in playersInfo)
         {
             string playerId = playerInfo["playerId"].ToString();
@@ -285,31 +285,31 @@ public class MultiplayerService : MonoBehaviour
             }
         }
 
-        // Nastavíme mená podľa poradia hráčov
+        // Nastavime mena podla poradia hracov
         if (playersInfo.Count >= 2)
         {
-            // Obaja hráči sú pripojení
+            // Obaja hraci su pripojeni
             JObject firstPlayer = playersInfo[0] as JObject;
             bool amIFirstPlayer = firstPlayer["playerId"].ToString() == myPlayerId;
 
             if (amIFirstPlayer)
             {
-                // Som prvý hráč (domáci)
+                // Som prvy hrac (domaci)
                 playerNameText.text = myUsername;
                 enemyNameText.text = opponentUsername;
             }
             else
             {
-                // Som druhý hráč (hosť)
+                // Som druhy hrac (host)
                 enemyNameText.text = myUsername;
                 playerNameText.text = opponentUsername;
             }
 
-            // ❌ Removed "Connected!" message - hráči idú priamo na "Choose fighter!"
+            // [ERR] Removed "Connected!" message - hraci idu priamo na "Choose fighter!"
             // statusText.text = "Connected!";
             isWaitingForOpponent = false;
 
-            // Zastavíme polling ak bežal
+            // Zastavime polling ak bezal
             if (pollingCoroutine != null)
             {
                 StopCoroutine(pollingCoroutine);
@@ -318,7 +318,7 @@ public class MultiplayerService : MonoBehaviour
         }
         else if (playersInfo.Count == 1)
         {
-            // Len jeden hráč je pripojený (som to ja)
+            // Len jeden hrac je pripojeny (som to ja)
             playerNameText.text = myUsername;
             enemyNameText.text = "";
             statusText.text = "Waiting for opponent...";
@@ -328,7 +328,7 @@ public class MultiplayerService : MonoBehaviour
 
     void SetFallbackPlayerNames()
     {
-        // Fallback na staré správanie - ak čakáme na súpera, zobrazíme len svoje meno
+        // Fallback na stare spravanie - ak cakame na supera, zobrazime len svoje meno
         string myUsername = PlayerPrefs.GetString("username", myPlayerId);
         playerNameText.text = myUsername;
         enemyNameText.text = "";
@@ -339,9 +339,9 @@ public class MultiplayerService : MonoBehaviour
     {
         while (isWaitingForOpponent)
         {
-            yield return new WaitForSeconds(2f); // Kontrola každé 2 sekundy
+            yield return new WaitForSeconds(2f); // Kontrola kazde 2 sekundy
 
-            // POUŽI GetRoomPlayersInfo namiesto JoinOrCreateRoom!
+            // POUZI GetRoomPlayersInfo namiesto JoinOrCreateRoom!
             serverFunctionsManager.GetRoomPlayersInfo(roomCode, result =>
             {
                 if (result != null && result.FunctionResult != null)
@@ -372,7 +372,7 @@ public class MultiplayerService : MonoBehaviour
         }
     }
 
-    // Verejné metódy pre manuálne nastavenie mien (pre spätnu kompatibilitu)
+    // Verejne metody pre manualne nastavenie mien (pre spatnu kompatibilitu)
     public void ShowPlayerName(string playerName)
     {
         playerNameText.text = playerName;
@@ -383,7 +383,7 @@ public class MultiplayerService : MonoBehaviour
         enemyNameText.text = enemyName;
     }
 
-    // === HEARTBEAT SYSTÉM ===
+    // === HEARTBEAT SYSTEM ===
 
     void StartHeartbeat()
     {
@@ -411,7 +411,7 @@ public class MultiplayerService : MonoBehaviour
         {
             yield return new WaitForSeconds(heartbeatInterval);
 
-            // Pošli heartbeat na server
+            // Posli heartbeat na server
             if (serverFunctionsManager != null && !string.IsNullOrEmpty(myPlayerId))
             {
                 serverFunctionsManager.Heartbeat(myPlayerId);
@@ -419,13 +419,13 @@ public class MultiplayerService : MonoBehaviour
         }
     }
 
-    // === CLEANUP PRI OPUSTENÍ ===
+    // === CLEANUP PRI OPUSTENI ===
 
     void OnApplicationPause(bool pauseStatus)
     {
         if (pauseStatus)
         {
-            // Aplikácia sa pozastavuje - pošli heartbeat
+            // Aplikacia sa pozastavuje - posli heartbeat
             if (serverFunctionsManager != null && !string.IsNullOrEmpty(myPlayerId))
             {
                 serverFunctionsManager.Heartbeat(myPlayerId);
@@ -437,7 +437,7 @@ public class MultiplayerService : MonoBehaviour
     {
         if (!hasFocus)
         {
-            // Aplikácia stráca focus - pošli heartbeat
+            // Aplikacia straca focus - posli heartbeat
             if (serverFunctionsManager != null && !string.IsNullOrEmpty(myPlayerId))
             {
                 serverFunctionsManager.Heartbeat(myPlayerId);
@@ -447,10 +447,10 @@ public class MultiplayerService : MonoBehaviour
 
     public void LeaveMultiplayerRoom()
     {
-        // Manuálne opustenie miestnosti
+        // Manualne opustenie miestnosti
         if (serverFunctionsManager != null && !string.IsNullOrEmpty(myPlayerId))
         {
-            // Najprv označíme miestnosť ako completed aby sa do nej nikto nový nepripojil
+            // Najprv oznacime miestnost ako completed aby sa do nej nikto novy nepripojil
             if (!string.IsNullOrEmpty(roomCode))
             {
                 serverFunctionsManager.MarkRoomAsCompleted(roomCode, myPlayerId, result =>
@@ -459,7 +459,7 @@ public class MultiplayerService : MonoBehaviour
                 });
             }
 
-            // Potom opustime miestnosť
+            // Potom opustime miestnost
             serverFunctionsManager.LeaveRoom(myPlayerId, result =>
             {
                 if (result != null && result.FunctionResult != null)
@@ -473,11 +473,11 @@ public class MultiplayerService : MonoBehaviour
             });
         }
 
-        // Vyčisti lokálne údaje
+        // Vycisti lokalne udaje
         PlayerPrefs.DeleteKey("RoomCode");
         PlayerPrefs.DeleteKey("IsWaitingForOpponent");
 
-        // Zastav všetky systémy
+        // Zastav vsetky systemy
         StopHeartbeat();
         if (pollingCoroutine != null)
         {
@@ -490,25 +490,25 @@ public class MultiplayerService : MonoBehaviour
 
     public void OnExitToLobby()
     {
-        // Volaj túto metódu z UI tlačidla "Exit" 
+        // Volaj tuto metodu z UI tlacidla "Exit" 
         Debug.Log("Player requested exit to lobby");
 
-        // Opusti miestnosť a vráť sa do lobby
+        // Opusti miestnost a vrat sa do lobby
         LeaveMultiplayerRoom();
 
-        // Počkaj chvíľu na dokončenie cleanup a potom nahraj lobby
+        // Pockaj chvilu na dokoncenie cleanup a potom nahraj lobby
         StartCoroutine(ExitToLobbyCoroutine());
     }
 
     public void OnExitToMainMenu()
     {
-        // Alternatívna metóda pre exit do hlavného menu
+        // Alternativna metoda pre exit do hlavneho menu
         Debug.Log("Player requested exit to main menu");
 
-        // Opusti miestnosť
+        // Opusti miestnost
         LeaveMultiplayerRoom();
 
-        // Počkaj chvíľu na dokončenie cleanup a potom nahraj hlavné menu
+        // Pockaj chvilu na dokoncenie cleanup a potom nahraj hlavne menu
         StartCoroutine(ExitToMainMenuCoroutine());
     }
 
@@ -516,22 +516,22 @@ public class MultiplayerService : MonoBehaviour
     {
         statusText.text = "Leaving room...";
 
-        // Počkaj chvíľu na dokončenie server komunikácie
+        // Pockaj chvilu na dokoncenie server komunikacie
         yield return new WaitForSeconds(0.5f);
 
-        // Nahraj lobby scénu
-        SceneManager.LoadScene("MultiplayerLobby"); // Zmeň na správny názov scény
+        // Nahraj lobby scenu
+        SceneManager.LoadScene("MultiplayerLobby"); // Zmen na spravny nazov sceny
     }
 
     IEnumerator ExitToMainMenuCoroutine()
     {
         statusText.text = "Leaving room...";
 
-        // Počkaj chvíľu na dokončenie server komunikácie
+        // Pockaj chvilu na dokoncenie server komunikacie
         yield return new WaitForSeconds(0.5f);
 
-        // Nahraj hlavné menu
-        SceneManager.LoadScene("MainMenu"); // Zmeň na správny názov scény
+        // Nahraj hlavne menu
+        SceneManager.LoadScene("MainMenu"); // Zmen na spravny nazov sceny
     }
 
     public async Task SubmitSelectedCardAsync(string roomCode, string playerId, SelectedCardData cardData)

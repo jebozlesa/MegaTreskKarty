@@ -84,7 +84,7 @@ public class FightSystemMultiplayer : MonoBehaviour
     public List<Player> roomPlayers;
     public List<string> playerDecks;
 
-    // Nové referencie na battle komponenty
+    // Nove referencie na battle komponenty
     public MultiplayerService multiplayerService;
     public MultiplayerUI multiplayerUI;
     public MultiplayerHandManager multiplayerHandManager;
@@ -99,21 +99,21 @@ public class FightSystemMultiplayer : MonoBehaviour
     {
         Debug.LogWarning("[FightSystemMultiplayer] Start() called");
         
-        // ✅ Auto-find MultiplayerUI ak nie je assigned v Inspector
+        // [OK] Auto-find MultiplayerUI ak nie je assigned v Inspector
         if (multiplayerUI == null)
         {
             multiplayerUI = FindFirstObjectByType<MultiplayerUI>();
             if (multiplayerUI == null)
             {
-                Debug.LogError("[FightSystemMultiplayer] ❌ MultiplayerUI not found in scene!");
+                Debug.LogError("[FightSystemMultiplayer] [ERR] MultiplayerUI not found in scene!");
             }
             else
             {
-                Debug.LogWarning("[FightSystemMultiplayer] ⚠️ Auto-found MultiplayerUI (prefer Inspector setup)");
+                Debug.LogWarning("[FightSystemMultiplayer] [WARN] Auto-found MultiplayerUI (prefer Inspector setup)");
             }
         }
         
-        // ✅ Set initial status message (replaces Unity Inspector default "Fight!")
+        // [OK] Set initial status message (replaces Unity Inspector default "Fight!")
         if (multiplayerUI != null)
         {
             Debug.LogWarning("[FightSystemMultiplayer] Setting status to 'Loading...'");
@@ -121,7 +121,7 @@ public class FightSystemMultiplayer : MonoBehaviour
         }
         else if (dialogText != null)
         {
-            // Fallback ak MultiplayerUI chýba
+            // Fallback ak MultiplayerUI chyba
             Debug.LogWarning("[FightSystemMultiplayer] Using dialogText fallback");
             dialogText.text = MultiplayerUI.MSG_LOADING;
         }
@@ -232,15 +232,15 @@ public class FightSystemMultiplayer : MonoBehaviour
             dragHandler?.ResetToOriginalPosition();
         }
         
-        // Načítaj názvy a počty útokov
+        // Nacitaj nazvy a pocty utokov
         LoadAttackNames(card);
         LoadAttackCounts(card);
     }
 
     /// <summary>
-    /// Načíta a zobrazí názvy útokov pre vybranú kartu
+    /// Nacita a zobrazi nazvy utokov pre vybranu kartu
     /// </summary>
-    /// <param name="card">Vybraná karta</param>
+    /// <param name="card">Vybrana karta</param>
     public void LoadAttackNames(Kard card)
     {
         if (attackNamesLoader != null)
@@ -254,9 +254,9 @@ public class FightSystemMultiplayer : MonoBehaviour
     }
 
     /// <summary>
-    /// Načíta a zobrazí počty útokov pre vybranú kartu zo servera
+    /// Nacita a zobrazi pocty utokov pre vybranu kartu zo servera
     /// </summary>
-    /// <param name="card">Vybraná karta</param>
+    /// <param name="card">Vybrana karta</param>
     public void LoadAttackCounts(Kard card)
     {
         if (attackCountLoader != null)
@@ -267,7 +267,7 @@ public class FightSystemMultiplayer : MonoBehaviour
                 {
                     Debug.Log($"[FightSystemMultiplayer] Attack counts loaded successfully");
                     
-                    // Po načítaní attack counts priprav UI pre výber útoku
+                    // Po nacitani attack counts priprav UI pre vyber utoku
                     if (attackSelectionManager != null)
                     {
                         attackSelectionManager.PrepareAttackSelection(card, result);
@@ -286,9 +286,9 @@ public class FightSystemMultiplayer : MonoBehaviour
     }
 
     /// <summary>
-    /// Callback volaný po potvrdení výberu útoku
+    /// Callback volany po potvrdeni vyberu utoku
     /// </summary>
-    /// <param name="attackData">Dáta o vybratom útoku</param>
+    /// <param name="attackData">Data o vybratom utoku</param>
     public void OnAttackConfirmed(SelectedAttackData attackData)
     {
         Debug.Log($"[FightSystemMultiplayer] Attack confirmed: Type={attackData.attackType}, ID={attackData.attackId}");
@@ -299,7 +299,7 @@ public class FightSystemMultiplayer : MonoBehaviour
             return;
         }
         
-        // Získaj cardId aktuálnej karty
+        // Ziskaj cardId aktualnej karty
         Kard myCard = player?.cardInGame;
         if (myCard == null)
         {
@@ -307,7 +307,7 @@ public class FightSystemMultiplayer : MonoBehaviour
             return;
         }
         
-        // Deleguj na BattleSubmitter - pošli IDs + slot pre attack count decrement
+        // Deleguj na BattleSubmitter - posli IDs + slot pre attack count decrement
         battleSubmitter.SubmitAttack(roomCode, myPlayerId, myCard.cardId, attackData.attackId, attackData.attackType);
         
         // Zobraz status

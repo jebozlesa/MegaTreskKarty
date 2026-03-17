@@ -26,7 +26,7 @@ public class Attack3Handler
         // Heal effect - apply heal + HP bar update
         if (healAmount > 0)
         {
-            Debug.LogWarning($"🩹 [HEAL] {attacker.cardName} heals for {healAmount} HP!");
+            Debug.LogWarning($" [HEAL] {attacker.cardName} heals for {healAmount} HP!");
             attacker.Heal(healAmount);
             
             if (isMyAttack)

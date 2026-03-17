@@ -19,10 +19,10 @@ public class MultiplayerLobbyUI : MonoBehaviour
         joinButton.onClick.AddListener(OnJoinClicked);
         statusText.text = "";
         
-        // Pri vstupe do lobby vyčistime staré miestnosti
+        // Pri vstupe do lobby vycistime stare miestnosti
         CleanupOldRooms();
         
-        // Ak sa vracíame z multiplayeru, opustime starú miestnosť
+        // Ak sa vraciame z multiplayeru, opustime staru miestnost
         LeaveAnyExistingRoom();
     }
 
@@ -48,26 +48,26 @@ public class MultiplayerLobbyUI : MonoBehaviour
                     Debug.LogWarning($"Room object: {room}");
                     string myId = PlayerId;
                     
-                    // Uloženie informácií o miestnosti
+                    // Ulozenie informacii o miestnosti
                     PlayerPrefs.SetString("RoomCode", room["roomCode"].ToString());
                     
-                    // Kontrola počtu hráčov na určenie správania
+                    // Kontrola poctu hracov na urcenie spravania
                     var playersArray = room["players"] as JArray;
                     bool isWaiting = playersArray != null && playersArray.Count == 1;
                     
-                    // Uloženie stavu čakania
+                    // Ulozenie stavu cakania
                     PlayerPrefs.SetString("IsWaitingForOpponent", isWaiting ? "true" : "false");
                     
                     if (isWaiting)
                     {
                         statusText.text = "Waiting for opponent...";
-                        // ✅ Spusti polling pre druhého hráča
+                        // [OK] Spusti polling pre druheho hraca
                         StartCoroutine(WaitForOpponentAndStartBattle());
                     }
                     else
                     {
                         statusText.text = "Both players ready!";
-                        // ✅ Immediate transition - druhý hráč sa pripojil
+                        // [OK] Immediate transition - druhy hrac sa pripojil
                         StartCoroutine(StartBattleWithDelay());
                     }
                 }
@@ -84,13 +84,13 @@ public class MultiplayerLobbyUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Čaká kým sa nepripojí druhý hráč, potom spustí battle
+    /// Caka kym sa nepripoji druhy hrac, potom spusti battle
     /// </summary>
     private IEnumerator WaitForOpponentAndStartBattle()
     {
         string roomCode = PlayerPrefs.GetString("RoomCode", "");
         int pollAttempts = 0;
-        const int MAX_POLL_ATTEMPTS = 60; // 60 sekúnd timeout
+        const int MAX_POLL_ATTEMPTS = 60; // 60 sekund timeout
         
         while (pollAttempts < MAX_POLL_ATTEMPTS)
         {
@@ -142,12 +142,12 @@ public class MultiplayerLobbyUI : MonoBehaviour
         {
             statusText.text = "Timeout - opponent didn't join";
             Debug.LogError("[Lobby] Timeout waiting for opponent");
-            // Možno by sme mohli vrátiť hráča späť alebo restart lobby
+            // Mozno by sme mohli vratit hraca spat alebo restart lobby
         }
     }
     
     /// <summary>
-    /// Spustí battle scene s krátkym delay pre UI feedback
+    /// Spusti battle scene s kratkym delay pre UI feedback
     /// </summary>
     private IEnumerator StartBattleWithDelay()
     {
@@ -159,7 +159,7 @@ public class MultiplayerLobbyUI : MonoBehaviour
         SceneManager.LoadScene("Multiplayer");
     }
 
-    // === CLEANUP METÓDY ===
+    // === CLEANUP METODY ===
     
     void CleanupOldRooms()
     {
@@ -177,7 +177,7 @@ public class MultiplayerLobbyUI : MonoBehaviour
 
     void LeaveAnyExistingRoom()
     {
-        // Ak má hráč uložený roomCode, opusti túto miestnosť
+        // Ak ma hrac ulozeny roomCode, opusti tuto miestnost
         string existingRoomCode = PlayerPrefs.GetString("RoomCode", "");
         if (!string.IsNullOrEmpty(existingRoomCode) && serverFunctionsManager != null)
         {
@@ -188,7 +188,7 @@ public class MultiplayerLobbyUI : MonoBehaviour
                     Debug.Log("Left existing room: " + existingRoomCode);
                 }
                 
-                // Vyčisti lokálne údaje
+                // Vycisti lokalne udaje
                 PlayerPrefs.DeleteKey("RoomCode");
                 PlayerPrefs.DeleteKey("IsWaitingForOpponent");
             });
