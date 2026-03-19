@@ -441,6 +441,62 @@ public class BattleTimelineBuilderTests
     }
 
     [Test]
+    public void Build_TimelineV2StatChange_ParsesStatNameAndAmount()
+    {
+        var battleResult = new Dictionary<string, object>
+        {
+            {
+                "timelineV2", new Dictionary<string, object>
+                {
+                    { "version", 2 },
+                    { "steps", new List<object>
+                        {
+                            new Dictionary<string, object>
+                            {
+                                { "type", "Attack" },
+                                { "actorCardId", "card_A" },
+                                { "targetCardId", "card_B" },
+                                { "attackId", 15 }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "StatChange" },
+                                { "actorCardId", "card_A" },
+                                { "targetCardId", "card_B" },
+                                { "statName", "ATT" },
+                                { "amount", -1 },
+                                { "source", "attack" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "StatChange" },
+                                { "actorCardId", "card_A" },
+                                { "targetCardId", "card_B" },
+                                { "statName", "DEF" },
+                                { "amount", -1 },
+                                { "source", "attack" }
+                            }
+                        }
+                    }
+                }
+            },
+            { "firstAttacker", new Dictionary<string, object> { { "cardId", "legacy_A" }, { "attackId", 1 } } },
+            { "secondAttacker", new Dictionary<string, object> { { "cardId", "legacy_B" }, { "attackId", 1 } } }
+        };
+
+        List<object> steps = BuildTimelineFromBattleResultDict(battleResult);
+        var statChanges = GetStepsByType(steps, "StatChange").ToList();
+
+        Assert.AreEqual(2, statChanges.Count, "Expected two stat change steps from timelineV2.");
+        Assert.AreEqual("ATT", GetStringField(statChanges[0], "StatName"));
+        Assert.AreEqual(-1, GetIntField(statChanges[0], "Amount"));
+        Assert.AreEqual("card_B", GetStringField(statChanges[0], "TargetCardId"));
+        Assert.AreEqual("DEF", GetStringField(statChanges[1], "StatName"));
+        Assert.AreEqual(-1, GetIntField(statChanges[1], "Amount"));
+    }
+
+
+    [Test]
     public void Build_LegacyAttack_ParsesAttackerEffectsApplied()
     {
         var battleResult = new Dictionary<string, object>

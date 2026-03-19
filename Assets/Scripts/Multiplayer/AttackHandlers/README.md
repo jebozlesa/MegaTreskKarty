@@ -1,4 +1,4 @@
-# Attack Handlers
+﻿# Attack Handlers
 
 Modularna struktura pre attack animacie a logiku v multiplayer systeme.
 
@@ -16,7 +16,16 @@ AttackHandlers/
   Attack8Handler.cs   - MonkeyWrench (STR/2 + crit/sleep)
   Attack9Handler.cs   - Radiation (Exposure risk)
   Attack10Handler.cs  - Scratch (Bleed 20%)
-  Attack11Handler.cs  - TODO (113 remaining)
+  Attack11Handler.cs  - Scientific Lecture
+  Attack12Handler.cs  - Chi Sau
+  Attack13Handler.cs  - One Inch Punch
+  Attack14Handler.cs  - Up In Smoke
+  Attack15Handler.cs  - Sing
+  Attack16Handler.cs  - Revolver
+  Attack17Handler.cs  - Artillery Regiment
+  Attack18Handler.cs  - Bloodthirst
+  Attack19Handler.cs  - Sword
+  Attack20Handler.cs  - Pike
   ...
   Attack123Handler.cs
 ```
@@ -66,11 +75,18 @@ switch (attackId)
 }
 ```
 
-##  Pridat Attack 10+
+##  Pridat dalsi Attack
 
-1. **Create handler:** `Attack10Handler.cs`
+1. **Create handler:** `Attack{ID}Handler.cs`
 2. **Add case:** BattleResultProcessor.cs (+3 lines)
 3. **Done!**
+
+## Stat Rules
+
+- Attack handlers must not call HandleAttack/HandleStrength/HandleDefense/HandleKnowledge/HandleSpeed/HandleCharisma directly for battle-result stat changes.
+- Attack handlers must not call AnimateStatChange(...) directly for battle-result stat changes.
+- Server-driven stat changes are rendered only through shared battle playback/timeline flow in BattleResultProcessor.
+- Handler responsibility: attack animation, damage/heal visuals, effect-start visuals, dialogs.
 
 ##  Vyhody
 
@@ -85,4 +101,9 @@ Rovnaka struktura ako server:
 - **Server:** `api/attacks/implementations/attack{ID}.js`
 - **Unity:** `AttackHandlers/Attack{ID}Handler.cs`
 
-Progress: 9/123 attacks (7.3%)
+Progress: 20/123 attacks (16.3%)
+
+
+
+
+

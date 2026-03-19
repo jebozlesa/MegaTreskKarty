@@ -24,6 +24,8 @@ Keep multiplayer battle behavior consistent while allowing isolated attack itera
 - Attack visuals/flow per attack live in `Assets/Scripts/Multiplayer/AttackHandlers/Attack{ID}Handler.cs`.
 - Shared processing lives in `BattleResultProcessor` and related multiplayer managers.
 - Keep per-attack behavior isolated. Avoid coupling one handler with another.
+- Stat changes from server contract or `timelineV2` must be applied only by shared playback code, never directly inside an attack handler.
+- Attack handlers must not mutate card stats directly for server-driven outcomes; otherwise buffs/debuffs can render twice.
 
 ## ID-Based Rules
 
@@ -66,3 +68,4 @@ When behavior changes, update relevant active docs only:
 - `DOCUMENTATION_INDEX.md`
 
 Avoid creating new versioned one-off docs unless explicitly requested.
+

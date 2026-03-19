@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
@@ -1386,7 +1386,32 @@ public class BattleResultProcessor : MonoBehaviour
                     attackResult);
                 break;
                 
-            // ? TODO: Add case 17-123 - just add 3 lines per attack!
+            case 17: // Artillery Regiment
+                yield return Attack17Handler.Execute(
+                    attacker, defender, damage, isMyAttack,
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog,
+                    attackResult);
+                break;
+                
+            case 18: // Bloodthirst
+                yield return Attack18Handler.Execute(
+                    attacker, defender, damage, healAmount, isMyAttack,
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
+                break;
+                
+            case 19: // Sword
+                yield return Attack19Handler.Execute(
+                    attacker, defender, damage, isMyAttack,
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog, effectsApplied);
+                break;
+                
+            case 20: // Pike
+                yield return Attack20Handler.Execute(
+                    attacker, defender, damage, isMyAttack,
+                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog, effectsApplied);
+                break;
+                
+            // TODO: Add case 21-123 - just add 3 lines per attack!
             
             default:
                 Debug.LogWarning($"[ExecuteAttackAnimation] Unknown attackId={attackId}, using Punch as fallback");
@@ -1794,6 +1819,10 @@ public class BattleResultProcessor : MonoBehaviour
             case 14: return "Up In Smoke";
             case 15: return "Sing";
             case 16: return "Revolver";
+            case 17: return "Artillery Regiment";
+            case 18: return "Bloodthirst";
+            case 19: return "Sword";
+            case 20: return "Pike";
             // TODO: RozLAriLA pre vLetky Astoky
             default: return $"Attack#{attackId}";
         }
@@ -2197,6 +2226,11 @@ public class BattleResultProcessor : MonoBehaviour
         }
     }
 }
+
+
+
+
+
 
 
 
