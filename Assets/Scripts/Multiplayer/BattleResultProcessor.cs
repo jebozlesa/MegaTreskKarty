@@ -1,10 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using TMPro;
+using Newtonsoft.Json.Linq;
 using PlayFab;
 using PlayFab.ClientModels;
-using Newtonsoft.Json.Linq;
+using TMPro;
+using UnityEngine;
 
 /// <summary>
 /// Stat changes pre jeden Astok (buffs na AstoATnAka + debuffs na obrancu)
@@ -18,7 +18,7 @@ public struct AttackStatChanges
     public int attackerKnowledge;
     public int attackerSpeed;
     public int attackerCharisma;
-    
+
     // Debuffs on defender (e.g. Crusade, ScientificLecture)
     public int defenderAttack;
     public int defenderStrength;
@@ -26,7 +26,7 @@ public struct AttackStatChanges
     public int defenderKnowledge;
     public int defenderSpeed;
     public int defenderCharisma;
-    
+
     public static AttackStatChanges Zero => new AttackStatChanges();
 }
 
@@ -40,36 +40,47 @@ public class BattleResultProcessor : MonoBehaviour
     [Header("Dependencies")]
     public FightSystemMultiplayer fightSystem;
     public Attack attackComponent;
-    public MultiplayerService multiplayerService;  // For refreshing selectedCards
-    public MultiplayerCardAnimator cardAnimator;    // NEW: Card animations (damage, stats, shake)
-    public MultiplayerKillCounterManager killCounterManager;  // NEW: Kill counter tracking
+    public MultiplayerService multiplayerService; // For refreshing selectedCards
+    public MultiplayerCardAnimator cardAnimator; // NEW: Card animations (damage, stats, shake)
+    public MultiplayerKillCounterManager killCounterManager; // NEW: Kill counter tracking
     private BattleRoundCoordinator roundCoordinator;
-    
+
     [Header("UI References")]
     public TMP_Text dialogText;
     public HealthBar playerLifeBar;
     public HealthBar enemyLifeBar;
-    
+
     private void Start()
     {
         // ValidAcia required referenciA
         if (multiplayerService == null)
         {
-            Debug.LogError("[BattleResultProcessor] MultiplayerService not assigned! Please set in Inspector.");
+            Debug.LogError(
+                "[BattleResultProcessor] MultiplayerService not assigned! Please set in Inspector."
+            );
         }
-        
+
         if (cardAnimator == null)
         {
-            Debug.LogError("[BattleResultProcessor] MultiplayerCardAnimator not assigned! Card animations will be skipped. Please set in Inspector.");
+            Debug.LogError(
+                "[BattleResultProcessor] MultiplayerCardAnimator not assigned! Card animations will be skipped. Please set in Inspector."
+            );
         }
-        
+
         if (attackComponent == null)
         {
-            Debug.LogError("[BattleResultProcessor] CRITICAL: attackComponent not assigned! Sleep animations and effects will NOT work! Please set in Inspector.");
+            Debug.LogError(
+                "[BattleResultProcessor] CRITICAL: attackComponent not assigned! Sleep animations and effects will NOT work! Please set in Inspector."
+            );
         }
-        roundCoordinator = new BattleRoundCoordinator(fightSystem, multiplayerService, killCounterManager, dialogText);
+        roundCoordinator = new BattleRoundCoordinator(
+            fightSystem,
+            multiplayerService,
+            killCounterManager,
+            dialogText
+        );
     }
-    
+
     /// <summary>
     /// Spracuje vAsledok battle a spustA animAcie
     /// V5: BattleResult identifikuje karty cez cardId, HP sa naATAta z selectedCards
@@ -82,24 +93,35 @@ public class BattleResultProcessor : MonoBehaviour
             Debug.LogWarning($"[BATTLE_RESULT] {kvp.Key}: {kvp.Value}");
         }
         Debug.LogWarning($"[BATTLE_RESULT] ================================ ");
-        
+
         Debug.Log($"[BattleResultProcessor] Processing battle result (V5)");
-        
+
         // ZAskaj karty
         Kard myCard = fightSystem.player?.cardInGame;
         Kard enemyCard = fightSystem.enemy?.cardInGame;
-        
+
         if (myCard == null || enemyCard == null)
         {
             Debug.LogError("[BattleResultProcessor] Cannot apply result - cards not found");
             return;
         }
-        
-        Debug.LogWarning($"[CARDS] MY: {myCard.cardName} (cardId={myCard.cardId}, HP={myCard.health}/{myCard.maxHealth})");
-        Debug.LogWarning($"[CARDS] ENEMY: {enemyCard.cardName} (cardId={enemyCard.cardId}, HP={enemyCard.health}/{enemyCard.maxHealth})");
-        
+
+        Debug.LogWarning(
+            $"[CARDS] MY: {myCard.cardName} (cardId={myCard.cardId}, HP={myCard.health}/{myCard.maxHealth})"
+        );
+        Debug.LogWarning(
+            $"[CARDS] ENEMY: {enemyCard.cardName} (cardId={enemyCard.cardId}, HP={enemyCard.health}/{enemyCard.maxHealth})"
+        );
+
         // V11: Parse NEW ID-based response format (firstAttacker, secondAttacker)
-        if (!BattleResultParser.TryParse(battleResult, myCard.cardId, out var parsed, out var parseError))
+        if (
+            !BattleResultParser.TryParse(
+                battleResult,
+                myCard.cardId,
+                out var parsed,
+                out var parseError
+            )
+        )
         {
             Debug.LogError($"[BattleResultProcessor] Parse failed: {parseError}");
             return;
@@ -114,7 +136,9 @@ public class BattleResultProcessor : MonoBehaviour
         bool iAmFirstAttacker = parsed.IAmFirstAttacker;
 
         Debug.LogWarning($"[ROLE] I am {(iAmFirstAttacker ? "FIRST" : "SECOND")} attacker");
-        Debug.LogWarning($"[ROLE] FirstAttacker={firstAttackerCardId}, SecondAttacker={secondAttackerCardId}");
+        Debug.LogWarning(
+            $"[ROLE] FirstAttacker={firstAttackerCardId}, SecondAttacker={secondAttackerCardId}"
+        );
 
         int myDamage = parsed.MyDamage;
         int enemyDamage = parsed.EnemyDamage;
@@ -131,22 +155,34 @@ public class BattleResultProcessor : MonoBehaviour
         AttackStatChanges myStatChanges = parsed.MyStatChanges;
         AttackStatChanges enemyStatChanges = parsed.EnemyStatChanges;
 
-        Debug.LogWarning($"[MY_STATS] Attacker buffs: ATK={myStatChanges.attackerAttack} STR={myStatChanges.attackerStrength} DEF={myStatChanges.attackerDefense} KNO={myStatChanges.attackerKnowledge} SPD={myStatChanges.attackerSpeed} CHA={myStatChanges.attackerCharisma}");
-        Debug.LogWarning($"[MY_STATS] Defender debuffs: ATK={myStatChanges.defenderAttack} STR={myStatChanges.defenderStrength} DEF={myStatChanges.defenderDefense} KNO={myStatChanges.defenderKnowledge} SPD={myStatChanges.defenderSpeed} CHA={myStatChanges.defenderCharisma}");
-        Debug.LogWarning($"[ENEMY_STATS] Attacker buffs: ATK={enemyStatChanges.attackerAttack} STR={enemyStatChanges.attackerStrength} DEF={enemyStatChanges.attackerDefense} KNO={enemyStatChanges.attackerKnowledge} SPD={enemyStatChanges.attackerSpeed} CHA={enemyStatChanges.attackerCharisma}");
-        Debug.LogWarning($"[ENEMY_STATS] Defender debuffs: ATK={enemyStatChanges.defenderAttack} STR={enemyStatChanges.defenderStrength} DEF={enemyStatChanges.defenderDefense} KNO={enemyStatChanges.defenderKnowledge} SPD={enemyStatChanges.defenderSpeed} CHA={enemyStatChanges.defenderCharisma}");
+        Debug.LogWarning(
+            $"[MY_STATS] Attacker buffs: ATK={myStatChanges.attackerAttack} STR={myStatChanges.attackerStrength} DEF={myStatChanges.attackerDefense} KNO={myStatChanges.attackerKnowledge} SPD={myStatChanges.attackerSpeed} CHA={myStatChanges.attackerCharisma}"
+        );
+        Debug.LogWarning(
+            $"[MY_STATS] Defender debuffs: ATK={myStatChanges.defenderAttack} STR={myStatChanges.defenderStrength} DEF={myStatChanges.defenderDefense} KNO={myStatChanges.defenderKnowledge} SPD={myStatChanges.defenderSpeed} CHA={myStatChanges.defenderCharisma}"
+        );
+        Debug.LogWarning(
+            $"[ENEMY_STATS] Attacker buffs: ATK={enemyStatChanges.attackerAttack} STR={enemyStatChanges.attackerStrength} DEF={enemyStatChanges.attackerDefense} KNO={enemyStatChanges.attackerKnowledge} SPD={enemyStatChanges.attackerSpeed} CHA={enemyStatChanges.attackerCharisma}"
+        );
+        Debug.LogWarning(
+            $"[ENEMY_STATS] Defender debuffs: ATK={enemyStatChanges.defenderAttack} STR={enemyStatChanges.defenderStrength} DEF={enemyStatChanges.defenderDefense} KNO={enemyStatChanges.defenderKnowledge} SPD={enemyStatChanges.defenderSpeed} CHA={enemyStatChanges.defenderCharisma}"
+        );
 
         Dictionary<string, object> myEffectApplied = parsed.MyEffectApplied;
         Dictionary<string, object> enemyEffectApplied = parsed.EnemyEffectApplied;
 
         if (myEffectApplied != null)
         {
-            Debug.LogWarning($"[EFFECT] MY card APPLIED effect to enemy: type={myEffectApplied["type"]}, duration={myEffectApplied["duration"]}");
+            Debug.LogWarning(
+                $"[EFFECT] MY card APPLIED effect to enemy: type={myEffectApplied["type"]}, duration={myEffectApplied["duration"]}"
+            );
         }
 
         if (enemyEffectApplied != null)
         {
-            Debug.LogWarning($"[EFFECT] ENEMY card APPLIED effect to me: type={enemyEffectApplied["type"]}, duration={enemyEffectApplied["duration"]}");
+            Debug.LogWarning(
+                $"[EFFECT] ENEMY card APPLIED effect to me: type={enemyEffectApplied["type"]}, duration={enemyEffectApplied["duration"]}"
+            );
         }
 
         List<Dictionary<string, object>> myEffectsApplied = parsed.MyEffectsApplied;
@@ -164,7 +200,9 @@ public class BattleResultProcessor : MonoBehaviour
         }
         if (enemyAttackerSelfDamage > 0)
         {
-            Debug.LogWarning($"[SELF-DAMAGE] ENEMY card takes {enemyAttackerSelfDamage} self-damage!");
+            Debug.LogWarning(
+                $"[SELF-DAMAGE] ENEMY card takes {enemyAttackerSelfDamage} self-damage!"
+            );
         }
 
         bool myAttackBlocked = parsed.MyAttackBlocked;
@@ -196,12 +234,16 @@ public class BattleResultProcessor : MonoBehaviour
         if (myAttackBlocked)
         {
             string effectName = GetEffectName(myBlockedBy ?? 0);
-            Debug.LogWarning($"[BLOCK] MY attack BLOCKED by {effectName}! SelfDamage={mySelfDamage}");
+            Debug.LogWarning(
+                $"[BLOCK] MY attack BLOCKED by {effectName}! SelfDamage={mySelfDamage}"
+            );
         }
         if (enemyAttackBlocked)
         {
             string effectName = GetEffectName(enemyBlockedBy ?? 0);
-            Debug.LogWarning($"[BLOCK] ENEMY attack BLOCKED by {effectName}! SelfDamage={enemySelfDamage}");
+            Debug.LogWarning(
+                $"[BLOCK] ENEMY attack BLOCKED by {effectName}! SelfDamage={enemySelfDamage}"
+            );
         }
         if (myWokeUp)
         {
@@ -213,14 +255,18 @@ public class BattleResultProcessor : MonoBehaviour
         }
         if (myRecovered)
         {
-            Debug.LogWarning($"[ASCETICISM] MY card RECOVERED from Asceticism! Feels blessed again.");
+            Debug.LogWarning(
+                $"[ASCETICISM] MY card RECOVERED from Asceticism! Feels blessed again."
+            );
         }
         if (enemyRecovered)
         {
             Debug.LogWarning($"[ASCETICISM] ENEMY card RECOVERED from Asceticism!");
         }
 
-        Debug.LogWarning($"[BattleResultProcessor] MyAttackId={myAttackId}, MyDamageReceived={myDamage}, MyHeal={myHealAmount}, MySelfDamage={mySelfDamage}, MyBleedDamage={myBleedDamage}, MyBleedCount={myBleedDamages.Count}, MyExposureDamage={myExposureDamage}, MyExposureRemoved={myExposureRemoved}, MyAttackerSelfDamage={myAttackerSelfDamage}, MyBlocked={myAttackBlocked}, MyBlockedBy={myBlockedBy}, MyWokeUp={myWokeUp}, MyRecovered={myRecovered}, MyEffects={myEffectsApplied.Count}, MySelfEffects={myAttackerEffects.Count}, EnemyAttackId={enemyAttackId}, EnemyDamageReceived={enemyDamage}, EnemyHeal={enemyHealAmount}, EnemySelfDamage={enemySelfDamage}, EnemyBleedDamage={enemyBleedDamage}, EnemyBleedCount={enemyBleedDamages.Count}, EnemyExposureDamage={enemyExposureDamage}, EnemyExposureRemoved={enemyExposureRemoved}, EnemyAttackerSelfDamage={enemyAttackerSelfDamage}, EnemyBlocked={enemyAttackBlocked}, EnemyBlockedBy={enemyBlockedBy}, EnemyWokeUp={enemyWokeUp}, EnemyRecovered={enemyRecovered}, EnemyEffects={enemyEffectsApplied.Count}, EnemySelfEffects={enemyAttackerEffects.Count}");
+        Debug.LogWarning(
+            $"[BattleResultProcessor] MyAttackId={myAttackId}, MyDamageReceived={myDamage}, MyHeal={myHealAmount}, MySelfDamage={mySelfDamage}, MyBleedDamage={myBleedDamage}, MyBleedCount={myBleedDamages.Count}, MyExposureDamage={myExposureDamage}, MyExposureRemoved={myExposureRemoved}, MyAttackerSelfDamage={myAttackerSelfDamage}, MyBlocked={myAttackBlocked}, MyBlockedBy={myBlockedBy}, MyWokeUp={myWokeUp}, MyRecovered={myRecovered}, MyEffects={myEffectsApplied.Count}, MySelfEffects={myAttackerEffects.Count}, EnemyAttackId={enemyAttackId}, EnemyDamageReceived={enemyDamage}, EnemyHeal={enemyHealAmount}, EnemySelfDamage={enemySelfDamage}, EnemyBleedDamage={enemyBleedDamage}, EnemyBleedCount={enemyBleedDamages.Count}, EnemyExposureDamage={enemyExposureDamage}, EnemyExposureRemoved={enemyExposureRemoved}, EnemyAttackerSelfDamage={enemyAttackerSelfDamage}, EnemyBlocked={enemyAttackBlocked}, EnemyBlockedBy={enemyBlockedBy}, EnemyWokeUp={enemyWokeUp}, EnemyRecovered={enemyRecovered}, EnemyEffects={enemyEffectsApplied.Count}, EnemySelfEffects={enemyAttackerEffects.Count}"
+        );
 
         // ? Spusti animacie (HP sa updatne postupne!)
         // ? REFRESH selectedCards sa spusti AZ PO animaciach
@@ -228,107 +274,59 @@ public class BattleResultProcessor : MonoBehaviour
         // ? V11.1: Added effectsApplied arrays + attackerSelfDamage for AoE/recoil attacks
         // ? V11.2: Added bleedDamages arrays for individual Bleed animations + exposureDamage/exposureRemoved
         // ? V12: Added stat changes structs for clean parameter passing
-        // M10: V2 hard mode support (no fallback when timelineV2 is missing/invalid).
-        bool timelineHardMode = BattleTimelinePilotPolicy.IsHardModeEnabled();
+        // M10: TimelineV2 only. Missing or invalid timeline payload must fail fast.
         if (BattleTimelinePilotPolicy.ShouldRunTimeline(battleResult, parsed, out var timelineMode))
         {
-            if (BattleTimelineBuilder.TryBuild(battleResult, out var timelineSteps, out var timelineError))
+            if (
+                BattleTimelineBuilder.TryBuild(
+                    battleResult,
+                    out var timelineSteps,
+                    out var timelineError
+                )
+            )
             {
-                Debug.Log($"[TimelinePilot] Enabled for this turn, mode={timelineMode}, steps={timelineSteps.Count}");
-                StartCoroutine(PlayTimelinePilotAndRefresh(myCard, enemyCard, myCardId, enemyCardId, timelineSteps));
+                Debug.Log(
+                    $"[TimelinePilot] Enabled for this turn, mode={timelineMode}, steps={timelineSteps.Count}"
+                );
+                StartCoroutine(
+                    PlayTimelinePilotAndRefresh(
+                        myCard,
+                        enemyCard,
+                        myCardId,
+                        enemyCardId,
+                        timelineSteps
+                    )
+                );
                 return;
             }
 
-            if (timelineHardMode)
-            {
-                Debug.LogError($"[TimelinePilot][HARD] Timeline build failed (mode={timelineMode}). Legacy fallback is disabled. Error: {timelineError}");
-                StartCoroutine(ShowDialog("TimelineV2 error (hard mode). Legacy fallback disabled."));
-                return;
-            }
-
-            Debug.LogWarning($"[TimelinePilot] Timeline build failed (mode={timelineMode}), falling back to legacy flow: {timelineError}");
-        }
-
-        if (timelineHardMode && (timelineMode == "v2_hard_missing" || timelineMode == "v2_no_payload"))
-        {
-            Debug.LogError($"[TimelinePilot][HARD] Missing timelineV2 payload (mode={timelineMode}). Legacy fallback is disabled.");
-            StartCoroutine(ShowDialog("Missing timelineV2 (hard mode). Legacy fallback disabled."));
+            Debug.LogError(
+                $"[TimelinePilot] TimelineV2 build failed (mode={timelineMode}). Legacy playback is disabled. Error: {timelineError}"
+            );
+            StartCoroutine(ShowDialog("TimelineV2 build error. Legacy playback disabled."));
             return;
         }
 
-        StartCoroutine(PlayBattleAnimationsAndRefresh(myCard, enemyCard, firstAttackerCardId, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myStatChanges, enemyStatChanges, myEffectsApplied, enemyEffectsApplied, myAttackerEffects, enemyAttackerEffects, myAttackerSelfDamage, enemyAttackerSelfDamage, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myBlockedBy, enemyBlockedBy, myBleedDamages, enemyBleedDamages, myExposureDamage, myExposureRemoved, enemyExposureDamage, enemyExposureRemoved, myAttackResult, enemyAttackResult));
+        Debug.LogError(
+            $"[TimelinePilot] TimelineV2 unavailable (mode={timelineMode}). Legacy playback is disabled."
+        );
+        StartCoroutine(
+            ShowDialog($"TimelineV2 unavailable ({timelineMode}). Legacy playback disabled.")
+        );
+        return;
     }
-    
-    /// <summary>
-    /// Wrapper coroutine - animAcie POTOM refresh
-    /// V5: PouLlAva cardId na identifikAciu, damage namiesto finalHealth
-    /// V8: PridanA attackId pre dynamickA animAcie
-    /// V9: PridanA healAmount pre self-heal animAcie + effectApplied pre effect ikony + Sleep blocking + blockedBy field
-    /// V10: PridanA recovered/selfDamage pre Asceticism effect
-    /// V11.1: PridanA effectsApplied arrays + attackerSelfDamage/attackerEffectsApplied pre AoE/recoil attacks (CarHit)
-    /// V11.2: PridanA bleedDamage pre Bleed effect processing
-    /// </summary>
-    private IEnumerator PlayBattleAnimationsAndRefresh(
-        Kard myCard, 
-        Kard enemyCard, 
-        string firstAttackerCardId, 
-        string myCardId, 
-        string enemyCardId, 
-        int myAttackId, 
-        int enemyAttackId, 
-        int myDamage, 
-        int enemyDamage, 
-        int myHealAmount, 
-        int enemyHealAmount, 
-        AttackStatChanges myStatChanges,
-        AttackStatChanges enemyStatChanges,
-        List<Dictionary<string, object>> myEffectsApplied,
-        List<Dictionary<string, object>> enemyEffectsApplied,
-        List<Dictionary<string, object>> myAttackerEffects,
-        List<Dictionary<string, object>> enemyAttackerEffects,
-        int myAttackerSelfDamage,
-        int enemyAttackerSelfDamage,
-        bool myAttackBlocked, 
-        bool enemyAttackBlocked, 
-        bool myWokeUp, 
-        bool enemyWokeUp, 
-        bool myRecovered, 
-        bool enemyRecovered, 
-        int mySelfDamage, 
-        int enemySelfDamage, 
-        int? myBlockedBy, 
-        int? enemyBlockedBy,
-        List<int> myBleedDamages,
-        List<int> enemyBleedDamages,
-        int myExposureDamage,
-        bool myExposureRemoved,
-        int enemyExposureDamage,
-        bool enemyExposureRemoved,
-        string myAttackResult,
-        string enemyAttackResult)
-    {
-        // 1. PrehrA animAcie (postupnA HP update) + effect ikony V SPRAVNOM PORADAT
-        yield return StartCoroutine(PlayBattleAnimations(myCard, enemyCard, firstAttackerCardId, myCardId, enemyCardId, myAttackId, enemyAttackId, myDamage, enemyDamage, myHealAmount, enemyHealAmount, myStatChanges, enemyStatChanges, myEffectsApplied, enemyEffectsApplied, myAttackerEffects, enemyAttackerEffects, myAttackerSelfDamage, enemyAttackerSelfDamage, myAttackBlocked, enemyAttackBlocked, myWokeUp, enemyWokeUp, myRecovered, enemyRecovered, mySelfDamage, enemySelfDamage, myBlockedBy, enemyBlockedBy, myBleedDamages, enemyBleedDamages, myExposureDamage, myExposureRemoved, enemyExposureDamage, enemyExposureRemoved, myAttackResult, enemyAttackResult));
-        
-        // 2. Effect ikony sa zobrazujAs UL v PlayBattleAnimations (MOVED)
-        // Tento kAd uLl nie je potrebnA - effects sa zobrazujAs v sprAvnom momente poATas battle flow
-        
-        // 3. AL PO animAciAch refreshni selectedCards z DB (pre buffs/effects)
-        yield return StartCoroutine(RefreshCardsFromServer());
-    }
-    
-    /// <summary>
-    /// NaATAta fresh selectedCards z DB po battle
-    /// </summary>
 
     private IEnumerator PlayTimelinePilotAndRefresh(
         Kard myCard,
         Kard enemyCard,
         string myCardId,
         string enemyCardId,
-        List<BattleStep> steps)
+        List<BattleStep> steps
+    )
     {
-        yield return StartCoroutine(PlayTimelinePilot(myCard, enemyCard, myCardId, enemyCardId, steps));
+        yield return StartCoroutine(
+            PlayTimelinePilot(myCard, enemyCard, myCardId, enemyCardId, steps)
+        );
         yield return StartCoroutine(RefreshCardsFromServer());
     }
 
@@ -337,7 +335,8 @@ public class BattleResultProcessor : MonoBehaviour
         Kard enemyCard,
         string myCardId,
         string enemyCardId,
-        List<BattleStep> steps)
+        List<BattleStep> steps
+    )
     {
         int executedAttacks = 0;
 
@@ -359,7 +358,9 @@ public class BattleResultProcessor : MonoBehaviour
                     if (actor != null && step.Amount > 0)
                     {
                         actor.health -= step.Amount;
-                        yield return StartCoroutine(PlaySingleBleedAnimation(actor, step.Amount, isMyActor));
+                        yield return StartCoroutine(
+                            PlaySingleBleedAnimation(actor, step.Amount, isMyActor)
+                        );
                         yield return new WaitForSeconds(0.3f);
                     }
                     break;
@@ -368,7 +369,9 @@ public class BattleResultProcessor : MonoBehaviour
                     if (actor != null && step.Amount > 0)
                     {
                         actor.health -= step.Amount;
-                        yield return StartCoroutine(PlayExposureAnimation(actor, step.Amount, false, isMyActor));
+                        yield return StartCoroutine(
+                            PlayExposureAnimation(actor, step.Amount, false, isMyActor)
+                        );
                         yield return new WaitForSeconds(0.3f);
                     }
                     break;
@@ -376,7 +379,9 @@ public class BattleResultProcessor : MonoBehaviour
                 case BattleStepType.ExposureRemoved:
                     if (actor != null)
                     {
-                        yield return StartCoroutine(PlayExposureAnimation(actor, 0, true, isMyActor));
+                        yield return StartCoroutine(
+                            PlayExposureAnimation(actor, 0, true, isMyActor)
+                        );
                         yield return new WaitForSeconds(0.3f);
                     }
                     break;
@@ -384,7 +389,9 @@ public class BattleResultProcessor : MonoBehaviour
                 case BattleStepType.Recovery:
                     if (actor != null)
                     {
-                        yield return StartCoroutine(PlayRecoveryAnimation(actor, isMyActor ? "My card" : "Enemy card"));
+                        yield return StartCoroutine(
+                            PlayRecoveryAnimation(actor, isMyActor ? "My card" : "Enemy card")
+                        );
                         yield return new WaitForSeconds(0.5f);
                     }
                     break;
@@ -404,7 +411,9 @@ public class BattleResultProcessor : MonoBehaviour
 
                     if (step.Skipped || step.Blocked)
                     {
-                        Debug.Log($"[TimelinePilot] Skipping attackId={step.AttackId}, actor={step.ActorCardId}, skipped={step.Skipped}, blocked={step.Blocked}");
+                        Debug.Log(
+                            $"[TimelinePilot] Skipping attackId={step.AttackId}, actor={step.ActorCardId}, skipped={step.Skipped}, blocked={step.Blocked}"
+                        );
                         break;
                     }
 
@@ -423,25 +432,49 @@ public class BattleResultProcessor : MonoBehaviour
                         dialogText.color = isMyActor ? Color.blue : Color.red;
                     }
 
-                    int damage = GetAttackDamageFromTimeline(steps, i, step.ActorCardId, step.TargetCardId);
+                    int damage = GetAttackDamageFromTimeline(
+                        steps,
+                        i,
+                        step.ActorCardId,
+                        step.TargetCardId
+                    );
                     int heal = GetAttackHealFromTimeline(steps, i, step.ActorCardId);
 
-                    yield return StartCoroutine(ExecuteAttackAnimation(actor, target, step.AttackId, damage, heal, isMyActor, 0, step.EffectsApplied, step.AttackResult, step.AttackerEffectsApplied));
+                    yield return StartCoroutine(
+                        ExecuteAttackAnimation(
+                            actor,
+                            target,
+                            step.AttackId,
+                            damage,
+                            heal,
+                            isMyActor,
+                            0,
+                            step.EffectsApplied,
+                            step.AttackResult,
+                            step.AttackerEffectsApplied
+                        )
+                    );
                     executedAttacks++;
                     break;
 
                 case BattleStepType.StatChange:
                     if (target != null && !string.IsNullOrEmpty(step.StatName) && step.Amount != 0)
                     {
-                        Debug.Log($"[TimelinePilot] Applying stat change: target={target.cardName}, stat={step.StatName}, amount={step.Amount}");
-                        yield return StartCoroutine(ApplyTimelineStatChange(target, step.Amount, step.StatName));
+                        Debug.Log(
+                            $"[TimelinePilot] Applying stat change: target={target.cardName}, stat={step.StatName}, amount={step.Amount}"
+                        );
+                        yield return StartCoroutine(
+                            ApplyTimelineStatChange(target, step.Amount, step.StatName)
+                        );
                     }
                     break;
 
                 case BattleStepType.Blocked:
                     if (actor != null)
                     {
-                        yield return StartCoroutine(PlayBlockAnimation(actor, step.BlockedBy, isMyActor));
+                        yield return StartCoroutine(
+                            PlayBlockAnimation(actor, step.BlockedBy, isMyActor)
+                        );
                     }
                     break;
 
@@ -449,7 +482,9 @@ public class BattleResultProcessor : MonoBehaviour
                     if (actor != null && step.Amount > 0)
                     {
                         actor.health -= step.Amount;
-                        yield return StartCoroutine(PlaySelfDamageAnimation(actor, step.Amount, isMyActor));
+                        yield return StartCoroutine(
+                            PlaySelfDamageAnimation(actor, step.Amount, isMyActor)
+                        );
                     }
                     break;
 
@@ -460,9 +495,11 @@ public class BattleResultProcessor : MonoBehaviour
                         {
                             { "type", step.EffectType },
                             { "duration", step.Duration },
-                            { "source", step.Source }
+                            { "source", step.Source },
                         };
-                        yield return StartCoroutine(AddEffectIconOnly(target, effectData, target.cardId == myCardId));
+                        yield return StartCoroutine(
+                            AddEffectIconOnly(target, effectData, target.cardId == myCardId)
+                        );
                     }
                     break;
 
@@ -483,17 +520,33 @@ public class BattleResultProcessor : MonoBehaviour
 
         if (cardAnimator != null)
         {
-            Vector3 playerBoardPos = fightSystem.playerBoard != null ? fightSystem.playerBoard.transform.position : myCard.transform.position;
-            Vector3 enemyBoardPos = fightSystem.enemyBoard != null ? fightSystem.enemyBoard.transform.position : enemyCard.transform.position;
+            Vector3 playerBoardPos =
+                fightSystem.playerBoard != null
+                    ? fightSystem.playerBoard.transform.position
+                    : myCard.transform.position;
+            Vector3 enemyBoardPos =
+                fightSystem.enemyBoard != null
+                    ? fightSystem.enemyBoard.transform.position
+                    : enemyCard.transform.position;
 
-            StartCoroutine(cardAnimator.ResetCardPosition(myCard, playerBoardPos, Quaternion.identity));
-            StartCoroutine(cardAnimator.ResetCardPosition(enemyCard, enemyBoardPos, Quaternion.identity));
+            StartCoroutine(
+                cardAnimator.ResetCardPosition(myCard, playerBoardPos, Quaternion.identity)
+            );
+            StartCoroutine(
+                cardAnimator.ResetCardPosition(enemyCard, enemyBoardPos, Quaternion.identity)
+            );
         }
 
         yield return new WaitForSeconds(1f);
         CheckBattleOutcome(myCard, enemyCard);
     }
-    private static int GetAttackDamageFromTimeline(List<BattleStep> steps, int attackIndex, string attackerCardId, string defenderCardId)
+
+    private static int GetAttackDamageFromTimeline(
+        List<BattleStep> steps,
+        int attackIndex,
+        string attackerCardId,
+        string defenderCardId
+    )
     {
         for (int i = attackIndex + 1; i < steps.Count; i++)
         {
@@ -503,10 +556,12 @@ public class BattleResultProcessor : MonoBehaviour
                 break;
             }
 
-            if (next.Type == BattleStepType.Damage &&
-                next.Source == "attack" &&
-                next.ActorCardId == attackerCardId &&
-                next.TargetCardId == defenderCardId)
+            if (
+                next.Type == BattleStepType.Damage
+                && next.Source == "attack"
+                && next.ActorCardId == attackerCardId
+                && next.TargetCardId == defenderCardId
+            )
             {
                 return next.Amount;
             }
@@ -515,7 +570,11 @@ public class BattleResultProcessor : MonoBehaviour
         return 0;
     }
 
-    private static int GetAttackHealFromTimeline(List<BattleStep> steps, int attackIndex, string attackerCardId)
+    private static int GetAttackHealFromTimeline(
+        List<BattleStep> steps,
+        int attackIndex,
+        string attackerCardId
+    )
     {
         for (int i = attackIndex + 1; i < steps.Count; i++)
         {
@@ -525,9 +584,11 @@ public class BattleResultProcessor : MonoBehaviour
                 break;
             }
 
-            if (next.Type == BattleStepType.Heal &&
-                next.ActorCardId == attackerCardId &&
-                next.TargetCardId == attackerCardId)
+            if (
+                next.Type == BattleStepType.Heal
+                && next.ActorCardId == attackerCardId
+                && next.TargetCardId == attackerCardId
+            )
             {
                 return next.Amount;
             }
@@ -536,7 +597,13 @@ public class BattleResultProcessor : MonoBehaviour
         return 0;
     }
 
-    private static Kard GetCardById(string cardId, Kard myCard, Kard enemyCard, string myCardId, string enemyCardId)
+    private static Kard GetCardById(
+        string cardId,
+        Kard myCard,
+        Kard enemyCard,
+        string myCardId,
+        string enemyCardId
+    )
     {
         if (cardId == myCardId)
         {
@@ -550,89 +617,113 @@ public class BattleResultProcessor : MonoBehaviour
 
         return null;
     }
+
     private IEnumerator RefreshCardsFromServer()
     {
         if (multiplayerService == null)
         {
-            Debug.LogWarning("[BattleResultProcessor] MultiplayerService not set - cannot refresh cards");
+            Debug.LogWarning(
+                "[BattleResultProcessor] MultiplayerService not set - cannot refresh cards"
+            );
             yield break;
         }
-        
+
         Debug.Log("[BattleResultProcessor] Refreshing selectedCards from server...");
-        
+
         var task = multiplayerService.GetSelectedCardsAsync(fightSystem.roomCode);
         yield return new WaitUntil(() => task.IsCompleted);
-        
+
         if (task.Result != null && task.Result.Count > 0)
         {
-            Debug.Log($"[BattleResultProcessor] Received {task.Result.Count} updated cards from server");
-            
+            Debug.Log(
+                $"[BattleResultProcessor] Received {task.Result.Count} updated cards from server"
+            );
+
             // Aplikuj updatovanA stats na karty
             foreach (var kvp in task.Result)
             {
                 string playerId = kvp.Key;
                 var cardData = kvp.Value;
-                
-                Debug.Log($"[RefreshCards] Processing playerId={playerId}, cardName={cardData.name}, HP={cardData.health}/{cardData.maxHealth}");
+
+                Debug.Log(
+                    $"[RefreshCards] Processing playerId={playerId}, cardName={cardData.name}, HP={cardData.health}/{cardData.maxHealth}"
+                );
                 Debug.Log($"[RefreshCards] myPlayerId={fightSystem.myPlayerId}");
-                Debug.Log($"[RefreshCards] player.cardInGame={fightSystem.player?.cardInGame?.cardName}, enemy.cardInGame={fightSystem.enemy?.cardInGame?.cardName}");
-                
+                Debug.Log(
+                    $"[RefreshCards] player.cardInGame={fightSystem.player?.cardInGame?.cardName}, enemy.cardInGame={fightSystem.enemy?.cardInGame?.cardName}"
+                );
+
                 Kard card = null;
                 if (playerId == fightSystem.myPlayerId && fightSystem.player?.cardInGame != null)
                 {
                     card = fightSystem.player.cardInGame;
                     Debug.Log($"[RefreshCards] Mapped to MY card: {card.cardName}");
                 }
-                else if (playerId != fightSystem.myPlayerId && fightSystem.enemy?.cardInGame != null)
+                else if (
+                    playerId != fightSystem.myPlayerId
+                    && fightSystem.enemy?.cardInGame != null
+                )
                 {
                     card = fightSystem.enemy.cardInGame;
                     Debug.Log($"[RefreshCards] Mapped to ENEMY card: {card.cardName}");
                 }
-                
+
                 if (card != null)
                 {
                     Debug.LogWarning($"[REFRESH] Updating {card.cardName} from server:");
-                    Debug.LogWarning($"[REFRESH]   - Current Kard.health: {card.health}/{card.maxHealth}");
-                    Debug.LogWarning($"[REFRESH]   - Server cardData.health: {cardData.health}/{cardData.maxHealth}");
-                    
+                    Debug.LogWarning(
+                        $"[REFRESH]   - Current Kard.health: {card.health}/{card.maxHealth}"
+                    );
+                    Debug.LogWarning(
+                        $"[REFRESH]   - Server cardData.health: {cardData.health}/{cardData.maxHealth}"
+                    );
+
                     // Zachytaj stat changes pre animAcie
-                    int oldHealth = card.health;  // DEBUG: Track health change
+                    int oldHealth = card.health; // DEBUG: Track health change
                     int oldStrength = card.strength;
                     int oldDefense = card.defense;
                     int oldSpeed = card.speed;
                     int oldKnowledge = card.knowledge;
-                    
+
                     // Aplikuj live stats z servera
                     card.health = cardData.health;
-                    card.maxHealth = cardData.maxHealth;  // Update maxHealth!
-                    card.strength = cardData.strength;  // Buffs/debuffs!
+                    card.maxHealth = cardData.maxHealth; // Update maxHealth!
+                    card.strength = cardData.strength; // Buffs/debuffs!
                     card.defense = cardData.defense;
                     card.speed = cardData.speed;
                     card.knowledge = cardData.knowledge;
-                    
-                    Debug.LogWarning($"[REFRESH]   - After update Kard.health: {card.health}/{card.maxHealth} (change: {card.health - oldHealth})");
-                    
+
+                    Debug.LogWarning(
+                        $"[REFRESH]   - After update Kard.health: {card.health}/{card.maxHealth} (change: {card.health - oldHealth})"
+                    );
+
                     // CRITICAL: Sync HP bar after server refresh!
                     if (playerId == fightSystem.myPlayerId)
                     {
                         playerLifeBar.SetHP(card.health);
-                        Debug.LogWarning($"[REFRESH] playerLifeBar.SetHP({card.health}) - MY card synced");
+                        Debug.LogWarning(
+                            $"[REFRESH] playerLifeBar.SetHP({card.health}) - MY card synced"
+                        );
                     }
                     else
                     {
                         enemyLifeBar.SetHP(card.health);
-                        Debug.LogWarning($"[REFRESH] enemyLifeBar.SetHP({card.health}) - ENEMY card synced");
+                        Debug.LogWarning(
+                            $"[REFRESH] enemyLifeBar.SetHP({card.health}) - ENEMY card synced"
+                        );
                     }
-                    
+
                     // Stat changes are animated during battle playback only. Refresh just syncs server state.
-                    
+
                     // Aplikuj effects (burn, sleep, atAZ.)
                     if (cardData.effects != null && cardData.effects.Length > 0)
                     {
                         foreach (var effect in cardData.effects)
                         {
-                            Debug.Log($"[BattleResultProcessor] {card.cardName} has effect: {effect.type} (duration: {effect.duration})");
-                            
+                            Debug.Log(
+                                $"[BattleResultProcessor] {card.cardName} has effect: {effect.type} (duration: {effect.duration})"
+                            );
+
                             // V10: Pridaj effect ikony ak chAbajAs (synchronizAcia s DB)
                             int effectType = int.Parse(effect.type.ToString());
                             string effectName = GetEffectName(effectType);
@@ -648,10 +739,12 @@ public class BattleResultProcessor : MonoBehaviour
                                         break;
                                     }
                                 }
-                                
+
                                 if (!hasIcon)
                                 {
-                                    Debug.LogWarning($"[REFRESH] Adding missing {effectName} icon to {card.cardName}");
+                                    Debug.LogWarning(
+                                        $"[REFRESH] Adding missing {effectName} icon to {card.cardName}"
+                                    );
                                     card.AddEffectIcon(effectName);
                                 }
                             }
@@ -660,33 +753,37 @@ public class BattleResultProcessor : MonoBehaviour
                     else
                     {
                         // V10: Ak DB nemA Lliadne effects, odstrAL vLetky ikony (cleanup)
-                        Debug.LogWarning($"[REFRESH] {card.cardName} has NO effects in DB - removing all effect icons");
-                        
+                        Debug.LogWarning(
+                            $"[REFRESH] {card.cardName} has NO effects in DB - removing all effect icons"
+                        );
+
                         // Remove all effect icons
                         List<Transform> iconsToRemove = new List<Transform>();
                         foreach (Transform child in card.effectIconContainer)
                         {
                             iconsToRemove.Add(child);
                         }
-                        
+
                         foreach (Transform icon in iconsToRemove)
                         {
                             Debug.LogWarning($"[REFRESH] Removing orphaned icon: {icon.name}");
                             Destroy(icon.gameObject);
                         }
-                        
+
                         if (iconsToRemove.Count > 0)
                         {
                             card.RepositionEffectIcons();
                         }
                     }
-                    
-                    Debug.Log($"[BattleResultProcessor] Updated {card.cardName}: HP={card.health}/{card.maxHealth}, STR={card.strength}, DEF={card.defense}");
+
+                    Debug.Log(
+                        $"[BattleResultProcessor] Updated {card.cardName}: HP={card.health}/{card.maxHealth}, STR={card.strength}, DEF={card.defense}"
+                    );
                 }
             }
         }
     }
-    
+
     /// <summary>
     /// PrehrA battle animAcie s postupnAm HP updateom
     /// V5: PouLlAva cardId na urATenie kto AstoATil prvA
@@ -697,17 +794,17 @@ public class BattleResultProcessor : MonoBehaviour
     /// V11.2: PridanA bleedDamage pre Bleed effect processing (Priority 1)
     /// </summary>
     private IEnumerator PlayBattleAnimations(
-        Kard myCard, 
-        Kard enemyCard, 
-        string firstAttackerCardId, 
-        string myCardId, 
-        string enemyCardId, 
-        int myAttackId, 
-        int enemyAttackId, 
-        int myDamage, 
-        int enemyDamage, 
-        int myHealAmount, 
-        int enemyHealAmount, 
+        Kard myCard,
+        Kard enemyCard,
+        string firstAttackerCardId,
+        string myCardId,
+        string enemyCardId,
+        int myAttackId,
+        int enemyAttackId,
+        int myDamage,
+        int enemyDamage,
+        int myHealAmount,
+        int enemyHealAmount,
         AttackStatChanges myStatChanges,
         AttackStatChanges enemyStatChanges,
         List<Dictionary<string, object>> myEffectsApplied,
@@ -716,15 +813,15 @@ public class BattleResultProcessor : MonoBehaviour
         List<Dictionary<string, object>> enemyAttackerEffects,
         int myAttackerSelfDamage,
         int enemyAttackerSelfDamage,
-        bool myAttackBlocked, 
-        bool enemyAttackBlocked, 
-        bool myWokeUp, 
-        bool enemyWokeUp, 
-        bool myRecovered, 
-        bool enemyRecovered, 
-        int mySelfDamage, 
-        int enemySelfDamage, 
-        int? myBlockedBy, 
+        bool myAttackBlocked,
+        bool enemyAttackBlocked,
+        bool myWokeUp,
+        bool enemyWokeUp,
+        bool myRecovered,
+        bool enemyRecovered,
+        int mySelfDamage,
+        int enemySelfDamage,
+        int? myBlockedBy,
         int? enemyBlockedBy,
         List<int> myBleedDamages,
         List<int> enemyBleedDamages,
@@ -733,20 +830,25 @@ public class BattleResultProcessor : MonoBehaviour
         int enemyExposureDamage,
         bool enemyExposureRemoved,
         string myAttackResult,
-        string enemyAttackResult)
+        string enemyAttackResult
+    )
     {
         bool iAttackedFirst = (firstAttackerCardId == myCardId);
-        
-        Debug.LogWarning($"[PlayBattleAnimations] FirstAttackerCardId={firstAttackerCardId}, MyCardId={myCardId}, IAttackedFirst={iAttackedFirst}");
-        Debug.LogWarning($"[PlayBattleAnimations] MyAttackId={myAttackId}, EnemyAttackId={enemyAttackId}");
-        
+
+        Debug.LogWarning(
+            $"[PlayBattleAnimations] FirstAttackerCardId={firstAttackerCardId}, MyCardId={myCardId}, IAttackedFirst={iAttackedFirst}"
+        );
+        Debug.LogWarning(
+            $"[PlayBattleAnimations] MyAttackId={myAttackId}, EnemyAttackId={enemyAttackId}"
+        );
+
         AttackAnimations animations = attackComponent?.attackAnimations;
         if (animations == null)
         {
             Debug.LogError("[BattleResultProcessor] AttackAnimations not found!");
             yield break;
         }
-        
+
         if (iAttackedFirst)
         {
             // JA AsTOASATM PRVAt
@@ -760,23 +862,29 @@ public class BattleResultProcessor : MonoBehaviour
                     int bleedDamage = myBleedDamages[i];
                     Debug.LogWarning($"[BLEED #{i + 1}] MY card takes {bleedDamage} damage");
                     myCard.health -= bleedDamage;
-                    yield return StartCoroutine(PlaySingleBleedAnimation(myCard, bleedDamage, true));
+                    yield return StartCoroutine(
+                        PlaySingleBleedAnimation(myCard, bleedDamage, true)
+                    );
                     if (i < myBleedDamages.Count - 1)
                     {
-                        yield return new WaitForSeconds(0.3f);  // Small delay between Bleeds
+                        yield return new WaitForSeconds(0.3f); // Small delay between Bleeds
                     }
                 }
             }
-            
+
             // PRIORITY 1: Exposure damage (same priority as Bleed)
             if (myExposureDamage > 0 || myExposureRemoved)
             {
-                Debug.LogWarning($"adZ [EXPOSURE] MY card - damage={myExposureDamage}, removed={myExposureRemoved}");
+                Debug.LogWarning(
+                    $"adZ [EXPOSURE] MY card - damage={myExposureDamage}, removed={myExposureRemoved}"
+                );
                 myCard.health -= myExposureDamage;
-                yield return StartCoroutine(PlayExposureAnimation(myCard, myExposureDamage, myExposureRemoved, true));
+                yield return StartCoroutine(
+                    PlayExposureAnimation(myCard, myExposureDamage, myExposureRemoved, true)
+                );
                 yield return new WaitForSeconds(0.3f);
             }
-            
+
             // PRIORITY 3: Skontroluj Asceticism recovery (blocking effect)
             if (myRecovered)
             {
@@ -784,185 +892,270 @@ public class BattleResultProcessor : MonoBehaviour
                 yield return StartCoroutine(PlayRecoveryAnimation(myCard, "My card"));
                 yield return new WaitForSeconds(0.5f);
             }
-            
+
             // PRIORITY 3: Skontroluj Sleep blocking/wake-up (blocking effect)
             if (myWokeUp)
             {
                 // Zobraz wake-up animAciu pred Astokom
                 yield return StartCoroutine(PlayWakeUpAnimation(myCard, true));
             }
-            
+
             if (!myAttackBlocked)
             {
                 // Set color to BLUE for entire attack sequence (like singleplayer)
-                if (dialogText != null) dialogText.color = Color.blue;
-                
-                // Execute attack animation
-                yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true, myAttackerSelfDamage, myEffectsApplied, myAttackResult, myAttackerEffects));
-                
-                Debug.LogWarning($"[APPLYING_STATS] My turn - attackerKno={myStatChanges.attackerKnowledge}, defenderKno={myStatChanges.defenderKnowledge}");
-                
-                // [OK] V12: Apply and animate stat changes during battle playback
-                yield return StartCoroutine(ApplyCardStatChanges(
-                    myCard,
-                    myStatChanges.attackerAttack,
-                    myStatChanges.attackerStrength,
-                    myStatChanges.attackerDefense,
-                    myStatChanges.attackerKnowledge,
-                    myStatChanges.attackerSpeed,
-                    myStatChanges.attackerCharisma));
+                if (dialogText != null)
+                    dialogText.color = Color.blue;
 
-                yield return StartCoroutine(ApplyCardStatChanges(
-                    enemyCard,
-                    myStatChanges.defenderAttack,
-                    myStatChanges.defenderStrength,
-                    myStatChanges.defenderDefense,
-                    myStatChanges.defenderKnowledge,
-                    myStatChanges.defenderSpeed,
-                    myStatChanges.defenderCharisma));
-                
+                // Execute attack animation
+                yield return StartCoroutine(
+                    ExecuteAttackAnimation(
+                        myCard,
+                        enemyCard,
+                        myAttackId,
+                        enemyDamage,
+                        myHealAmount,
+                        true,
+                        myAttackerSelfDamage,
+                        myEffectsApplied,
+                        myAttackResult,
+                        myAttackerEffects
+                    )
+                );
+
+                Debug.LogWarning(
+                    $"[APPLYING_STATS] My turn - attackerKno={myStatChanges.attackerKnowledge}, defenderKno={myStatChanges.defenderKnowledge}"
+                );
+
+                // [OK] V12: Apply and animate stat changes during battle playback
+                yield return StartCoroutine(
+                    ApplyCardStatChanges(
+                        myCard,
+                        myStatChanges.attackerAttack,
+                        myStatChanges.attackerStrength,
+                        myStatChanges.attackerDefense,
+                        myStatChanges.attackerKnowledge,
+                        myStatChanges.attackerSpeed,
+                        myStatChanges.attackerCharisma
+                    )
+                );
+
+                yield return StartCoroutine(
+                    ApplyCardStatChanges(
+                        enemyCard,
+                        myStatChanges.defenderAttack,
+                        myStatChanges.defenderStrength,
+                        myStatChanges.defenderDefense,
+                        myStatChanges.defenderKnowledge,
+                        myStatChanges.defenderSpeed,
+                        myStatChanges.defenderCharisma
+                    )
+                );
+
                 // V11.1: Display multiple effects on defender
                 if (myEffectsApplied != null && myEffectsApplied.Count > 0)
                 {
-                    yield return StartCoroutine(DisplayMultipleEffects(enemyCard, myEffectsApplied, false));
+                    yield return StartCoroutine(
+                        DisplayMultipleEffects(enemyCard, myEffectsApplied, false)
+                    );
                 }
-                
+
                 // V11.1: Attacker self-damage (CarHit recoil)
                 // Skip for CarHit (attackId 7) - already handled in case 7
                 if (myAttackerSelfDamage > 0 && myAttackId != 7)
                 {
-                    Debug.LogWarning($"zA [SELF-DAMAGE] MY card takes {myAttackerSelfDamage} recoil damage!");
+                    Debug.LogWarning(
+                        $"zA [SELF-DAMAGE] MY card takes {myAttackerSelfDamage} recoil damage!"
+                    );
                     myCard.health -= myAttackerSelfDamage;
-                    yield return StartCoroutine(PlaySelfDamageAnimation(myCard, myAttackerSelfDamage, true));
+                    yield return StartCoroutine(
+                        PlaySelfDamageAnimation(myCard, myAttackerSelfDamage, true)
+                    );
                 }
-                
+
                 // V11.1: Attacker self-effects (CarHit recoil bleed/sleep)
                 if (myAttackerEffects != null && myAttackerEffects.Count > 0)
                 {
-                    yield return StartCoroutine(DisplayMultipleEffects(myCard, myAttackerEffects, true));
+                    yield return StartCoroutine(
+                        DisplayMultipleEffects(myCard, myAttackerEffects, true)
+                    );
                 }
             }
             else
             {
                 // V10: Astok blocked by effect (Sleep, Asceticism, atAZ.)
                 yield return StartCoroutine(PlayBlockAnimation(myCard, myBlockedBy, true));
-                
+
                 // V10: Ak je blocked Asceticism-om (type 2), aplikuj self-damage
                 if (myBlockedBy == 2 && mySelfDamage > 0)
                 {
-                    Debug.LogWarning($"[ASCETICISM] MY card takes {mySelfDamage} self-damage due to blocking!");
+                    Debug.LogWarning(
+                        $"[ASCETICISM] MY card takes {mySelfDamage} self-damage due to blocking!"
+                    );
                     myCard.health -= mySelfDamage;
-                    yield return StartCoroutine(PlaySelfDamageAnimation(myCard, mySelfDamage, true));
+                    yield return StartCoroutine(
+                        PlaySelfDamageAnimation(myCard, mySelfDamage, true)
+                    );
                 }
             }
-            
+
             // AK NEPRIATEA PRELIL, JEHO AsTOK
             if (enemyCard.health > 0)
             {
                 yield return new WaitForSeconds(0.5f);
-                
+
                 // Set dialog color to RED for enemy attack (like singleplayer)
-                if (dialogText != null) dialogText.color = Color.red;
-                
+                if (dialogText != null)
+                    dialogText.color = Color.red;
+
                 // PRIORITY 1: Enemy Bleed damage FIRST
                 // V11.2: Play INDIVIDUAL Bleed animations for each Bleed effect
                 if (enemyBleedDamages != null && enemyBleedDamages.Count > 0)
                 {
-                    Debug.LogWarning($"[BLEED] ENEMY card has {enemyBleedDamages.Count} Bleed effects!");
+                    Debug.LogWarning(
+                        $"[BLEED] ENEMY card has {enemyBleedDamages.Count} Bleed effects!"
+                    );
                     for (int i = 0; i < enemyBleedDamages.Count; i++)
                     {
                         int bleedDamage = enemyBleedDamages[i];
                         Debug.LogWarning($"[BLEED #{i + 1}] ENEMY card takes {bleedDamage} damage");
                         enemyCard.health -= bleedDamage;
-                        yield return StartCoroutine(PlaySingleBleedAnimation(enemyCard, bleedDamage, false));
+                        yield return StartCoroutine(
+                            PlaySingleBleedAnimation(enemyCard, bleedDamage, false)
+                        );
                         if (i < enemyBleedDamages.Count - 1)
                         {
-                            yield return new WaitForSeconds(0.3f);  // Small delay between Bleeds
+                            yield return new WaitForSeconds(0.3f); // Small delay between Bleeds
                         }
                     }
                 }
-                
+
                 // PRIORITY 1: Exposure damage (same priority as Bleed)
                 if (enemyExposureDamage > 0 || enemyExposureRemoved)
                 {
-                    Debug.LogWarning($"adZ [EXPOSURE] ENEMY card - damage={enemyExposureDamage}, removed={enemyExposureRemoved}");
+                    Debug.LogWarning(
+                        $"adZ [EXPOSURE] ENEMY card - damage={enemyExposureDamage}, removed={enemyExposureRemoved}"
+                    );
                     enemyCard.health -= enemyExposureDamage;
-                    yield return StartCoroutine(PlayExposureAnimation(enemyCard, enemyExposureDamage, enemyExposureRemoved, false));
+                    yield return StartCoroutine(
+                        PlayExposureAnimation(
+                            enemyCard,
+                            enemyExposureDamage,
+                            enemyExposureRemoved,
+                            false
+                        )
+                    );
                     yield return new WaitForSeconds(0.3f);
                 }
-                
+
                 // PRIORITY 3: NepriateAl Asceticism recovery check (blocking effect)
                 if (enemyRecovered)
                 {
-                    Debug.LogWarning($"[ASCETICISM] ENEMY card RECOVERED from Asceticism before counter-attack!");
+                    Debug.LogWarning(
+                        $"[ASCETICISM] ENEMY card RECOVERED from Asceticism before counter-attack!"
+                    );
                     yield return StartCoroutine(PlayRecoveryAnimation(enemyCard, "Enemy card"));
                     yield return new WaitForSeconds(0.5f);
                 }
-                
+
                 // PRIORITY 3: NepriateAl wake-up check (blocking effect)
                 if (enemyWokeUp)
                 {
                     yield return StartCoroutine(PlayWakeUpAnimation(enemyCard, false));
                 }
-                
+
                 if (!enemyAttackBlocked)
                 {
                     // FIX: enemyCard AstoATA myCard a pouLlij myDamage (damage ktorA JA dostanem)
-                    yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, myDamage, enemyHealAmount, false, enemyAttackerSelfDamage, enemyEffectsApplied, enemyAttackResult, enemyAttackerEffects));
-                    
-                    Debug.LogWarning($"[APPLYING_STATS] Enemy turn - attackerKno={enemyStatChanges.attackerKnowledge}, defenderKno={enemyStatChanges.defenderKnowledge}");
-                    
-                    // [OK] V12: Apply and animate stat changes during battle playback
-                    yield return StartCoroutine(ApplyCardStatChanges(
-                        enemyCard,
-                        enemyStatChanges.attackerAttack,
-                        enemyStatChanges.attackerStrength,
-                        enemyStatChanges.attackerDefense,
-                        enemyStatChanges.attackerKnowledge,
-                        enemyStatChanges.attackerSpeed,
-                        enemyStatChanges.attackerCharisma));
+                    yield return StartCoroutine(
+                        ExecuteAttackAnimation(
+                            enemyCard,
+                            myCard,
+                            enemyAttackId,
+                            myDamage,
+                            enemyHealAmount,
+                            false,
+                            enemyAttackerSelfDamage,
+                            enemyEffectsApplied,
+                            enemyAttackResult,
+                            enemyAttackerEffects
+                        )
+                    );
 
-                    yield return StartCoroutine(ApplyCardStatChanges(
-                        myCard,
-                        enemyStatChanges.defenderAttack,
-                        enemyStatChanges.defenderStrength,
-                        enemyStatChanges.defenderDefense,
-                        enemyStatChanges.defenderKnowledge,
-                        enemyStatChanges.defenderSpeed,
-                        enemyStatChanges.defenderCharisma));
-                    
+                    Debug.LogWarning(
+                        $"[APPLYING_STATS] Enemy turn - attackerKno={enemyStatChanges.attackerKnowledge}, defenderKno={enemyStatChanges.defenderKnowledge}"
+                    );
+
+                    // [OK] V12: Apply and animate stat changes during battle playback
+                    yield return StartCoroutine(
+                        ApplyCardStatChanges(
+                            enemyCard,
+                            enemyStatChanges.attackerAttack,
+                            enemyStatChanges.attackerStrength,
+                            enemyStatChanges.attackerDefense,
+                            enemyStatChanges.attackerKnowledge,
+                            enemyStatChanges.attackerSpeed,
+                            enemyStatChanges.attackerCharisma
+                        )
+                    );
+
+                    yield return StartCoroutine(
+                        ApplyCardStatChanges(
+                            myCard,
+                            enemyStatChanges.defenderAttack,
+                            enemyStatChanges.defenderStrength,
+                            enemyStatChanges.defenderDefense,
+                            enemyStatChanges.defenderKnowledge,
+                            enemyStatChanges.defenderSpeed,
+                            enemyStatChanges.defenderCharisma
+                        )
+                    );
+
                     // V11.1: Display multiple effects on defender (me)
                     if (enemyEffectsApplied != null && enemyEffectsApplied.Count > 0)
                     {
-                        yield return StartCoroutine(DisplayMultipleEffects(myCard, enemyEffectsApplied, true));
+                        yield return StartCoroutine(
+                            DisplayMultipleEffects(myCard, enemyEffectsApplied, true)
+                        );
                     }
-                    
+
                     // V11.1: Enemy attacker self-damage
                     // Skip for CarHit (attackId 7) - already handled in case 7
                     if (enemyAttackerSelfDamage > 0 && enemyAttackId != 7)
                     {
-                        Debug.LogWarning($"zA [SELF-DAMAGE] ENEMY card takes {enemyAttackerSelfDamage} recoil damage!");
+                        Debug.LogWarning(
+                            $"zA [SELF-DAMAGE] ENEMY card takes {enemyAttackerSelfDamage} recoil damage!"
+                        );
                         enemyCard.health -= enemyAttackerSelfDamage;
-                        yield return StartCoroutine(PlaySelfDamageAnimation(enemyCard, enemyAttackerSelfDamage, false));
+                        yield return StartCoroutine(
+                            PlaySelfDamageAnimation(enemyCard, enemyAttackerSelfDamage, false)
+                        );
                     }
-                    
+
                     // V11.1: Enemy attacker self-effects
                     if (enemyAttackerEffects != null && enemyAttackerEffects.Count > 0)
                     {
-                        yield return StartCoroutine(DisplayMultipleEffects(enemyCard, enemyAttackerEffects, false));
+                        yield return StartCoroutine(
+                            DisplayMultipleEffects(enemyCard, enemyAttackerEffects, false)
+                        );
                     }
                 }
                 else
                 {
                     // V10: Astok blocked by effect (Sleep, Asceticism, atAZ.)
-                    yield return StartCoroutine(PlayBlockAnimation(enemyCard, enemyBlockedBy, false));
-                    
+                    yield return StartCoroutine(
+                        PlayBlockAnimation(enemyCard, enemyBlockedBy, false)
+                    );
+
                     // V10: Ak je blocked Asceticism-om (type 2), aplikuj self-damage
                     if (enemyBlockedBy == 2 && enemySelfDamage > 0)
                     {
-                        Debug.LogWarning($"[ASCETICISM] ENEMY card takes {enemySelfDamage} self-damage due to blocking!");
+                        Debug.LogWarning(
+                            $"[ASCETICISM] ENEMY card takes {enemySelfDamage} self-damage due to blocking!"
+                        );
                         enemyCard.health -= enemySelfDamage;
-                        yield return StartCoroutine(PlaySelfDamageAnimation(enemyCard, enemySelfDamage, false));
+                        yield return StartCoroutine(
+                            PlaySelfDamageAnimation(enemyCard, enemySelfDamage, false)
+                        );
                     }
                 }
             }
@@ -971,117 +1164,167 @@ public class BattleResultProcessor : MonoBehaviour
         {
             // NEPRIATEA AsTOASAT PRVAt
             // Set dialog color to RED for enemy attack (like singleplayer)
-            if (dialogText != null) dialogText.color = Color.red;
-            
+            if (dialogText != null)
+                dialogText.color = Color.red;
+
             // PRIORITY 1: Enemy Bleed damage FIRST
             // V11.2: Play INDIVIDUAL Bleed animations for each Bleed effect
             if (enemyBleedDamages != null && enemyBleedDamages.Count > 0)
             {
-                Debug.LogWarning($"[BLEED] ENEMY card has {enemyBleedDamages.Count} Bleed effects!");
+                Debug.LogWarning(
+                    $"[BLEED] ENEMY card has {enemyBleedDamages.Count} Bleed effects!"
+                );
                 for (int i = 0; i < enemyBleedDamages.Count; i++)
                 {
                     int bleedDamage = enemyBleedDamages[i];
                     Debug.LogWarning($"[BLEED #{i + 1}] ENEMY card takes {bleedDamage} damage");
                     enemyCard.health -= bleedDamage;
-                    yield return StartCoroutine(PlaySingleBleedAnimation(enemyCard, bleedDamage, false));
+                    yield return StartCoroutine(
+                        PlaySingleBleedAnimation(enemyCard, bleedDamage, false)
+                    );
                     if (i < enemyBleedDamages.Count - 1)
                     {
-                        yield return new WaitForSeconds(0.3f);  // Small delay between Bleeds
+                        yield return new WaitForSeconds(0.3f); // Small delay between Bleeds
                     }
                 }
             }
-            
+
             // PRIORITY 1: Exposure damage (same priority as Bleed)
             if (enemyExposureDamage > 0 || enemyExposureRemoved)
             {
-                Debug.LogWarning($"adZ [EXPOSURE] ENEMY card - damage={enemyExposureDamage}, removed={enemyExposureRemoved}");
+                Debug.LogWarning(
+                    $"adZ [EXPOSURE] ENEMY card - damage={enemyExposureDamage}, removed={enemyExposureRemoved}"
+                );
                 enemyCard.health -= enemyExposureDamage;
-                yield return StartCoroutine(PlayExposureAnimation(enemyCard, enemyExposureDamage, enemyExposureRemoved, false));
+                yield return StartCoroutine(
+                    PlayExposureAnimation(
+                        enemyCard,
+                        enemyExposureDamage,
+                        enemyExposureRemoved,
+                        false
+                    )
+                );
                 yield return new WaitForSeconds(0.3f);
             }
-            
+
             // PRIORITY 3: NepriateAl Asceticism recovery check (blocking effect)
             if (enemyRecovered)
             {
-                Debug.LogWarning($"[ASCETICISM] ENEMY card RECOVERED from Asceticism before attack!");
+                Debug.LogWarning(
+                    $"[ASCETICISM] ENEMY card RECOVERED from Asceticism before attack!"
+                );
                 yield return StartCoroutine(PlayRecoveryAnimation(enemyCard, "Enemy card"));
                 yield return new WaitForSeconds(0.5f);
             }
-            
+
             // PRIORITY 3: NepriateAl wake-up check (blocking effect)
             if (enemyWokeUp)
             {
                 yield return StartCoroutine(PlayWakeUpAnimation(enemyCard, false));
             }
-            
+
             if (!enemyAttackBlocked)
             {
                 // FIX: enemyCard AstoATA myCard a pouLlij myDamage (damage ktorA JA dostanem)
-                yield return StartCoroutine(ExecuteAttackAnimation(enemyCard, myCard, enemyAttackId, myDamage, enemyHealAmount, false, enemyAttackerSelfDamage, enemyEffectsApplied, enemyAttackResult, enemyAttackerEffects));
-                
-                Debug.LogWarning($"[APPLYING_STATS] Enemy turn - attackerKno={enemyStatChanges.attackerKnowledge}, defenderKno={enemyStatChanges.defenderKnowledge}");
-                
-                // [OK] V12: Apply and animate stat changes during battle playback
-                yield return StartCoroutine(ApplyCardStatChanges(
-                    enemyCard,
-                    enemyStatChanges.attackerAttack,
-                    enemyStatChanges.attackerStrength,
-                    enemyStatChanges.attackerDefense,
-                    enemyStatChanges.attackerKnowledge,
-                    enemyStatChanges.attackerSpeed,
-                    enemyStatChanges.attackerCharisma));
+                yield return StartCoroutine(
+                    ExecuteAttackAnimation(
+                        enemyCard,
+                        myCard,
+                        enemyAttackId,
+                        myDamage,
+                        enemyHealAmount,
+                        false,
+                        enemyAttackerSelfDamage,
+                        enemyEffectsApplied,
+                        enemyAttackResult,
+                        enemyAttackerEffects
+                    )
+                );
 
-                yield return StartCoroutine(ApplyCardStatChanges(
-                    myCard,
-                    enemyStatChanges.defenderAttack,
-                    enemyStatChanges.defenderStrength,
-                    enemyStatChanges.defenderDefense,
-                    enemyStatChanges.defenderKnowledge,
-                    enemyStatChanges.defenderSpeed,
-                    enemyStatChanges.defenderCharisma));
-                
+                Debug.LogWarning(
+                    $"[APPLYING_STATS] Enemy turn - attackerKno={enemyStatChanges.attackerKnowledge}, defenderKno={enemyStatChanges.defenderKnowledge}"
+                );
+
+                // [OK] V12: Apply and animate stat changes during battle playback
+                yield return StartCoroutine(
+                    ApplyCardStatChanges(
+                        enemyCard,
+                        enemyStatChanges.attackerAttack,
+                        enemyStatChanges.attackerStrength,
+                        enemyStatChanges.attackerDefense,
+                        enemyStatChanges.attackerKnowledge,
+                        enemyStatChanges.attackerSpeed,
+                        enemyStatChanges.attackerCharisma
+                    )
+                );
+
+                yield return StartCoroutine(
+                    ApplyCardStatChanges(
+                        myCard,
+                        enemyStatChanges.defenderAttack,
+                        enemyStatChanges.defenderStrength,
+                        enemyStatChanges.defenderDefense,
+                        enemyStatChanges.defenderKnowledge,
+                        enemyStatChanges.defenderSpeed,
+                        enemyStatChanges.defenderCharisma
+                    )
+                );
+
                 // V11.1: Display multiple effects on defender (me)
                 if (enemyEffectsApplied != null && enemyEffectsApplied.Count > 0)
                 {
-                    yield return StartCoroutine(DisplayMultipleEffects(myCard, enemyEffectsApplied, true));
+                    yield return StartCoroutine(
+                        DisplayMultipleEffects(myCard, enemyEffectsApplied, true)
+                    );
                 }
-                
+
                 // V11.1: Enemy attacker self-damage
                 if (enemyAttackerSelfDamage > 0)
                 {
-                    Debug.LogWarning($"zA [SELF-DAMAGE] ENEMY card takes {enemyAttackerSelfDamage} recoil damage!");
+                    Debug.LogWarning(
+                        $"zA [SELF-DAMAGE] ENEMY card takes {enemyAttackerSelfDamage} recoil damage!"
+                    );
                     enemyCard.health -= enemyAttackerSelfDamage;
-                    yield return StartCoroutine(PlaySelfDamageAnimation(enemyCard, enemyAttackerSelfDamage, false));
+                    yield return StartCoroutine(
+                        PlaySelfDamageAnimation(enemyCard, enemyAttackerSelfDamage, false)
+                    );
                 }
-                
+
                 // V11.1: Enemy attacker self-effects
                 if (enemyAttackerEffects != null && enemyAttackerEffects.Count > 0)
                 {
-                    yield return StartCoroutine(DisplayMultipleEffects(enemyCard, enemyAttackerEffects, false));
+                    yield return StartCoroutine(
+                        DisplayMultipleEffects(enemyCard, enemyAttackerEffects, false)
+                    );
                 }
             }
             else
             {
                 // V10: Astok blocked by effect (Sleep, Asceticism, atAZ.)
                 yield return StartCoroutine(PlayBlockAnimation(enemyCard, enemyBlockedBy, false));
-                
+
                 // V10: Ak je blocked Asceticism-om (type 2), aplikuj self-damage
                 if (enemyBlockedBy == 2 && enemySelfDamage > 0)
                 {
-                    Debug.LogWarning($"[ASCETICISM] ENEMY card takes {enemySelfDamage} self-damage due to blocking!");
+                    Debug.LogWarning(
+                        $"[ASCETICISM] ENEMY card takes {enemySelfDamage} self-damage due to blocking!"
+                    );
                     enemyCard.health -= enemySelfDamage;
-                    yield return StartCoroutine(PlaySelfDamageAnimation(enemyCard, enemySelfDamage, false));
+                    yield return StartCoroutine(
+                        PlaySelfDamageAnimation(enemyCard, enemySelfDamage, false)
+                    );
                 }
             }
-            
+
             // AK JA PRELIJEM, MAJ AsTOK
             if (myCard.health > 0)
             {
                 yield return new WaitForSeconds(0.5f);
-                
+
                 // Set color to BLUE for entire attack sequence (like singleplayer)
-                if (dialogText != null) dialogText.color = Color.blue;
-                
+                if (dialogText != null)
+                    dialogText.color = Color.blue;
+
                 // PRIORITY 1: My Bleed damage FIRST
                 // V11.2: Play INDIVIDUAL Bleed animations for each Bleed effect
                 if (myBleedDamages != null && myBleedDamages.Count > 0)
@@ -1092,124 +1335,176 @@ public class BattleResultProcessor : MonoBehaviour
                         int bleedDamage = myBleedDamages[i];
                         Debug.LogWarning($"[BLEED #{i + 1}] MY card takes {bleedDamage} damage");
                         myCard.health -= bleedDamage;
-                        yield return StartCoroutine(PlaySingleBleedAnimation(myCard, bleedDamage, true));
+                        yield return StartCoroutine(
+                            PlaySingleBleedAnimation(myCard, bleedDamage, true)
+                        );
                         if (i < myBleedDamages.Count - 1)
                         {
-                            yield return new WaitForSeconds(0.3f);  // Small delay between Bleeds
+                            yield return new WaitForSeconds(0.3f); // Small delay between Bleeds
                         }
                     }
                 }
-                
+
                 // PRIORITY 1: Exposure damage (same priority as Bleed)
                 if (myExposureDamage > 0 || myExposureRemoved)
                 {
-                    Debug.LogWarning($"adZ [EXPOSURE] MY card - damage={myExposureDamage}, removed={myExposureRemoved}");
+                    Debug.LogWarning(
+                        $"adZ [EXPOSURE] MY card - damage={myExposureDamage}, removed={myExposureRemoved}"
+                    );
                     myCard.health -= myExposureDamage;
-                    yield return StartCoroutine(PlayExposureAnimation(myCard, myExposureDamage, myExposureRemoved, true));
+                    yield return StartCoroutine(
+                        PlayExposureAnimation(myCard, myExposureDamage, myExposureRemoved, true)
+                    );
                     yield return new WaitForSeconds(0.3f);
                 }
-                
+
                 // PRIORITY 3: MAj Asceticism recovery check (blocking effect)
                 if (myRecovered)
                 {
-                    Debug.LogWarning($"[ASCETICISM] MY card RECOVERED from Asceticism before counter-attack!");
+                    Debug.LogWarning(
+                        $"[ASCETICISM] MY card RECOVERED from Asceticism before counter-attack!"
+                    );
                     yield return StartCoroutine(PlayRecoveryAnimation(myCard, "My card"));
                     yield return new WaitForSeconds(0.5f);
                 }
-                
+
                 // PRIORITY 3: MAj wake-up check (blocking effect)
                 if (myWokeUp)
                 {
                     yield return StartCoroutine(PlayWakeUpAnimation(myCard, true));
                 }
-                
+
                 if (!myAttackBlocked)
                 {
                     // FIX: myCard AstoATA enemyCard a pouLlij enemyDamage (damage ktorA ENEMY dostane)
-                    yield return StartCoroutine(ExecuteAttackAnimation(myCard, enemyCard, myAttackId, enemyDamage, myHealAmount, true, myAttackerSelfDamage, myEffectsApplied, myAttackResult, myAttackerEffects));
-                    
-                    Debug.LogWarning($"[APPLYING_STATS] My turn - attackerKno={myStatChanges.attackerKnowledge}, defenderKno={myStatChanges.defenderKnowledge}");
-                    
-                    // [OK] V12: Apply and animate stat changes during battle playback
-                    yield return StartCoroutine(ApplyCardStatChanges(
-                        myCard,
-                        myStatChanges.attackerAttack,
-                        myStatChanges.attackerStrength,
-                        myStatChanges.attackerDefense,
-                        myStatChanges.attackerKnowledge,
-                        myStatChanges.attackerSpeed,
-                        myStatChanges.attackerCharisma));
+                    yield return StartCoroutine(
+                        ExecuteAttackAnimation(
+                            myCard,
+                            enemyCard,
+                            myAttackId,
+                            enemyDamage,
+                            myHealAmount,
+                            true,
+                            myAttackerSelfDamage,
+                            myEffectsApplied,
+                            myAttackResult,
+                            myAttackerEffects
+                        )
+                    );
 
-                    yield return StartCoroutine(ApplyCardStatChanges(
-                        enemyCard,
-                        myStatChanges.defenderAttack,
-                        myStatChanges.defenderStrength,
-                        myStatChanges.defenderDefense,
-                        myStatChanges.defenderKnowledge,
-                        myStatChanges.defenderSpeed,
-                        myStatChanges.defenderCharisma));
-                    
+                    Debug.LogWarning(
+                        $"[APPLYING_STATS] My turn - attackerKno={myStatChanges.attackerKnowledge}, defenderKno={myStatChanges.defenderKnowledge}"
+                    );
+
+                    // [OK] V12: Apply and animate stat changes during battle playback
+                    yield return StartCoroutine(
+                        ApplyCardStatChanges(
+                            myCard,
+                            myStatChanges.attackerAttack,
+                            myStatChanges.attackerStrength,
+                            myStatChanges.attackerDefense,
+                            myStatChanges.attackerKnowledge,
+                            myStatChanges.attackerSpeed,
+                            myStatChanges.attackerCharisma
+                        )
+                    );
+
+                    yield return StartCoroutine(
+                        ApplyCardStatChanges(
+                            enemyCard,
+                            myStatChanges.defenderAttack,
+                            myStatChanges.defenderStrength,
+                            myStatChanges.defenderDefense,
+                            myStatChanges.defenderKnowledge,
+                            myStatChanges.defenderSpeed,
+                            myStatChanges.defenderCharisma
+                        )
+                    );
+
                     // V11.1: Display multiple effects on defender (enemy)
                     if (myEffectsApplied != null && myEffectsApplied.Count > 0)
                     {
-                        yield return StartCoroutine(DisplayMultipleEffects(enemyCard, myEffectsApplied, false));
+                        yield return StartCoroutine(
+                            DisplayMultipleEffects(enemyCard, myEffectsApplied, false)
+                        );
                     }
-                    
+
                     // V11.1: My attacker self-damage
                     // Skip for CarHit (attackId 7) - already handled in case 7
                     if (myAttackerSelfDamage > 0 && myAttackId != 7)
                     {
-                        Debug.LogWarning($"zA [SELF-DAMAGE] MY card takes {myAttackerSelfDamage} recoil damage!");
+                        Debug.LogWarning(
+                            $"zA [SELF-DAMAGE] MY card takes {myAttackerSelfDamage} recoil damage!"
+                        );
                         myCard.health -= myAttackerSelfDamage;
-                        yield return StartCoroutine(PlaySelfDamageAnimation(myCard, myAttackerSelfDamage, true));
+                        yield return StartCoroutine(
+                            PlaySelfDamageAnimation(myCard, myAttackerSelfDamage, true)
+                        );
                     }
-                    
+
                     // V11.1: My attacker self-effects
                     if (myAttackerEffects != null && myAttackerEffects.Count > 0)
                     {
-                        yield return StartCoroutine(DisplayMultipleEffects(myCard, myAttackerEffects, true));
+                        yield return StartCoroutine(
+                            DisplayMultipleEffects(myCard, myAttackerEffects, true)
+                        );
                     }
                 }
                 else
                 {
                     // V10: Astok blocked by effect (Sleep, Asceticism, atAZ.)
                     yield return StartCoroutine(PlayBlockAnimation(myCard, myBlockedBy, true));
-                    
+
                     // V10: Ak je blocked Asceticism-om (type 2), aplikuj self-damage
                     if (myBlockedBy == 2 && mySelfDamage > 0)
                     {
-                        Debug.LogWarning($"[ASCETICISM] MY card takes {mySelfDamage} self-damage due to blocking!");
+                        Debug.LogWarning(
+                            $"[ASCETICISM] MY card takes {mySelfDamage} self-damage due to blocking!"
+                        );
                         myCard.health -= mySelfDamage;
-                        yield return StartCoroutine(PlaySelfDamageAnimation(myCard, mySelfDamage, true));
+                        yield return StartCoroutine(
+                            PlaySelfDamageAnimation(myCard, mySelfDamage, true)
+                        );
                     }
                 }
             }
         }
-        
+
         // Reset dialog color to BLACK after battle (for neutral messages like "Choose your attack")
-        if (dialogText != null) dialogText.color = Color.black;
-        
+        if (dialogText != null)
+            dialogText.color = Color.black;
+
         // V11.2: Immediately show "Preparing next turn..." to mask color transition
         yield return StartCoroutine(ShowDialog("Preparing next turn..."));
-        
+
         // V5: HP sa updatuje postupne poATas animAciA, Lliadna finAlna sync!
         // selectedCards refresh sa volA v PlayBattleAnimationsAndRefresh
-        
+
         // Reset card positions na sprAvne miesta
         if (cardAnimator != null)
         {
-            Vector3 playerBoardPos = fightSystem.playerBoard != null ? fightSystem.playerBoard.transform.position : myCard.transform.position;
-            Vector3 enemyBoardPos = fightSystem.enemyBoard != null ? fightSystem.enemyBoard.transform.position : enemyCard.transform.position;
-            
-            StartCoroutine(cardAnimator.ResetCardPosition(myCard, playerBoardPos, Quaternion.identity));
-            StartCoroutine(cardAnimator.ResetCardPosition(enemyCard, enemyBoardPos, Quaternion.identity));
+            Vector3 playerBoardPos =
+                fightSystem.playerBoard != null
+                    ? fightSystem.playerBoard.transform.position
+                    : myCard.transform.position;
+            Vector3 enemyBoardPos =
+                fightSystem.enemyBoard != null
+                    ? fightSystem.enemyBoard.transform.position
+                    : enemyCard.transform.position;
+
+            StartCoroutine(
+                cardAnimator.ResetCardPosition(myCard, playerBoardPos, Quaternion.identity)
+            );
+            StartCoroutine(
+                cardAnimator.ResetCardPosition(enemyCard, enemyBoardPos, Quaternion.identity)
+            );
         }
-        
+
         // Skontroluj vAsledok
         yield return new WaitForSeconds(1f);
         CheckBattleOutcome(myCard, enemyCard);
     }
-    
+
     /// <summary>
     /// VykonA animAciu pre konkrAtny Astok (router pattern)
     /// V8: Podporuje Attack ID 1 (Punch), 2 (Kick), 3 (Heal), ... rozLiriteAlnA
@@ -1225,14 +1520,32 @@ public class BattleResultProcessor : MonoBehaviour
         int defenseChange,
         int knowledgeChange,
         int speedChange,
-        int charismaChange)
+        int charismaChange
+    )
     {
-        yield return StartCoroutine(ApplySingleStatChange(card, attackChange, "ATT", value => card.HandleAttack(value)));
-        yield return StartCoroutine(ApplySingleStatChange(card, strengthChange, "STR", value => card.HandleStrength(value)));
-        yield return StartCoroutine(ApplySingleStatChange(card, defenseChange, "DEF", value => card.HandleDefense(value)));
-        yield return StartCoroutine(ApplySingleStatChange(card, knowledgeChange, "KNO", value => card.HandleKnowledge(value)));
-        yield return StartCoroutine(ApplySingleStatChange(card, speedChange, "SPD", value => card.HandleSpeed(value)));
-        yield return StartCoroutine(ApplySingleStatChange(card, charismaChange, "CHA", value => card.HandleCharisma(value)));
+        yield return StartCoroutine(
+            ApplySingleStatChange(card, attackChange, "ATT", value => card.HandleAttack(value))
+        );
+        yield return StartCoroutine(
+            ApplySingleStatChange(card, strengthChange, "STR", value => card.HandleStrength(value))
+        );
+        yield return StartCoroutine(
+            ApplySingleStatChange(card, defenseChange, "DEF", value => card.HandleDefense(value))
+        );
+        yield return StartCoroutine(
+            ApplySingleStatChange(
+                card,
+                knowledgeChange,
+                "KNO",
+                value => card.HandleKnowledge(value)
+            )
+        );
+        yield return StartCoroutine(
+            ApplySingleStatChange(card, speedChange, "SPD", value => card.HandleSpeed(value))
+        );
+        yield return StartCoroutine(
+            ApplySingleStatChange(card, charismaChange, "CHA", value => card.HandleCharisma(value))
+        );
     }
 
     private IEnumerator ApplyTimelineStatChange(Kard card, int change, string statName)
@@ -1240,30 +1553,69 @@ public class BattleResultProcessor : MonoBehaviour
         switch (statName)
         {
             case "ATT":
-                yield return StartCoroutine(ApplySingleStatChange(card, change, statName, value => card.HandleAttack(value)));
+                yield return StartCoroutine(
+                    ApplySingleStatChange(card, change, statName, value => card.HandleAttack(value))
+                );
                 break;
             case "STR":
-                yield return StartCoroutine(ApplySingleStatChange(card, change, statName, value => card.HandleStrength(value)));
+                yield return StartCoroutine(
+                    ApplySingleStatChange(
+                        card,
+                        change,
+                        statName,
+                        value => card.HandleStrength(value)
+                    )
+                );
                 break;
             case "DEF":
-                yield return StartCoroutine(ApplySingleStatChange(card, change, statName, value => card.HandleDefense(value)));
+                yield return StartCoroutine(
+                    ApplySingleStatChange(
+                        card,
+                        change,
+                        statName,
+                        value => card.HandleDefense(value)
+                    )
+                );
                 break;
             case "KNO":
-                yield return StartCoroutine(ApplySingleStatChange(card, change, statName, value => card.HandleKnowledge(value)));
+                yield return StartCoroutine(
+                    ApplySingleStatChange(
+                        card,
+                        change,
+                        statName,
+                        value => card.HandleKnowledge(value)
+                    )
+                );
                 break;
             case "SPD":
-                yield return StartCoroutine(ApplySingleStatChange(card, change, statName, value => card.HandleSpeed(value)));
+                yield return StartCoroutine(
+                    ApplySingleStatChange(card, change, statName, value => card.HandleSpeed(value))
+                );
                 break;
             case "CHA":
-                yield return StartCoroutine(ApplySingleStatChange(card, change, statName, value => card.HandleCharisma(value)));
+                yield return StartCoroutine(
+                    ApplySingleStatChange(
+                        card,
+                        change,
+                        statName,
+                        value => card.HandleCharisma(value)
+                    )
+                );
                 break;
             default:
-                Debug.LogWarning($"[BattleResultProcessor] Unknown timeline stat change: stat={statName}, amount={change}, card={card.cardName}");
+                Debug.LogWarning(
+                    $"[BattleResultProcessor] Unknown timeline stat change: stat={statName}, amount={change}, card={card.cardName}"
+                );
                 break;
         }
     }
 
-    private IEnumerator ApplySingleStatChange(Kard card, int change, string statName, System.Action<int> applyChange)
+    private IEnumerator ApplySingleStatChange(
+        Kard card,
+        int change,
+        string statName,
+        System.Action<int> applyChange
+    )
     {
         if (change == 0)
         {
@@ -1278,160 +1630,334 @@ public class BattleResultProcessor : MonoBehaviour
         }
     }
 
-    private IEnumerator ExecuteAttackAnimation(Kard attacker, Kard defender, int attackId, int damage, int healAmount, bool isMyAttack, int attackerSelfDamage = 0, List<Dictionary<string, object>> effectsApplied = null, string attackResult = null, List<Dictionary<string, object>> attackerEffects = null)
+    private IEnumerator ExecuteAttackAnimation(
+        Kard attacker,
+        Kard defender,
+        int attackId,
+        int damage,
+        int healAmount,
+        bool isMyAttack,
+        int attackerSelfDamage = 0,
+        List<Dictionary<string, object>> effectsApplied = null,
+        string attackResult = null,
+        List<Dictionary<string, object>> attackerEffects = null
+    )
     {
         AttackAnimations animations = attackComponent.attackAnimations;
-        
+
         // Router pattern - delegate to attack handlers
         switch (attackId)
         {
             case 1: // Punch
                 yield return Attack1Handler.Execute(
-                    attacker, defender, damage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog,
-                    effectsApplied);
+                    attacker,
+                    defender,
+                    damage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog,
+                    effectsApplied
+                );
                 break;
-                
+
             case 2: // Kick
                 yield return Attack2Handler.Execute(
-                    attacker, defender, damage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
+                    attacker,
+                    defender,
+                    damage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog
+                );
                 break;
-                
+
             case 3: // Heal
                 yield return Attack3Handler.Execute(
-                    attacker, defender, healAmount, isMyAttack,
-                    animations, playerLifeBar, enemyLifeBar, ShowDialog);
+                    attacker,
+                    defender,
+                    healAmount,
+                    isMyAttack,
+                    animations,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog
+                );
                 break;
-                
+
             case 4: // Forgiveness
                 yield return Attack4Handler.Execute(
-                    attacker, defender, animations, ShowDialog,
-                    effectsApplied);
+                    attacker,
+                    defender,
+                    animations,
+                    ShowDialog,
+                    effectsApplied
+                );
                 break;
-                
+
             case 5: // Crusade
                 yield return Attack5Handler.Execute(
-                    attacker, defender, damage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
+                    attacker,
+                    defender,
+                    damage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog
+                );
                 break;
-                
+
             case 6: // Water To Wine
-                yield return Attack6Handler.Execute(
-                    attacker, animations, ShowDialog);
+                yield return Attack6Handler.Execute(attacker, animations, ShowDialog);
                 break;
-                
+
             case 7: // CarHit
                 yield return Attack7Handler.Execute(
-                    attacker, defender, damage, attackerSelfDamage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog,
-                    effectsApplied, attackerEffects);
+                    attacker,
+                    defender,
+                    damage,
+                    attackerSelfDamage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog,
+                    effectsApplied,
+                    attackerEffects
+                );
                 break;
-                
+
             case 8: // MonkeyWrench
                 yield return Attack8Handler.Execute(
-                    attacker, defender, damage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog, effectsApplied);
+                    attacker,
+                    defender,
+                    damage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog,
+                    effectsApplied
+                );
                 break;
-                
+
             case 9: // Radiation
-                yield return Attack9Handler.Execute(
-                    attacker, defender, animations, ShowDialog);
+                yield return Attack9Handler.Execute(attacker, defender, animations, ShowDialog);
                 break;
-            
+
             case 10: // Scratch
                 yield return Attack10Handler.Execute(
-                    attacker, defender, damage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog,
-                    effectsApplied);
+                    attacker,
+                    defender,
+                    damage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog,
+                    effectsApplied
+                );
                 break;
-            
+
             case 11: // Scientific Lecture
                 yield return Attack11Handler.Execute(
-                    attacker, defender, damage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog,
-                    attackResult);  // Server decides animation, client is dumb renderer
+                    attacker,
+                    defender,
+                    damage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog,
+                    attackResult
+                ); // Server decides animation, client is dumb renderer
                 break;
-            
+
             case 12: // Chi Sau
                 yield return Attack12Handler.Execute(
-                    attacker, defender, damage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
+                    attacker,
+                    defender,
+                    damage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog
+                );
                 break;
-            
+
             case 13: // One Inch Punch
                 yield return Attack13Handler.Execute(
-                    attacker, defender, damage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
+                    attacker,
+                    defender,
+                    damage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog
+                );
                 break;
-            
+
             case 14: // Up In Smoke
                 yield return Attack14Handler.Execute(
-                    attacker, defender, healAmount, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog,
-                    attackerEffects);
+                    attacker,
+                    defender,
+                    healAmount,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog,
+                    attackerEffects
+                );
                 break;
-                
+
             case 15: // Sing
                 yield return Attack15Handler.Execute(
-                    attacker, defender,
-                    animations, ShowDialog,
-                    effectsApplied);
+                    attacker,
+                    defender,
+                    animations,
+                    ShowDialog,
+                    effectsApplied
+                );
                 break;
-                
+
             case 16: // Revolver
                 yield return Attack16Handler.Execute(
-                    attacker, defender, damage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog,
-                    attackResult);
+                    attacker,
+                    defender,
+                    damage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog,
+                    attackResult
+                );
                 break;
-                
+
             case 17: // Artillery Regiment
                 yield return Attack17Handler.Execute(
-                    attacker, defender, damage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog,
-                    attackResult);
+                    attacker,
+                    defender,
+                    damage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog,
+                    attackResult
+                );
                 break;
-                
+
             case 18: // Bloodthirst
                 yield return Attack18Handler.Execute(
-                    attacker, defender, damage, healAmount, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
+                    attacker,
+                    defender,
+                    damage,
+                    healAmount,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog
+                );
                 break;
-                
+
             case 19: // Sword
                 yield return Attack19Handler.Execute(
-                    attacker, defender, damage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog, effectsApplied);
+                    attacker,
+                    defender,
+                    damage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog,
+                    effectsApplied
+                );
                 break;
-                
+
             case 20: // Pike
                 yield return Attack20Handler.Execute(
-                    attacker, defender, damage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog, effectsApplied);
+                    attacker,
+                    defender,
+                    damage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog,
+                    effectsApplied
+                );
                 break;
-                
-            // TODO: Add case 21-123 - just add 3 lines per attack!
-            
+
+            case 21: // Terrify
+                yield return Attack21Handler.Execute(
+                    attacker,
+                    defender,
+                    animations,
+                    ShowDialog,
+                    attackResult
+                );
+                break;
+            // TODO: Add case 22-123 - just add 3 lines per attack!
+
             default:
-                Debug.LogWarning($"[ExecuteAttackAnimation] Unknown attackId={attackId}, using Punch as fallback");
+                Debug.LogWarning(
+                    $"[ExecuteAttackAnimation] Unknown attackId={attackId}, using Punch as fallback"
+                );
                 yield return Attack1Handler.Execute(
-                    attacker, defender, damage, isMyAttack,
-                    animations, cardAnimator, playerLifeBar, enemyLifeBar, ShowDialog);
+                    attacker,
+                    defender,
+                    damage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog
+                );
                 break;
         }
     }
-    
+
     /// <summary>
     /// PridA len ikonu efektu bez animAcie (V9.1: KO animAcia sa hrA v ExecuteAttackAnimation)
     /// </summary>
-    private IEnumerator AddEffectIconOnly(Kard card, Dictionary<string, object> effectData, bool isMyCard)
+    private IEnumerator AddEffectIconOnly(
+        Kard card,
+        Dictionary<string, object> effectData,
+        bool isMyCard
+    )
     {
         int effectType = int.Parse(effectData["type"].ToString());
         int duration = int.Parse(effectData["duration"].ToString());
-        
-        Debug.LogWarning($"[EFFECT_ICON] Adding ICON ONLY on {card.cardName}: type={effectType}, duration={duration}");
-        
+
+        Debug.LogWarning(
+            $"[EFFECT_ICON] Adding ICON ONLY on {card.cardName}: type={effectType}, duration={duration}"
+        );
+
         // PridA effect ikonu (reuse Kard.AddEffectIcon)
         string effectName = GetEffectName(effectType);
         if (!string.IsNullOrEmpty(effectName))
@@ -1440,45 +1966,57 @@ public class BattleResultProcessor : MonoBehaviour
             card.RepositionEffectIcons();
             Debug.LogWarning($"[EFFECT_ICON] Added {effectName} icon to {card.cardName}");
         }
-        
+
         yield return null;
     }
-    
+
     /// <summary>
     /// V11.1: Displays MULTIPLE effect icons on a card (for Bleed stacking, AoE attacks)
     /// Iterates through all effects in the array and displays each one
     /// </summary>
-    private IEnumerator DisplayMultipleEffects(Kard card, List<Dictionary<string, object>> effectsArray, bool isMyCard)
+    private IEnumerator DisplayMultipleEffects(
+        Kard card,
+        List<Dictionary<string, object>> effectsArray,
+        bool isMyCard
+    )
     {
         if (effectsArray == null || effectsArray.Count == 0)
         {
             yield break;
         }
-        
-        Debug.LogWarning($"[MULTI-EFFECTS] Displaying {effectsArray.Count} effects on {card.cardName}");
-        
+
+        Debug.LogWarning(
+            $"[MULTI-EFFECTS] Displaying {effectsArray.Count} effects on {card.cardName}"
+        );
+
         foreach (var effect in effectsArray)
         {
             yield return StartCoroutine(DisplayEffectIcon(card, effect, isMyCard));
-            yield return new WaitForSeconds(0.3f);  // Slight delay between multiple effects
+            yield return new WaitForSeconds(0.3f); // Slight delay between multiple effects
         }
     }
-    
+
     /// <summary>
     /// ZobrazA effect ikonu na karte (V9: Sleep, Bleed, Burn, Poison...)
     /// VOLA SA keAZ sa NOVAt effect aplikuje (Turn 1 aplikAcie)
     /// DEPRECATED V9.1: PouLlite AddEffectIconOnly, KO animAcia sa hrA v ExecuteAttackAnimation
     /// </summary>
-    private IEnumerator DisplayEffectIcon(Kard card, Dictionary<string, object> effectData, bool isMyCard)
+    private IEnumerator DisplayEffectIcon(
+        Kard card,
+        Dictionary<string, object> effectData,
+        bool isMyCard
+    )
     {
         int effectType = int.Parse(effectData["type"].ToString());
         int duration = int.Parse(effectData["duration"].ToString());
-        
-        Debug.LogWarning($"[EFFECT_ICON] Adding effect icon to {card.cardName}: type={effectType}, duration={duration}");
-        
+
+        Debug.LogWarning(
+            $"[EFFECT_ICON] Adding effect icon to {card.cardName}: type={effectType}, duration={duration}"
+        );
+
         // V14: Initial effect animations moved to Attack Handlers
         // DisplayEffectIcon now ONLY adds icons, NO animations
-        
+
         // PridA effect ikonu (reuse Kard.AddEffectIcon)
         string effectName = GetEffectName(effectType);
         if (!string.IsNullOrEmpty(effectName))
@@ -1487,10 +2025,10 @@ public class BattleResultProcessor : MonoBehaviour
             card.RepositionEffectIcons();
             Debug.LogWarning($"[EFFECT_ICON] Added {effectName} icon to {card.cardName}");
         }
-        
+
         yield break;
     }
-    
+
     /// <summary>
     /// PrehrA wake-up animAciu (Sleep duration = 0)
     /// </summary>
@@ -1498,14 +2036,14 @@ public class BattleResultProcessor : MonoBehaviour
     {
         string cardOwner = isMyCard ? "MY" : "ENEMY";
         Debug.LogWarning($"aZ [WAKE_UP] {cardOwner} card ({card.cardName}) is waking up!");
-        
+
         AttackAnimations animations = attackComponent?.attackAnimations;
         if (animations != null)
         {
             // Reuse singleplayer wake-up animation
             yield return StartCoroutine(animations.PlaySleepEndAnimation(card.transform));
         }
-        
+
         // OdstrAL Sleep ikonu po prebratA
         string sleepEffectName = GetEffectName(3); // 3 = Sleep
         if (!string.IsNullOrEmpty(sleepEffectName))
@@ -1513,18 +2051,20 @@ public class BattleResultProcessor : MonoBehaviour
             yield return StartCoroutine(card.RemoveEffectIcon(sleepEffectName));
             Debug.LogWarning($"aZ [WAKE_UP] Removed {sleepEffectName} icon from {card.cardName}");
         }
-        
+
         yield return StartCoroutine(ShowDialog($"{card.cardName} wakes up!"));
     }
-    
+
     /// <summary>
     /// PrehrA recovery animAciu (Asceticism duration = 0)
     /// V10: PridanA pre Asceticism effect
     /// </summary>
     private IEnumerator PlayRecoveryAnimation(Kard card, string cardDescription)
     {
-        Debug.LogWarning($"[RECOVERY] {cardDescription} ({card.cardName}) recovered from Asceticism!");
-        
+        Debug.LogWarning(
+            $"[RECOVERY] {cardDescription} ({card.cardName}) recovered from Asceticism!"
+        );
+
         AttackAnimations animations = attackComponent?.attackAnimations;
         if (animations != null)
         {
@@ -1537,25 +2077,29 @@ public class BattleResultProcessor : MonoBehaviour
         {
             Debug.LogError($"[RECOVERY] AttackAnimations is NULL!");
         }
-        
+
         // OdstrAL Asceticism ikonu po recovery
         string asceticismEffectName = GetEffectName(2); // 2 = Asceticism
         Debug.LogWarning($"[RECOVERY] Effect name for type 2: {asceticismEffectName}");
-        
+
         if (!string.IsNullOrEmpty(asceticismEffectName))
         {
-            Debug.LogWarning($"[RECOVERY] Attempting to remove {asceticismEffectName} icon from {card.cardName}...");
+            Debug.LogWarning(
+                $"[RECOVERY] Attempting to remove {asceticismEffectName} icon from {card.cardName}..."
+            );
             yield return StartCoroutine(card.RemoveEffectIcon(asceticismEffectName));
-            Debug.LogWarning($"[RECOVERY] Removed {asceticismEffectName} icon from {card.cardName}");
+            Debug.LogWarning(
+                $"[RECOVERY] Removed {asceticismEffectName} icon from {card.cardName}"
+            );
         }
         else
         {
             Debug.LogError($"[RECOVERY] asceticismEffectName is NULL or EMPTY!");
         }
-        
+
         yield return StartCoroutine(ShowDialog($"{card.cardName} feels blessed again!"));
     }
-    
+
     /// <summary>
     /// PrehrA self-damage animAciu (Asceticism blocking penalty)
     /// V10: PridanA pre Asceticism effect
@@ -1563,14 +2107,16 @@ public class BattleResultProcessor : MonoBehaviour
     private IEnumerator PlaySelfDamageAnimation(Kard card, int damage, bool isMyCard)
     {
         string cardOwner = isMyCard ? "MY" : "ENEMY";
-        Debug.LogWarning($"[SELF_DAMAGE] {cardOwner} card ({card.cardName}) takes {damage} self-damage!");
-        
+        Debug.LogWarning(
+            $"[SELF_DAMAGE] {cardOwner} card ({card.cardName}) takes {damage} self-damage!"
+        );
+
         // PouLlij cardAnimator pre damage animAciu
         if (cardAnimator != null && damage > 0)
         {
             yield return StartCoroutine(cardAnimator.AnimateDamage(card, damage));
         }
-        
+
         // Update HP bar
         if (isMyCard)
         {
@@ -1580,10 +2126,10 @@ public class BattleResultProcessor : MonoBehaviour
         {
             enemyLifeBar.SetHP(card.health);
         }
-        
+
         yield return StartCoroutine(ShowDialog($"{card.cardName} suffers -{damage} HP!"));
     }
-    
+
     /// <summary>
     /// PrehrA SINGLE Bleed continue animAciu + damage (pre jeden Bleed effect)
     /// V11.2: PRIORITY 1 - Individual Bleed damage processing (separate animations for each Bleed)
@@ -1591,21 +2137,25 @@ public class BattleResultProcessor : MonoBehaviour
     private IEnumerator PlaySingleBleedAnimation(Kard card, int damage, bool isMyCard)
     {
         string cardOwner = isMyCard ? "MY" : "ENEMY";
-        Debug.LogWarning($"[SINGLE_BLEED] {cardOwner} card ({card.cardName}) takes {damage} Bleed damage!");
-        
+        Debug.LogWarning(
+            $"[SINGLE_BLEED] {cardOwner} card ({card.cardName}) takes {damage} Bleed damage!"
+        );
+
         AttackAnimations animations = attackComponent?.attackAnimations;
         if (animations != null)
         {
             // ZahrA BleedContinue animAciu (drops = damage amount)
-            yield return StartCoroutine(animations.PlayBleedContinueAnimation(card.transform, damage));
+            yield return StartCoroutine(
+                animations.PlayBleedContinueAnimation(card.transform, damage)
+            );
         }
-        
+
         // PouLlij cardAnimator pre damage animAciu
         if (cardAnimator != null && damage > 0)
         {
             yield return StartCoroutine(cardAnimator.AnimateDamage(card, damage));
         }
-        
+
         // Update HP bar
         if (isMyCard)
         {
@@ -1615,10 +2165,10 @@ public class BattleResultProcessor : MonoBehaviour
         {
             enemyLifeBar.SetHP(card.health);
         }
-        
+
         yield return StartCoroutine(ShowDialog($"{card.cardName} is bleeding! -{damage} HP"));
     }
-    
+
     /// <summary>
     /// PrehrA Exposure animAciu - damage alebo removal
     /// V11.2: PRIORITY 1 - Exposure processing (escalating radiation damage)
@@ -1626,45 +2176,51 @@ public class BattleResultProcessor : MonoBehaviour
     private IEnumerator PlayExposureAnimation(Kard card, int damage, bool removed, bool isMyCard)
     {
         string cardOwner = isMyCard ? "MY" : "ENEMY";
-        
+
         AttackAnimations animations = attackComponent?.attackAnimations;
-        
+
         if (removed)
         {
             // 20% proc - Exposure removed!
-            Debug.LogWarning($"adZ [EXPOSURE] {cardOwner} card ({card.cardName})'s irradiation is gone! (20% removal proc)");
-            
+            Debug.LogWarning(
+                $"adZ [EXPOSURE] {cardOwner} card ({card.cardName})'s irradiation is gone! (20% removal proc)"
+            );
+
             if (animations != null)
             {
                 yield return StartCoroutine(animations.PlayExposureEndAnimation(card.transform));
             }
-            
+
             // OdstrAL Exposure ikonu
             string exposureEffectName = GetEffectName(4); // 4 = Exposure
             if (!string.IsNullOrEmpty(exposureEffectName))
             {
                 yield return StartCoroutine(card.RemoveEffectIcon(exposureEffectName));
-                Debug.LogWarning($"adZ [EXPOSURE] Removed {exposureEffectName} icon from {card.cardName}");
+                Debug.LogWarning(
+                    $"adZ [EXPOSURE] Removed {exposureEffectName} icon from {card.cardName}"
+                );
             }
-            
+
             yield return StartCoroutine(ShowDialog($"{card.cardName}'s irradiation is gone"));
         }
         else if (damage > 0)
         {
             // 80% proc - Take escalating damage
-            Debug.LogWarning($"adZ [EXPOSURE] {cardOwner} card ({card.cardName}) is irradiated! -{damage} HP");
-            
+            Debug.LogWarning(
+                $"adZ [EXPOSURE] {cardOwner} card ({card.cardName}) is irradiated! -{damage} HP"
+            );
+
             if (animations != null)
             {
                 yield return StartCoroutine(animations.PlayExposureAnimation(card.transform));
             }
-            
+
             // PouLlij cardAnimator pre damage animAciu
             if (cardAnimator != null)
             {
                 yield return StartCoroutine(cardAnimator.AnimateDamage(card, damage));
             }
-            
+
             // Update HP bar
             if (isMyCard)
             {
@@ -1674,11 +2230,11 @@ public class BattleResultProcessor : MonoBehaviour
             {
                 enemyLifeBar.SetHP(card.health);
             }
-            
+
             yield return StartCoroutine(ShowDialog($"{card.cardName} is irradiated"));
         }
     }
-    
+
     /// <summary>
     /// PrehrA blocking animAciu podAla typu effectu
     /// VOLA SA keAZ karta mA aktAvny blocking effect (Sleep, Stun, Freeze, atAZ.)
@@ -1687,54 +2243,66 @@ public class BattleResultProcessor : MonoBehaviour
     {
         string cardOwner = isMyCard ? "MY" : "ENEMY";
         string effectName = blockedBy.HasValue ? GetEffectName(blockedBy.Value) : "unknown effect";
-        Debug.LogWarning($"zdZ [BLOCK] {cardOwner} card ({card.cardName}) blocked by effect type {blockedBy} ({effectName})!");
-        
+        Debug.LogWarning(
+            $"zdZ [BLOCK] {cardOwner} card ({card.cardName}) blocked by effect type {blockedBy} ({effectName})!"
+        );
+
         AttackAnimations animations = attackComponent?.attackAnimations;
         if (animations == null)
         {
             Debug.LogError("[BattleResultProcessor] AttackAnimations not found!");
             yield break;
         }
-        
+
         // PrehrA animAciu podAla numeric effect type ID
         switch (blockedBy)
         {
             case 2: // ASCETICISM
-                Debug.LogWarning($"[ASCETICISM_ONGOING] Playing HURT ITSELF animation (ongoing Asceticism blocking)");
-                yield return StartCoroutine(animations.PlayConfusionHurtItselfAnimation(card.transform));
+                Debug.LogWarning(
+                    $"[ASCETICISM_ONGOING] Playing HURT ITSELF animation (ongoing Asceticism blocking)"
+                );
+                yield return StartCoroutine(
+                    animations.PlayConfusionHurtItselfAnimation(card.transform)
+                );
                 yield return StartCoroutine(ShowDialog($"{card.cardName} practizes asceticism..."));
                 break;
-                
+
             case 3: // SLEEP
-                Debug.LogWarning($"?? [SLEEP_ONGOING] Playing SLEEP animation (ongoing Sleep, not initial)");
+                Debug.LogWarning(
+                    $"?? [SLEEP_ONGOING] Playing SLEEP animation (ongoing Sleep, not initial)"
+                );
                 yield return StartCoroutine(animations.PlaySleepAnimation(card.transform));
                 yield return StartCoroutine(ShowDialog($"{card.cardName} is sleeping..."));
                 break;
             case 27: // KNOCKOUT -> ongoing flow behaves like sleep
-                Debug.LogWarning($"?? [KNOCKOUT_ONGOING_AS_SLEEP] Playing SLEEP animation (ongoing Knockout)");
+                Debug.LogWarning(
+                    $"?? [KNOCKOUT_ONGOING_AS_SLEEP] Playing SLEEP animation (ongoing Knockout)"
+                );
                 yield return StartCoroutine(animations.PlaySleepAnimation(card.transform));
                 yield return StartCoroutine(ShowDialog($"{card.cardName} is sleeping..."));
                 break;
-                
+
             case 5: // STUN (example)
                 // TODO: ImplementovaLA stun animAciu
                 // yield return StartCoroutine(animations.PlayStunAnimation(card.transform));
                 yield return StartCoroutine(ShowDialog($"{card.cardName} is stunned!"));
                 break;
-                
+
             case 6: // FREEZE (example)
                 // TODO: ImplementovaLA freeze animAciu
                 // yield return StartCoroutine(animations.PlayFreezeAnimation(card.transform));
                 yield return StartCoroutine(ShowDialog($"{card.cardName} is frozen!"));
                 break;
-                
+
             default:
-                Debug.LogWarning($"[PlayBlockAnimation] Unknown effect type {blockedBy}, using default message");
+                Debug.LogWarning(
+                    $"[PlayBlockAnimation] Unknown effect type {blockedBy}, using default message"
+                );
                 yield return StartCoroutine(ShowDialog($"{card.cardName} cannot attack!"));
                 break;
         }
     }
-    
+
     /// <summary>
     /// DEPRECATED: Replaced by PlayBlockAnimation(blockedBy)
     /// PrehrA Sleep blocking animAciu (Astok blocked, duration decremented)
@@ -1744,19 +2312,23 @@ public class BattleResultProcessor : MonoBehaviour
     private IEnumerator PlaySleepBlockAnimation(Kard card, bool isMyCard)
     {
         string cardOwner = isMyCard ? "MY" : "ENEMY";
-        Debug.LogWarning($"[SLEEP_BLOCK] {cardOwner} card ({card.cardName}) is sleeping, attack blocked!");
-        
+        Debug.LogWarning(
+            $"[SLEEP_BLOCK] {cardOwner} card ({card.cardName}) is sleeping, attack blocked!"
+        );
+
         AttackAnimations animations = attackComponent?.attackAnimations;
         if (animations != null)
         {
             // OveATka animAcia (karta UL spA, nie prvA aplikAcia)
-            Debug.LogWarning($"[SLEEP_ONGOING] Playing SLEEP animation (ongoing Sleep, not initial)");
+            Debug.LogWarning(
+                $"[SLEEP_ONGOING] Playing SLEEP animation (ongoing Sleep, not initial)"
+            );
             yield return StartCoroutine(animations.PlaySleepAnimation(card.transform));
         }
-        
+
         yield return StartCoroutine(ShowDialog($"{card.cardName} is sleeping..."));
     }
-    
+
     /// <summary>
     /// VrAti nAzov efektu pre effect type ID (pouLlAva Kard.GetEffectNameById logiku)
     /// </summary>
@@ -1764,38 +2336,64 @@ public class BattleResultProcessor : MonoBehaviour
     {
         switch (effectType)
         {
-            case 1: return "Bleed";
-            case 2: return "Asceticism";
-            case 3: return "Sleep";
-            case 27: return "Sleep"; // Knockout currently reuses Sleep icon
-            case 4: return "Exposure";
-            case 5: return "Siege";
-            case 6: return "Fury";
-            case 7: return "Famine";
-            case 8: return "Electricity";
-            case 9: return "Tether";
-            case 10: return "Starving";
-            case 11: return "ScientificLecture";
-            case 12: return "Blockade";
-            case 13: return "Depression";
-            case 14: return "ArtInspiration";
-            case 15: return "Autoportrait";
-            case 16: return "Burn";
-            case 17: return "Confusion";
-            case 18: return "Satellite";
-            case 19: return "Fear";
-            case 20: return "Horns";
-            case 21: return "Calm";
-            case 22: return "Reloading";
-            case 23: return "Trident";
-            case 24: return "Poison";
-            case 26: return "Curse";
+            case 1:
+                return "Bleed";
+            case 2:
+                return "Asceticism";
+            case 3:
+                return "Sleep";
+            case 27:
+                return "Sleep"; // Knockout currently reuses Sleep icon
+            case 4:
+                return "Exposure";
+            case 5:
+                return "Siege";
+            case 6:
+                return "Fury";
+            case 7:
+                return "Famine";
+            case 8:
+                return "Electricity";
+            case 9:
+                return "Tether";
+            case 10:
+                return "Starving";
+            case 11:
+                return "ScientificLecture";
+            case 12:
+                return "Blockade";
+            case 13:
+                return "Depression";
+            case 14:
+                return "ArtInspiration";
+            case 15:
+                return "Autoportrait";
+            case 16:
+                return "Burn";
+            case 17:
+                return "Confusion";
+            case 18:
+                return "Satellite";
+            case 19:
+                return "Fear";
+            case 20:
+                return "Horns";
+            case 21:
+                return "Calm";
+            case 22:
+                return "Reloading";
+            case 23:
+                return "Trident";
+            case 24:
+                return "Poison";
+            case 26:
+                return "Curse";
             default:
                 Debug.LogWarning($"[GetEffectName] Unknown effect type: {effectType}");
                 return null;
         }
     }
-    
+
     /// <summary>
     /// VrAti nAzov Astoku pre attackId (pre dialog text)
     /// </summary>
@@ -1803,31 +2401,54 @@ public class BattleResultProcessor : MonoBehaviour
     {
         switch (attackId)
         {
-            case 1: return "Punch";
-            case 2: return "Kick";
-            case 3: return "Heal";
-            case 4: return "Forgiveness";
-            case 5: return "Crusade";
-            case 6: return "Water To Wine";
-            case 7: return "Car Hit";
-            case 8: return "Monkey Wrench";
-            case 9: return "Radiation";
-            case 10: return "Scratch";
-            case 11: return "Scientific Lecture";
-            case 12: return "Chi Sau";
-            case 13: return "One Inch Punch";
-            case 14: return "Up In Smoke";
-            case 15: return "Sing";
-            case 16: return "Revolver";
-            case 17: return "Artillery Regiment";
-            case 18: return "Bloodthirst";
-            case 19: return "Sword";
-            case 20: return "Pike";
+            case 1:
+                return "Punch";
+            case 2:
+                return "Kick";
+            case 3:
+                return "Heal";
+            case 4:
+                return "Forgiveness";
+            case 5:
+                return "Crusade";
+            case 6:
+                return "Water To Wine";
+            case 7:
+                return "Car Hit";
+            case 8:
+                return "Monkey Wrench";
+            case 9:
+                return "Radiation";
+            case 10:
+                return "Scratch";
+            case 11:
+                return "Scientific Lecture";
+            case 12:
+                return "Chi Sau";
+            case 13:
+                return "One Inch Punch";
+            case 14:
+                return "Up In Smoke";
+            case 15:
+                return "Sing";
+            case 16:
+                return "Revolver";
+            case 17:
+                return "Artillery Regiment";
+            case 18:
+                return "Bloodthirst";
+            case 19:
+                return "Sword";
+            case 20:
+                return "Pike";
+            case 21:
+                return "Terrify";
             // TODO: RozLAriLA pre vLetky Astoky
-            default: return $"Attack#{attackId}";
+            default:
+                return $"Attack#{attackId}";
         }
     }
-    
+
     /// <summary>
     /// ZobrazA dialAg
     /// </summary>
@@ -1840,7 +2461,7 @@ public class BattleResultProcessor : MonoBehaviour
         }
         yield return new WaitForSeconds(1.5f);
     }
-    
+
     /// <summary>
     /// UrATA ATi som player1 alebo player2
     /// </summary>
@@ -1849,7 +2470,7 @@ public class BattleResultProcessor : MonoBehaviour
         // TODO: ImplementovaLA sprAvnu logiku podAla roomPlayers
         return true; // Placeholder
     }
-    
+
     /// <summary>
     /// Skontroluje vAsledok boja a urATA vALAaza
     /// </summary>
@@ -1857,7 +2478,12 @@ public class BattleResultProcessor : MonoBehaviour
     {
         if (roundCoordinator == null)
         {
-            roundCoordinator = new BattleRoundCoordinator(fightSystem, multiplayerService, killCounterManager, dialogText);
+            roundCoordinator = new BattleRoundCoordinator(
+                fightSystem,
+                multiplayerService,
+                killCounterManager,
+                dialogText
+            );
         }
 
         bool myCardDead = myCard.health <= 0;
@@ -1865,7 +2491,8 @@ public class BattleResultProcessor : MonoBehaviour
 
         if (myCardDead && enemyCardDead)
         {
-            if (dialogText != null) dialogText.text = "Both cards destroyed!";
+            if (dialogText != null)
+                dialogText.text = "Both cards destroyed!";
             Debug.Log("[BattleResultProcessor] Both cards died - checking remaining cards");
             StartCoroutine(roundCoordinator.HandleBothCardsDeath(myCard, enemyCard));
         }
@@ -1876,7 +2503,8 @@ public class BattleResultProcessor : MonoBehaviour
         }
         else if (enemyCardDead)
         {
-            if (dialogText != null) dialogText.text = "Enemy card destroyed!";
+            if (dialogText != null)
+                dialogText.text = "Enemy card destroyed!";
             Debug.Log("[BattleResultProcessor] Enemy card died");
             StartCoroutine(roundCoordinator.HandleEnemyCardDeath(enemyCard));
         }
@@ -1886,7 +2514,7 @@ public class BattleResultProcessor : MonoBehaviour
             StartCoroutine(roundCoordinator.PrepareNextTurn());
         }
     }
-    
+
     /// <summary>
     /// PripravA AZalLA turn - ready check systAm + reset UI
     /// </summary>
@@ -1897,20 +2525,24 @@ public class BattleResultProcessor : MonoBehaviour
             Debug.LogWarning("[BattleResultProcessor] HandleCardDeath called with null card!");
             yield break;
         }
-        
+
         string cardId = deadCard.cardId;
         string cardName = deadCard.cardName;
-        
-        Debug.Log($"[BattleResultProcessor] z Card died: {cardName} (ID: {cardId}, isMyCard: {isMyCard})");
-        
+
+        Debug.Log(
+            $"[BattleResultProcessor] z Card died: {cardName} (ID: {cardId}, isMyCard: {isMyCard})"
+        );
+
         // 1. AnimAcia smrti (voliteAlnA - fade out, shake, atAZ.)
         yield return new WaitForSeconds(1f); // KrAtka pauza pre dramatickA efekt
-        
+
         // 2. VymaLl kartu z boardu (UI)
         Player owner = isMyCard ? fightSystem.player : fightSystem.enemy;
         if (owner != null)
         {
-            Debug.Log($"[BattleResultProcessor] Removing {cardName} from {(isMyCard ? "player" : "enemy")} board");
+            Debug.Log(
+                $"[BattleResultProcessor] Removing {cardName} from {(isMyCard ? "player" : "enemy")} board"
+            );
             owner.RemoveCardFromBoard(deadCard);
         }
         else
@@ -1919,61 +2551,77 @@ public class BattleResultProcessor : MonoBehaviour
             // Fallback: zniATAme GameObject priamo
             Destroy(deadCard.gameObject);
         }
-        
+
         // 3. VymaLl kartu zo servera (selectedCards)
         var serverFunctions = fightSystem.serverFunctionsManager;
         if (serverFunctions == null)
         {
-            Debug.LogError("[BattleResultProcessor] ServerFunctionsManager not found! Cannot clear dead card from server.");
+            Debug.LogError(
+                "[BattleResultProcessor] ServerFunctionsManager not found! Cannot clear dead card from server."
+            );
             yield break;
         }
-        
+
         string roomCode = multiplayerService?.RoomCode;
         if (string.IsNullOrEmpty(roomCode))
         {
-            Debug.LogError("[BattleResultProcessor] RoomCode is null/empty! Cannot clear dead card from server.");
+            Debug.LogError(
+                "[BattleResultProcessor] RoomCode is null/empty! Cannot clear dead card from server."
+            );
             yield break;
         }
-        
-        Debug.Log($"[BattleResultProcessor] Calling server to clear dead card - roomCode: {roomCode}, cardId: {cardId}");
-        
+
+        Debug.Log(
+            $"[BattleResultProcessor] Calling server to clear dead card - roomCode: {roomCode}, cardId: {cardId}"
+        );
+
         bool serverCallCompleted = false;
         bool serverCallSuccess = false;
-        
-        serverFunctions.ClearDeadCard(roomCode, cardId, (result) =>
-        {
-            serverCallCompleted = true;
-            
-            if (result != null && result.FunctionResult != null)
+
+        serverFunctions.ClearDeadCard(
+            roomCode,
+            cardId,
+            (result) =>
             {
-                // Server vracia JObject, nie Dictionary!
-                var jObject = result.FunctionResult as Newtonsoft.Json.Linq.JObject;
-                if (jObject != null && jObject["success"] != null)
+                serverCallCompleted = true;
+
+                if (result != null && result.FunctionResult != null)
                 {
-                    serverCallSuccess = jObject["success"].ToObject<bool>();
-                    
-                    if (serverCallSuccess)
+                    // Server vracia JObject, nie Dictionary!
+                    var jObject = result.FunctionResult as Newtonsoft.Json.Linq.JObject;
+                    if (jObject != null && jObject["success"] != null)
                     {
-                        Debug.Log($"[BattleResultProcessor] Dead card cleared from server: {cardName} (ID: {cardId})");
+                        serverCallSuccess = jObject["success"].ToObject<bool>();
+
+                        if (serverCallSuccess)
+                        {
+                            Debug.Log(
+                                $"[BattleResultProcessor] Dead card cleared from server: {cardName} (ID: {cardId})"
+                            );
+                        }
+                        else
+                        {
+                            string errorMsg = jObject["error"]?.ToString() ?? "Unknown error";
+                            Debug.LogError(
+                                $"[BattleResultProcessor] Server failed to clear dead card: {errorMsg}"
+                            );
+                        }
                     }
                     else
                     {
-                        string errorMsg = jObject["error"]?.ToString() ?? "Unknown error";
-                        Debug.LogError($"[BattleResultProcessor] Server failed to clear dead card: {errorMsg}");
+                        Debug.LogWarning(
+                            "[BattleResultProcessor] Unexpected response format - assuming success"
+                        );
+                        serverCallSuccess = true; // Assume success if can't parse (server returned success in logs)
                     }
                 }
                 else
                 {
-                    Debug.LogWarning("[BattleResultProcessor] Unexpected response format - assuming success");
-                    serverCallSuccess = true; // Assume success if can't parse (server returned success in logs)
+                    Debug.LogError("[BattleResultProcessor] Server call returned null result!");
                 }
             }
-            else
-            {
-                Debug.LogError("[BattleResultProcessor] Server call returned null result!");
-            }
-        });
-        
+        );
+
         // PoATkaj na server response (max 5s)
         float timeout = 5f;
         float elapsed = 0f;
@@ -1982,19 +2630,23 @@ public class BattleResultProcessor : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
             elapsed += 0.1f;
         }
-        
+
         if (!serverCallCompleted)
         {
-            Debug.LogError($"[BattleResultProcessor] aZdZ Server call timeout after {timeout}s - dead card may still be in selectedCards!");
+            Debug.LogError(
+                $"[BattleResultProcessor] aZdZ Server call timeout after {timeout}s - dead card may still be in selectedCards!"
+            );
         }
         else if (!serverCallSuccess)
         {
-            Debug.LogWarning("[BattleResultProcessor] Server call completed but failed - check server logs");
+            Debug.LogWarning(
+                "[BattleResultProcessor] Server call completed but failed - check server logs"
+            );
         }
-        
+
         Debug.Log($"[BattleResultProcessor] Card death handling complete for {cardName}");
     }
-    
+
     /// <summary>
     /// Handler pre smrLA player karty - skontroluje ATi mA AZalLie karty
     /// </summary>
@@ -2010,10 +2662,10 @@ public class BattleResultProcessor : MonoBehaviour
         {
             Debug.LogWarning("[BattleResultProcessor] KillCounterManager not assigned!");
         }
-        
+
         // 1. VymaLl kartu (board + server)
         yield return StartCoroutine(HandleCardDeath(myCard, isMyCard: true));
-        
+
         // 2. Skontroluj ATi mA player AZalLie karty v ruke
         Player player = fightSystem?.player;
         if (player == null)
@@ -2022,18 +2674,18 @@ public class BattleResultProcessor : MonoBehaviour
             fightSystem.state = FightStateMultiplayer.LOST;
             yield break;
         }
-        
+
         int remainingCards = player.hand.Count;
         Debug.Log($"[BattleResultProcessor] Player has {remainingCards} cards remaining in hand");
-        
+
         if (remainingCards > 0)
         {
             // MA karty a PLAYERDEATH state (vAber novej karty)
             dialogText.text = "Choose new fighter!";
             fightSystem.state = FightStateMultiplayer.PLAYERDEATH;
-            
+
             Debug.Log("[BattleResultProcessor] z Unlocking hand for new card selection");
-            
+
             // Unlock hand pre vAber novej karty
             var boardManager = fightSystem.multiplayerBoardManager;
             if (boardManager != null)
@@ -2042,9 +2694,11 @@ public class BattleResultProcessor : MonoBehaviour
             }
             else
             {
-                Debug.LogError("[BattleResultProcessor] MultiplayerBoardManager not found - cannot unlock hand!");
+                Debug.LogError(
+                    "[BattleResultProcessor] MultiplayerBoardManager not found - cannot unlock hand!"
+                );
             }
-            
+
             // ExistujAsci systAm HandleCardSelectedAsync sa postarA o:
             // - Submit novej karty do selectedCards
             // - Wait for opponent (ak aj on vyberie novAs)
@@ -2058,7 +2712,7 @@ public class BattleResultProcessor : MonoBehaviour
             Debug.Log("[BattleResultProcessor] Player lost - no cards remaining");
         }
     }
-    
+
     /// <summary>
     /// Handler pre smrLA enemy karty - ATakAme na vAber novej enemy karty
     /// </summary>
@@ -2074,14 +2728,14 @@ public class BattleResultProcessor : MonoBehaviour
         {
             Debug.LogWarning("[BattleResultProcessor] KillCounterManager not assigned!");
         }
-        
+
         // 1. VymaLl kartu (board + server)
         yield return StartCoroutine(HandleCardDeath(enemyCard, isMyCard: false));
-        
+
         // 2. REUSE MultiplayerBoardManager polling + reveal systAm (KISS principle!)
         dialogText.text = "Opponent choosing new fighter...";
         Debug.Log("[BattleResultProcessor] Waiting for opponent to select new card...");
-        
+
         var boardManager = fightSystem.multiplayerBoardManager;
         if (boardManager == null)
         {
@@ -2090,47 +2744,59 @@ public class BattleResultProcessor : MonoBehaviour
             fightSystem.state = FightStateMultiplayer.WON;
             yield break;
         }
-        
+
         // REUSE: Reset opponent card flag (aby WaitForOpponentSelectionAsync fungoval znova)
         boardManager.opponentCardRevealed = false;
-        
+
         // REUSE: Zavolaj existujAscu metAdu (async a coroutine wrapper)
         var waitTask = boardManager.WaitForOpponentSelectionAsync();
         yield return new WaitUntil(() => waitTask.IsCompleted);
-        
+
         // REUSE: Reveal opponent card (existujAsca metAda)
         boardManager.RevealCards();
-        
+
         // Hotovo - battle pokraATuje
         Debug.Log("[BattleResultProcessor] Enemy card revealed! Battle continues.");
-        
+
         // aZ PoATkaj chvAAlu aby sa GUI mohlo updatovaLA
         yield return new WaitForSeconds(0.5f);
-        
+
         // CRITICAL: VyATisti starA battleResult zo servera (inak server vrAti battle s MLTVOU kartou!)
         var serverFunctions = fightSystem.serverFunctionsManager;
         if (serverFunctions != null)
         {
             Debug.Log("[BattleResultProcessor] Clearing old battle result from server...");
-            
+
             bool clearCompleted = false;
             bool clearSuccess = false;
-            
-            serverFunctions.ClearBattleData(fightSystem.roomCode, fightSystem.myPlayerId, result =>
-            {
-                clearCompleted = true;
-                clearSuccess = result != null && (result.FunctionResult as Newtonsoft.Json.Linq.JObject)?["success"]?.ToObject<bool>() == true;
-                
-                if (clearSuccess)
+
+            serverFunctions.ClearBattleData(
+                fightSystem.roomCode,
+                fightSystem.myPlayerId,
+                result =>
                 {
-                    Debug.Log("[BattleResultProcessor] Old battle result cleared successfully!");
+                    clearCompleted = true;
+                    clearSuccess =
+                        result != null
+                        && (result.FunctionResult as Newtonsoft.Json.Linq.JObject)?[
+                            "success"
+                        ]?.ToObject<bool>() == true;
+
+                    if (clearSuccess)
+                    {
+                        Debug.Log(
+                            "[BattleResultProcessor] Old battle result cleared successfully!"
+                        );
+                    }
+                    else
+                    {
+                        Debug.LogWarning(
+                            "[BattleResultProcessor] Failed to clear battle result - may cause issues!"
+                        );
+                    }
                 }
-                else
-                {
-                    Debug.LogWarning("[BattleResultProcessor] Failed to clear battle result - may cause issues!");
-                }
-            });
-            
+            );
+
             // PoATkaj na server response (max 5s - mALle byLA pomalA)
             float waitTime = 0f;
             while (!clearCompleted && waitTime < 5f)
@@ -2138,21 +2804,23 @@ public class BattleResultProcessor : MonoBehaviour
                 yield return new WaitForSeconds(0.1f);
                 waitTime += 0.1f;
             }
-            
+
             if (!clearCompleted)
             {
-                Debug.LogWarning("[BattleResultProcessor] ClearBattleData timeout after 5s - continuing anyway");
+                Debug.LogWarning(
+                    "[BattleResultProcessor] ClearBattleData timeout after 5s - continuing anyway"
+                );
             }
         }
         else
         {
             Debug.LogError("[BattleResultProcessor] ServerFunctionsManager not found!");
         }
-        
+
         // Nastav state na TURN (RevealCards() nemusA to urobiLA ak fightSystem field je null)
         fightSystem.state = FightStateMultiplayer.TURN;
         Debug.Log($"[BattleResultProcessor] State set to TURN. Current state: {fightSystem.state}");
-        
+
         // Reload attack counts pre novAs kartu
         var myCard = fightSystem.player.cardInGame;
         if (myCard != null && fightSystem.attackCountLoader != null)
@@ -2161,11 +2829,11 @@ public class BattleResultProcessor : MonoBehaviour
             fightSystem.LoadAttackCounts(myCard);
         }
     }
-    
+
     // REMOVED: WaitForEnemyNewCard() - duplicitnA kAd
     // REMOVED: RevealEnemyNewCard() - duplicitnA kAd
     // Teraz reusujeme MultiplayerBoardManager.WaitForOpponentSelectionAsync() + RevealCards()
-    
+
     /// <summary>
     /// Handler pre smrLA oboch kariet simultAnne
     /// </summary>
@@ -2182,11 +2850,11 @@ public class BattleResultProcessor : MonoBehaviour
         {
             Debug.LogWarning("[BattleResultProcessor] KillCounterManager not assigned!");
         }
-        
+
         // 1. VymaLl obe karty (board + server)
         yield return StartCoroutine(HandleCardDeath(myCard, isMyCard: true));
         yield return StartCoroutine(HandleCardDeath(enemyCard, isMyCard: false));
-        
+
         // 2. Skontroluj ATi player mA AZalLie karty
         Player player = fightSystem?.player;
         if (player == null)
@@ -2195,18 +2863,20 @@ public class BattleResultProcessor : MonoBehaviour
             fightSystem.state = FightStateMultiplayer.WON; // alebo DRAW state
             yield break;
         }
-        
+
         int remainingCards = player.hand.Count;
-        Debug.Log($"[BattleResultProcessor] Both died - Player has {remainingCards} cards remaining");
-        
+        Debug.Log(
+            $"[BattleResultProcessor] Both died - Player has {remainingCards} cards remaining"
+        );
+
         if (remainingCards > 0)
         {
             // MA karty a PLAYERDEATH state
             dialogText.text = "Both destroyed! Choose new fighter!";
             fightSystem.state = FightStateMultiplayer.PLAYERDEATH;
-            
+
             Debug.Log("[BattleResultProcessor] z Unlocking hand after mutual destruction");
-            
+
             var boardManager = fightSystem.multiplayerBoardManager;
             if (boardManager != null)
             {
@@ -2214,7 +2884,9 @@ public class BattleResultProcessor : MonoBehaviour
             }
             else
             {
-                Debug.LogError("[BattleResultProcessor] MultiplayerBoardManager not found in both cards death!");
+                Debug.LogError(
+                    "[BattleResultProcessor] MultiplayerBoardManager not found in both cards death!"
+                );
             }
         }
         else
@@ -2226,12 +2898,3 @@ public class BattleResultProcessor : MonoBehaviour
         }
     }
 }
-
-
-
-
-
-
-
-
-

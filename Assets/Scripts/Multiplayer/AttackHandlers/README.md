@@ -1,4 +1,4 @@
-﻿# Attack Handlers
+# Attack Handlers
 
 Modularna struktura pre attack animacie a logiku v multiplayer systeme.
 
@@ -26,6 +26,7 @@ AttackHandlers/
   Attack18Handler.cs  - Bloodthirst
   Attack19Handler.cs  - Sword
   Attack20Handler.cs  - Pike
+  Attack21Handler.cs  - Terrify
   ...
   Attack123Handler.cs
 ```
@@ -101,7 +102,7 @@ Rovnaka struktura ako server:
 - **Server:** `api/attacks/implementations/attack{ID}.js`
 - **Unity:** `AttackHandlers/Attack{ID}Handler.cs`
 
-Progress: 20/123 attacks (16.3%)
+Progress: 21/123 attacks (17.1%)
 
 
 

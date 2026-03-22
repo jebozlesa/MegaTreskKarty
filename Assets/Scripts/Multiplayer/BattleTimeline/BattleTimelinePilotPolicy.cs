@@ -1,11 +1,9 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public static class BattleTimelinePilotPolicy
 {
     public const string TimelineV2EnabledPrefKey = "battle.timeline.v2.enabled";
-    public const string TimelineV1FallbackPrefKey = "battle.timeline.v1.fallback";
-    public const string TimelineV2HardModePrefKey = "battle.timeline.v2.hard_mode";
 
     public static bool ShouldRunTimeline(
         Dictionary<string, object> battleResult,
@@ -15,42 +13,29 @@ public static class BattleTimelinePilotPolicy
         mode = "disabled";
         if (parsed == null)
         {
+            mode = "parsed_missing";
             return false;
         }
 
         bool timelineV2Enabled = ReadBoolPref(TimelineV2EnabledPrefKey, true);
-        bool timelineV1FallbackEnabled = ReadBoolPref(TimelineV1FallbackPrefKey, true);
-        bool timelineV2HardMode = ReadBoolPref(TimelineV2HardModePrefKey, true);
         bool hasTimelineV2 = battleResult != null &&
                              battleResult.ContainsKey("timelineV2") &&
                              battleResult["timelineV2"] != null;
 
-        if (timelineV2Enabled && hasTimelineV2)
+        if (!timelineV2Enabled)
         {
-            mode = "v2";
-            return true;
-        }
-
-        if (timelineV2Enabled && !hasTimelineV2)
-        {
-            if (timelineV2HardMode)
-            {
-                mode = "v2_hard_missing";
-                return false;
-            }
-
-            if (timelineV1FallbackEnabled && IsEligible(parsed))
-            {
-                mode = "v1_fallback";
-                return true;
-            }
-
-            mode = "v2_no_payload";
+            mode = "v2_disabled";
             return false;
         }
 
-        mode = "v2_disabled";
-        return false;
+        if (!hasTimelineV2)
+        {
+            mode = "v2_missing";
+            return false;
+        }
+
+        mode = "v2";
+        return true;
     }
 
     public static bool IsEligible(ParsedBattleResult parsed)
@@ -117,6 +102,6 @@ public static class BattleTimelinePilotPolicy
 
     public static bool IsHardModeEnabled()
     {
-        return ReadBoolPref(TimelineV2HardModePrefKey, true);
+        return true;
     }
 }

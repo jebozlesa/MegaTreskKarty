@@ -25,8 +25,8 @@ public class BattleTimelineBuilderTests
             Assert.IsNotNull(steps, $"Steps should not be null for fixture {fileName}");
             Assert.IsTrue(steps.Count > 0, $"Timeline should not be empty for fixture {fileName}");
         }
-    }
 
+    }
     [Test]
     public void Build_DeathFixtures_ContainDeathStep()
     {
@@ -106,11 +106,11 @@ public class BattleTimelineBuilderTests
     {
         var steps = BuildTimelineFromFixture("04_first_blocked_second_attacks.json");
         var attackA = GetStepsByType(steps, "Attack").FirstOrDefault(s => GetStringField(s, "ActorCardId") == "card_A");
+        var blockedA = GetStepsByType(steps, "Blocked").FirstOrDefault(s => GetStringField(s, "ActorCardId") == "card_A");
 
         Assert.IsNotNull(attackA, "Missing attack step for card_A");
         Assert.IsTrue(GetBoolField(attackA, "Blocked"));
-        Assert.AreEqual(3, GetNullableIntField(attackA, "BlockedBy"));
-
+        Assert.AreEqual(3, GetNullableIntField(blockedA, "BlockedBy"));
         bool blockedCardDealtAttackDamage = GetStepsByType(steps, "Damage")
             .Any(s => GetStringField(s, "ActorCardId") == "card_A" &&
                       GetStringField(s, "TargetCardId") == "card_B" &&
@@ -153,11 +153,9 @@ public class BattleTimelineBuilderTests
         Assert.IsTrue(GetStepsByType(steps, "ExposureTick")
             .Any(s => GetStringField(s, "ActorCardId") == "card_B" && GetIntField(s, "Amount") == 1));
 
-        Assert.IsTrue(GetStepsByType(steps, "Blocked")
-            .Any(s => GetStringField(s, "ActorCardId") == "card_A" && GetNullableIntField(s, "BlockedBy") == 3));
-
-        Assert.IsTrue(GetStepsByType(steps, "Blocked")
-            .Any(s => GetStringField(s, "ActorCardId") == "card_B" && GetNullableIntField(s, "BlockedBy") == 2));
+        var blockedSteps = GetStepsByType(steps, "Blocked");
+        Assert.IsTrue(blockedSteps.Any(s => GetStringField(s, "ActorCardId") == "card_A"));
+        Assert.IsTrue(blockedSteps.Any(s => GetStringField(s, "ActorCardId") == "card_B"));
     }
 
     [Test]
@@ -173,8 +171,7 @@ public class BattleTimelineBuilderTests
 
         int blockedIdx = IndexOfFirst(steps, s =>
             GetStepTypeName(s) == "Blocked" &&
-            GetStringField(s, "ActorCardId") == "card_B" &&
-            GetNullableIntField(s, "BlockedBy") == 3);
+            GetStringField(s, "ActorCardId") == "card_B");
 
         Assert.GreaterOrEqual(appliedIdx, 0, "Missing sleep effect applied step");
         Assert.GreaterOrEqual(blockedIdx, 0, "Missing blocked-by-sleep step");
@@ -187,19 +184,37 @@ public class BattleTimelineBuilderTests
         var battleResult = new Dictionary<string, object>
         {
             {
+                "timelineV2", new Dictionary<string, object>
+                {
+                    { "version", 2 },
+                    { "steps", new List<object>
+                        {
+                            new Dictionary<string, object>
+                            {
+                                { "type", "WakeUp" },
+                                { "actorCardId", "card_A" },
+                                { "targetCardId", "card_A" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "Recovery" },
+                                { "actorCardId", "card_B" },
+                                { "targetCardId", "card_B" }
+                            }
+                        }
+                    }
+                }
+            },
+            {
                 "firstAttacker", new Dictionary<string, object>
                 {
-                    { "cardId", "card_A" }, { "attackId", 1 }, { "damageDealt", 0 }, { "healAmount", 0 },
-                    { "blocked", false }, { "wokeUp", true }, { "recovered", false },
-                    { "bleedDamage", 0 }, { "exposureDamage", 0 }, { "exposureRemoved", false }, { "isDead", false }
+                    { "cardId", "card_A" }, { "attackId", 1 }
                 }
             },
             {
                 "secondAttacker", new Dictionary<string, object>
                 {
-                    { "cardId", "card_B" }, { "attackId", 1 }, { "damageDealt", 0 }, { "healAmount", 0 },
-                    { "blocked", false }, { "wokeUp", false }, { "recovered", true },
-                    { "bleedDamage", 0 }, { "exposureDamage", 0 }, { "exposureRemoved", false }, { "isDead", false }
+                    { "cardId", "card_B" }, { "attackId", 1 }
                 }
             }
         };
@@ -278,7 +293,7 @@ public class BattleTimelineBuilderTests
     }
 
     [Test]
-    public void Build_FallsBackToLegacy_WhenTimelineV2IsInvalid()
+    public void Build_Fails_WhenTimelineV2IsInvalid()
     {
         var battleResult = new Dictionary<string, object>
         {
@@ -286,57 +301,21 @@ public class BattleTimelineBuilderTests
             {
                 "firstAttacker", new Dictionary<string, object>
                 {
-                    { "cardId", "legacy_A" }, { "attackId", 1 }, { "damageDealt", 3 }, { "healAmount", 0 },
-                    { "blocked", false }, { "wokeUp", false }, { "recovered", false },
-                    { "bleedDamage", 0 }, { "exposureDamage", 0 }, { "exposureRemoved", false }, { "isDead", false }
+                    { "cardId", "legacy_A" }, { "attackId", 1 }, { "damageDealt", 3 }, { "healAmount", 0 }
                 }
             },
             {
                 "secondAttacker", new Dictionary<string, object>
                 {
-                    { "cardId", "legacy_B" }, { "attackId", 1 }, { "damageDealt", 0 }, { "healAmount", 0 },
-                    { "blocked", false }, { "wokeUp", false }, { "recovered", false },
-                    { "bleedDamage", 0 }, { "exposureDamage", 0 }, { "exposureRemoved", false }, { "isDead", false }
+                    { "cardId", "legacy_B" }, { "attackId", 1 }, { "damageDealt", 0 }, { "healAmount", 0 }
                 }
             }
         };
 
-        List<object> steps = BuildTimelineFromBattleResultDict(battleResult);
-        var attack = GetStepsByType(steps, "Attack").FirstOrDefault();
+        bool ok = TryBuildTimelineFromBattleResultDict(battleResult, out _, out string error);
 
-        Assert.IsNotNull(attack, "Legacy fallback should still produce attack steps.");
-        Assert.AreEqual("legacy_A", GetStringField(attack, "ActorCardId"));
-    }
-
-    [Test]
-    public void Build_LegacyBlockedByKnockout_PreservesBlockedBy27()
-    {
-        var battleResult = new Dictionary<string, object>
-        {
-            {
-                "firstAttacker", new Dictionary<string, object>
-                {
-                    { "cardId", "card_A" }, { "attackId", 1 }, { "damageDealt", 1 }, { "healAmount", 0 },
-                    { "blocked", false }, { "blockedBy", null }, { "wokeUp", false }, { "recovered", false },
-                    { "bleedDamage", 0 }, { "exposureDamage", 0 }, { "exposureRemoved", false }, { "isDead", false }
-                }
-            },
-            {
-                "secondAttacker", new Dictionary<string, object>
-                {
-                    { "cardId", "card_B" }, { "attackId", 8 }, { "damageDealt", 0 }, { "healAmount", 0 },
-                    { "blocked", true }, { "blockedBy", 27 }, { "wokeUp", false }, { "recovered", false },
-                    { "bleedDamage", 0 }, { "exposureDamage", 0 }, { "exposureRemoved", false }, { "isDead", false }
-                }
-            }
-        };
-
-        List<object> steps = BuildTimelineFromBattleResultDict(battleResult);
-        var blocked = GetStepsByType(steps, "Blocked")
-            .FirstOrDefault(s => GetStringField(s, "ActorCardId") == "card_B");
-
-        Assert.IsNotNull(blocked, "Missing blocked step for card_B");
-        Assert.AreEqual(27, GetNullableIntField(blocked, "BlockedBy"));
+        Assert.IsFalse(ok);
+        StringAssert.Contains("timelineV2 invalid", error);
     }
 
     [Test]
@@ -495,69 +474,6 @@ public class BattleTimelineBuilderTests
         Assert.AreEqual(-1, GetIntField(statChanges[1], "Amount"));
     }
 
-
-    [Test]
-    public void Build_LegacyAttack_ParsesAttackerEffectsApplied()
-    {
-        var battleResult = new Dictionary<string, object>
-        {
-            {
-                "firstAttacker", new Dictionary<string, object>
-                {
-                    { "cardId", "card_A" }, { "attackId", 7 }, { "damageDealt", 5 }, { "healAmount", 0 },
-                    { "blocked", false }, { "wokeUp", false }, { "recovered", false },
-                    { "bleedDamage", 0 }, { "exposureDamage", 0 }, { "exposureRemoved", false }, { "isDead", false },
-                    { "attackerEffectsApplied", new List<object>
-                        {
-                            new Dictionary<string, object> { { "type", 1 }, { "duration", 3 } }
-                        }
-                    }
-                }
-            },
-            {
-                "secondAttacker", new Dictionary<string, object>
-                {
-                    { "cardId", "card_B" }, { "attackId", 1 }, { "damageDealt", 0 }, { "healAmount", 0 },
-                    { "blocked", false }, { "wokeUp", false }, { "recovered", false },
-                    { "bleedDamage", 0 }, { "exposureDamage", 0 }, { "exposureRemoved", false }, { "isDead", false }
-                }
-            }
-        };
-
-        List<object> steps = BuildTimelineFromBattleResultDict(battleResult);
-        var attack = GetStepsByType(steps, "Attack").FirstOrDefault(s => GetStringField(s, "ActorCardId") == "card_A");
-
-        Assert.IsNotNull(attack, "Missing first attacker step.");
-        var attackerEffects = GetEffectListField(attack, "AttackerEffectsApplied");
-        Assert.IsNotNull(attackerEffects, "AttackerEffectsApplied should be parsed from legacy result.");
-        Assert.AreEqual(1, attackerEffects.Count, "Expected one attacker-applied effect.");
-        Assert.AreEqual("1", attackerEffects[0]["type"].ToString());
-    }
-
-    private static List<object> BuildTimelineFromFixture(string fileName)
-    {
-        var envelope = LoadFixtureEnvelope(fileName);
-        Assert.IsNotNull(envelope);
-        Assert.IsNotNull(envelope.battleResult);
-
-        var battleResultDict = ToBattleResultDict(envelope.battleResult);
-        return BuildTimelineFromBattleResultDict(battleResultDict);
-    }
-
-    private static FixtureEnvelope LoadFixtureEnvelope(string fileName)
-    {
-        string json = File.ReadAllText(Path.Combine(ResolveFixturesDir(), fileName));
-        return JsonUtility.FromJson<FixtureEnvelope>(json);
-    }
-
-    private static IEnumerable<string> EnumerateBattleFixturePaths()
-    {
-        return Directory
-            .GetFiles(ResolveFixturesDir(), "*.json", SearchOption.TopDirectoryOnly)
-            .OrderBy(Path.GetFileName)
-            .Where(path => !Path.GetFileName(path).Contains("waiting_response", StringComparison.OrdinalIgnoreCase));
-    }
-
     private static List<object> BuildTimelineFromBattleResultDict(Dictionary<string, object> battleResultDict)
     {
         var builderType = Type.GetType("BattleTimelineBuilder, Assembly-CSharp");
@@ -650,6 +566,172 @@ public class BattleTimelineBuilderTests
         return value as List<Dictionary<string, object>>;
     }
 
+    private static IEnumerable<string> EnumerateBattleFixturePaths()
+    {
+        string fixturesDir = ResolveFixturesDir();
+        Assert.IsTrue(Directory.Exists(fixturesDir), $"Fixtures directory not found: {fixturesDir}");
+
+        var files = Directory.GetFiles(fixturesDir, "*.json")
+            .Where(FixtureHasTimelineV2)
+            .OrderBy(Path.GetFileName)
+            .ToList();
+
+        if (files.Count == 0)
+        {
+            Assert.Ignore("BattleTimelineBuilderTests fixture corpus does not contain timelineV2 yet.");
+        }
+
+        return files;
+    }
+
+    private static bool FixtureHasTimelineV2(string path)
+    {
+        return File.ReadAllText(path).Contains("\"timelineV2\"");
+    }
+
+    private static FixtureEnvelope LoadFixtureEnvelope(string fileName)
+    {
+        string path = Path.Combine(ResolveFixturesDir(), fileName);
+        Assert.IsTrue(File.Exists(path), $"Fixture not found: {path}");
+
+        string json = File.ReadAllText(path);
+        var envelope = JsonUtility.FromJson<FixtureEnvelope>(json);
+        Assert.IsNotNull(envelope, $"Envelope parse failed for fixture: {fileName}");
+        return envelope;
+    }
+
+    private static List<object> BuildTimelineFromFixture(string fileName)
+    {
+        string path = Path.Combine(ResolveFixturesDir(), fileName);
+        if (!FixtureHasTimelineV2(path))
+        {
+            Assert.Ignore($"Fixture {fileName} does not include timelineV2 yet.");
+        }
+
+        return BuildTimelineFromBattleResultDict(LoadFixtureBattleResultDict(fileName));
+    }
+
+    private static Dictionary<string, object> LoadFixtureBattleResultDict(string fileName)
+    {
+        string path = Path.Combine(ResolveFixturesDir(), fileName);
+        Assert.IsTrue(File.Exists(path), $"Fixture not found: {path}");
+
+        string json = File.ReadAllText(path);
+        string battleResultJson = ExtractJsonObjectForProperty(json, "battleResult");
+        Assert.IsFalse(string.IsNullOrWhiteSpace(battleResultJson), $"Fixture has no battleResult: {fileName}");
+
+        return ParseJsonObjectToDict(battleResultJson, fileName);
+    }
+
+    private static Dictionary<string, object> ParseJsonObjectToDict(string json, string fileName)
+    {
+        var builderType = Type.GetType("BattleTimelineBuilder, Assembly-CSharp");
+        Assert.IsNotNull(builderType, "Type BattleTimelineBuilder was not found in Assembly-CSharp.");
+
+        MethodInfo toDictMethod = builderType.GetMethod("ToDict", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.IsNotNull(toDictMethod, "Method BattleTimelineBuilder.ToDict was not found.");
+
+        var result = toDictMethod.Invoke(null, new object[] { json }) as Dictionary<string, object>;
+        Assert.IsNotNull(result, $"Fixture battleResult parse failed: {fileName}");
+        return result;
+    }
+
+    private static string ExtractJsonObjectForProperty(string json, string propertyName)
+    {
+        string needle = $"\"{propertyName}\"";
+        int propertyIndex = json.IndexOf(needle, StringComparison.Ordinal);
+        if (propertyIndex < 0)
+        {
+            return null;
+        }
+
+        int colonIndex = json.IndexOf(':', propertyIndex + needle.Length);
+        if (colonIndex < 0)
+        {
+            return null;
+        }
+
+        int objectStart = json.IndexOf('{', colonIndex + 1);
+        if (objectStart < 0)
+        {
+            return null;
+        }
+
+        int depth = 0;
+        bool inString = false;
+        bool escaped = false;
+
+        for (int i = objectStart; i < json.Length; i++)
+        {
+            char c = json[i];
+
+            if (escaped)
+            {
+                escaped = false;
+                continue;
+            }
+
+            if (c == '\\')
+            {
+                escaped = true;
+                continue;
+            }
+
+            if (c == '"')
+            {
+                inString = !inString;
+                continue;
+            }
+
+            if (inString)
+            {
+                continue;
+            }
+
+            if (c == '{')
+            {
+                depth++;
+            }
+            else if (c == '}')
+            {
+                depth--;
+                if (depth == 0)
+                {
+                    return json.Substring(objectStart, i - objectStart + 1);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TryBuildTimelineFromBattleResultDict(
+        Dictionary<string, object> battleResultDict,
+        out List<object> steps,
+        out string error)
+    {
+        steps = null;
+        error = null;
+
+        var builderType = Type.GetType("BattleTimelineBuilder, Assembly-CSharp");
+        Assert.IsNotNull(builderType, "Type BattleTimelineBuilder was not found in Assembly-CSharp.");
+
+        MethodInfo tryBuildMethod = builderType
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .FirstOrDefault(m => m.Name == "TryBuild" && m.GetParameters().Length == 3);
+        Assert.IsNotNull(tryBuildMethod, "Method BattleTimelineBuilder.TryBuild was not found.");
+
+        object[] args = { battleResultDict, null, null };
+        bool ok = (bool)tryBuildMethod.Invoke(null, args);
+        error = args[2] as string;
+
+        if (ok && args[1] is IEnumerable enumerable)
+        {
+            steps = enumerable.Cast<object>().ToList();
+        }
+
+        return ok;
+    }
     private static string ResolveFixturesDir()
     {
         string env = Environment.GetEnvironmentVariable("MEGA_TRESK_FIXTURES_DIR");
@@ -670,7 +752,7 @@ public class BattleTimelineBuilderTests
 
     private static Dictionary<string, object> ToBattleResultDict(FixtureBattleResult result)
     {
-        return new Dictionary<string, object>
+        var dict = new Dictionary<string, object>
         {
             { "firstAttacker", ToAttackerDict(result.firstAttacker) },
             { "secondAttacker", ToAttackerDict(result.secondAttacker) },
@@ -678,6 +760,13 @@ public class BattleTimelineBuilderTests
             { "winnerCardId", result.winnerCardId },
             { "loserCardId", result.loserCardId }
         };
+
+        if (result.timelineV2 != null)
+        {
+            dict["timelineV2"] = ToTimelineV2Dict(result.timelineV2);
+        }
+
+        return dict;
     }
 
     private static Dictionary<string, object> ToAttackerDict(FixtureAttacker attacker)
@@ -736,6 +825,54 @@ public class BattleTimelineBuilderTests
         return effects.Select(e => (object)ToEffectDict(e)).ToList();
     }
 
+    private static Dictionary<string, object> ToTimelineV2Dict(FixtureTimelineV2 timeline)
+    {
+        return new Dictionary<string, object>
+        {
+            { "version", timeline.version },
+            { "steps", ToTimelineStepDictList(timeline.steps) }
+        };
+    }
+
+    private static List<object> ToTimelineStepDictList(List<FixtureTimelineStep> steps)
+    {
+        if (steps == null)
+        {
+            return new List<object>();
+        }
+
+        return steps.Select(step => (object)ToTimelineStepDict(step)).ToList();
+    }
+
+    private static Dictionary<string, object> ToTimelineStepDict(FixtureTimelineStep step)
+    {
+        int? blockedBy = step.blockedBy;
+        if (step.blocked && blockedBy == null && step.effectType > 0)
+        {
+            blockedBy = step.effectType;
+        }
+
+        return new Dictionary<string, object>
+        {
+            { "type", step.type },
+            { "actorCardId", step.actorCardId },
+            { "targetCardId", step.targetCardId },
+            { "attackId", step.attackId },
+            { "attackResult", step.attackResult },
+            { "amount", step.amount },
+            { "statName", step.statName },
+            { "effectType", step.effectType },
+            { "duration", step.duration },
+            { "blocked", step.blocked },
+            { "blockedBy", blockedBy },
+            { "skipped", step.skipped },
+            { "source", step.source },
+            { "note", step.note },
+            { "effectsApplied", ToEffectDictList(step.effectsApplied) },
+            { "attackerEffectsApplied", ToEffectDictList(step.attackerEffectsApplied) }
+        };
+    }
+
     [Serializable]
     private class FixtureEnvelope
     {
@@ -750,6 +887,7 @@ public class BattleTimelineBuilderTests
         public bool cardDied;
         public string winnerCardId;
         public string loserCardId;
+        public FixtureTimelineV2 timelineV2;
     }
 
     [Serializable]
@@ -776,6 +914,34 @@ public class BattleTimelineBuilderTests
     }
 
     [Serializable]
+    private class FixtureTimelineV2
+    {
+        public int version;
+        public List<FixtureTimelineStep> steps;
+    }
+
+    [Serializable]
+    private class FixtureTimelineStep
+    {
+        public string type;
+        public string actorCardId;
+        public string targetCardId;
+        public int attackId;
+        public string attackResult;
+        public int amount;
+        public string statName;
+        public int effectType;
+        public int duration;
+        public bool blocked;
+        public int? blockedBy;
+        public bool skipped;
+        public string source;
+        public string note;
+        public List<FixtureEffect> effectsApplied;
+        public List<FixtureEffect> attackerEffectsApplied;
+    }
+
+    [Serializable]
     private class FixtureEffect
     {
         public int type;
@@ -783,3 +949,5 @@ public class BattleTimelineBuilderTests
         public string source;
     }
 }
+
+

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
@@ -10,16 +10,12 @@ public class BattleTimelinePilotPolicyTests
     public void SetUp()
     {
         PlayerPrefs.DeleteKey("battle.timeline.v2.enabled");
-        PlayerPrefs.DeleteKey("battle.timeline.v1.fallback");
-        PlayerPrefs.DeleteKey("battle.timeline.v2.hard_mode");
     }
 
     [TearDown]
     public void TearDown()
     {
         PlayerPrefs.DeleteKey("battle.timeline.v2.enabled");
-        PlayerPrefs.DeleteKey("battle.timeline.v1.fallback");
-        PlayerPrefs.DeleteKey("battle.timeline.v2.hard_mode");
     }
 
     [Test]
@@ -118,59 +114,20 @@ public class BattleTimelinePilotPolicyTests
     }
 
     [Test]
-    public void ShouldRunTimeline_UsesV1Fallback_WhenV2PayloadMissing()
+    public void ShouldRunTimeline_ReturnsFalse_WhenV2PayloadMissing()
     {
         object parsed = CreateParsedBattleResult();
         SetField(parsed, "MyAttackId", 1);
         SetField(parsed, "EnemyAttackId", 2);
         SetField(parsed, "MyStatChanges", CreateAttackStatChanges());
         SetField(parsed, "EnemyStatChanges", CreateAttackStatChanges());
-        PlayerPrefs.SetInt("battle.timeline.v2.hard_mode", 0);
-
-        var battleResult = new Dictionary<string, object>();
-
-        bool shouldRun = InvokeShouldRunTimeline(battleResult, parsed, out string mode);
-
-        Assert.IsTrue(shouldRun);
-        Assert.AreEqual("v1_fallback", mode);
-    }
-
-    [Test]
-    public void ShouldRunTimeline_ReturnsFalse_WhenV2PayloadMissingAndFallbackDisabled()
-    {
-        object parsed = CreateParsedBattleResult();
-        SetField(parsed, "MyAttackId", 1);
-        SetField(parsed, "EnemyAttackId", 2);
-        SetField(parsed, "MyStatChanges", CreateAttackStatChanges());
-        SetField(parsed, "EnemyStatChanges", CreateAttackStatChanges());
-
-        PlayerPrefs.SetInt("battle.timeline.v2.hard_mode", 0);
-        PlayerPrefs.SetInt("battle.timeline.v1.fallback", 0);
 
         var battleResult = new Dictionary<string, object>();
 
         bool shouldRun = InvokeShouldRunTimeline(battleResult, parsed, out string mode);
 
         Assert.IsFalse(shouldRun);
-        Assert.AreEqual("v2_no_payload", mode);
-    }
-
-    [Test]
-    public void ShouldRunTimeline_ReturnsFalse_WhenV2PayloadMissingAndHardModeEnabled()
-    {
-        object parsed = CreateParsedBattleResult();
-        SetField(parsed, "MyAttackId", 1);
-        SetField(parsed, "EnemyAttackId", 2);
-        SetField(parsed, "MyStatChanges", CreateAttackStatChanges());
-        SetField(parsed, "EnemyStatChanges", CreateAttackStatChanges());
-        PlayerPrefs.SetInt("battle.timeline.v2.hard_mode", 1);
-
-        var battleResult = new Dictionary<string, object>();
-
-        bool shouldRun = InvokeShouldRunTimeline(battleResult, parsed, out string mode);
-
-        Assert.IsFalse(shouldRun);
-        Assert.AreEqual("v2_hard_missing", mode);
+        Assert.AreEqual("v2_missing", mode);
     }
 
     [Test]
