@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -176,6 +176,246 @@ public class BattleTimelineBuilderTests
         Assert.GreaterOrEqual(appliedIdx, 0, "Missing sleep effect applied step");
         Assert.GreaterOrEqual(blockedIdx, 0, "Missing blocked-by-sleep step");
         Assert.Less(appliedIdx, blockedIdx, "Freshly applied sleep should appear before blocked attack step");
+    }
+
+    [Test]
+    public void Build_DrinkWineTimeline_ContainsHealStrengthBuffAndSelfSleep()
+    {
+        var battleResult = new Dictionary<string, object>
+        {
+            {
+                "timelineV2", new Dictionary<string, object>
+                {
+                    { "version", 2 },
+                    { "steps", new List<object>
+                        {
+                            new Dictionary<string, object>
+                            {
+                                { "type", "Attack" },
+                                { "actorCardId", "drink_a" },
+                                { "targetCardId", "drink_b" },
+                                { "attackId", 22 },
+                                { "attackResult", "drunk" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "Heal" },
+                                { "actorCardId", "drink_a" },
+                                { "targetCardId", "drink_a" },
+                                { "amount", 2 },
+                                { "source", "attack" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "StatChange" },
+                                { "actorCardId", "drink_a" },
+                                { "targetCardId", "drink_a" },
+                                { "statName", "STR" },
+                                { "amount", 1 },
+                                { "source", "attack" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "EffectApplied" },
+                                { "actorCardId", "drink_a" },
+                                { "targetCardId", "drink_a" },
+                                { "effectType", 3 },
+                                { "duration", 2 }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "firstAttacker", new Dictionary<string, object>
+                {
+                    { "cardId", "drink_a" }, { "attackId", 22 }
+                }
+            },
+            {
+                "secondAttacker", new Dictionary<string, object>
+                {
+                    { "cardId", "drink_b" }, { "attackId", 17 }
+                }
+            }
+        };
+
+        List<object> steps = BuildTimelineFromBattleResultDict(battleResult);
+
+        Assert.IsTrue(GetStepsByType(steps, "Attack").Any(s => GetStringField(s, "ActorCardId") == "drink_a" && GetIntField(s, "AttackId") == 22));
+        Assert.IsTrue(GetStepsByType(steps, "Heal").Any(s => GetStringField(s, "ActorCardId") == "drink_a" && GetStringField(s, "TargetCardId") == "drink_a" && GetIntField(s, "Amount") == 2));
+        Assert.IsTrue(GetStepsByType(steps, "StatChange").Any(s => GetStringField(s, "ActorCardId") == "drink_a" && GetStringField(s, "TargetCardId") == "drink_a" && GetStringField(s, "StatName") == "STR" && GetIntField(s, "Amount") == 1));
+        Assert.IsTrue(GetStepsByType(steps, "EffectApplied").Any(s => GetStringField(s, "ActorCardId") == "drink_a" && GetStringField(s, "TargetCardId") == "drink_a" && GetIntField(s, "EffectType") == 3));
+    }
+    [Test]
+    public void Build_FlamingGunTimeline_ContainsDamageAndBurnEffect()
+    {
+        var battleResult = new Dictionary<string, object>
+        {
+            {
+                "timelineV2", new Dictionary<string, object>
+                {
+                    { "version", 2 },
+                    { "steps", new List<object>
+                        {
+                            new Dictionary<string, object>
+                            {
+                                { "type", "Attack" },
+                                { "actorCardId", "flame_a" },
+                                { "targetCardId", "flame_b" },
+                                { "attackId", 23 },
+                                { "attackResult", "burn" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "Damage" },
+                                { "actorCardId", "flame_a" },
+                                { "targetCardId", "flame_b" },
+                                { "amount", 3 },
+                                { "source", "attack" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "EffectApplied" },
+                                { "actorCardId", "flame_a" },
+                                { "targetCardId", "flame_b" },
+                                { "effectType", 16 },
+                                { "duration", 1 }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "firstAttacker", new Dictionary<string, object>
+                {
+                    { "cardId", "flame_a" }, { "attackId", 23 }
+                }
+            },
+            {
+                "secondAttacker", new Dictionary<string, object>
+                {
+                    { "cardId", "flame_b" }, { "attackId", 17 }
+                }
+            }
+        };
+
+        List<object> steps = BuildTimelineFromBattleResultDict(battleResult);
+
+        Assert.IsTrue(GetStepsByType(steps, "Attack").Any(s => GetStringField(s, "ActorCardId") == "flame_a" && GetIntField(s, "AttackId") == 23));
+        Assert.IsTrue(GetStepsByType(steps, "Damage").Any(s => GetStringField(s, "ActorCardId") == "flame_a" && GetStringField(s, "TargetCardId") == "flame_b" && GetIntField(s, "Amount") == 3));
+        Assert.IsTrue(GetStepsByType(steps, "EffectApplied").Any(s => GetStringField(s, "ActorCardId") == "flame_a" && GetStringField(s, "TargetCardId") == "flame_b" && GetIntField(s, "EffectType") == 16));
+    }
+
+    [Test]
+    public void Build_CleaverTimeline_ContainsDamageAndBleedEffect()
+    {
+        var battleResult = new Dictionary<string, object>
+        {
+            {
+                "timelineV2", new Dictionary<string, object>
+                {
+                    { "version", 2 },
+                    { "steps", new List<object>
+                        {
+                            new Dictionary<string, object>
+                            {
+                                { "type", "Attack" },
+                                { "actorCardId", "cleaver_a" },
+                                { "targetCardId", "cleaver_b" },
+                                { "attackId", 24 },
+                                { "attackResult", "hit" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "Damage" },
+                                { "actorCardId", "cleaver_a" },
+                                { "targetCardId", "cleaver_b" },
+                                { "amount", 7 },
+                                { "source", "attack" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "EffectApplied" },
+                                { "actorCardId", "cleaver_a" },
+                                { "targetCardId", "cleaver_b" },
+                                { "effectType", 1 },
+                                { "duration", 6 }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "firstAttacker", new Dictionary<string, object>
+                {
+                    { "cardId", "cleaver_a" }, { "attackId", 24 }
+                }
+            },
+            {
+                "secondAttacker", new Dictionary<string, object>
+                {
+                    { "cardId", "cleaver_b" }, { "attackId", 17 }
+                }
+            }
+        };
+
+        List<object> steps = BuildTimelineFromBattleResultDict(battleResult);
+
+        Assert.IsTrue(GetStepsByType(steps, "Attack").Any(s => GetStringField(s, "ActorCardId") == "cleaver_a" && GetIntField(s, "AttackId") == 24));
+        Assert.IsTrue(GetStepsByType(steps, "Damage").Any(s => GetStringField(s, "ActorCardId") == "cleaver_a" && GetStringField(s, "TargetCardId") == "cleaver_b" && GetIntField(s, "Amount") == 7));
+        Assert.IsTrue(GetStepsByType(steps, "EffectApplied").Any(s => GetStringField(s, "ActorCardId") == "cleaver_a" && GetStringField(s, "TargetCardId") == "cleaver_b" && GetIntField(s, "EffectType") == 1 && GetIntField(s, "Duration") == 6));
+    }
+
+    [Test]
+    public void Build_BurnTickTimeline_ContainsBurnTickAndDamage()
+    {
+        var battleResult = new Dictionary<string, object>
+        {
+            {
+                "timelineV2", new Dictionary<string, object>
+                {
+                    { "version", 2 },
+                    { "steps", new List<object>
+                        {
+                            new Dictionary<string, object>
+                            {
+                                { "type", "BurnTick" },
+                                { "actorCardId", "burn_a" },
+                                { "targetCardId", "burn_a" },
+                                { "amount", 1 },
+                                { "source", "burn" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "Damage" },
+                                { "actorCardId", "burn_a" },
+                                { "targetCardId", "burn_a" },
+                                { "amount", 1 },
+                                { "source", "burn" }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "firstAttacker", new Dictionary<string, object>
+                {
+                    { "cardId", "burn_a" }, { "attackId", 23 }
+                }
+            },
+            {
+                "secondAttacker", new Dictionary<string, object>
+                {
+                    { "cardId", "burn_b" }, { "attackId", 17 }
+                }
+            }
+        };
+
+        List<object> steps = BuildTimelineFromBattleResultDict(battleResult);
+
+        Assert.IsTrue(GetStepsByType(steps, "BurnTick").Any(s => GetStringField(s, "ActorCardId") == "burn_a" && GetIntField(s, "Amount") == 1));
+        Assert.IsTrue(GetStepsByType(steps, "Damage").Any(s => GetStringField(s, "ActorCardId") == "burn_a" && GetStringField(s, "TargetCardId") == "burn_a" && GetIntField(s, "Amount") == 1 && GetStringField(s, "Source") == "burn"));
     }
 
     [Test]
@@ -949,5 +1189,8 @@ public class BattleTimelineBuilderTests
         public string source;
     }
 }
+
+
+
 
 

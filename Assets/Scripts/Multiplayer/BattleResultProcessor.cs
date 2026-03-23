@@ -365,6 +365,17 @@ public class BattleResultProcessor : MonoBehaviour
                     }
                     break;
 
+                case BattleStepType.BurnTick:
+                    if (actor != null && step.Amount > 0)
+                    {
+                        actor.health -= step.Amount;
+                        yield return StartCoroutine(
+                            PlayBurnAnimation(actor, step.Amount, isMyActor)
+                        );
+                        yield return new WaitForSeconds(0.3f);
+                    }
+                    break;
+
                 case BattleStepType.ExposureTick:
                     if (actor != null && step.Amount > 0)
                     {
@@ -1921,7 +1932,52 @@ public class BattleResultProcessor : MonoBehaviour
                     attackResult
                 );
                 break;
-            // TODO: Add case 22-123 - just add 3 lines per attack!
+
+            case 22: // Drink Wine
+                yield return Attack22Handler.Execute(
+                    attacker,
+                    defender,
+                    healAmount,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog,
+                    attackerEffects
+                );
+                break;
+
+            case 23: // Flaming Gun
+                yield return Attack23Handler.Execute(
+                    attacker,
+                    defender,
+                    damage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog,
+                    effectsApplied
+                );
+                break;
+
+            case 24: // Cleaver
+                yield return Attack24Handler.Execute(
+                    attacker,
+                    defender,
+                    damage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog,
+                    effectsApplied
+                );
+                break;
+            // TODO: Add case 25-123 - just add 3 lines per attack!
 
             default:
                 Debug.LogWarning(
@@ -2134,6 +2190,31 @@ public class BattleResultProcessor : MonoBehaviour
     /// PrehrA SINGLE Bleed continue animAciu + damage (pre jeden Bleed effect)
     /// V11.2: PRIORITY 1 - Individual Bleed damage processing (separate animations for each Bleed)
     /// </summary>
+    private IEnumerator PlayBurnAnimation(Kard card, int damage, bool isMyCard)
+    {
+        if (card == null || damage <= 0)
+        {
+            yield break;
+        }
+        AttackAnimations animations = attackComponent?.attackAnimations;
+        if (animations != null)
+        {
+            yield return StartCoroutine(animations.PlayBurnContinueAnimation(card.transform));
+        }
+        if (cardAnimator != null)
+        {
+            yield return StartCoroutine(cardAnimator.AnimateDamage(card, damage));
+        }
+        if (isMyCard)
+        {
+            playerLifeBar?.SetHP(card.health);
+        }
+        else
+        {
+            enemyLifeBar?.SetHP(card.health);
+        }
+        yield return StartCoroutine(ShowDialog($"{card.cardName} is on fire! -{damage} HP"));
+    }
     private IEnumerator PlaySingleBleedAnimation(Kard card, int damage, bool isMyCard)
     {
         string cardOwner = isMyCard ? "MY" : "ENEMY";
@@ -2443,6 +2524,12 @@ public class BattleResultProcessor : MonoBehaviour
                 return "Pike";
             case 21:
                 return "Terrify";
+            case 22:
+                return "Drink Wine";
+            case 23:
+                return "Flaming Gun";
+            case 24:
+                return "Cleaver";
             // TODO: RozLAriLA pre vLetky Astoky
             default:
                 return $"Attack#{attackId}";
@@ -2898,3 +2985,14 @@ public class BattleResultProcessor : MonoBehaviour
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 public enum BattleStepType
@@ -8,6 +8,7 @@ public enum BattleStepType
     Blocked,
     Damage,
     BleedTick,
+    BurnTick,
     ExposureTick,
     ExposureRemoved,
     Heal,
@@ -38,3 +39,5 @@ public class BattleStep
     public string Source;
     public string Note;
 }
+
+
