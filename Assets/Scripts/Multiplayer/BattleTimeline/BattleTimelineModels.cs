@@ -16,6 +16,7 @@ public enum BattleStepType
     WakeUp,
     Recovery,
     EffectApplied,
+    EffectRemoved,
     Death
 }
 
@@ -39,5 +40,6 @@ public class BattleStep
     public string Source;
     public string Note;
 }
+
 
 

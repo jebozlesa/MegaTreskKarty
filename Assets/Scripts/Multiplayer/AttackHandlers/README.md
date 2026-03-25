@@ -30,6 +30,8 @@ AttackHandlers/
   Attack22Handler.cs  - Drink Wine
   Attack23Handler.cs  - Flaming Gun
   Attack24Handler.cs  - Cleaver
+  Attack25Handler.cs  - Pan
+  Attack26Handler.cs  - Boost
   ...
   Attack123Handler.cs
 ```
@@ -106,6 +108,10 @@ Rovnaka struktura ako server:
 - **Unity:** `AttackHandlers/Attack{ID}Handler.cs`
 
 Progress: 24/123 attacks (19.5%)
+
+
+
+
 
 
 

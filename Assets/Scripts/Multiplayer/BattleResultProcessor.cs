@@ -514,6 +514,16 @@ public class BattleResultProcessor : MonoBehaviour
                     }
                     break;
 
+                case BattleStepType.EffectRemoved:
+                    if (target != null)
+                    {
+                        yield return StartCoroutine(
+                            RemoveEffectIconOnly(target, step.EffectType, target.cardId == myCardId)
+                        );
+                        yield return new WaitForSeconds(0.2f);
+                    }
+                    break;
+
                 case BattleStepType.Damage:
                 case BattleStepType.Heal:
                 case BattleStepType.Death:
@@ -1535,27 +1545,27 @@ public class BattleResultProcessor : MonoBehaviour
     )
     {
         yield return StartCoroutine(
-            ApplySingleStatChange(card, attackChange, "ATT", value => card.HandleAttack(value))
+            ApplySingleStatChange(card, attackChange, "ATT", value => card.attack = Mathf.Max(1, card.attack + value))
         );
         yield return StartCoroutine(
-            ApplySingleStatChange(card, strengthChange, "STR", value => card.HandleStrength(value))
+            ApplySingleStatChange(card, strengthChange, "STR", value => card.strength = Mathf.Max(1, card.strength + value))
         );
         yield return StartCoroutine(
-            ApplySingleStatChange(card, defenseChange, "DEF", value => card.HandleDefense(value))
+            ApplySingleStatChange(card, defenseChange, "DEF", value => card.defense = Mathf.Max(1, card.defense + value))
         );
         yield return StartCoroutine(
             ApplySingleStatChange(
                 card,
                 knowledgeChange,
                 "KNO",
-                value => card.HandleKnowledge(value)
+                value => card.knowledge = Mathf.Max(1, card.knowledge + value)
             )
         );
         yield return StartCoroutine(
-            ApplySingleStatChange(card, speedChange, "SPD", value => card.HandleSpeed(value))
+            ApplySingleStatChange(card, speedChange, "SPD", value => card.speed = Mathf.Max(1, card.speed + value))
         );
         yield return StartCoroutine(
-            ApplySingleStatChange(card, charismaChange, "CHA", value => card.HandleCharisma(value))
+            ApplySingleStatChange(card, charismaChange, "CHA", value => card.charisma = Mathf.Max(1, card.charisma + value))
         );
     }
 
@@ -1565,7 +1575,7 @@ public class BattleResultProcessor : MonoBehaviour
         {
             case "ATT":
                 yield return StartCoroutine(
-                    ApplySingleStatChange(card, change, statName, value => card.HandleAttack(value))
+                    ApplySingleStatChange(card, change, statName, value => card.attack = Mathf.Max(1, card.attack + value))
                 );
                 break;
             case "STR":
@@ -1574,7 +1584,7 @@ public class BattleResultProcessor : MonoBehaviour
                         card,
                         change,
                         statName,
-                        value => card.HandleStrength(value)
+                        value => card.strength = Mathf.Max(1, card.strength + value)
                     )
                 );
                 break;
@@ -1584,7 +1594,7 @@ public class BattleResultProcessor : MonoBehaviour
                         card,
                         change,
                         statName,
-                        value => card.HandleDefense(value)
+                        value => card.defense = Mathf.Max(1, card.defense + value)
                     )
                 );
                 break;
@@ -1594,13 +1604,13 @@ public class BattleResultProcessor : MonoBehaviour
                         card,
                         change,
                         statName,
-                        value => card.HandleKnowledge(value)
+                        value => card.knowledge = Mathf.Max(1, card.knowledge + value)
                     )
                 );
                 break;
             case "SPD":
                 yield return StartCoroutine(
-                    ApplySingleStatChange(card, change, statName, value => card.HandleSpeed(value))
+                    ApplySingleStatChange(card, change, statName, value => card.speed = Mathf.Max(1, card.speed + value))
                 );
                 break;
             case "CHA":
@@ -1609,7 +1619,7 @@ public class BattleResultProcessor : MonoBehaviour
                         card,
                         change,
                         statName,
-                        value => card.HandleCharisma(value)
+                        value => card.charisma = Mathf.Max(1, card.charisma + value)
                     )
                 );
                 break;
@@ -1977,7 +1987,31 @@ public class BattleResultProcessor : MonoBehaviour
                     effectsApplied
                 );
                 break;
-            // TODO: Add case 25-123 - just add 3 lines per attack!
+
+            case 25: // Pan
+                yield return Attack25Handler.Execute(
+                    attacker,
+                    defender,
+                    damage,
+                    isMyAttack,
+                    animations,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar,
+                    ShowDialog,
+                    effectsApplied
+                );
+                break;
+
+            case 26: // Boost
+                yield return Attack26Handler.Execute(
+                    attacker,
+                    defender,
+                    animations,
+                    ShowDialog
+                );
+                break;
+            // TODO: Add case 27-123 - just add 3 lines per attack!
 
             default:
                 Debug.LogWarning(
@@ -2086,29 +2120,40 @@ public class BattleResultProcessor : MonoBehaviour
     }
 
     /// <summary>
-    /// PrehrA wake-up animAciu (Sleep duration = 0)
+    /// Play wake-up animation after a sleep effect is removed.
     /// </summary>
     private IEnumerator PlayWakeUpAnimation(Kard card, bool isMyCard)
     {
         string cardOwner = isMyCard ? "MY" : "ENEMY";
-        Debug.LogWarning($"aZ [WAKE_UP] {cardOwner} card ({card.cardName}) is waking up!");
+        Debug.LogWarning($"[WAKE_UP] {cardOwner} card ({card.cardName}) is waking up!");
 
         AttackAnimations animations = attackComponent?.attackAnimations;
         if (animations != null)
         {
-            // Reuse singleplayer wake-up animation
             yield return StartCoroutine(animations.PlaySleepEndAnimation(card.transform));
         }
 
-        // OdstrAL Sleep ikonu po prebratA
-        string sleepEffectName = GetEffectName(3); // 3 = Sleep
-        if (!string.IsNullOrEmpty(sleepEffectName))
+        yield return StartCoroutine(ShowDialog($"{card.cardName} wakes up!"));
+    }
+
+    private IEnumerator RemoveEffectIconOnly(Kard card, int effectType, bool isMyCard)
+    {
+        string effectName = GetEffectName(effectType);
+        if (string.IsNullOrEmpty(effectName))
         {
-            yield return StartCoroutine(card.RemoveEffectIcon(sleepEffectName));
-            Debug.LogWarning($"aZ [WAKE_UP] Removed {sleepEffectName} icon from {card.cardName}");
+            yield break;
         }
 
-        yield return StartCoroutine(ShowDialog($"{card.cardName} wakes up!"));
+        AttackAnimations animations = attackComponent?.attackAnimations;
+        if (animations != null && effectType == 21)
+        {
+            yield return StartCoroutine(animations.PlayCalmEndAnimation(card.transform));
+        }
+
+        Debug.LogWarning(
+            $"[EFFECT_ICON] Removing {effectName} from {(isMyCard ? "MY" : "ENEMY")} card {card.cardName}"
+        );
+        yield return StartCoroutine(card.RemoveEffectIcon(effectName));
     }
 
     /// <summary>
@@ -2530,6 +2575,10 @@ public class BattleResultProcessor : MonoBehaviour
                 return "Flaming Gun";
             case 24:
                 return "Cleaver";
+            case 25:
+                return "Pan";
+            case 26:
+                return "Boost";
             // TODO: RozLAriLA pre vLetky Astoky
             default:
                 return $"Attack#{attackId}";
@@ -2985,6 +3034,9 @@ public class BattleResultProcessor : MonoBehaviour
         }
     }
 }
+
+
+
 
 
 

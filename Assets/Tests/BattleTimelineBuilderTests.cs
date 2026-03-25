@@ -419,6 +419,197 @@ public class BattleTimelineBuilderTests
     }
 
     [Test]
+    public void Build_BoostTimeline_ContainsSelfStatChangesAndPostAttackWakeUp()
+    {
+        var battleResult = new Dictionary<string, object>
+        {
+            {
+                "timelineV2", new Dictionary<string, object>
+                {
+                    { "version", 2 },
+                    { "steps", new List<object>
+                        {
+                            new Dictionary<string, object>
+                            {
+                                { "type", "Attack" },
+                                { "actorCardId", "boost_a" },
+                                { "targetCardId", "boost_b" },
+                                { "attackId", 26 },
+                                { "attackResult", "self_buff" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "StatChange" },
+                                { "actorCardId", "boost_a" },
+                                { "targetCardId", "boost_a" },
+                                { "statName", "ATT" },
+                                { "amount", 3 }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "StatChange" },
+                                { "actorCardId", "boost_a" },
+                                { "targetCardId", "boost_a" },
+                                { "statName", "STR" },
+                                { "amount", 2 }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "StatChange" },
+                                { "actorCardId", "boost_a" },
+                                { "targetCardId", "boost_a" },
+                                { "statName", "CHA" },
+                                { "amount", -1 }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "StatChange" },
+                                { "actorCardId", "boost_a" },
+                                { "targetCardId", "boost_a" },
+                                { "statName", "KNO" },
+                                { "amount", -2 }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "EffectRemoved" },
+                                { "actorCardId", "boost_a" },
+                                { "targetCardId", "boost_a" },
+                                { "effectType", 3 },
+                                { "source", "attack" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "WakeUp" },
+                                { "actorCardId", "boost_a" },
+                                { "targetCardId", "boost_a" }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "firstAttacker", new Dictionary<string, object>
+                {
+                    { "cardId", "boost_a" }, { "attackId", 26 }
+                }
+            },
+            {
+                "secondAttacker", new Dictionary<string, object>
+                {
+                    { "cardId", "boost_b" }, { "attackId", 17 }
+                }
+            }
+        };
+
+        List<object> steps = BuildTimelineFromBattleResultDict(battleResult);
+
+        int attackIndex = steps.FindIndex(
+            s => GetStringField(s, "Type") == "Attack" && GetStringField(s, "ActorCardId") == "boost_a"
+        );
+        int effectRemovedIndex = steps.FindIndex(
+            s =>
+                GetStringField(s, "Type") == "EffectRemoved"
+                && GetStringField(s, "ActorCardId") == "boost_a"
+                && GetIntField(s, "EffectType") == 3
+        );
+        int wakeUpIndex = steps.FindIndex(
+            s => GetStringField(s, "Type") == "WakeUp" && GetStringField(s, "ActorCardId") == "boost_a"
+        );
+
+        Assert.That(attackIndex, Is.GreaterThanOrEqualTo(0));
+        Assert.That(effectRemovedIndex, Is.GreaterThan(attackIndex));
+        Assert.That(wakeUpIndex, Is.GreaterThan(effectRemovedIndex));
+        Assert.IsTrue(GetStepsByType(steps, "StatChange").Any(s => GetStringField(s, "ActorCardId") == "boost_a" && GetStringField(s, "TargetCardId") == "boost_a" && GetStringField(s, "StatName") == "ATT" && GetIntField(s, "Amount") == 3));
+        Assert.IsTrue(GetStepsByType(steps, "StatChange").Any(s => GetStringField(s, "ActorCardId") == "boost_a" && GetStringField(s, "TargetCardId") == "boost_a" && GetStringField(s, "StatName") == "STR" && GetIntField(s, "Amount") == 2));
+        Assert.IsTrue(GetStepsByType(steps, "StatChange").Any(s => GetStringField(s, "ActorCardId") == "boost_a" && GetStringField(s, "TargetCardId") == "boost_a" && GetStringField(s, "StatName") == "CHA" && GetIntField(s, "Amount") == -1));
+        Assert.IsTrue(GetStepsByType(steps, "StatChange").Any(s => GetStringField(s, "ActorCardId") == "boost_a" && GetStringField(s, "TargetCardId") == "boost_a" && GetStringField(s, "StatName") == "KNO" && GetIntField(s, "Amount") == -2));
+    }
+
+    [Test]
+    public void Build_CalmExpiryTimeline_ContainsPreAttackRestoreAndRemoval()
+    {
+        var battleResult = new Dictionary<string, object>
+        {
+            {
+                "timelineV2", new Dictionary<string, object>
+                {
+                    { "version", 2 },
+                    { "steps", new List<object>
+                        {
+                            new Dictionary<string, object>
+                            {
+                                { "type", "EffectRemoved" },
+                                { "actorCardId", "calm_a" },
+                                { "targetCardId", "calm_a" },
+                                { "effectType", 21 },
+                                { "source", "effect" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "StatChange" },
+                                { "actorCardId", "calm_a" },
+                                { "targetCardId", "calm_a" },
+                                { "statName", "ATT" },
+                                { "amount", 1 },
+                                { "source", "effect" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "StatChange" },
+                                { "actorCardId", "calm_a" },
+                                { "targetCardId", "calm_a" },
+                                { "statName", "STR" },
+                                { "amount", 1 },
+                                { "source", "effect" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "Attack" },
+                                { "actorCardId", "calm_a" },
+                                { "targetCardId", "calm_b" },
+                                { "attackId", 17 },
+                                { "attackResult", "miss" }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "firstAttacker", new Dictionary<string, object>
+                {
+                    { "cardId", "calm_a" }, { "attackId", 17 }
+                }
+            },
+            {
+                "secondAttacker", new Dictionary<string, object>
+                {
+                    { "cardId", "calm_b" }, { "attackId", 17 }
+                }
+            }
+        };
+
+        List<object> steps = BuildTimelineFromBattleResultDict(battleResult);
+
+        int removalIndex = steps.FindIndex(
+            s => GetStringField(s, "Type") == "EffectRemoved" && GetStringField(s, "ActorCardId") == "calm_a"
+        );
+        int attackBuffIndex = steps.FindIndex(
+            s => GetStringField(s, "Type") == "StatChange" && GetStringField(s, "ActorCardId") == "calm_a" && GetStringField(s, "StatName") == "ATT"
+        );
+        int strengthBuffIndex = steps.FindIndex(
+            s => GetStringField(s, "Type") == "StatChange" && GetStringField(s, "ActorCardId") == "calm_a" && GetStringField(s, "StatName") == "STR"
+        );
+        int attackIndex = steps.FindIndex(
+            s => GetStringField(s, "Type") == "Attack" && GetStringField(s, "ActorCardId") == "calm_a"
+        );
+
+        Assert.That(removalIndex, Is.GreaterThanOrEqualTo(0));
+        Assert.That(attackBuffIndex, Is.GreaterThan(removalIndex));
+        Assert.That(strengthBuffIndex, Is.GreaterThan(removalIndex));
+        Assert.That(attackIndex, Is.GreaterThan(strengthBuffIndex));
+    }
+
+    [Test]
     public void Build_WokeUpRecovered_ContainsWakeUpAndRecoverySteps()
     {
         var battleResult = new Dictionary<string, object>

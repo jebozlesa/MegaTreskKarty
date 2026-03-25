@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using TMPro;
 
@@ -80,13 +80,10 @@ public class MultiplayerCardAnimator : MonoBehaviour
             Debug.LogError("[MultiplayerCardAnimator] AnimateStatChange: card is null!");
             yield break;
         }
-        
-        if (statChange == 0) yield break; // Ziadna zmena
-        
+        if (statChange == 0)
+            yield break; // Ziadna zmena
         Color32 color = (statChange > 0) ? greenColor : redColor;
-        
         Debug.Log($"[MultiplayerCardAnimator] Animating {statChange} {statName} change on {card.cardName}");
-        
         yield return StartCoroutine(PlayEffectAnimation(card, Mathf.Abs(statChange), statName, color));
     }
     
@@ -244,3 +241,4 @@ public class MultiplayerCardAnimator : MonoBehaviour
         Destroy(effectObject);
     }
 }
+
