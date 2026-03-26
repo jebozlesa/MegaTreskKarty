@@ -44,6 +44,8 @@ public class BattleResultProcessor : MonoBehaviour
     public MultiplayerCardAnimator cardAnimator; // NEW: Card animations (damage, stats, shake)
     public MultiplayerKillCounterManager killCounterManager; // NEW: Kill counter tracking
     private BattleRoundCoordinator roundCoordinator;
+    private BattleStatApplier statApplier;
+    private BattleEffectVisuals effectVisuals;
 
     [Header("UI References")]
     public TMP_Text dialogText;
@@ -81,6 +83,26 @@ public class BattleResultProcessor : MonoBehaviour
         );
     }
 
+    private BattleStatApplier GetStatApplier()
+    {
+        if (statApplier == null)
+        {
+            statApplier = new BattleStatApplier(cardAnimator);
+            effectVisuals = new BattleEffectVisuals(attackComponent);
+        }
+
+        return statApplier;
+    }
+
+    private BattleEffectVisuals GetEffectVisuals()
+    {
+        if (effectVisuals == null)
+        {
+            effectVisuals = new BattleEffectVisuals(attackComponent);
+        }
+
+        return effectVisuals;
+    }
     /// <summary>
     /// Spracuje vAsledok battle a spustA animAcie
     /// V5: BattleResult identifikuje karty cez cardId, HP sa naATAta z selectedCards
@@ -233,14 +255,14 @@ public class BattleResultProcessor : MonoBehaviour
 
         if (myAttackBlocked)
         {
-            string effectName = GetEffectName(myBlockedBy ?? 0);
+            string effectName = GetEffectVisuals().GetEffectName(myBlockedBy ?? 0);
             Debug.LogWarning(
                 $"[BLOCK] MY attack BLOCKED by {effectName}! SelfDamage={mySelfDamage}"
             );
         }
         if (enemyAttackBlocked)
         {
-            string effectName = GetEffectName(enemyBlockedBy ?? 0);
+            string effectName = GetEffectVisuals().GetEffectName(enemyBlockedBy ?? 0);
             Debug.LogWarning(
                 $"[BLOCK] ENEMY attack BLOCKED by {effectName}! SelfDamage={enemySelfDamage}"
             );
@@ -475,7 +497,7 @@ public class BattleResultProcessor : MonoBehaviour
                             $"[TimelinePilot] Applying stat change: target={target.cardName}, stat={step.StatName}, amount={step.Amount}"
                         );
                         yield return StartCoroutine(
-                            ApplyTimelineStatChange(target, step.Amount, step.StatName)
+                            GetStatApplier().ApplyTimelineStatChange(target, step.Amount, step.StatName)
                         );
                     }
                     break;
@@ -509,7 +531,7 @@ public class BattleResultProcessor : MonoBehaviour
                             { "source", step.Source },
                         };
                         yield return StartCoroutine(
-                            AddEffectIconOnly(target, effectData, target.cardId == myCardId)
+                            GetEffectVisuals().AddEffectIconOnly(target, effectData, target.cardId == myCardId)
                         );
                     }
                     break;
@@ -518,7 +540,7 @@ public class BattleResultProcessor : MonoBehaviour
                     if (target != null)
                     {
                         yield return StartCoroutine(
-                            RemoveEffectIconOnly(target, step.EffectType, target.cardId == myCardId)
+                            GetEffectVisuals().RemoveEffectIconOnly(target, step.EffectType, target.cardId == myCardId)
                         );
                         yield return new WaitForSeconds(0.2f);
                     }
@@ -747,7 +769,7 @@ public class BattleResultProcessor : MonoBehaviour
 
                             // V10: Pridaj effect ikony ak chAbajAs (synchronizAcia s DB)
                             int effectType = int.Parse(effect.type.ToString());
-                            string effectName = GetEffectName(effectType);
+                            string effectName = GetEffectVisuals().GetEffectName(effectType);
                             if (!string.IsNullOrEmpty(effectName))
                             {
                                 // Check if icon already exists
@@ -949,7 +971,7 @@ public class BattleResultProcessor : MonoBehaviour
 
                 // [OK] V12: Apply and animate stat changes during battle playback
                 yield return StartCoroutine(
-                    ApplyCardStatChanges(
+                    GetStatApplier().ApplyCardStatChanges(
                         myCard,
                         myStatChanges.attackerAttack,
                         myStatChanges.attackerStrength,
@@ -961,7 +983,7 @@ public class BattleResultProcessor : MonoBehaviour
                 );
 
                 yield return StartCoroutine(
-                    ApplyCardStatChanges(
+                    GetStatApplier().ApplyCardStatChanges(
                         enemyCard,
                         myStatChanges.defenderAttack,
                         myStatChanges.defenderStrength,
@@ -976,7 +998,7 @@ public class BattleResultProcessor : MonoBehaviour
                 if (myEffectsApplied != null && myEffectsApplied.Count > 0)
                 {
                     yield return StartCoroutine(
-                        DisplayMultipleEffects(enemyCard, myEffectsApplied, false)
+                        GetEffectVisuals().DisplayMultipleEffects(this, enemyCard, myEffectsApplied, false)
                     );
                 }
 
@@ -997,7 +1019,7 @@ public class BattleResultProcessor : MonoBehaviour
                 if (myAttackerEffects != null && myAttackerEffects.Count > 0)
                 {
                     yield return StartCoroutine(
-                        DisplayMultipleEffects(myCard, myAttackerEffects, true)
+                        GetEffectVisuals().DisplayMultipleEffects(this, myCard, myAttackerEffects, true)
                     );
                 }
             }
@@ -1108,7 +1130,7 @@ public class BattleResultProcessor : MonoBehaviour
 
                     // [OK] V12: Apply and animate stat changes during battle playback
                     yield return StartCoroutine(
-                        ApplyCardStatChanges(
+                        GetStatApplier().ApplyCardStatChanges(
                             enemyCard,
                             enemyStatChanges.attackerAttack,
                             enemyStatChanges.attackerStrength,
@@ -1120,7 +1142,7 @@ public class BattleResultProcessor : MonoBehaviour
                     );
 
                     yield return StartCoroutine(
-                        ApplyCardStatChanges(
+                        GetStatApplier().ApplyCardStatChanges(
                             myCard,
                             enemyStatChanges.defenderAttack,
                             enemyStatChanges.defenderStrength,
@@ -1135,7 +1157,7 @@ public class BattleResultProcessor : MonoBehaviour
                     if (enemyEffectsApplied != null && enemyEffectsApplied.Count > 0)
                     {
                         yield return StartCoroutine(
-                            DisplayMultipleEffects(myCard, enemyEffectsApplied, true)
+                            GetEffectVisuals().DisplayMultipleEffects(this, myCard, enemyEffectsApplied, true)
                         );
                     }
 
@@ -1156,7 +1178,7 @@ public class BattleResultProcessor : MonoBehaviour
                     if (enemyAttackerEffects != null && enemyAttackerEffects.Count > 0)
                     {
                         yield return StartCoroutine(
-                            DisplayMultipleEffects(enemyCard, enemyAttackerEffects, false)
+                            GetEffectVisuals().DisplayMultipleEffects(this, enemyCard, enemyAttackerEffects, false)
                         );
                     }
                 }
@@ -1268,7 +1290,7 @@ public class BattleResultProcessor : MonoBehaviour
 
                 // [OK] V12: Apply and animate stat changes during battle playback
                 yield return StartCoroutine(
-                    ApplyCardStatChanges(
+                    GetStatApplier().ApplyCardStatChanges(
                         enemyCard,
                         enemyStatChanges.attackerAttack,
                         enemyStatChanges.attackerStrength,
@@ -1280,7 +1302,7 @@ public class BattleResultProcessor : MonoBehaviour
                 );
 
                 yield return StartCoroutine(
-                    ApplyCardStatChanges(
+                    GetStatApplier().ApplyCardStatChanges(
                         myCard,
                         enemyStatChanges.defenderAttack,
                         enemyStatChanges.defenderStrength,
@@ -1295,7 +1317,7 @@ public class BattleResultProcessor : MonoBehaviour
                 if (enemyEffectsApplied != null && enemyEffectsApplied.Count > 0)
                 {
                     yield return StartCoroutine(
-                        DisplayMultipleEffects(myCard, enemyEffectsApplied, true)
+                        GetEffectVisuals().DisplayMultipleEffects(this, myCard, enemyEffectsApplied, true)
                     );
                 }
 
@@ -1315,7 +1337,7 @@ public class BattleResultProcessor : MonoBehaviour
                 if (enemyAttackerEffects != null && enemyAttackerEffects.Count > 0)
                 {
                     yield return StartCoroutine(
-                        DisplayMultipleEffects(enemyCard, enemyAttackerEffects, false)
+                        GetEffectVisuals().DisplayMultipleEffects(this, enemyCard, enemyAttackerEffects, false)
                     );
                 }
             }
@@ -1419,7 +1441,7 @@ public class BattleResultProcessor : MonoBehaviour
 
                     // [OK] V12: Apply and animate stat changes during battle playback
                     yield return StartCoroutine(
-                        ApplyCardStatChanges(
+                        GetStatApplier().ApplyCardStatChanges(
                             myCard,
                             myStatChanges.attackerAttack,
                             myStatChanges.attackerStrength,
@@ -1431,7 +1453,7 @@ public class BattleResultProcessor : MonoBehaviour
                     );
 
                     yield return StartCoroutine(
-                        ApplyCardStatChanges(
+                        GetStatApplier().ApplyCardStatChanges(
                             enemyCard,
                             myStatChanges.defenderAttack,
                             myStatChanges.defenderStrength,
@@ -1446,7 +1468,7 @@ public class BattleResultProcessor : MonoBehaviour
                     if (myEffectsApplied != null && myEffectsApplied.Count > 0)
                     {
                         yield return StartCoroutine(
-                            DisplayMultipleEffects(enemyCard, myEffectsApplied, false)
+                            GetEffectVisuals().DisplayMultipleEffects(this, enemyCard, myEffectsApplied, false)
                         );
                     }
 
@@ -1467,7 +1489,7 @@ public class BattleResultProcessor : MonoBehaviour
                     if (myAttackerEffects != null && myAttackerEffects.Count > 0)
                     {
                         yield return StartCoroutine(
-                            DisplayMultipleEffects(myCard, myAttackerEffects, true)
+                            GetEffectVisuals().DisplayMultipleEffects(this, myCard, myAttackerEffects, true)
                         );
                     }
                 }
@@ -1534,123 +1556,6 @@ public class BattleResultProcessor : MonoBehaviour
     /// V12: Modular - kaLldA Astok mA svoj handler v AttackHandlers/ folder
     /// V14: attackerEffects - effects applied to attacker SELF (backfire Sleep from UpInSmoke)
     /// </summary>
-    private IEnumerator ApplyCardStatChanges(
-        Kard card,
-        int attackChange,
-        int strengthChange,
-        int defenseChange,
-        int knowledgeChange,
-        int speedChange,
-        int charismaChange
-    )
-    {
-        yield return StartCoroutine(
-            ApplySingleStatChange(card, attackChange, "ATT", value => card.attack = Mathf.Max(1, card.attack + value))
-        );
-        yield return StartCoroutine(
-            ApplySingleStatChange(card, strengthChange, "STR", value => card.strength = Mathf.Max(1, card.strength + value))
-        );
-        yield return StartCoroutine(
-            ApplySingleStatChange(card, defenseChange, "DEF", value => card.defense = Mathf.Max(1, card.defense + value))
-        );
-        yield return StartCoroutine(
-            ApplySingleStatChange(
-                card,
-                knowledgeChange,
-                "KNO",
-                value => card.knowledge = Mathf.Max(1, card.knowledge + value)
-            )
-        );
-        yield return StartCoroutine(
-            ApplySingleStatChange(card, speedChange, "SPD", value => card.speed = Mathf.Max(1, card.speed + value))
-        );
-        yield return StartCoroutine(
-            ApplySingleStatChange(card, charismaChange, "CHA", value => card.charisma = Mathf.Max(1, card.charisma + value))
-        );
-    }
-
-    private IEnumerator ApplyTimelineStatChange(Kard card, int change, string statName)
-    {
-        switch (statName)
-        {
-            case "ATT":
-                yield return StartCoroutine(
-                    ApplySingleStatChange(card, change, statName, value => card.attack = Mathf.Max(1, card.attack + value))
-                );
-                break;
-            case "STR":
-                yield return StartCoroutine(
-                    ApplySingleStatChange(
-                        card,
-                        change,
-                        statName,
-                        value => card.strength = Mathf.Max(1, card.strength + value)
-                    )
-                );
-                break;
-            case "DEF":
-                yield return StartCoroutine(
-                    ApplySingleStatChange(
-                        card,
-                        change,
-                        statName,
-                        value => card.defense = Mathf.Max(1, card.defense + value)
-                    )
-                );
-                break;
-            case "KNO":
-                yield return StartCoroutine(
-                    ApplySingleStatChange(
-                        card,
-                        change,
-                        statName,
-                        value => card.knowledge = Mathf.Max(1, card.knowledge + value)
-                    )
-                );
-                break;
-            case "SPD":
-                yield return StartCoroutine(
-                    ApplySingleStatChange(card, change, statName, value => card.speed = Mathf.Max(1, card.speed + value))
-                );
-                break;
-            case "CHA":
-                yield return StartCoroutine(
-                    ApplySingleStatChange(
-                        card,
-                        change,
-                        statName,
-                        value => card.charisma = Mathf.Max(1, card.charisma + value)
-                    )
-                );
-                break;
-            default:
-                Debug.LogWarning(
-                    $"[BattleResultProcessor] Unknown timeline stat change: stat={statName}, amount={change}, card={card.cardName}"
-                );
-                break;
-        }
-    }
-
-    private IEnumerator ApplySingleStatChange(
-        Kard card,
-        int change,
-        string statName,
-        System.Action<int> applyChange
-    )
-    {
-        if (change == 0)
-        {
-            yield break;
-        }
-
-        applyChange(change);
-
-        if (cardAnimator != null)
-        {
-            yield return StartCoroutine(cardAnimator.AnimateStatChange(card, change, statName));
-        }
-    }
-
     private IEnumerator ExecuteAttackAnimation(
         Kard attacker,
         Kard defender,
@@ -1665,458 +1570,24 @@ public class BattleResultProcessor : MonoBehaviour
     )
     {
         AttackAnimations animations = attackComponent.attackAnimations;
-
-        // Router pattern - delegate to attack handlers
-        switch (attackId)
-        {
-            case 1: // Punch
-                yield return Attack1Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog,
-                    effectsApplied
-                );
-                break;
-
-            case 2: // Kick
-                yield return Attack2Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog
-                );
-                break;
-
-            case 3: // Heal
-                yield return Attack3Handler.Execute(
-                    attacker,
-                    defender,
-                    healAmount,
-                    isMyAttack,
-                    animations,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog
-                );
-                break;
-
-            case 4: // Forgiveness
-                yield return Attack4Handler.Execute(
-                    attacker,
-                    defender,
-                    animations,
-                    ShowDialog,
-                    effectsApplied
-                );
-                break;
-
-            case 5: // Crusade
-                yield return Attack5Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog
-                );
-                break;
-
-            case 6: // Water To Wine
-                yield return Attack6Handler.Execute(attacker, animations, ShowDialog);
-                break;
-
-            case 7: // CarHit
-                yield return Attack7Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    attackerSelfDamage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog,
-                    effectsApplied,
-                    attackerEffects
-                );
-                break;
-
-            case 8: // MonkeyWrench
-                yield return Attack8Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog,
-                    effectsApplied
-                );
-                break;
-
-            case 9: // Radiation
-                yield return Attack9Handler.Execute(attacker, defender, animations, ShowDialog);
-                break;
-
-            case 10: // Scratch
-                yield return Attack10Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog,
-                    effectsApplied
-                );
-                break;
-
-            case 11: // Scientific Lecture
-                yield return Attack11Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog,
-                    attackResult
-                ); // Server decides animation, client is dumb renderer
-                break;
-
-            case 12: // Chi Sau
-                yield return Attack12Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog
-                );
-                break;
-
-            case 13: // One Inch Punch
-                yield return Attack13Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog
-                );
-                break;
-
-            case 14: // Up In Smoke
-                yield return Attack14Handler.Execute(
-                    attacker,
-                    defender,
-                    healAmount,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog,
-                    attackerEffects
-                );
-                break;
-
-            case 15: // Sing
-                yield return Attack15Handler.Execute(
-                    attacker,
-                    defender,
-                    animations,
-                    ShowDialog,
-                    effectsApplied
-                );
-                break;
-
-            case 16: // Revolver
-                yield return Attack16Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog,
-                    attackResult
-                );
-                break;
-
-            case 17: // Artillery Regiment
-                yield return Attack17Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog,
-                    attackResult
-                );
-                break;
-
-            case 18: // Bloodthirst
-                yield return Attack18Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    healAmount,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog
-                );
-                break;
-
-            case 19: // Sword
-                yield return Attack19Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog,
-                    effectsApplied
-                );
-                break;
-
-            case 20: // Pike
-                yield return Attack20Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog,
-                    effectsApplied
-                );
-                break;
-
-            case 21: // Terrify
-                yield return Attack21Handler.Execute(
-                    attacker,
-                    defender,
-                    animations,
-                    ShowDialog,
-                    attackResult
-                );
-                break;
-
-            case 22: // Drink Wine
-                yield return Attack22Handler.Execute(
-                    attacker,
-                    defender,
-                    healAmount,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog,
-                    attackerEffects
-                );
-                break;
-
-            case 23: // Flaming Gun
-                yield return Attack23Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog,
-                    effectsApplied
-                );
-                break;
-
-            case 24: // Cleaver
-                yield return Attack24Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog,
-                    effectsApplied
-                );
-                break;
-
-            case 25: // Pan
-                yield return Attack25Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog,
-                    effectsApplied
-                );
-                break;
-
-            case 26: // Boost
-                yield return Attack26Handler.Execute(
-                    attacker,
-                    defender,
-                    animations,
-                    ShowDialog
-                );
-                break;
-            // TODO: Add case 27-123 - just add 3 lines per attack!
-
-            default:
-                Debug.LogWarning(
-                    $"[ExecuteAttackAnimation] Unknown attackId={attackId}, using Punch as fallback"
-                );
-                yield return Attack1Handler.Execute(
-                    attacker,
-                    defender,
-                    damage,
-                    isMyAttack,
-                    animations,
-                    cardAnimator,
-                    playerLifeBar,
-                    enemyLifeBar,
-                    ShowDialog
-                );
-                break;
-        }
-    }
-
-    /// <summary>
-    /// PridA len ikonu efektu bez animAcie (V9.1: KO animAcia sa hrA v ExecuteAttackAnimation)
-    /// </summary>
-    private IEnumerator AddEffectIconOnly(
-        Kard card,
-        Dictionary<string, object> effectData,
-        bool isMyCard
-    )
-    {
-        int effectType = int.Parse(effectData["type"].ToString());
-        int duration = int.Parse(effectData["duration"].ToString());
-
-        Debug.LogWarning(
-            $"[EFFECT_ICON] Adding ICON ONLY on {card.cardName}: type={effectType}, duration={duration}"
+        AttackExecutionContext context = new AttackExecutionContext(
+            attacker,
+            defender,
+            damage,
+            healAmount,
+            isMyAttack,
+            attackerSelfDamage,
+            animations,
+            cardAnimator,
+            playerLifeBar,
+            enemyLifeBar,
+            ShowDialog,
+            effectsApplied,
+            attackResult,
+            attackerEffects
         );
 
-        // PridA effect ikonu (reuse Kard.AddEffectIcon)
-        string effectName = GetEffectName(effectType);
-        if (!string.IsNullOrEmpty(effectName))
-        {
-            card.AddEffectIcon(effectName);
-            card.RepositionEffectIcons();
-            Debug.LogWarning($"[EFFECT_ICON] Added {effectName} icon to {card.cardName}");
-        }
-
-        yield return null;
-    }
-
-    /// <summary>
-    /// V11.1: Displays MULTIPLE effect icons on a card (for Bleed stacking, AoE attacks)
-    /// Iterates through all effects in the array and displays each one
-    /// </summary>
-    private IEnumerator DisplayMultipleEffects(
-        Kard card,
-        List<Dictionary<string, object>> effectsArray,
-        bool isMyCard
-    )
-    {
-        if (effectsArray == null || effectsArray.Count == 0)
-        {
-            yield break;
-        }
-
-        Debug.LogWarning(
-            $"[MULTI-EFFECTS] Displaying {effectsArray.Count} effects on {card.cardName}"
-        );
-
-        foreach (var effect in effectsArray)
-        {
-            yield return StartCoroutine(DisplayEffectIcon(card, effect, isMyCard));
-            yield return new WaitForSeconds(0.3f); // Slight delay between multiple effects
-        }
-    }
-
-    /// <summary>
-    /// ZobrazA effect ikonu na karte (V9: Sleep, Bleed, Burn, Poison...)
-    /// VOLA SA keAZ sa NOVAt effect aplikuje (Turn 1 aplikAcie)
-    /// DEPRECATED V9.1: PouLlite AddEffectIconOnly, KO animAcia sa hrA v ExecuteAttackAnimation
-    /// </summary>
-    private IEnumerator DisplayEffectIcon(
-        Kard card,
-        Dictionary<string, object> effectData,
-        bool isMyCard
-    )
-    {
-        int effectType = int.Parse(effectData["type"].ToString());
-        int duration = int.Parse(effectData["duration"].ToString());
-
-        Debug.LogWarning(
-            $"[EFFECT_ICON] Adding effect icon to {card.cardName}: type={effectType}, duration={duration}"
-        );
-
-        // V14: Initial effect animations moved to Attack Handlers
-        // DisplayEffectIcon now ONLY adds icons, NO animations
-
-        // PridA effect ikonu (reuse Kard.AddEffectIcon)
-        string effectName = GetEffectName(effectType);
-        if (!string.IsNullOrEmpty(effectName))
-        {
-            card.AddEffectIcon(effectName);
-            card.RepositionEffectIcons();
-            Debug.LogWarning($"[EFFECT_ICON] Added {effectName} icon to {card.cardName}");
-        }
-
-        yield break;
+        yield return AttackRegistry.ExecuteOrFallback(attackId, context);
     }
 
     /// <summary>
@@ -2134,26 +1605,6 @@ public class BattleResultProcessor : MonoBehaviour
         }
 
         yield return StartCoroutine(ShowDialog($"{card.cardName} wakes up!"));
-    }
-
-    private IEnumerator RemoveEffectIconOnly(Kard card, int effectType, bool isMyCard)
-    {
-        string effectName = GetEffectName(effectType);
-        if (string.IsNullOrEmpty(effectName))
-        {
-            yield break;
-        }
-
-        AttackAnimations animations = attackComponent?.attackAnimations;
-        if (animations != null && effectType == 21)
-        {
-            yield return StartCoroutine(animations.PlayCalmEndAnimation(card.transform));
-        }
-
-        Debug.LogWarning(
-            $"[EFFECT_ICON] Removing {effectName} from {(isMyCard ? "MY" : "ENEMY")} card {card.cardName}"
-        );
-        yield return StartCoroutine(card.RemoveEffectIcon(effectName));
     }
 
     /// <summary>
@@ -2180,7 +1631,7 @@ public class BattleResultProcessor : MonoBehaviour
         }
 
         // OdstrAL Asceticism ikonu po recovery
-        string asceticismEffectName = GetEffectName(2); // 2 = Asceticism
+        string asceticismEffectName = GetEffectVisuals().GetEffectName(2); // 2 = Asceticism
         Debug.LogWarning($"[RECOVERY] Effect name for type 2: {asceticismEffectName}");
 
         if (!string.IsNullOrEmpty(asceticismEffectName))
@@ -2318,7 +1769,7 @@ public class BattleResultProcessor : MonoBehaviour
             }
 
             // OdstrAL Exposure ikonu
-            string exposureEffectName = GetEffectName(4); // 4 = Exposure
+            string exposureEffectName = GetEffectVisuals().GetEffectName(4); // 4 = Exposure
             if (!string.IsNullOrEmpty(exposureEffectName))
             {
                 yield return StartCoroutine(card.RemoveEffectIcon(exposureEffectName));
@@ -2368,7 +1819,7 @@ public class BattleResultProcessor : MonoBehaviour
     private IEnumerator PlayBlockAnimation(Kard card, int? blockedBy, bool isMyCard)
     {
         string cardOwner = isMyCard ? "MY" : "ENEMY";
-        string effectName = blockedBy.HasValue ? GetEffectName(blockedBy.Value) : "unknown effect";
+        string effectName = blockedBy.HasValue ? GetEffectVisuals().GetEffectName(blockedBy.Value) : "unknown effect";
         Debug.LogWarning(
             $"zdZ [BLOCK] {cardOwner} card ({card.cardName}) blocked by effect type {blockedBy} ({effectName})!"
         );
@@ -2456,133 +1907,11 @@ public class BattleResultProcessor : MonoBehaviour
     }
 
     /// <summary>
-    /// VrAti nAzov efektu pre effect type ID (pouLlAva Kard.GetEffectNameById logiku)
-    /// </summary>
-    private string GetEffectName(int effectType)
-    {
-        switch (effectType)
-        {
-            case 1:
-                return "Bleed";
-            case 2:
-                return "Asceticism";
-            case 3:
-                return "Sleep";
-            case 27:
-                return "Sleep"; // Knockout currently reuses Sleep icon
-            case 4:
-                return "Exposure";
-            case 5:
-                return "Siege";
-            case 6:
-                return "Fury";
-            case 7:
-                return "Famine";
-            case 8:
-                return "Electricity";
-            case 9:
-                return "Tether";
-            case 10:
-                return "Starving";
-            case 11:
-                return "ScientificLecture";
-            case 12:
-                return "Blockade";
-            case 13:
-                return "Depression";
-            case 14:
-                return "ArtInspiration";
-            case 15:
-                return "Autoportrait";
-            case 16:
-                return "Burn";
-            case 17:
-                return "Confusion";
-            case 18:
-                return "Satellite";
-            case 19:
-                return "Fear";
-            case 20:
-                return "Horns";
-            case 21:
-                return "Calm";
-            case 22:
-                return "Reloading";
-            case 23:
-                return "Trident";
-            case 24:
-                return "Poison";
-            case 26:
-                return "Curse";
-            default:
-                Debug.LogWarning($"[GetEffectName] Unknown effect type: {effectType}");
-                return null;
-        }
-    }
-
-    /// <summary>
     /// VrAti nAzov Astoku pre attackId (pre dialog text)
     /// </summary>
     private string GetAttackName(int attackId)
     {
-        switch (attackId)
-        {
-            case 1:
-                return "Punch";
-            case 2:
-                return "Kick";
-            case 3:
-                return "Heal";
-            case 4:
-                return "Forgiveness";
-            case 5:
-                return "Crusade";
-            case 6:
-                return "Water To Wine";
-            case 7:
-                return "Car Hit";
-            case 8:
-                return "Monkey Wrench";
-            case 9:
-                return "Radiation";
-            case 10:
-                return "Scratch";
-            case 11:
-                return "Scientific Lecture";
-            case 12:
-                return "Chi Sau";
-            case 13:
-                return "One Inch Punch";
-            case 14:
-                return "Up In Smoke";
-            case 15:
-                return "Sing";
-            case 16:
-                return "Revolver";
-            case 17:
-                return "Artillery Regiment";
-            case 18:
-                return "Bloodthirst";
-            case 19:
-                return "Sword";
-            case 20:
-                return "Pike";
-            case 21:
-                return "Terrify";
-            case 22:
-                return "Drink Wine";
-            case 23:
-                return "Flaming Gun";
-            case 24:
-                return "Cleaver";
-            case 25:
-                return "Pan";
-            case 26:
-                return "Boost";
-            // TODO: RozLAriLA pre vLetky Astoky
-            default:
-                return $"Attack#{attackId}";
-        }
+        return AttackRegistry.GetAttackName(attackId);
     }
 
     /// <summary>
@@ -3034,6 +2363,15 @@ public class BattleResultProcessor : MonoBehaviour
         }
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 

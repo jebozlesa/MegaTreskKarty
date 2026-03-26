@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -68,8 +68,6 @@ public class FightSystem : MonoBehaviour
     private string connectionString;
 
     public static bool IsLoggedIn = false;
-
-    private bool campaign = false;
     private int plyerCardsUsage = 0;
     int missionID = 0;
 
@@ -135,7 +133,6 @@ public class FightSystem : MonoBehaviour
 
         if (missionID > 0)
         {
-            campaign = true;
             plyerCardsUsage = 2;
             yield return StartCoroutine(VytvorKartyAIMission(nepriatel, enemy, missionID));
         }
@@ -162,13 +159,13 @@ public class FightSystem : MonoBehaviour
         StartCoroutine(ResetCardPositions());
         state = FightState.TURN;
         playerAttack = 0;
-        float timeout = Time.time + 5f; // nastavíme timeout na 5 sekund od začátku cyklu
+        float timeout = Time.time + 5f; // nastavĂ­me timeout na 5 sekund od zaÄŤĂˇtku cyklu
         do
         {
             enemyAttack = Random.Range(1, 5);//vyberie nahodny utok pre nepriatela
             if (Time.time > timeout)
             {
-                Debug.Log("Timeout - nepodařilo se generovat náhodnou hodnotu, použije se výchozí hodnota");
+                Debug.Log("Timeout - nepodaĹ™ilo se generovat nĂˇhodnou hodnotu, pouĹľije se vĂ˝chozĂ­ hodnota");
                 dialogText.text = "Daco sa dojebalo";
                 break;
             }
@@ -231,9 +228,9 @@ public class FightSystem : MonoBehaviour
         {
             return enemy;
         }
-        else // Rovnaká rýchlosť
+        else // RovnakĂˇ rĂ˝chlosĹĄ
         {
-            if (Random.value < 0.5f) // 50% šanca pre každú kartu
+            if (Random.value < 0.5f) // 50% Ĺˇanca pre kaĹľdĂş kartu
             {
                 return player;
             }
@@ -398,7 +395,7 @@ public class FightSystem : MonoBehaviour
 
     private IEnumerator ResetCardPosition(Transform cardTransform, Vector3 targetPosition, Quaternion targetRotation)
     {
-        float resetDuration = 0.5f;  // Dĺžka trvania resetovania v sekundách
+        float resetDuration = 0.5f;  // DÄşĹľka trvania resetovania v sekundĂˇch
 
         float elapsedTime = 0f;
         Vector3 startingPosition = cardTransform.position;
@@ -413,7 +410,7 @@ public class FightSystem : MonoBehaviour
             yield return null;
         }
 
-        // Uistite sa, že karta dosiahla cieľovú pozíciu a rotáciu
+        // Uistite sa, Ĺľe karta dosiahla cieÄľovĂş pozĂ­ciu a rotĂˇciu
         cardTransform.position = targetPosition;
         cardTransform.rotation = targetRotation;
     }
@@ -422,11 +419,11 @@ public class FightSystem : MonoBehaviour
     {
         Debug.Log("FightSystem.LoginPlayFab  -- Start");
 
-        // Získajte referenciu na komponenty Kard a Player
+        // ZĂ­skajte referenciu na komponenty Kard a Player
         Kard kard = cardObject.GetComponent<Kard>();
         DragKard dragKard = cardObject.GetComponent<DragKard>();
 
-        // Vykonajte akciu pre premiestnenie karty do bojového priestoru
+        // Vykonajte akciu pre premiestnenie karty do bojovĂ©ho priestoru
         if (state == FightState.PLAYERDEATH || state == FightState.START)
         {
             AudioManager.Instance.PlayCardZoomInSound();
@@ -439,7 +436,7 @@ public class FightSystem : MonoBehaviour
         else
         {
             AudioManager.Instance.PlayCardZoomOutSound();
-            // Vráťte kartu do ruky, ak nie je splnená podmienka
+            // VrĂˇĹĄte kartu do ruky, ak nie je splnenĂˇ podmienka
             player.ReturnCardToHand(kard, dragKard.originalHandPosition);
         }
     }
@@ -461,13 +458,13 @@ public class FightSystem : MonoBehaviour
                 Deck deckToLoad = deckList.Decks.FirstOrDefault(deck => deck.DeckName == deckName);
                 if (deckToLoad != null)
                 {
-                    // Načítanie kariet z vybraného balíčka
+                    // NaÄŤĂ­tanie kariet z vybranĂ©ho balĂ­ÄŤka
                     foreach (var cardID in deckToLoad.GetCardIDs())
                     {
                         var cardData = cardList.cards.FirstOrDefault(card => card.CardID == cardID);
                         if (cardData != null)
                         {
-                            // Tu vytvoríte kartu na základe cardData
+                            // Tu vytvorĂ­te kartu na zĂˇklade cardData
                             CreateCardInGame(cardData, playerGO, player);
                         }
                     }
@@ -489,7 +486,7 @@ public class FightSystem : MonoBehaviour
             isCompleted = true;
         });
 
-        // Čakajte, kým sa nevykoná callback
+        // ÄŚakajte, kĂ˝m sa nevykonĂˇ callback
         yield return new WaitUntil(() => isCompleted);
     }
 
@@ -606,7 +603,7 @@ public class FightSystem : MonoBehaviour
         reader.Close();
         dbCommand.Dispose();
 
-        // Načítanie kariet podľa ich ID
+        // NaÄŤĂ­tanie kariet podÄľa ich ID
         foreach (int cardID in cardIDs)
         {
             dbCommand = dbConnection.CreateCommand();
@@ -754,13 +751,13 @@ public class FightSystem : MonoBehaviour
     {
         int[] result = new int[6];
 
-        // Nastaviť všetky prvky poľa na hodnotu 0
+        // NastaviĹĄ vĹˇetky prvky poÄľa na hodnotu 0
         for (int i = 0; i < result.Length; i++)
         {
             result[i] = 0;
         }
 
-        // Pridať zvyšok hodnoty do pola náhodne
+        // PridaĹĄ zvyĹˇok hodnoty do pola nĂˇhodne
         int remainingValue = value;
 
         while (remainingValue > 0)
@@ -778,3 +775,5 @@ public class FightSystem : MonoBehaviour
         return result;
     }
 }
+
+

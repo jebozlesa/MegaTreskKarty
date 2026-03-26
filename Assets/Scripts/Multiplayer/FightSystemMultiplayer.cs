@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
@@ -66,15 +66,10 @@ public class FightSystemMultiplayer : MonoBehaviour
     int enemyAttack;
 
     public RecordHandler recordHandler;
-    int enemyLevel = 0;
 
     private string connectionString;
 
     public static bool IsLoggedIn = false;
-
-    private bool campaign = false;
-    private int plyerCardsUsage = 0;
-    int missionID = 0;
 
     // Multiplayer-specific variables
     public string myPlayerId;
@@ -316,3 +311,4 @@ public class FightSystemMultiplayer : MonoBehaviour
 
 
 }
+
