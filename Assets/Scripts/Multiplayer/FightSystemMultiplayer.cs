@@ -17,6 +17,15 @@ public enum FightStateMultiplayer { START, TURN, ENDTURN, PLAYERDEATH, ENEMYDEAT
 
 public class FightSystemMultiplayer : MonoBehaviour
 {
+    [System.Serializable]
+    public class PendingOngoingActionTurn
+    {
+        public string actionType;
+        public int sourceAttackId;
+        public string targetCardId;
+        public int turnsRemaining;
+    }
+
     // Multiplayer player references
     public Player player;
     public Player enemy;
@@ -88,6 +97,8 @@ public class FightSystemMultiplayer : MonoBehaviour
     // Battle system komponenty
     public BattleSubmitter battleSubmitter;
     public BattleResultProcessor battleResultProcessor;
+
+    private PendingOngoingActionTurn pendingOngoingActionTurn;
 
 
     void Start()
@@ -307,6 +318,65 @@ public class FightSystemMultiplayer : MonoBehaviour
         
         // Zobraz status
         multiplayerUI?.ShowStatus(MultiplayerUI.MSG_WAITING_OPPONENT);
+    }
+
+    public void UpdatePendingOngoingAction(SelectedCardData selectedCardData)
+    {
+        if (selectedCardData?.ongoingActions == null || selectedCardData.ongoingActions.Length == 0)
+        {
+            pendingOngoingActionTurn = null;
+            return;
+        }
+
+        var action = selectedCardData.ongoingActions[0];
+        pendingOngoingActionTurn = new PendingOngoingActionTurn
+        {
+            actionType = action.type,
+            sourceAttackId = action.sourceAttackId,
+            targetCardId = action.targetCardId,
+            turnsRemaining = action.turnsRemaining
+        };
+    }
+
+    public bool TryGetPendingOngoingActionTurn(out PendingOngoingActionTurn pendingTurn)
+    {
+        pendingTurn = pendingOngoingActionTurn;
+        return pendingTurn != null;
+    }
+
+    public bool TryResolveAttackTypeForAttackId(Kard card, int attackId, out int attackType)
+    {
+        attackType = 0;
+        if (card == null || attackId <= 0)
+        {
+            return false;
+        }
+
+        if (card.attack1 == attackId)
+        {
+            attackType = 1;
+            return true;
+        }
+
+        if (card.attack2 == attackId)
+        {
+            attackType = 2;
+            return true;
+        }
+
+        if (card.attack3 == attackId)
+        {
+            attackType = 3;
+            return true;
+        }
+
+        if (card.attack4 == attackId)
+        {
+            attackType = 4;
+            return true;
+        }
+
+        return false;
     }
 
 

@@ -22,29 +22,19 @@ public class Attack5Handler
     {
         yield return showDialog($"{attacker.cardName} uses Crusade!");
         yield return animations.PlayCrusadeAnimation(attacker.transform, defender.transform);
-        
-        // Damage attack - apply damage + HP bar update
+
         if (damage > 0)
         {
             Debug.LogWarning($"[HIT] [CRUSADE] {attacker.cardName} -> {defender.cardName}: {damage} damage");
-            defender.health -= damage;
-            if (defender.health < 0) defender.health = 0;
-            
-            if (cardAnimator != null)
-            {
-                yield return cardAnimator.AnimateDamage(defender, damage);
-            }
-            
-            if (isMyAttack)
-            {
-                enemyLifeBar.SetHP(defender.health);
-            }
-            else
-            {
-                playerLifeBar.SetHP(defender.health);
-            }
-            
-            yield return showDialog($"In the name of Christ!!! damage was done");
+            yield return AttackPlaybackShared.PlayStandardTargetDamage(
+                defender,
+                damage,
+                isMyAttack,
+                cardAnimator,
+                playerLifeBar,
+                enemyLifeBar
+            );
+            yield return showDialog("In the name of Christ!!! damage was done");
         }
     }
 }

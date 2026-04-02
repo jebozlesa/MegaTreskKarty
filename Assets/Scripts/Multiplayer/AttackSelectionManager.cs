@@ -55,6 +55,11 @@ public class AttackSelectionManager : MonoBehaviour
         currentAttackCounts = attackCounts;
         selectedAttackType = 0;
 
+        if (TryHandlePendingOngoingActionTurn(card))
+        {
+            return;
+        }
+
         // [OK] NEVYPLNAJ dialogText tu - spravy nastavuju MultiplayerBoardManager a BattleResultProcessor
         // Predchadzajuca sprava je vzdy relevantna ("Choose your attack", "Choose fighter!", atd.)
 
@@ -160,6 +165,58 @@ public class AttackSelectionManager : MonoBehaviour
         DisableAttackSelection();
     }
 
+    private bool TryHandlePendingOngoingActionTurn(Kard card)
+    {
+        if (fightSystem == null || card == null)
+        {
+            return false;
+        }
+
+        if (!fightSystem.TryGetPendingOngoingActionTurn(out var pendingTurn) || pendingTurn == null)
+        {
+            return false;
+        }
+
+        if (!fightSystem.TryResolveAttackTypeForAttackId(card, pendingTurn.sourceAttackId, out var attackType))
+        {
+            Debug.LogWarning(
+                $"[AttackSelectionManager] Pending ongoing action {pendingTurn.actionType} could not resolve attack slot for attackId={pendingTurn.sourceAttackId}"
+            );
+            return false;
+        }
+
+        selectedAttackType = attackType;
+        SetAllAttackButtonsInteractable(false);
+        SetConfirmButtonState(false);
+
+        if (dialogText != null)
+        {
+            string actionLabel = GetOngoingActionLabel(pendingTurn.actionType);
+            dialogText.text = $"{actionLabel} continues automatically...";
+        }
+
+        Debug.Log(
+            $"[AttackSelectionManager] Auto-submitting ongoing action turn: type={pendingTurn.actionType}, attackType={attackType}, attackId={pendingTurn.sourceAttackId}"
+        );
+
+        ConfirmAttackSelection();
+        return true;
+    }
+
+    private string GetOngoingActionLabel(string actionType)
+    {
+        if (string.IsNullOrEmpty(actionType))
+        {
+            return "Action";
+        }
+
+        return actionType.ToLowerInvariant() switch
+        {
+            "siege" => "Siege",
+            _ => char.ToUpperInvariant(actionType[0]) + actionType.Substring(1)
+        };
+    }
+
     /// <summary>
     /// Ziskaj ID utoku pre dany typ (1-4)
     /// </summary>
@@ -230,8 +287,11 @@ public class AttackSelectionManager : MonoBehaviour
         // Re-enable buttony s novymi counts
         if (currentCard != null && fightSystem != null && fightSystem.state == FightStateMultiplayer.TURN)
         {
-            SetAttackButtonsInteractable(newCounts);
-            Debug.LogWarning($"[AttackSelectionManager] [OK] Attack counts updated: {newCounts.count1}, {newCounts.count2}, {newCounts.count3}, {newCounts.count4}");
+            if (!TryHandlePendingOngoingActionTurn(currentCard))
+            {
+                SetAttackButtonsInteractable(newCounts);
+                Debug.LogWarning($"[AttackSelectionManager] [OK] Attack counts updated: {newCounts.count1}, {newCounts.count2}, {newCounts.count3}, {newCounts.count4}");
+            }
         }
         else
         {

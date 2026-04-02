@@ -1,4 +1,4 @@
-﻿# Attack Handlers
+# Attack Handlers
 
 Modularna struktura pre attack animacie a logiku v multiplayer systeme.
 
@@ -32,6 +32,12 @@ AttackHandlers/
   Attack24Handler.cs  - Cleaver
   Attack25Handler.cs  - Pan
   Attack26Handler.cs  - Boost
+  Attack27Handler.cs  - Temptation
+  Attack28Handler.cs  - Shamshir
+  Attack29Handler.cs  - Diplomacy
+  Attack30Handler.cs  - Siege
+  Attack32Handler.cs  - Tomahawk
+  Attack33Handler.cs  - Peace Pipe
   ...
   Attack123Handler.cs
 ```
@@ -92,7 +98,11 @@ switch (attackId)
 - Attack handlers must not call HandleAttack/HandleStrength/HandleDefense/HandleKnowledge/HandleSpeed/HandleCharisma directly for battle-result stat changes.
 - Attack handlers must not call AnimateStatChange(...) directly for battle-result stat changes.
 - Server-driven stat changes are rendered only through shared battle playback/timeline flow in BattleResultProcessor.
-- Handler responsibility: attack animation, damage/heal visuals, effect-start visuals, dialogs.
+- Standard target damage should default to AttackPlaybackShared.PlayStandardTargetDamage(...).
+- New handlers should focus on attack animation, sequencing, special-case visuals, and dialogs.
+- Do not add fallback damage logic in BattleResultProcessor for ordinary attack damage.
+- Do not add new ordinary attack handlers that manually subtract defender HP unless the mechanic truly requires custom damage timing.
+- Explicit timing exceptions such as Attack7Handler must stay documented and intentional.
 
 ##  Vyhody
 
@@ -107,7 +117,15 @@ Rovnaka struktura ako server:
 - **Server:** `api/attacks/implementations/attack{ID}.js`
 - **Unity:** `AttackHandlers/Attack{ID}Handler.cs`
 
-Progress: 24/123 attacks (19.5%)
+Progress: 35/123 attacks (28.5%)
+
+
+
+
+
+
+
+
 
 
 

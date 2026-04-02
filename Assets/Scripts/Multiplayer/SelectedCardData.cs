@@ -25,6 +25,7 @@ public class SelectedCardData
     public int attack4;
     public int[] color;
     public EffectData[] effects;  // [OK] Support pre effects (burn, sleep, atd.)
+    public OngoingActionData[] ongoingActions;
     
     [System.Serializable]
     public class EffectData
@@ -33,6 +34,27 @@ public class SelectedCardData
         public int duration;       // Pocet turno v
         public int appliedTurn;    // Kedy bol aplikovany
         public int value;          // Optional value (napr. burn damage per turn)
+    }
+
+    [System.Serializable]
+    public class OngoingActionPayloadData
+    {
+        public int defenseBonusApplied;
+        public int finalDamageMin;
+        public int finalDamageMax;
+    }
+
+    [System.Serializable]
+    public class OngoingActionData
+    {
+        public string actionId;
+        public string type;
+        public int sourceAttackId;
+        public string sourceCardId;
+        public string targetCardId;
+        public string phase;
+        public int turnsRemaining;
+        public OngoingActionPayloadData payload;
     }
 
     public static SelectedCardData FromCard(Kard card, GeneratedCard definition, string ownerPlayerId)
@@ -76,7 +98,8 @@ public class SelectedCardData
             attack3 = card.attack3,
             attack4 = card.attack4,
             color = resolvedColor,
-            effects = null  // [OK] Effects budu z DB pri refresh
+            effects = null,  // [OK] Effects budu z DB pri refresh
+            ongoingActions = null
         };
 
         return data;
@@ -111,7 +134,8 @@ public class SelectedCardData
             attack3 = payload.Value<int?>("attack3") ?? 0,
             attack4 = payload.Value<int?>("attack4") ?? 0,
             color = payload["color"] is JArray colorArray ? colorArray.ToObject<int[]>() : null,
-            effects = ParseEffects(payload["effects"])  // [OK] Parse effects z servera
+            effects = ParseEffects(payload["effects"]),  // [OK] Parse effects z servera
+            ongoingActions = ParseOngoingActions(payload["ongoingActions"])
         };
     }
     
@@ -145,6 +169,46 @@ public class SelectedCardData
             }
             
             return effects.Count > 0 ? effects.ToArray() : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static OngoingActionData[] ParseOngoingActions(JToken ongoingActionsToken)
+    {
+        if (ongoingActionsToken == null || ongoingActionsToken.Type != JTokenType.Array)
+        {
+            return null;
+        }
+
+        try
+        {
+            var ongoingActionsArray = (JArray)ongoingActionsToken;
+            var ongoingActions = new System.Collections.Generic.List<OngoingActionData>();
+
+            foreach (var actionObj in ongoingActionsArray)
+            {
+                if (actionObj is not JObject jobj)
+                {
+                    continue;
+                }
+
+                ongoingActions.Add(new OngoingActionData
+                {
+                    actionId = jobj.Value<string>("actionId"),
+                    type = jobj.Value<string>("type"),
+                    sourceAttackId = jobj.Value<int?>("sourceAttackId") ?? 0,
+                    sourceCardId = jobj.Value<string>("sourceCardId"),
+                    targetCardId = jobj.Value<string>("targetCardId"),
+                    phase = jobj.Value<string>("phase"),
+                    turnsRemaining = jobj.Value<int?>("turnsRemaining") ?? 0,
+                    payload = jobj["payload"]?.ToObject<OngoingActionPayloadData>()
+                });
+            }
+
+            return ongoingActions.Count > 0 ? ongoingActions.ToArray() : null;
         }
         catch
         {

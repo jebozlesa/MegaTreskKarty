@@ -1,4 +1,5 @@
-﻿using System.Collections;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using PlayFab;
@@ -546,7 +547,68 @@ public class BattleResultProcessor : MonoBehaviour
                     }
                     break;
 
+                case BattleStepType.OngoingActionStarted:
+                    Debug.Log(
+                        $"[TimelinePilot] Ongoing action started: type={step.ActionType}, actor={step.ActorCardId}, target={step.TargetCardId}, turnsRemaining={step.TurnsRemaining}"
+                    );
+                    break;
+
+                case BattleStepType.OngoingActionProgress:
+                    if (string.Equals(step.ActionType, "siege", StringComparison.OrdinalIgnoreCase))
+                    {
+                        AttackAnimations animations = attackComponent?.attackAnimations;
+                        if (animations != null && actor != null && target != null)
+                        {
+                            yield return StartCoroutine(
+                                animations.PlaySiegeContinueAnimation(actor.transform, target.transform)
+                            );
+                        }
+
+                        if (!string.IsNullOrEmpty(step.Note))
+                        {
+                            yield return StartCoroutine(ShowDialog(step.Note));
+                        }
+                    }
+                    break;
+
+                case BattleStepType.OngoingActionResolved:
+                    if (string.Equals(step.ActionType, "siege", StringComparison.OrdinalIgnoreCase))
+                    {
+                        AttackAnimations animations = attackComponent?.attackAnimations;
+                        if (animations != null && target != null)
+                        {
+                            yield return StartCoroutine(
+                                animations.PlaySiegeEndAnimation(target.transform)
+                            );
+                        }
+
+                        if (!string.IsNullOrEmpty(step.Note))
+                        {
+                            yield return StartCoroutine(ShowDialog(step.Note));
+                        }
+                    }
+                    break;
+
+                case BattleStepType.OngoingActionCancelled:
+                    if (!string.IsNullOrEmpty(step.Note))
+                    {
+                        yield return StartCoroutine(ShowDialog(step.Note));
+                    }
+                    break;
+
                 case BattleStepType.Damage:
+                    if (
+                        string.Equals(step.Source, "ongoingAction", StringComparison.OrdinalIgnoreCase)
+                        && target != null
+                    )
+                    {
+                        bool isMyTarget = target.cardId == myCardId;
+                        yield return StartCoroutine(
+                            PlayTimelineDamageAnimation(target, step.Amount, isMyTarget)
+                        );
+                    }
+                    break;
+
                 case BattleStepType.Heal:
                 case BattleStepType.Death:
                 default:
@@ -757,6 +819,10 @@ public class BattleResultProcessor : MonoBehaviour
                     }
 
                     // Stat changes are animated during battle playback only. Refresh just syncs server state.
+                    if (playerId == fightSystem.myPlayerId)
+                    {
+                        fightSystem.UpdatePendingOngoingAction(cardData);
+                    }
 
                     // Aplikuj effects (burn, sleep, atAZ.)
                     if (cardData.effects != null && cardData.effects.Length > 0)
@@ -1590,6 +1656,7 @@ public class BattleResultProcessor : MonoBehaviour
         yield return AttackRegistry.ExecuteOrFallback(attackId, context);
     }
 
+
     /// <summary>
     /// Play wake-up animation after a sleep effect is removed.
     /// </summary>
@@ -1680,6 +1747,30 @@ public class BattleResultProcessor : MonoBehaviour
         }
 
         yield return StartCoroutine(ShowDialog($"{card.cardName} suffers -{damage} HP!"));
+    }
+
+    private IEnumerator PlayTimelineDamageAnimation(Kard card, int damage, bool isMyCard)
+    {
+        if (card == null || damage <= 0)
+        {
+            yield break;
+        }
+
+        card.health = Mathf.Max(0, card.health - damage);
+
+        if (cardAnimator != null)
+        {
+            yield return StartCoroutine(cardAnimator.AnimateDamage(card, damage));
+        }
+
+        if (isMyCard)
+        {
+            playerLifeBar?.SetHP(card.health);
+        }
+        else
+        {
+            enemyLifeBar?.SetHP(card.health);
+        }
     }
 
     /// <summary>
@@ -2363,6 +2454,9 @@ public class BattleResultProcessor : MonoBehaviour
         }
     }
 }
+
+
+
 
 
 

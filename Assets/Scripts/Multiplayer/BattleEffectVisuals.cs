@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -65,6 +65,10 @@ public sealed class BattleEffectVisuals
         if (animations != null && effectType == 21)
         {
             yield return animations.PlayCalmEndAnimation(card.transform);
+        }
+        else if (animations != null && effectType == 6)
+        {
+            yield return animations.PlayFuryEndAnimation(card.transform);
         }
 
         Debug.LogWarning(
@@ -158,3 +162,4 @@ public sealed class BattleEffectVisuals
         yield break;
     }
 }
+

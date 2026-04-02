@@ -23,28 +23,18 @@ public class Attack13Handler
     {
         yield return showDialog($"{attacker.cardName} uses One Inch Punch!");
         yield return animations.PlayOneInchPunchAnimation(attacker.transform, defender.transform);
-        
-        // Apply damage
+
         if (damage > 0)
         {
             Debug.LogWarning($"[HIT] [ONE_INCH_PUNCH] {attacker.cardName} -> {defender.cardName}: {damage} damage");
-            defender.health -= damage;
-            if (defender.health < 0) defender.health = 0;
-            
-            if (cardAnimator != null)
-            {
-                yield return cardAnimator.AnimateDamage(defender, damage);
-            }
-            
-            if (isMyAttack)
-            {
-                enemyLifeBar.SetHP(defender.health);
-            }
-            else
-            {
-                playerLifeBar.SetHP(defender.health);
-            }
-            
+            yield return AttackPlaybackShared.PlayStandardTargetDamage(
+                defender,
+                damage,
+                isMyAttack,
+                cardAnimator,
+                playerLifeBar,
+                enemyLifeBar
+            );
             yield return showDialog($"{attacker.cardName} pokes enemy with finger");
         }
     }

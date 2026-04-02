@@ -1,13 +1,11 @@
 using System.Collections;
 using UnityEngine;
-using TMPro;
 
 /// <summary>
-/// Attack ID 2: Kick
-/// Damage: (speed/3) - (defense/3), min 1
-/// Effect: 20% +4 extra damage
+/// Attack ID 36: Guerilla
+/// Standard target damage uses AttackPlaybackShared; ATT debuff remains in shared timeline stat playback.
 /// </summary>
-public class Attack2Handler
+public class Attack36Handler
 {
     public static IEnumerator Execute(
         Kard attacker,
@@ -20,12 +18,11 @@ public class Attack2Handler
         HealthBar enemyLifeBar,
         System.Func<string, IEnumerator> showDialog)
     {
-        yield return showDialog($"{attacker.cardName} uses Kick!");
-        yield return animations.PlayKickAnimation(attacker.transform, defender.transform);
+        yield return showDialog($"{attacker.cardName} uses Guerilla");
+        yield return animations.PlayGuerillaAnimation(attacker.transform, defender.transform);
 
         if (damage > 0)
         {
-            Debug.LogWarning($"[HIT] [KICK] {attacker.cardName} -> {defender.cardName}: {damage} damage");
             yield return AttackPlaybackShared.PlayStandardTargetDamage(
                 defender,
                 damage,
@@ -34,7 +31,8 @@ public class Attack2Handler
                 playerLifeBar,
                 enemyLifeBar
             );
-            yield return showDialog($"Plesk! kick from {attacker.cardName}");
         }
+
+        yield return showDialog($"{attacker.cardName} sends Guerillas");
     }
 }

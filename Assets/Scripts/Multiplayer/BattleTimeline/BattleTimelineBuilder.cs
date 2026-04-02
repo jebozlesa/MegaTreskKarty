@@ -115,6 +115,9 @@ public static class BattleTimelineBuilder
         step.Skipped = GetBoolAny(data, false, "skipped", "Skipped");
         step.Source = GetStringAny(data, "source", "Source");
         step.Note = GetStringAny(data, "note", "Note");
+        step.ActionType = GetStringAny(data, "actionType", "ActionType");
+        step.ActionId = GetStringAny(data, "actionId", "ActionId");
+        step.TurnsRemaining = GetIntAny(data, 0, "turnsRemaining", "TurnsRemaining");
         step.EffectsApplied = GetEffectListAny(data, "effectsApplied", "EffectsApplied");
         step.AttackerEffectsApplied = GetEffectListAny(data, "attackerEffectsApplied", "AttackerEffectsApplied");
 

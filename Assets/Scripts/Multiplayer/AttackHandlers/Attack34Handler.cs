@@ -2,11 +2,11 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Attack ID 17: Artillery Regiment
+/// Attack ID 34: Recurve Bow
 /// Hit chance handled on server.
 /// Client only renders hit or miss based on attackResult (fallback by damage).
 /// </summary>
-public class Attack17Handler
+public class Attack34Handler
 {
     public static IEnumerator Execute(
         Kard attacker,
@@ -26,12 +26,12 @@ public class Attack17Handler
             hit = damage > 0;
         }
 
-        yield return showDialog($"{attacker.cardName} uses Artillery Regiment");
-        yield return animations.PlayArtilleryRegimentAnimation(attacker.transform, defender.transform, hit);
+        yield return showDialog($"{attacker.cardName} uses Recurve Bow");
+        yield return animations.PlayRecurveBowAnimation(attacker.transform, defender.transform, hit);
 
         if (!hit)
         {
-            yield return showDialog("Bang! aaaand miss");
+            yield return showDialog("arrow missed");
             yield break;
         }
 
@@ -47,6 +47,6 @@ public class Attack17Handler
             );
         }
 
-        yield return showDialog($"{defender.cardName} is heavily bombarded");
+        yield return showDialog($"{attacker.cardName} shoots arrow");
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -26,22 +26,14 @@ public class Attack20Handler
 
         if (damage > 0)
         {
-            defender.health -= damage;
-            if (defender.health < 0) defender.health = 0;
-
-            if (cardAnimator != null)
-            {
-                yield return cardAnimator.AnimateDamage(defender, damage);
-            }
-
-            if (isMyAttack)
-            {
-                enemyLifeBar.SetHP(defender.health);
-            }
-            else
-            {
-                playerLifeBar.SetHP(defender.health);
-            }
+            yield return AttackPlaybackShared.PlayStandardTargetDamage(
+                defender,
+                damage,
+                isMyAttack,
+                cardAnimator,
+                playerLifeBar,
+                enemyLifeBar
+            );
         }
 
         yield return showDialog($"{attacker.cardName} strikes with pike");

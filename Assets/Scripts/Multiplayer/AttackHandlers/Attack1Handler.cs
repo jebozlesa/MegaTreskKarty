@@ -24,32 +24,21 @@ public class Attack1Handler
     {
         yield return showDialog($"{attacker.cardName} uses Punch!");
         yield return animations.PlayPunchAnimation(attacker.transform, defender.transform);
-        
-        // Damage attack - apply damage + HP bar update
+
         if (damage > 0)
         {
             Debug.LogWarning($"[HIT] [PUNCH] {attacker.cardName} -> {defender.cardName}: {damage} damage");
-            defender.health -= damage;
-            if (defender.health < 0) defender.health = 0;
-            
-            if (cardAnimator != null)
-            {
-                yield return cardAnimator.AnimateDamage(defender, damage);
-            }
-            
-            if (isMyAttack)
-            {
-                enemyLifeBar.SetHP(defender.health);
-            }
-            else
-            {
-                playerLifeBar.SetHP(defender.health);
-            }
-            
+            yield return AttackPlaybackShared.PlayStandardTargetDamage(
+                defender,
+                damage,
+                isMyAttack,
+                cardAnimator,
+                playerLifeBar,
+                enemyLifeBar
+            );
             yield return showDialog($"Puf! punch from {attacker.cardName}");
         }
-        
-        // [OK] Initial effect animation (KO for Sleep/Knockout)
+
         if (effectsApplied != null && effectsApplied.Count > 0)
         {
             var sleepEffect = effectsApplied.Find(e => e["type"].ToString() == "27");

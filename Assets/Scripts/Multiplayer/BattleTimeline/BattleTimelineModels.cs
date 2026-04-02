@@ -17,6 +17,10 @@ public enum BattleStepType
     Recovery,
     EffectApplied,
     EffectRemoved,
+    OngoingActionStarted,
+    OngoingActionProgress,
+    OngoingActionResolved,
+    OngoingActionCancelled,
     Death
 }
 
@@ -39,6 +43,9 @@ public class BattleStep
     public bool Skipped;
     public string Source;
     public string Note;
+    public string ActionType;
+    public string ActionId;
+    public int TurnsRemaining;
 }
 
 

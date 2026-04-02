@@ -25,28 +25,18 @@ public class Attack8Handler
     {
         yield return showDialog($"{attacker.cardName} uses MonkeyWrench!");
         yield return animations.PlayMonkeyWrenchAnimation(attacker.transform, defender.transform);
-        
-        // Damage attack - apply damage + HP bar update
+
         if (damage > 0)
         {
             Debug.LogWarning($"[HIT] [MONKEYWRENCH] {attacker.cardName} -> {defender.cardName}: {damage} damage");
-            defender.health -= damage;
-            if (defender.health < 0) defender.health = 0;
-            
-            if (cardAnimator != null)
-            {
-                yield return cardAnimator.AnimateDamage(defender, damage);
-            }
-            
-            if (isMyAttack)
-            {
-                enemyLifeBar.SetHP(defender.health);
-            }
-            else
-            {
-                playerLifeBar.SetHP(defender.health);
-            }
-            
+            yield return AttackPlaybackShared.PlayStandardTargetDamage(
+                defender,
+                damage,
+                isMyAttack,
+                cardAnimator,
+                playerLifeBar,
+                enemyLifeBar
+            );
             yield return showDialog($"{attacker.cardName} hits with Monkey Wrench");
         }
 

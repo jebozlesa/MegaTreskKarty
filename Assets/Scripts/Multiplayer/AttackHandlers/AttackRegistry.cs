@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -387,6 +387,102 @@ public static class AttackRegistry
                     ctx.ShowDialog
                 )
             ),
+            [27] = new AttackDefinition("Temptation", ctx =>
+                Attack27Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [28] = new AttackDefinition("Shamshir", ctx =>
+                Attack28Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied
+                )
+            ),
+            [29] = new AttackDefinition("Diplomacy", ctx =>
+                Attack29Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog
+                )
+            ),
+            [30] = new AttackDefinition("Siege", ctx =>
+                Attack30Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Animations,
+                    ctx.ShowDialog
+                )
+            ),
+            [32] = new AttackDefinition("Tomahawk", ctx =>
+                Attack32Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied
+                )
+            ),
+            [33] = new AttackDefinition("Peace Pipe", ctx =>
+                Attack33Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog
+                )
+            ),
+            [34] = new AttackDefinition("Recurve Bow", ctx =>
+                Attack34Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [35] = new AttackDefinition("Fury", ctx =>
+                Attack35Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [36] = new AttackDefinition("Guerilla", ctx =>
+                Attack36Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog
+                )
+            ),
         };
 
     public static string GetAttackName(int attackId)
@@ -409,3 +505,14 @@ public static class AttackRegistry
         return Definitions[1].Execute(context);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
