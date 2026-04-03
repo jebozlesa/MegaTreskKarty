@@ -27,6 +27,7 @@ public class MultiplayerCleanupManager : MonoBehaviour
         {
             instance = this;
             DontDestroyOnLoad(gameObject);
+            ResolveServerFunctionsManager();
         }
         else
         {
@@ -37,6 +38,8 @@ public class MultiplayerCleanupManager : MonoBehaviour
 
     void Start()
     {
+        ResolveServerFunctionsManager();
+
         if (autoCleanupOnStart)
         {
             // Okamzity cleanup pri starte
@@ -60,6 +63,8 @@ public class MultiplayerCleanupManager : MonoBehaviour
 
     public void PerformCleanup()
     {
+        ResolveServerFunctionsManager();
+
         if (serverFunctionsManager != null)
         {
             Debug.Log("Performing multiplayer rooms cleanup...");
@@ -92,6 +97,16 @@ public class MultiplayerCleanupManager : MonoBehaviour
         {
             Debug.LogWarning("ServerFunctionsManager not found for cleanup");
         }
+    }
+
+    private void ResolveServerFunctionsManager()
+    {
+        if (serverFunctionsManager != null)
+        {
+            return;
+        }
+
+        serverFunctionsManager = FindFirstObjectByType<ServerFunctionsManager>(FindObjectsInactive.Include);
     }
 
     public void StartPeriodicCleanup()

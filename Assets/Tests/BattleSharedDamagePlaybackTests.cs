@@ -140,6 +140,14 @@ public class BattleSharedDamagePlaybackTests
         StringAssert.Contains("CallFunctionWithRetry(\"getBattleStatus\"", source);
     }
 
+    [Test]
+    public void MultiplayerCleanupManager_ResolvesServerFunctionsManagerLazily()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "MultiplayerCleanupManager.cs");
+        StringAssert.Contains("ResolveServerFunctionsManager();", source);
+        StringAssert.Contains("FindFirstObjectByType<ServerFunctionsManager>(FindObjectsInactive.Include)", source);
+    }
+
     private static string ReadProjectFile(params string[] relativeParts)
     {
         var allParts = new List<string> { Application.dataPath };

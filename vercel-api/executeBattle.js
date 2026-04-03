@@ -1,14 +1,14 @@
-import clientPromise from './mongodb';
+﻿import clientPromise from './mongodb';
 
 /**
- * 🚀 V5 - CARDID-BASED BATTLE RESULTS
+ * đźš€ V5 - CARDID-BASED BATTLE RESULTS
  * 
  * Endpoint: POST /api/executeBattle
  * 
- * ✅ HP tracking v room.selectedCards (single source of truth)
- * ✅ battleResult identifikuje karty cez cardId (nie player1/player2)
- * ✅ battleResult obsahuje len damage/effects (nie HP!)
- * ✅ Klient načíta finálne HP z selectedCards, damage aplikuje postupne v animáciách
+ * âś… HP tracking v room.selectedCards (single source of truth)
+ * âś… battleResult identifikuje karty cez cardId (nie player1/player2)
+ * âś… battleResult obsahuje len damage/effects (nie HP!)
+ * âś… Klient naÄŤĂ­ta finĂˇlne HP z selectedCards, damage aplikuje postupne v animĂˇciĂˇch
  * 
  * Request payload:
  * {
@@ -39,7 +39,7 @@ function extractParam(req, key) {
 }
 
 /**
- * Načíta selectedCard pre daného hráča (LIVE stats!)
+ * NaÄŤĂ­ta selectedCard pre danĂ©ho hrĂˇÄŤa (LIVE stats!)
  */
 async function getSelectedCard(roomCode, playerId) {
   try {
@@ -65,7 +65,7 @@ async function getSelectedCard(roomCode, playerId) {
 }
 
 /**
- * Uloží updatované selectedCards späť do DB
+ * UloĹľĂ­ updatovanĂ© selectedCards spĂ¤ĹĄ do DB
  */
 async function saveSelectedCards(roomCode, player1Id, player2Id, card1, card2) {
   try {
@@ -93,9 +93,9 @@ async function saveSelectedCards(roomCode, player1Id, player2Id, card1, card2) {
 }
 
 /**
- * Simuluje Punch útok (Attack ID 1)
+ * Simuluje Punch Ăştok (Attack ID 1)
  * Damage: (strength/3) - (defense/3), min 1
- * Effect: 20% šanca na sleep (1-2 turns)
+ * Effect: 20% Ĺˇanca na sleep (1-2 turns)
  */
 function executePunch(attackerCard, defenderCard) {
   let damage = Math.floor(attackerCard.strength / 3) - Math.floor(defenderCard.defense / 3);
@@ -105,278 +105,6 @@ function executePunch(attackerCard, defenderCard) {
 
   defenderCard.health -= damage;
   if (defenderCard.health < 0) defenderCard.health = 0;
-
-  // 20% sleep chance
-  let didSleep = false;
-  let sleepDuration = 0;
-
-  if (Math.random() <= 0.2 && defenderCard.health > 0) {
-    didSleep = true;
-    sleepDuration = Math.floor(Math.random() * 2) + 1; // 1-2 turns
-    
-    // Pridaj effect
-    if (!defenderCard.effects) defenderCard.effects = [];
-    defenderCard.effects.push({
-      type: 'sleep',
-      duration: sleepDuration,
-      appliedTurn: (defenderCard.turnNumber || 1)
-    });
-    
-    console.log(`[executePunch] ${defenderCard.name} fell asleep for ${sleepDuration} turns!`);
-  }
-
-  return {
-    damage: damage,
-    didSleep: didSleep,
-    sleepDuration: sleepDuration
-  };
-}
-
-/**
- * Simuluje battle medzi dvomi kartami
- */
-function simulateBattle(card1, card2, attackId1, attackId2) {
-  console.log('[simulateBattle] Starting battle');
-  console.log(`  Card1: ${card1.name} (ATK:${attackId1}, HP:${card1.health}, STR:${card1.strength}, SPD:${card1.speed})`);
-  console.log(`  Card2: ${card2.name} (ATK:${attackId2}, HP:${card2.health}, STR:${card2.strength}, SPD:${card2.speed})`);
-
-  // Urč kto útočí prvý podľa speed
-  let firstAttacker, secondAttacker;
-  let firstCard, secondCard;
-  let firstAttackId, secondAttackId;
-
-  if (card1.speed > card2.speed) {
-    firstAttacker = 'player1';
-    firstCard = card1;
-    secondCard = card2;
-    firstAttackId = attackId1;
-    secondAttackId = attackId2;
-  } else if (card2.speed > card1.speed) {
-    firstAttacker = 'player2';
-    firstCard = card2;
-    secondCard = card1;
-    firstAttackId = attackId2;
-    secondAttackId = attackId1;
-  } else {
-    // Rovnaká rýchlosť - random
-    if (Math.random() < 0.5) {
-      firstAttacker = 'player1';
-      firstCard = card1;
-      secondCard = card2;
-      firstAttackId = attackId1;
-      secondAttackId = attackId2;
-    } else {
-      firstAttacker = 'player2';
-      firstCard = card2;
-      secondCard = card1;
-      firstAttackId = attackId2;
-      secondAttackId = attackId1;
-    }
-  }
-
-  console.log(`[simulateBattle] First attacker: ${firstAttacker} (${firstCard.name})`);
-
-  // Prvý útok
-  let firstResult = { damage: 0, didSleep: false, sleepDuration: 0 };
-  if (firstAttackId === 1) {
-    firstResult = executePunch(firstCard, secondCard);
-  }
-  // TODO: Pridaj switch pre ostatné attackId (2, 3, 4, ...)
-
-  // Druhý útok (len ak prežil)
-  let secondResult = { damage: 0, didSleep: false, sleepDuration: 0 };
-  if (secondCard.health > 0) {
-    if (secondAttackId === 1) {
-      secondResult = executePunch(secondCard, firstCard);
-    }
-    // TODO: Switch pre ostatné attackId
-  }
-
-  // Zostav result object
-  // ✅ V5: Identifikácia pomocou cardId namiesto player1/player2
-  const result = {
-    firstAttacker: firstCard.cardId,
-    
-    attacks: {
-      [card1.cardId]: {
-        damage: firstAttacker === 'player1' ? firstResult.damage : secondResult.damage,
-        didSleep: firstAttacker === 'player1' ? secondResult.didSleep : firstResult.didSleep,
-        sleepDuration: firstAttacker === 'player1' ? secondResult.sleepDuration : firstResult.sleepDuration,
-        effects: card1.effects || []
-      },
-      [card2.cardId]: {
-        damage: firstAttacker === 'player2' ? firstResult.damage : secondResult.damage,
-        didSleep: firstAttacker === 'player2' ? secondResult.didSleep : firstResult.didSleep,
-        sleepDuration: firstAttacker === 'player2' ? secondResult.sleepDuration : firstResult.sleepDuration,
-        effects: card2.effects || []
-      }
-    }
-  };
-
-  console.log('[simulateBattle] Result:', JSON.stringify(result, null, 2));
-  return result;
-}
-
-/**
- * Main handler
- */
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, error: 'Method not allowed' });
-  }
-
-  try {
-    const roomCode = extractParam(req, 'roomCode');
-    const playerId = extractParam(req, 'playerId');
-    const attackDataParam = extractParam(req, 'attackData');
-
-    console.log('[executeBattle] Request:', { roomCode, playerId, attackData: attackDataParam });
-
-    if (!roomCode || !playerId || !attackDataParam) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: roomCode, playerId, attackData'
-      });
-    }
-
-    const { cardId, attackId } = attackDataParam;
-
-    if (!cardId || attackId === undefined) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required attack data fields: cardId, attackId'
-      });
-    }
-
-    // ✅ STATUS CHECK (polling s attackId=0)
-    if (attackId === 0) {
-      const client = await clientPromise;
-      const db = client.db();
-      const collection = db.collection('rooms');
-
-      const room = await collection.findOne({ roomCode });
-      if (!room || !room.battleData) {
-        return res.status(200).json({
-          success: true,
-          bothPlayersReady: false,
-          playersReady: 0
-        });
-      }
-
-      const battleData = room.battleData;
-      
-      // Vráť lastResult ak existuje
-      if (battleData.lastResult) {
-        console.log('[executeBattle] Returning cached lastResult');
-        return res.status(200).json({
-          success: true,
-          bothPlayersReady: true,
-          battleResult: battleData.lastResult
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-        bothPlayersReady: false,
-        playersReady: (battleData.player1?.submitted ? 1 : 0) + (battleData.player2?.submitted ? 1 : 0)
-      });
-    }
-
-    // ✅ ATTACK SUBMISSION
-    const client = await clientPromise;
-    const db = client.db();
-    const collection = db.collection('rooms');
-
-    const room = await collection.findOne({ roomCode });
-    if (!room) {
-      return res.status(404).json({ success: false, error: 'Room not found' });
-    }
-
-    // Urč player1 / player2
-    const isPlayer1 = room.players[0] === playerId;
-    const player1Id = room.players[0];
-    const player2Id = room.players[1];
-
-    // Načítaj/vytvor battleData
-    let battleData = room.battleData || { player1: null, player2: null };
-
-    // ✅ ATOMIC UPDATE - použiť nested path namiesto celého objektu (race condition fix)
-    const playerKey = isPlayer1 ? 'player1' : 'player2';
-    
-    await collection.updateOne(
-      { roomCode },
-      {
-        $set: {
-          [`battleData.${playerKey}.playerId`]: playerId,
-          [`battleData.${playerKey}.cardId`]: cardId,
-          [`battleData.${playerKey}.attackId`]: attackId,
-          [`battleData.${playerKey}.submitted`]: true,
-          lastActivity: new Date()
-        }
-      }
-    );
-    
-    console.log(`[executeBattle] ${playerKey} submitted attack ${attackId}`);
-    
-    // ✅ RE-LOAD battleData po zápise (aby sme mali fresh data od oboch hráčov)
-    const updatedRoom = await collection.findOne({ roomCode });
-    battleData = updatedRoom.battleData || { player1: null, player2: null };
-
-    // ✅ CHECK: Sú obaja hráči ready?
-    if (battleData.player1?.submitted && battleData.player2?.submitted) {
-      console.log('[executeBattle] Both players ready - executing battle!');
-
-      // Načítaj selectedCards (LIVE stats!)
-      const card1 = await getSelectedCard(roomCode, player1Id);
-      const card2 = await getSelectedCard(roomCode, player2Id);
-
-      if (!card1 || !card2) {
-        return res.status(500).json({ success: false, error: 'Failed to load cards' });
-      }
-
-      // Simuluj battle (modifikuje card1 a card2 in-place!)
-      const battleResult = simulateBattle(
-        card1,
-        card2,
-        battleData.player1.attackId,
-        battleData.player2.attackId
-      );
-
-      // ✅ ULOŽ UPDATOVANÉ CARDS (HP, effects, atď.)
-      await saveSelectedCards(roomCode, player1Id, player2Id, card1, card2);
-
-      // ✅ RESET nextTurnReady pre ďalší turn (CRITICAL FIX!)
-      const resetNextTurnReady = {};
-      room.players.forEach(pid => {
-        resetNextTurnReady[pid] = false;
-      });
-
-      // Vyčisti battleData pre ďalšie kolo + RESET nextTurnReady
-      await collection.updateOne(
-        { roomCode },
-        {
-          $set: {
-            'battleData.player1.submitted': false,
-            'battleData.player2.submitted': false,
-            'battleData.lastResult': battleResult,
-            'battleData.lastBattleTime': new Date(),
-            nextTurnReady: resetNextTurnReady  // ✅ RESET na {p1:false, p2:false}
-          }
-        }
-      );
-
-      console.log('[executeBattle] Battle complete, nextTurnReady reset to:', resetNextTurnReady);
-
-      return res.status(200).json({
-        success: true,
-        bothPlayersReady: true,
-        battleResult: battleResult
-      });
-    } else {
-      // Čakaj na druhého hráča
-      const playersReady = (battleData.player1?.submitted ? 1 : 0) + (battleData.player2?.submitted ? 1 : 0);
-      console.log(`[executeBattle] Waiting for opponent (${playersReady}/2)`);
-
       return res.status(200).json({
         success: true,
         bothPlayersReady: false,
@@ -393,3 +121,4 @@ export default async function handler(req, res) {
     });
   }
 }
+

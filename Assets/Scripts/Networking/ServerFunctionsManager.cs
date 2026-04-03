@@ -363,7 +363,7 @@ public class ServerFunctionsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Polling status po submitnuti utoku bez zneuzivania executeBattle s attackId=0.
+    /// Polling status po submitnuti utoku cez dedicated getBattleStatus endpoint.
     /// </summary>
     public void GetBattleStatus(string roomCode, string playerId, Action<ExecuteFunctionResult> callback)
     {
