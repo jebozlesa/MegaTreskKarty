@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -483,6 +483,20 @@ public static class AttackRegistry
                     ctx.ShowDialog
                 )
             ),
+            [37] = new AttackDefinition("Famine", ctx =>
+                Attack37Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
         };
 
     public static string GetAttackName(int attackId)
@@ -505,6 +519,7 @@ public static class AttackRegistry
         return Definitions[1].Execute(context);
     }
 }
+
 
 
 

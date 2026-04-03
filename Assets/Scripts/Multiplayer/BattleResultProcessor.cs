@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
@@ -543,6 +543,10 @@ public class BattleResultProcessor : MonoBehaviour
                         yield return StartCoroutine(
                             GetEffectVisuals().RemoveEffectIconOnly(target, step.EffectType, target.cardId == myCardId)
                         );
+                        if (step.EffectType == 7)
+                        {
+                            yield return StartCoroutine(ShowDialog($"{target.cardName} is starving no more"));
+                        }
                         yield return new WaitForSeconds(0.2f);
                     }
                     break;
@@ -610,6 +614,41 @@ public class BattleResultProcessor : MonoBehaviour
                     break;
 
                 case BattleStepType.Heal:
+                    if (
+                        target != null
+                        && string.Equals(step.Source, "famine", StringComparison.OrdinalIgnoreCase)
+                    )
+                    {
+                        bool isMyTarget = target.cardId == myCardId;
+                        AttackAnimations animations = attackComponent?.attackAnimations;
+                        if (animations != null)
+                        {
+                            yield return StartCoroutine(
+                                animations.PlayFamineContinueAnimation(target.transform)
+                            );
+                        }
+                        if (step.Amount > 0 && cardAnimator != null)
+                        {
+                            yield return StartCoroutine(cardAnimator.AnimateHeal(target, step.Amount));
+                        }
+                        if (step.Amount > 0)
+                        {
+                            target.health = Mathf.Min(target.maxHealth, target.health + step.Amount);
+                            if (isMyTarget)
+                            {
+                                playerLifeBar?.SetHP(target.health);
+                            }
+                            else
+                            {
+                                enemyLifeBar?.SetHP(target.health);
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(step.Note))
+                        {
+                            yield return StartCoroutine(ShowDialog(step.Note));
+                        }
+                    }
+                    break;
                 case BattleStepType.Death:
                 default:
                     break;
@@ -2454,6 +2493,8 @@ public class BattleResultProcessor : MonoBehaviour
         }
     }
 }
+
+
 
 
 

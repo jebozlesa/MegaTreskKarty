@@ -1,4 +1,4 @@
-# Attack Handlers
+﻿# Attack Handlers
 
 Modularna struktura pre attack animacie a logiku v multiplayer systeme.
 
@@ -38,6 +38,9 @@ AttackHandlers/
   Attack30Handler.cs  - Siege
   Attack32Handler.cs  - Tomahawk
   Attack33Handler.cs  - Peace Pipe
+  Attack35Handler.cs  - Fury
+  Attack36Handler.cs  - Guerilla
+  Attack37Handler.cs  - Famine
   ...
   Attack123Handler.cs
 ```
@@ -117,7 +120,9 @@ Rovnaka struktura ako server:
 - **Server:** `api/attacks/implementations/attack{ID}.js`
 - **Unity:** `AttackHandlers/Attack{ID}Handler.cs`
 
-Progress: 35/123 attacks (28.5%)
+Progress: 36/123 attacks (29.3%)
+
+
 
 
 
