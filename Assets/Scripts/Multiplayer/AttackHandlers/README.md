@@ -100,8 +100,10 @@ switch (attackId)
 
 - Attack handlers must not call HandleAttack/HandleStrength/HandleDefense/HandleKnowledge/HandleSpeed/HandleCharisma directly for battle-result stat changes.
 - Attack handlers must not call AnimateStatChange(...) directly for battle-result stat changes.
+- BattleResultProcessor and attack handlers should use BattleStatPlayback for shared stat mutation + popup playback.
+- BattleResultProcessor and attack handlers should use BattleEffectPlayback for shared effect icon and effect-end visual playback.
 - Server-driven stat changes are rendered only through shared battle playback/timeline flow in BattleResultProcessor.
-- Standard target damage should default to AttackPlaybackShared.PlayStandardTargetDamage(...).
+- Standard target damage and self-heal playback should default to BattleValuePlayback shared helpers.
 - New handlers should focus on attack animation, sequencing, special-case visuals, and dialogs.
 - Do not add fallback damage logic in BattleResultProcessor for ordinary attack damage.
 - Do not add new ordinary attack handlers that manually subtract defender HP unless the mechanic truly requires custom damage timing.

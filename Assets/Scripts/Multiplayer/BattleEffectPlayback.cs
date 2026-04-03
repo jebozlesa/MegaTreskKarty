@@ -1,17 +1,10 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public sealed class BattleEffectVisuals
+public static class BattleEffectPlayback
 {
-    private readonly Attack attackComponent;
-
-    public BattleEffectVisuals(Attack attackComponent)
-    {
-        this.attackComponent = attackComponent;
-    }
-
-    public IEnumerator AddEffectIconOnly(Kard card, Dictionary<string, object> effectData, bool isMyCard)
+    public static IEnumerator AddEffectIconOnly(Kard card, Dictionary<string, object> effectData, bool isMyCard)
     {
         int effectType = int.Parse(effectData["type"].ToString());
         int duration = int.Parse(effectData["duration"].ToString());
@@ -31,8 +24,7 @@ public sealed class BattleEffectVisuals
         yield return null;
     }
 
-    public IEnumerator DisplayMultipleEffects(
-        MonoBehaviour owner,
+    public static IEnumerator DisplayMultipleEffects(
         Kard card,
         List<Dictionary<string, object>> effectsArray,
         bool isMyCard)
@@ -48,12 +40,16 @@ public sealed class BattleEffectVisuals
 
         foreach (var effect in effectsArray)
         {
-            yield return owner.StartCoroutine(DisplayEffectIcon(card, effect, isMyCard));
+            yield return DisplayEffectIcon(card, effect, isMyCard);
             yield return new WaitForSeconds(0.3f);
         }
     }
 
-    public IEnumerator RemoveEffectIconOnly(Kard card, int effectType, bool isMyCard)
+    public static IEnumerator RemoveEffectIconOnly(
+        Kard card,
+        int effectType,
+        bool isMyCard,
+        Attack attackComponent)
     {
         string effectName = GetEffectName(effectType);
         if (string.IsNullOrEmpty(effectName))
@@ -81,7 +77,7 @@ public sealed class BattleEffectVisuals
         yield return card.RemoveEffectIcon(effectName);
     }
 
-    public string GetEffectName(int effectType)
+    public static string GetEffectName(int effectType)
     {
         switch (effectType)
         {
@@ -138,12 +134,12 @@ public sealed class BattleEffectVisuals
             case 26:
                 return "Curse";
             default:
-                Debug.LogWarning($"[BattleEffectVisuals] Unknown effect type: {effectType}");
+                Debug.LogWarning($"[BattleEffectPlayback] Unknown effect type: {effectType}");
                 return null;
         }
     }
 
-    private IEnumerator DisplayEffectIcon(
+    private static IEnumerator DisplayEffectIcon(
         Kard card,
         Dictionary<string, object> effectData,
         bool isMyCard)
@@ -166,5 +162,3 @@ public sealed class BattleEffectVisuals
         yield break;
     }
 }
-
-

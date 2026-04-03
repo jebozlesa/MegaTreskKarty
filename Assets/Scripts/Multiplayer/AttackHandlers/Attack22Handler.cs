@@ -27,25 +27,14 @@ public class Attack22Handler
         if (healAmount > 0)
         {
             Debug.LogWarning($"[DRINK_WINE] {attacker.cardName} heals {healAmount} HP");
-            attacker.health += healAmount;
-            if (attacker.health > attacker.maxHealth)
-            {
-                attacker.health = attacker.maxHealth;
-            }
-
-            if (cardAnimator != null)
-            {
-                yield return cardAnimator.AnimateHeal(attacker, healAmount);
-            }
-
-            if (isMyAttack)
-            {
-                playerLifeBar.SetHP(attacker.health);
-            }
-            else
-            {
-                enemyLifeBar.SetHP(attacker.health);
-            }
+            yield return BattleValuePlayback.PlayHeal(
+                attacker,
+                healAmount,
+                isMyAttack,
+                cardAnimator,
+                playerLifeBar,
+                enemyLifeBar
+            );
         }
 
         yield return showDialog($"{attacker.cardName} is getting slightly drunk");

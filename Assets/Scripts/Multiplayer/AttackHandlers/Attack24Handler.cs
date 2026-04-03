@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 /// <summary>
@@ -24,7 +24,7 @@ public class Attack24Handler
         yield return animations.PlayCleaverAnimation(attacker.transform, defender.transform);
         if (damage > 0)
         {
-            yield return AttackPlaybackShared.PlayStandardTargetDamage(
+            yield return BattleValuePlayback.PlayDamage(
                 defender,
                 damage,
                 isMyAttack,
@@ -45,3 +45,4 @@ public class Attack24Handler
         }
     }
 }
+

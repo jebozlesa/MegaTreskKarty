@@ -45,8 +45,7 @@ public class BattleResultProcessor : MonoBehaviour
     public MultiplayerCardAnimator cardAnimator; // NEW: Card animations (damage, stats, shake)
     public MultiplayerKillCounterManager killCounterManager; // NEW: Kill counter tracking
     private BattleRoundCoordinator roundCoordinator;
-    private BattleStatApplier statApplier;
-    private BattleEffectVisuals effectVisuals;
+    
 
     [Header("UI References")]
     public TMP_Text dialogText;
@@ -84,26 +83,6 @@ public class BattleResultProcessor : MonoBehaviour
         );
     }
 
-    private BattleStatApplier GetStatApplier()
-    {
-        if (statApplier == null)
-        {
-            statApplier = new BattleStatApplier(cardAnimator);
-            effectVisuals = new BattleEffectVisuals(attackComponent);
-        }
-
-        return statApplier;
-    }
-
-    private BattleEffectVisuals GetEffectVisuals()
-    {
-        if (effectVisuals == null)
-        {
-            effectVisuals = new BattleEffectVisuals(attackComponent);
-        }
-
-        return effectVisuals;
-    }
     /// <summary>
     /// Spracuje vAsledok battle a spustA animAcie
     /// V5: BattleResult identifikuje karty cez cardId, HP sa naATAta z selectedCards
@@ -256,14 +235,14 @@ public class BattleResultProcessor : MonoBehaviour
 
         if (myAttackBlocked)
         {
-            string effectName = GetEffectVisuals().GetEffectName(myBlockedBy ?? 0);
+            string effectName = BattleEffectPlayback.GetEffectName(myBlockedBy ?? 0);
             Debug.LogWarning(
                 $"[BLOCK] MY attack BLOCKED by {effectName}! SelfDamage={mySelfDamage}"
             );
         }
         if (enemyAttackBlocked)
         {
-            string effectName = GetEffectVisuals().GetEffectName(enemyBlockedBy ?? 0);
+            string effectName = BattleEffectPlayback.GetEffectName(enemyBlockedBy ?? 0);
             Debug.LogWarning(
                 $"[BLOCK] ENEMY attack BLOCKED by {effectName}! SelfDamage={enemySelfDamage}"
             );
@@ -380,7 +359,6 @@ public class BattleResultProcessor : MonoBehaviour
                 case BattleStepType.BleedTick:
                     if (actor != null && step.Amount > 0)
                     {
-                        actor.health -= step.Amount;
                         yield return StartCoroutine(
                             PlaySingleBleedAnimation(actor, step.Amount, isMyActor)
                         );
@@ -391,7 +369,6 @@ public class BattleResultProcessor : MonoBehaviour
                 case BattleStepType.BurnTick:
                     if (actor != null && step.Amount > 0)
                     {
-                        actor.health -= step.Amount;
                         yield return StartCoroutine(
                             PlayBurnAnimation(actor, step.Amount, isMyActor)
                         );
@@ -402,7 +379,6 @@ public class BattleResultProcessor : MonoBehaviour
                 case BattleStepType.ExposureTick:
                     if (actor != null && step.Amount > 0)
                     {
-                        actor.health -= step.Amount;
                         yield return StartCoroutine(
                             PlayExposureAnimation(actor, step.Amount, false, isMyActor)
                         );
@@ -498,7 +474,12 @@ public class BattleResultProcessor : MonoBehaviour
                             $"[TimelinePilot] Applying stat change: target={target.cardName}, stat={step.StatName}, amount={step.Amount}"
                         );
                         yield return StartCoroutine(
-                            GetStatApplier().ApplyTimelineStatChange(target, step.Amount, step.StatName)
+                            BattleStatPlayback.PlayTimelineStatChange(
+                                target,
+                                step.Amount,
+                                step.StatName,
+                                cardAnimator
+                            )
                         );
                     }
                     break;
@@ -515,7 +496,6 @@ public class BattleResultProcessor : MonoBehaviour
                 case BattleStepType.SelfDamage:
                     if (actor != null && step.Amount > 0)
                     {
-                        actor.health -= step.Amount;
                         yield return StartCoroutine(
                             PlaySelfDamageAnimation(actor, step.Amount, isMyActor)
                         );
@@ -532,7 +512,7 @@ public class BattleResultProcessor : MonoBehaviour
                             { "source", step.Source },
                         };
                         yield return StartCoroutine(
-                            GetEffectVisuals().AddEffectIconOnly(target, effectData, target.cardId == myCardId)
+                            BattleEffectPlayback.AddEffectIconOnly(target, effectData, target.cardId == myCardId)
                         );
                     }
                     break;
@@ -541,7 +521,12 @@ public class BattleResultProcessor : MonoBehaviour
                     if (target != null)
                     {
                         yield return StartCoroutine(
-                            GetEffectVisuals().RemoveEffectIconOnly(target, step.EffectType, target.cardId == myCardId)
+                            BattleEffectPlayback.RemoveEffectIconOnly(
+                                target,
+                                step.EffectType,
+                                target.cardId == myCardId,
+                                attackComponent
+                            )
                         );
                         if (step.EffectType == 7)
                         {
@@ -608,7 +593,14 @@ public class BattleResultProcessor : MonoBehaviour
                     {
                         bool isMyTarget = target.cardId == myCardId;
                         yield return StartCoroutine(
-                            PlayTimelineDamageAnimation(target, step.Amount, isMyTarget)
+                            BattleValuePlayback.PlayDamage(
+                                target,
+                                step.Amount,
+                                isMyTarget,
+                                cardAnimator,
+                                playerLifeBar,
+                                enemyLifeBar
+                            )
                         );
                     }
                     break;
@@ -627,22 +619,16 @@ public class BattleResultProcessor : MonoBehaviour
                                 animations.PlayFamineContinueAnimation(target.transform)
                             );
                         }
-                        if (step.Amount > 0 && cardAnimator != null)
-                        {
-                            yield return StartCoroutine(cardAnimator.AnimateHeal(target, step.Amount));
-                        }
-                        if (step.Amount > 0)
-                        {
-                            target.health = Mathf.Min(target.maxHealth, target.health + step.Amount);
-                            if (isMyTarget)
-                            {
-                                playerLifeBar?.SetHP(target.health);
-                            }
-                            else
-                            {
-                                enemyLifeBar?.SetHP(target.health);
-                            }
-                        }
+                        yield return StartCoroutine(
+                            BattleValuePlayback.PlayHeal(
+                                target,
+                                step.Amount,
+                                isMyTarget,
+                                cardAnimator,
+                                playerLifeBar,
+                                enemyLifeBar
+                            )
+                        );
                         if (!string.IsNullOrEmpty(step.Note))
                         {
                             yield return StartCoroutine(ShowDialog(step.Note));
@@ -874,7 +860,7 @@ public class BattleResultProcessor : MonoBehaviour
 
                             // V10: Pridaj effect ikony ak chAbajAs (synchronizAcia s DB)
                             int effectType = int.Parse(effect.type.ToString());
-                            string effectName = GetEffectVisuals().GetEffectName(effectType);
+                            string effectName = BattleEffectPlayback.GetEffectName(effectType);
                             if (!string.IsNullOrEmpty(effectName))
                             {
                                 // Check if icon already exists
@@ -1009,7 +995,6 @@ public class BattleResultProcessor : MonoBehaviour
                 {
                     int bleedDamage = myBleedDamages[i];
                     Debug.LogWarning($"[BLEED #{i + 1}] MY card takes {bleedDamage} damage");
-                    myCard.health -= bleedDamage;
                     yield return StartCoroutine(
                         PlaySingleBleedAnimation(myCard, bleedDamage, true)
                     );
@@ -1026,7 +1011,6 @@ public class BattleResultProcessor : MonoBehaviour
                 Debug.LogWarning(
                     $"adZ [EXPOSURE] MY card - damage={myExposureDamage}, removed={myExposureRemoved}"
                 );
-                myCard.health -= myExposureDamage;
                 yield return StartCoroutine(
                     PlayExposureAnimation(myCard, myExposureDamage, myExposureRemoved, true)
                 );
@@ -1076,26 +1060,28 @@ public class BattleResultProcessor : MonoBehaviour
 
                 // [OK] V12: Apply and animate stat changes during battle playback
                 yield return StartCoroutine(
-                    GetStatApplier().ApplyCardStatChanges(
+                    BattleStatPlayback.PlayCardStatChanges(
                         myCard,
                         myStatChanges.attackerAttack,
                         myStatChanges.attackerStrength,
                         myStatChanges.attackerDefense,
                         myStatChanges.attackerKnowledge,
                         myStatChanges.attackerSpeed,
-                        myStatChanges.attackerCharisma
+                        myStatChanges.attackerCharisma,
+                        cardAnimator
                     )
                 );
 
                 yield return StartCoroutine(
-                    GetStatApplier().ApplyCardStatChanges(
+                    BattleStatPlayback.PlayCardStatChanges(
                         enemyCard,
                         myStatChanges.defenderAttack,
                         myStatChanges.defenderStrength,
                         myStatChanges.defenderDefense,
                         myStatChanges.defenderKnowledge,
                         myStatChanges.defenderSpeed,
-                        myStatChanges.defenderCharisma
+                        myStatChanges.defenderCharisma,
+                        cardAnimator
                     )
                 );
 
@@ -1103,7 +1089,7 @@ public class BattleResultProcessor : MonoBehaviour
                 if (myEffectsApplied != null && myEffectsApplied.Count > 0)
                 {
                     yield return StartCoroutine(
-                        GetEffectVisuals().DisplayMultipleEffects(this, enemyCard, myEffectsApplied, false)
+                        BattleEffectPlayback.DisplayMultipleEffects(enemyCard, myEffectsApplied, false)
                     );
                 }
 
@@ -1114,7 +1100,6 @@ public class BattleResultProcessor : MonoBehaviour
                     Debug.LogWarning(
                         $"zA [SELF-DAMAGE] MY card takes {myAttackerSelfDamage} recoil damage!"
                     );
-                    myCard.health -= myAttackerSelfDamage;
                     yield return StartCoroutine(
                         PlaySelfDamageAnimation(myCard, myAttackerSelfDamage, true)
                     );
@@ -1124,7 +1109,7 @@ public class BattleResultProcessor : MonoBehaviour
                 if (myAttackerEffects != null && myAttackerEffects.Count > 0)
                 {
                     yield return StartCoroutine(
-                        GetEffectVisuals().DisplayMultipleEffects(this, myCard, myAttackerEffects, true)
+                        BattleEffectPlayback.DisplayMultipleEffects(myCard, myAttackerEffects, true)
                     );
                 }
             }
@@ -1139,7 +1124,6 @@ public class BattleResultProcessor : MonoBehaviour
                     Debug.LogWarning(
                         $"[ASCETICISM] MY card takes {mySelfDamage} self-damage due to blocking!"
                     );
-                    myCard.health -= mySelfDamage;
                     yield return StartCoroutine(
                         PlaySelfDamageAnimation(myCard, mySelfDamage, true)
                     );
@@ -1166,7 +1150,6 @@ public class BattleResultProcessor : MonoBehaviour
                     {
                         int bleedDamage = enemyBleedDamages[i];
                         Debug.LogWarning($"[BLEED #{i + 1}] ENEMY card takes {bleedDamage} damage");
-                        enemyCard.health -= bleedDamage;
                         yield return StartCoroutine(
                             PlaySingleBleedAnimation(enemyCard, bleedDamage, false)
                         );
@@ -1183,7 +1166,6 @@ public class BattleResultProcessor : MonoBehaviour
                     Debug.LogWarning(
                         $"adZ [EXPOSURE] ENEMY card - damage={enemyExposureDamage}, removed={enemyExposureRemoved}"
                     );
-                    enemyCard.health -= enemyExposureDamage;
                     yield return StartCoroutine(
                         PlayExposureAnimation(
                             enemyCard,
@@ -1235,26 +1217,28 @@ public class BattleResultProcessor : MonoBehaviour
 
                     // [OK] V12: Apply and animate stat changes during battle playback
                     yield return StartCoroutine(
-                        GetStatApplier().ApplyCardStatChanges(
+                        BattleStatPlayback.PlayCardStatChanges(
                             enemyCard,
                             enemyStatChanges.attackerAttack,
                             enemyStatChanges.attackerStrength,
                             enemyStatChanges.attackerDefense,
                             enemyStatChanges.attackerKnowledge,
                             enemyStatChanges.attackerSpeed,
-                            enemyStatChanges.attackerCharisma
+                            enemyStatChanges.attackerCharisma,
+                            cardAnimator
                         )
                     );
 
                     yield return StartCoroutine(
-                        GetStatApplier().ApplyCardStatChanges(
+                        BattleStatPlayback.PlayCardStatChanges(
                             myCard,
                             enemyStatChanges.defenderAttack,
                             enemyStatChanges.defenderStrength,
                             enemyStatChanges.defenderDefense,
                             enemyStatChanges.defenderKnowledge,
                             enemyStatChanges.defenderSpeed,
-                            enemyStatChanges.defenderCharisma
+                            enemyStatChanges.defenderCharisma,
+                            cardAnimator
                         )
                     );
 
@@ -1262,7 +1246,7 @@ public class BattleResultProcessor : MonoBehaviour
                     if (enemyEffectsApplied != null && enemyEffectsApplied.Count > 0)
                     {
                         yield return StartCoroutine(
-                            GetEffectVisuals().DisplayMultipleEffects(this, myCard, enemyEffectsApplied, true)
+                            BattleEffectPlayback.DisplayMultipleEffects(myCard, enemyEffectsApplied, true)
                         );
                     }
 
@@ -1273,7 +1257,6 @@ public class BattleResultProcessor : MonoBehaviour
                         Debug.LogWarning(
                             $"zA [SELF-DAMAGE] ENEMY card takes {enemyAttackerSelfDamage} recoil damage!"
                         );
-                        enemyCard.health -= enemyAttackerSelfDamage;
                         yield return StartCoroutine(
                             PlaySelfDamageAnimation(enemyCard, enemyAttackerSelfDamage, false)
                         );
@@ -1283,7 +1266,7 @@ public class BattleResultProcessor : MonoBehaviour
                     if (enemyAttackerEffects != null && enemyAttackerEffects.Count > 0)
                     {
                         yield return StartCoroutine(
-                            GetEffectVisuals().DisplayMultipleEffects(this, enemyCard, enemyAttackerEffects, false)
+                            BattleEffectPlayback.DisplayMultipleEffects(enemyCard, enemyAttackerEffects, false)
                         );
                     }
                 }
@@ -1300,7 +1283,6 @@ public class BattleResultProcessor : MonoBehaviour
                         Debug.LogWarning(
                             $"[ASCETICISM] ENEMY card takes {enemySelfDamage} self-damage due to blocking!"
                         );
-                        enemyCard.health -= enemySelfDamage;
                         yield return StartCoroutine(
                             PlaySelfDamageAnimation(enemyCard, enemySelfDamage, false)
                         );
@@ -1326,7 +1308,6 @@ public class BattleResultProcessor : MonoBehaviour
                 {
                     int bleedDamage = enemyBleedDamages[i];
                     Debug.LogWarning($"[BLEED #{i + 1}] ENEMY card takes {bleedDamage} damage");
-                    enemyCard.health -= bleedDamage;
                     yield return StartCoroutine(
                         PlaySingleBleedAnimation(enemyCard, bleedDamage, false)
                     );
@@ -1343,7 +1324,6 @@ public class BattleResultProcessor : MonoBehaviour
                 Debug.LogWarning(
                     $"adZ [EXPOSURE] ENEMY card - damage={enemyExposureDamage}, removed={enemyExposureRemoved}"
                 );
-                enemyCard.health -= enemyExposureDamage;
                 yield return StartCoroutine(
                     PlayExposureAnimation(
                         enemyCard,
@@ -1395,26 +1375,28 @@ public class BattleResultProcessor : MonoBehaviour
 
                 // [OK] V12: Apply and animate stat changes during battle playback
                 yield return StartCoroutine(
-                    GetStatApplier().ApplyCardStatChanges(
+                    BattleStatPlayback.PlayCardStatChanges(
                         enemyCard,
                         enemyStatChanges.attackerAttack,
                         enemyStatChanges.attackerStrength,
                         enemyStatChanges.attackerDefense,
                         enemyStatChanges.attackerKnowledge,
                         enemyStatChanges.attackerSpeed,
-                        enemyStatChanges.attackerCharisma
+                        enemyStatChanges.attackerCharisma,
+                        cardAnimator
                     )
                 );
 
                 yield return StartCoroutine(
-                    GetStatApplier().ApplyCardStatChanges(
+                    BattleStatPlayback.PlayCardStatChanges(
                         myCard,
                         enemyStatChanges.defenderAttack,
                         enemyStatChanges.defenderStrength,
                         enemyStatChanges.defenderDefense,
                         enemyStatChanges.defenderKnowledge,
                         enemyStatChanges.defenderSpeed,
-                        enemyStatChanges.defenderCharisma
+                        enemyStatChanges.defenderCharisma,
+                        cardAnimator
                     )
                 );
 
@@ -1422,7 +1404,7 @@ public class BattleResultProcessor : MonoBehaviour
                 if (enemyEffectsApplied != null && enemyEffectsApplied.Count > 0)
                 {
                     yield return StartCoroutine(
-                        GetEffectVisuals().DisplayMultipleEffects(this, myCard, enemyEffectsApplied, true)
+                        BattleEffectPlayback.DisplayMultipleEffects(myCard, enemyEffectsApplied, true)
                     );
                 }
 
@@ -1432,7 +1414,6 @@ public class BattleResultProcessor : MonoBehaviour
                     Debug.LogWarning(
                         $"zA [SELF-DAMAGE] ENEMY card takes {enemyAttackerSelfDamage} recoil damage!"
                     );
-                    enemyCard.health -= enemyAttackerSelfDamage;
                     yield return StartCoroutine(
                         PlaySelfDamageAnimation(enemyCard, enemyAttackerSelfDamage, false)
                     );
@@ -1442,7 +1423,7 @@ public class BattleResultProcessor : MonoBehaviour
                 if (enemyAttackerEffects != null && enemyAttackerEffects.Count > 0)
                 {
                     yield return StartCoroutine(
-                        GetEffectVisuals().DisplayMultipleEffects(this, enemyCard, enemyAttackerEffects, false)
+                        BattleEffectPlayback.DisplayMultipleEffects(enemyCard, enemyAttackerEffects, false)
                     );
                 }
             }
@@ -1457,7 +1438,6 @@ public class BattleResultProcessor : MonoBehaviour
                     Debug.LogWarning(
                         $"[ASCETICISM] ENEMY card takes {enemySelfDamage} self-damage due to blocking!"
                     );
-                    enemyCard.health -= enemySelfDamage;
                     yield return StartCoroutine(
                         PlaySelfDamageAnimation(enemyCard, enemySelfDamage, false)
                     );
@@ -1482,7 +1462,6 @@ public class BattleResultProcessor : MonoBehaviour
                     {
                         int bleedDamage = myBleedDamages[i];
                         Debug.LogWarning($"[BLEED #{i + 1}] MY card takes {bleedDamage} damage");
-                        myCard.health -= bleedDamage;
                         yield return StartCoroutine(
                             PlaySingleBleedAnimation(myCard, bleedDamage, true)
                         );
@@ -1499,7 +1478,6 @@ public class BattleResultProcessor : MonoBehaviour
                     Debug.LogWarning(
                         $"adZ [EXPOSURE] MY card - damage={myExposureDamage}, removed={myExposureRemoved}"
                     );
-                    myCard.health -= myExposureDamage;
                     yield return StartCoroutine(
                         PlayExposureAnimation(myCard, myExposureDamage, myExposureRemoved, true)
                     );
@@ -1546,26 +1524,28 @@ public class BattleResultProcessor : MonoBehaviour
 
                     // [OK] V12: Apply and animate stat changes during battle playback
                     yield return StartCoroutine(
-                        GetStatApplier().ApplyCardStatChanges(
+                        BattleStatPlayback.PlayCardStatChanges(
                             myCard,
                             myStatChanges.attackerAttack,
                             myStatChanges.attackerStrength,
                             myStatChanges.attackerDefense,
                             myStatChanges.attackerKnowledge,
                             myStatChanges.attackerSpeed,
-                            myStatChanges.attackerCharisma
+                            myStatChanges.attackerCharisma,
+                            cardAnimator
                         )
                     );
 
                     yield return StartCoroutine(
-                        GetStatApplier().ApplyCardStatChanges(
+                        BattleStatPlayback.PlayCardStatChanges(
                             enemyCard,
                             myStatChanges.defenderAttack,
                             myStatChanges.defenderStrength,
                             myStatChanges.defenderDefense,
                             myStatChanges.defenderKnowledge,
                             myStatChanges.defenderSpeed,
-                            myStatChanges.defenderCharisma
+                            myStatChanges.defenderCharisma,
+                            cardAnimator
                         )
                     );
 
@@ -1573,7 +1553,7 @@ public class BattleResultProcessor : MonoBehaviour
                     if (myEffectsApplied != null && myEffectsApplied.Count > 0)
                     {
                         yield return StartCoroutine(
-                            GetEffectVisuals().DisplayMultipleEffects(this, enemyCard, myEffectsApplied, false)
+                            BattleEffectPlayback.DisplayMultipleEffects(enemyCard, myEffectsApplied, false)
                         );
                     }
 
@@ -1584,7 +1564,6 @@ public class BattleResultProcessor : MonoBehaviour
                         Debug.LogWarning(
                             $"zA [SELF-DAMAGE] MY card takes {myAttackerSelfDamage} recoil damage!"
                         );
-                        myCard.health -= myAttackerSelfDamage;
                         yield return StartCoroutine(
                             PlaySelfDamageAnimation(myCard, myAttackerSelfDamage, true)
                         );
@@ -1594,7 +1573,7 @@ public class BattleResultProcessor : MonoBehaviour
                     if (myAttackerEffects != null && myAttackerEffects.Count > 0)
                     {
                         yield return StartCoroutine(
-                            GetEffectVisuals().DisplayMultipleEffects(this, myCard, myAttackerEffects, true)
+                            BattleEffectPlayback.DisplayMultipleEffects(myCard, myAttackerEffects, true)
                         );
                     }
                 }
@@ -1609,7 +1588,6 @@ public class BattleResultProcessor : MonoBehaviour
                         Debug.LogWarning(
                             $"[ASCETICISM] MY card takes {mySelfDamage} self-damage due to blocking!"
                         );
-                        myCard.health -= mySelfDamage;
                         yield return StartCoroutine(
                             PlaySelfDamageAnimation(myCard, mySelfDamage, true)
                         );
@@ -1737,7 +1715,7 @@ public class BattleResultProcessor : MonoBehaviour
         }
 
         // OdstrAL Asceticism ikonu po recovery
-        string asceticismEffectName = GetEffectVisuals().GetEffectName(2); // 2 = Asceticism
+        string asceticismEffectName = BattleEffectPlayback.GetEffectName(2); // 2 = Asceticism
         Debug.LogWarning($"[RECOVERY] Effect name for type 2: {asceticismEffectName}");
 
         if (!string.IsNullOrEmpty(asceticismEffectName))
@@ -1769,47 +1747,18 @@ public class BattleResultProcessor : MonoBehaviour
             $"[SELF_DAMAGE] {cardOwner} card ({card.cardName}) takes {damage} self-damage!"
         );
 
-        // PouLlij cardAnimator pre damage animAciu
-        if (cardAnimator != null && damage > 0)
-        {
-            yield return StartCoroutine(cardAnimator.AnimateDamage(card, damage));
-        }
-
-        // Update HP bar
-        if (isMyCard)
-        {
-            playerLifeBar.SetHP(card.health);
-        }
-        else
-        {
-            enemyLifeBar.SetHP(card.health);
-        }
+        yield return StartCoroutine(
+            BattleValuePlayback.PlayDamage(
+                card,
+                damage,
+                isMyCard,
+                cardAnimator,
+                playerLifeBar,
+                enemyLifeBar
+            )
+        );
 
         yield return StartCoroutine(ShowDialog($"{card.cardName} suffers -{damage} HP!"));
-    }
-
-    private IEnumerator PlayTimelineDamageAnimation(Kard card, int damage, bool isMyCard)
-    {
-        if (card == null || damage <= 0)
-        {
-            yield break;
-        }
-
-        card.health = Mathf.Max(0, card.health - damage);
-
-        if (cardAnimator != null)
-        {
-            yield return StartCoroutine(cardAnimator.AnimateDamage(card, damage));
-        }
-
-        if (isMyCard)
-        {
-            playerLifeBar?.SetHP(card.health);
-        }
-        else
-        {
-            enemyLifeBar?.SetHP(card.health);
-        }
     }
 
     /// <summary>
@@ -1827,18 +1776,16 @@ public class BattleResultProcessor : MonoBehaviour
         {
             yield return StartCoroutine(animations.PlayBurnContinueAnimation(card.transform));
         }
-        if (cardAnimator != null)
-        {
-            yield return StartCoroutine(cardAnimator.AnimateDamage(card, damage));
-        }
-        if (isMyCard)
-        {
-            playerLifeBar?.SetHP(card.health);
-        }
-        else
-        {
-            enemyLifeBar?.SetHP(card.health);
-        }
+        yield return StartCoroutine(
+            BattleValuePlayback.PlayDamage(
+                card,
+                damage,
+                isMyCard,
+                cardAnimator,
+                playerLifeBar,
+                enemyLifeBar
+            )
+        );
         yield return StartCoroutine(ShowDialog($"{card.cardName} is on fire! -{damage} HP"));
     }
     private IEnumerator PlaySingleBleedAnimation(Kard card, int damage, bool isMyCard)
@@ -1857,21 +1804,16 @@ public class BattleResultProcessor : MonoBehaviour
             );
         }
 
-        // PouLlij cardAnimator pre damage animAciu
-        if (cardAnimator != null && damage > 0)
-        {
-            yield return StartCoroutine(cardAnimator.AnimateDamage(card, damage));
-        }
-
-        // Update HP bar
-        if (isMyCard)
-        {
-            playerLifeBar.SetHP(card.health);
-        }
-        else
-        {
-            enemyLifeBar.SetHP(card.health);
-        }
+        yield return StartCoroutine(
+            BattleValuePlayback.PlayDamage(
+                card,
+                damage,
+                isMyCard,
+                cardAnimator,
+                playerLifeBar,
+                enemyLifeBar
+            )
+        );
 
         yield return StartCoroutine(ShowDialog($"{card.cardName} is bleeding! -{damage} HP"));
     }
@@ -1899,7 +1841,7 @@ public class BattleResultProcessor : MonoBehaviour
             }
 
             // OdstrAL Exposure ikonu
-            string exposureEffectName = GetEffectVisuals().GetEffectName(4); // 4 = Exposure
+            string exposureEffectName = BattleEffectPlayback.GetEffectName(4); // 4 = Exposure
             if (!string.IsNullOrEmpty(exposureEffectName))
             {
                 yield return StartCoroutine(card.RemoveEffectIcon(exposureEffectName));
@@ -1922,21 +1864,16 @@ public class BattleResultProcessor : MonoBehaviour
                 yield return StartCoroutine(animations.PlayExposureAnimation(card.transform));
             }
 
-            // PouLlij cardAnimator pre damage animAciu
-            if (cardAnimator != null)
-            {
-                yield return StartCoroutine(cardAnimator.AnimateDamage(card, damage));
-            }
-
-            // Update HP bar
-            if (isMyCard)
-            {
-                playerLifeBar.SetHP(card.health);
-            }
-            else
-            {
-                enemyLifeBar.SetHP(card.health);
-            }
+            yield return StartCoroutine(
+                BattleValuePlayback.PlayDamage(
+                    card,
+                    damage,
+                    isMyCard,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar
+                )
+            );
 
             yield return StartCoroutine(ShowDialog($"{card.cardName} is irradiated"));
         }
@@ -1949,7 +1886,7 @@ public class BattleResultProcessor : MonoBehaviour
     private IEnumerator PlayBlockAnimation(Kard card, int? blockedBy, bool isMyCard)
     {
         string cardOwner = isMyCard ? "MY" : "ENEMY";
-        string effectName = blockedBy.HasValue ? GetEffectVisuals().GetEffectName(blockedBy.Value) : "unknown effect";
+        string effectName = blockedBy.HasValue ? BattleEffectPlayback.GetEffectName(blockedBy.Value) : "unknown effect";
         Debug.LogWarning(
             $"zdZ [BLOCK] {cardOwner} card ({card.cardName}) blocked by effect type {blockedBy} ({effectName})!"
         );
@@ -2493,6 +2430,8 @@ public class BattleResultProcessor : MonoBehaviour
         }
     }
 }
+
+
 
 
 

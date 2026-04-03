@@ -9,7 +9,7 @@ public class BattleFaminePlaybackTests
     {
         string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack37Handler.cs");
         StringAssert.Contains("animations.PlayFamineAnimation(defender.transform)", source);
-        StringAssert.Contains("AttackPlaybackShared.PlayStandardTargetDamage(", source);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", source);
         StringAssert.Contains("PlayAnimationNotImpressed(defender.transform)", source);
         StringAssert.Contains("Be a human, {attacker.cardName}!", source);
     }
@@ -20,13 +20,13 @@ public class BattleFaminePlaybackTests
         StringAssert.Contains("case BattleStepType.Heal:", source);
         StringAssert.Contains("string.Equals(step.Source, \"famine\", StringComparison.OrdinalIgnoreCase)", source);
         StringAssert.Contains("animations.PlayFamineContinueAnimation(target.transform)", source);
-        StringAssert.Contains("cardAnimator.AnimateHeal(target, step.Amount)", source);
+        StringAssert.Contains("BattleValuePlayback.PlayHeal(", source);
         StringAssert.Contains("ShowDialog(step.Note)", source);
     }
     [Test]
-    public void BattleEffectVisuals_PlaysFamineEndAnimationOnEffectRemoval()
+    public void BattleEffectPlayback_PlaysFamineEndAnimationOnEffectRemoval()
     {
-        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleEffectVisuals.cs");
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleEffectPlayback.cs");
         StringAssert.Contains("effectType == 7", source);
         StringAssert.Contains("PlayFamineEndAnimation(card.transform)", source);
     }

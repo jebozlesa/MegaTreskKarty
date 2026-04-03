@@ -12,12 +12,12 @@ public class BattleSharedDamagePlaybackTests
 
         StringAssert.Contains("yield return AttackRegistry.ExecuteOrFallback(attackId, context);", source);
         Assert.IsFalse(source.Contains("defender.health == defenderHealthBeforeAttack"));
-        Assert.IsFalse(source.Contains("PlayTimelineDamageAnimation(defender, damage, isMyTarget)"));
         Assert.IsFalse(source.Contains("[AttackPlayback] Applying shared damage fallback"));
+        Assert.IsFalse(source.Contains("private IEnumerator PlayTimelineDamageAnimation("));
     }
 
     [Test]
-    public void StandardDamageHandlers_UseSharedDamageHelper()
+    public void StandardDamageHandlers_UseBattleValuePlayback()
     {
         string[] helperHandlers =
         {
@@ -45,13 +45,13 @@ public class BattleSharedDamagePlaybackTests
         foreach (string fileName in helperHandlers)
         {
             string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", fileName);
-            StringAssert.Contains("AttackPlaybackShared.PlayStandardTargetDamage(", source, $"Expected shared damage helper in {fileName}");
+            StringAssert.Contains("BattleValuePlayback.PlayDamage(", source, $"Expected shared damage helper in {fileName}");
             Assert.IsFalse(source.Contains("defender.health -= damage;"), $"Manual defender damage should be removed from {fileName}");
         }
     }
 
     [Test]
-    public void OnlyExplicitSpecialCaseHandler_UsesManualDefenderDamage()
+    public void OnlyExplicitSpecialCaseHandler_UsesManualParallelDamagePlayback()
     {
         string handlersDir = Path.Combine(Application.dataPath, "Scripts", "Multiplayer", "AttackHandlers");
         string[] allHandlerFiles = Directory.GetFiles(handlersDir, "Attack*Handler.cs");
@@ -60,13 +60,84 @@ public class BattleSharedDamagePlaybackTests
         foreach (string path in allHandlerFiles)
         {
             string source = File.ReadAllText(path);
-            if (source.Contains("defender.health -= damage;"))
+            if (source.Contains("AnimateDamage(defender, damage)") || source.Contains("AnimateDamage(attacker, attackerSelfDamage)"))
             {
                 manualDamageHandlers.Add(Path.GetFileName(path));
             }
         }
 
         CollectionAssert.AreEquivalent(new[] { "Attack7Handler.cs" }, manualDamageHandlers);
+    }
+
+    [Test]
+    public void SharedBattleValuePlayback_OwnsHealthMutationAndUiSync()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleValuePlayback.cs");
+        StringAssert.Contains("public static IEnumerator PlayDamage(", source);
+        StringAssert.Contains("public static IEnumerator PlayHeal(", source);
+        StringAssert.Contains("public static void ApplyDamage(", source);
+        StringAssert.Contains("public static void ApplyHeal(", source);
+        StringAssert.Contains("public static void SyncHealthBar(", source);
+    }
+
+    [Test]
+    public void SharedBattleStatPlayback_OwnsStatMutationAndAnimation()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleStatPlayback.cs");
+        StringAssert.Contains("public static IEnumerator PlayCardStatChanges(", source);
+        StringAssert.Contains("public static IEnumerator PlayTimelineStatChange(", source);
+        StringAssert.Contains("cardAnimator.AnimateStatChange(card, change, statName)", source);
+    }
+
+    [Test]
+    public void BattleResultProcessor_UsesSharedStatPlaybackService()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs");
+        StringAssert.Contains("BattleStatPlayback.PlayTimelineStatChange(", source);
+        StringAssert.Contains("BattleStatPlayback.PlayCardStatChanges(", source);
+        Assert.IsFalse(source.Contains("GetStatApplier("));
+        Assert.IsFalse(source.Contains("BattleStatApplier"));
+    }
+
+    [Test]
+    public void BattleResultProcessor_UsesSharedEffectPlaybackService()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs");
+        StringAssert.Contains("BattleEffectPlayback.AddEffectIconOnly(", source);
+        StringAssert.Contains("BattleEffectPlayback.RemoveEffectIconOnly(", source);
+        StringAssert.Contains("BattleEffectPlayback.DisplayMultipleEffects(", source);
+        StringAssert.Contains("BattleEffectPlayback.GetEffectName(", source);
+        Assert.IsFalse(source.Contains("GetEffectVisuals("));
+        Assert.IsFalse(source.Contains("BattleEffectVisuals"));
+    }
+
+    [Test]
+    public void SharedBattleEffectPlayback_OwnsEffectIconAndEndAnimations()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleEffectPlayback.cs");
+        StringAssert.Contains("public static IEnumerator AddEffectIconOnly(", source);
+        StringAssert.Contains("public static IEnumerator RemoveEffectIconOnly(", source);
+        StringAssert.Contains("public static IEnumerator DisplayMultipleEffects(", source);
+        StringAssert.Contains("public static string GetEffectName(", source);
+        StringAssert.Contains("PlayFamineEndAnimation(card.transform)", source);
+    }
+
+    [Test]
+    public void BattleSubmitter_PollsViaGetBattleStatusNotDummyAttackZero()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleSubmitter.cs");
+        StringAssert.Contains("serverFunctionsManager.GetBattleStatus(", source);
+        Assert.IsFalse(source.Contains("attackId = 0"));
+        Assert.IsFalse(source.Contains("attackSlot = 0"));
+        Assert.IsFalse(source.Contains("dummySubmission"));
+    }
+
+    [Test]
+    public void ServerFunctionsManager_ExposesGetBattleStatus()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Networking", "ServerFunctionsManager.cs");
+        StringAssert.Contains("public void GetBattleStatus(", source);
+        StringAssert.Contains("CallFunctionWithRetry(\"getBattleStatus\"", source);
     }
 
     private static string ReadProjectFile(params string[] relativeParts)

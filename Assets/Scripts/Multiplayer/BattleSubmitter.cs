@@ -16,7 +16,6 @@ public class BattleSubmitter : MonoBehaviour
     private bool isWaitingForBattle = false;
     private int pollAttempts = 0;
     private const int MAX_POLL_ATTEMPTS = 60; // 60 sekund timeout
-    private string lastSubmittedCardId; // [OK] Ulozeny cardId pre polling
     
     /// <summary>
     /// Odosle utok na server a spusti polling pre vysledok
@@ -31,7 +30,6 @@ public class BattleSubmitter : MonoBehaviour
         
         isWaitingForBattle = true;
         pollAttempts = 0;
-        lastSubmittedCardId = cardId; // [OK] Uloz cardId pre polling
         
         Debug.Log($"[BattleSubmitter] Submitting attack: roomCode={roomCode}, cardId={cardId}, attackId={attackId}, attackSlot={attackSlot}");
         
@@ -129,17 +127,7 @@ public class BattleSubmitter : MonoBehaviour
             yield break;
         }
         
-        // Dummy request na zistenie stavu
-        var dummySubmission = new AttackSubmission
-        {
-            playerId = fightSystem.myPlayerId,
-            roomCode = fightSystem.roomCode,
-            cardId = lastSubmittedCardId, // [OK] Pouzij ulozeny cardId!
-            attackId = 0, // Special value pre "check status only"
-            attackSlot = 0 // Dummy value pre polling
-        };
-        
-        serverFunctionsManager.ExecuteBattle(fightSystem.roomCode, fightSystem.myPlayerId, dummySubmission, result =>
+        serverFunctionsManager.GetBattleStatus(fightSystem.roomCode, fightSystem.myPlayerId, result =>
         {
             OnBattleResponse(result);
         });

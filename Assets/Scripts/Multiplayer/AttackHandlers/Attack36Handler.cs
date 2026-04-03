@@ -1,9 +1,9 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 /// <summary>
 /// Attack ID 36: Guerilla
-/// Standard target damage uses AttackPlaybackShared; ATT debuff remains in shared timeline stat playback.
+/// Standard target damage uses BattleValuePlayback; ATT debuff remains in shared timeline stat playback.
 /// </summary>
 public class Attack36Handler
 {
@@ -23,7 +23,7 @@ public class Attack36Handler
 
         if (damage > 0)
         {
-            yield return AttackPlaybackShared.PlayStandardTargetDamage(
+            yield return BattleValuePlayback.PlayDamage(
                 defender,
                 damage,
                 isMyAttack,
@@ -36,3 +36,4 @@ public class Attack36Handler
         yield return showDialog($"{attacker.cardName} sends Guerillas");
     }
 }
+

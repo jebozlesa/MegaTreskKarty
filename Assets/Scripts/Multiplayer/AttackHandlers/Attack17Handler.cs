@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -37,7 +37,7 @@ public class Attack17Handler
 
         if (damage > 0)
         {
-            yield return AttackPlaybackShared.PlayStandardTargetDamage(
+            yield return BattleValuePlayback.PlayDamage(
                 defender,
                 damage,
                 isMyAttack,
@@ -50,3 +50,4 @@ public class Attack17Handler
         yield return showDialog($"{defender.cardName} is heavily bombarded");
     }
 }
+

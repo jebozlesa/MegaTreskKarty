@@ -30,27 +30,14 @@ public class Attack14Handler
         if (healAmount > 0)
         {
             Debug.LogWarning($" [UP_IN_SMOKE] {attacker.cardName} heals {healAmount} HP");
-            attacker.health += healAmount;
-            if (attacker.health > attacker.maxHealth) 
-            {
-                attacker.health = attacker.maxHealth;
-            }
-            
-            // Green HP animation (self-heal)
-            if (cardAnimator != null)
-            {
-                yield return cardAnimator.AnimateHeal(attacker, healAmount);
-            }
-            
-            // Update HP bar
-            if (isMyAttack)
-            {
-                playerLifeBar.SetHP(attacker.health);
-            }
-            else
-            {
-                enemyLifeBar.SetHP(attacker.health);
-            }
+            yield return BattleValuePlayback.PlayHeal(
+                attacker,
+                healAmount,
+                isMyAttack,
+                cardAnimator,
+                playerLifeBar,
+                enemyLifeBar
+            );
         }
         
         yield return showDialog($"{attacker.cardName} smokes some s#!t and feels good");

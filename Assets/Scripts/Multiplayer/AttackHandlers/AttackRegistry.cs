@@ -104,6 +104,7 @@ public static class AttackRegistry
                     ctx.HealAmount,
                     ctx.IsMyAttack,
                     ctx.Animations,
+                    ctx.CardAnimator,
                     ctx.PlayerLifeBar,
                     ctx.EnemyLifeBar,
                     ctx.ShowDialog

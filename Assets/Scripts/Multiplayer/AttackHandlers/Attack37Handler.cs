@@ -33,7 +33,7 @@ public class Attack37Handler
 
         if (damage > 0)
         {
-            yield return AttackPlaybackShared.PlayStandardTargetDamage(
+            yield return BattleValuePlayback.PlayDamage(
                 defender,
                 damage,
                 isMyAttack,
@@ -46,3 +46,4 @@ public class Attack37Handler
         yield return showDialog($"{attacker.cardName} caused a famine");
     }
 }
+

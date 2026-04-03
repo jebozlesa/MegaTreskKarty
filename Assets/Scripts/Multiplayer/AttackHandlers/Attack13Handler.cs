@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using TMPro;
 
@@ -27,7 +27,7 @@ public class Attack13Handler
         if (damage > 0)
         {
             Debug.LogWarning($"[HIT] [ONE_INCH_PUNCH] {attacker.cardName} -> {defender.cardName}: {damage} damage");
-            yield return AttackPlaybackShared.PlayStandardTargetDamage(
+            yield return BattleValuePlayback.PlayDamage(
                 defender,
                 damage,
                 isMyAttack,
@@ -39,3 +39,4 @@ public class Attack13Handler
         }
     }
 }
+

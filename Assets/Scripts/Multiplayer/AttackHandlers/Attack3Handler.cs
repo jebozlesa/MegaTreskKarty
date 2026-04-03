@@ -16,6 +16,7 @@ public class Attack3Handler
         int healAmount,
         bool isMyAttack,
         AttackAnimations animations,
+        MultiplayerCardAnimator cardAnimator,
         HealthBar playerLifeBar,
         HealthBar enemyLifeBar,
         System.Func<string, IEnumerator> showDialog)
@@ -27,17 +28,14 @@ public class Attack3Handler
         if (healAmount > 0)
         {
             Debug.LogWarning($" [HEAL] {attacker.cardName} heals for {healAmount} HP!");
-            attacker.Heal(healAmount);
-            
-            if (isMyAttack)
-            {
-                playerLifeBar.SetHP(attacker.health);
-            }
-            else
-            {
-                enemyLifeBar.SetHP(attacker.health);
-            }
-            
+            yield return BattleValuePlayback.PlayHeal(
+                attacker,
+                healAmount,
+                isMyAttack,
+                cardAnimator,
+                playerLifeBar,
+                enemyLifeBar
+            );
             yield return showDialog($"{attacker.cardName} Heals himself");
         }
     }

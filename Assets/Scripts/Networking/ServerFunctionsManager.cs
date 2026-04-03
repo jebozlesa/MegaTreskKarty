@@ -361,6 +361,28 @@ public class ServerFunctionsManager : MonoBehaviour
         // ✅ Retry - executeBattle je NAJKRITICKEJŠIA funkcia!
         CallFunctionWithRetry("executeBattle", parameters, callback);
     }
+
+    /// <summary>
+    /// Polling status po submitnuti utoku bez zneuzivania executeBattle s attackId=0.
+    /// </summary>
+    public void GetBattleStatus(string roomCode, string playerId, Action<ExecuteFunctionResult> callback)
+    {
+        if (callback == null)
+        {
+            Debug.LogError("GetBattleStatus: callback is null!");
+            return;
+        }
+
+        Debug.LogWarning($"GetBattleStatus called for room: {roomCode}, player: {playerId}");
+
+        var parameters = new
+        {
+            roomCode = roomCode,
+            playerId = playerId
+        };
+
+        CallFunctionWithRetry("getBattleStatus", parameters, callback);
+    }
     
     /// <summary>
     /// Označí hráča ako ready pre ďalší turn

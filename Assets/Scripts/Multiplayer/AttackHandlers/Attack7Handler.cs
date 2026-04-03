@@ -45,27 +45,17 @@ public class Attack7Handler
         // [OK] Apply damage to BOTH cards SIMULTANEOUSLY (AFTER animations)
         if (damage > 0)
         {
-            defender.health -= damage;
-            if (defender.health < 0) defender.health = 0;
+            BattleValuePlayback.ApplyDamage(defender, damage);
         }
         
         if (attackerSelfDamage > 0)
         {
-            attacker.health -= attackerSelfDamage;
-            if (attacker.health < 0) attacker.health = 0;
+            BattleValuePlayback.ApplyDamage(attacker, attackerSelfDamage);
         }
         
         // [OK] Update HP bars AFTER damage application
-        if (isMyAttack)
-        {
-            playerLifeBar.SetHP(attacker.health);
-            enemyLifeBar.SetHP(defender.health);
-        }
-        else
-        {
-            playerLifeBar.SetHP(defender.health);
-            enemyLifeBar.SetHP(attacker.health);
-        }
+        BattleValuePlayback.SyncHealthBar(attacker, isMyAttack, playerLifeBar, enemyLifeBar);
+        BattleValuePlayback.SyncHealthBar(defender, !isMyAttack, playerLifeBar, enemyLifeBar);
         
         yield return showDialog($"Tresk! hit by {attacker.cardName}'s car");
         

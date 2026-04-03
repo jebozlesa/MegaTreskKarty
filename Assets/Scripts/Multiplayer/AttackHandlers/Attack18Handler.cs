@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -25,7 +25,7 @@ public class Attack18Handler
 
         if (damage > 0)
         {
-            yield return AttackPlaybackShared.PlayStandardTargetDamage(
+            yield return BattleValuePlayback.PlayDamage(
                 defender,
                 damage,
                 isMyAttack,
@@ -37,27 +37,17 @@ public class Attack18Handler
 
         if (healAmount > 0)
         {
-            attacker.health += healAmount;
-            if (attacker.health > attacker.maxHealth)
-            {
-                attacker.health = attacker.maxHealth;
-            }
-
-            if (cardAnimator != null)
-            {
-                yield return cardAnimator.AnimateHeal(attacker, healAmount);
-            }
-
-            if (isMyAttack)
-            {
-                playerLifeBar.SetHP(attacker.health);
-            }
-            else
-            {
-                enemyLifeBar.SetHP(attacker.health);
-            }
+            yield return BattleValuePlayback.PlayHeal(
+                attacker,
+                healAmount,
+                isMyAttack,
+                cardAnimator,
+                playerLifeBar,
+                enemyLifeBar
+            );
         }
 
         yield return showDialog($"{defender.cardName} was drained");
     }
 }
+

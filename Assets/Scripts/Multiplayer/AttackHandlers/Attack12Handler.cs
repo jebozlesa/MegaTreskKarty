@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using TMPro;
 
@@ -26,7 +26,7 @@ public class Attack12Handler
         int visualMultiply = Mathf.Clamp(damage, 1, 9);
         yield return animations.PlayChiSauAnimation(attacker.transform, defender.transform, visualMultiply);
 
-        yield return AttackPlaybackShared.PlayStandardTargetDamage(
+        yield return BattleValuePlayback.PlayDamage(
             defender,
             damage,
             isMyAttack,
@@ -38,3 +38,4 @@ public class Attack12Handler
         Debug.Log($"[Attack12] {attacker.cardName} -> Chi Sau ({visualMultiply} strikes) -> {defender.cardName}: {damage} damage");
     }
 }
+
