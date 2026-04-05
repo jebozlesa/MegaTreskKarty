@@ -29,7 +29,7 @@ public class Attack5Handler
             yield return BattleValuePlayback.PlayDamage(
                 defender,
                 damage,
-                isMyAttack,
+                !isMyAttack,
                 cardAnimator,
                 playerLifeBar,
                 enemyLifeBar
@@ -38,4 +38,5 @@ public class Attack5Handler
         }
     }
 }
+
 

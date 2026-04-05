@@ -498,6 +498,55 @@ public static class AttackRegistry
                     ctx.AttackResult
                 )
             ),
+            [38] = new AttackDefinition("Marxism", ctx =>
+                Attack38Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [39] = new AttackDefinition("Tesla Coil", ctx =>
+                Attack39Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied
+                )
+            ),
+            [40] = new AttackDefinition("Wireless Charger", ctx =>
+                Attack40Handler.Execute(
+                    ctx.Attacker,
+                    ctx.HealAmount,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog
+                )
+            ),
+            [41] = new AttackDefinition("Experiment", ctx =>
+                Attack41Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.AttackerSelfDamage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog
+                )
+            ),
         };
 
     public static string GetAttackName(int attackId)
@@ -520,6 +569,7 @@ public static class AttackRegistry
         return Definitions[1].Execute(context);
     }
 }
+
 
 
 

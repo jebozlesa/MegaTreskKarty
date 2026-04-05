@@ -24,7 +24,7 @@ public static class BattleContractMapper
             dto.message = string.Empty;
         }
 
-        dto.playersReady = Math.Max(0, dto.playersReady);
+        dto.playersReadyCount = Math.Max(0, dto.playersReadyCount);
         return dto;
     }
 
@@ -50,21 +50,6 @@ public static class BattleContractMapper
 
         NormalizeAttacker(dto.firstAttacker);
         NormalizeAttacker(dto.secondAttacker);
-
-        if (dto.attacks == null)
-        {
-            dto.attacks = new Dictionary<string, BattleAttackerDto>();
-        }
-
-        if (dto.firstAttacker != null && !string.IsNullOrEmpty(dto.firstAttacker.cardId))
-        {
-            dto.attacks[dto.firstAttacker.cardId] = dto.firstAttacker;
-        }
-
-        if (dto.secondAttacker != null && !string.IsNullOrEmpty(dto.secondAttacker.cardId))
-        {
-            dto.attacks[dto.secondAttacker.cardId] = dto.secondAttacker;
-        }
     }
 
     private static void NormalizeAttacker(BattleAttackerDto attacker)

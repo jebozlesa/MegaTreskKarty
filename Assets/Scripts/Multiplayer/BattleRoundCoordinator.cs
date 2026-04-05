@@ -106,12 +106,12 @@ public class BattleRoundCoordinator
                         bothReady = (bool)resultData["bothPlayersReady"];
                     }
 
-                    if (resultData.ContainsKey("playersReady"))
+                    if (resultData.ContainsKey("playersReadyByPlayerId"))
                     {
-                        var playersReady = resultData["playersReady"] as Dictionary<string, object>;
-                        if (playersReady != null && playersReady.ContainsKey(fightSystem.myPlayerId))
+                        var playersReadyByPlayerId = resultData["playersReadyByPlayerId"] as Dictionary<string, object>;
+                        if (playersReadyByPlayerId != null && playersReadyByPlayerId.ContainsKey(fightSystem.myPlayerId))
                         {
-                            iAmMarkedReady = (bool)playersReady[fightSystem.myPlayerId];
+                            iAmMarkedReady = (bool)playersReadyByPlayerId[fightSystem.myPlayerId];
                             if (!iAmMarkedReady)
                             {
                                 Debug.LogWarning($"[BattleRoundCoordinator] Poll #{pollAttempts}: I'm NOT marked ready in DB!");

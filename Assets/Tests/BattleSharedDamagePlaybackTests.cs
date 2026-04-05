@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using UnityEngine;
@@ -46,12 +46,13 @@ public class BattleSharedDamagePlaybackTests
         {
             string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", fileName);
             StringAssert.Contains("BattleValuePlayback.PlayDamage(", source, $"Expected shared damage helper in {fileName}");
+            StringAssert.Contains("!isMyAttack", source, $"Defender damage should target the opposite health bar in {fileName}");
             Assert.IsFalse(source.Contains("defender.health -= damage;"), $"Manual defender damage should be removed from {fileName}");
         }
     }
 
     [Test]
-    public void OnlyExplicitSpecialCaseHandler_UsesManualParallelDamagePlayback()
+    public void OnlyExplicitSpecialCaseHandlers_UseManualParallelDamagePlayback()
     {
         string handlersDir = Path.Combine(Application.dataPath, "Scripts", "Multiplayer", "AttackHandlers");
         string[] allHandlerFiles = Directory.GetFiles(handlersDir, "Attack*Handler.cs");
@@ -66,7 +67,10 @@ public class BattleSharedDamagePlaybackTests
             }
         }
 
-        CollectionAssert.AreEquivalent(new[] { "Attack7Handler.cs" }, manualDamageHandlers);
+        CollectionAssert.AreEquivalent(
+            new[] { "Attack7Handler.cs", "Attack41Handler.cs" },
+            manualDamageHandlers
+        );
     }
 
     [Test]
@@ -157,3 +161,4 @@ public class BattleSharedDamagePlaybackTests
         return File.ReadAllText(fullPath);
     }
 }
+

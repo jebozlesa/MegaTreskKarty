@@ -28,7 +28,7 @@ public class Attack23Handler
             yield return BattleValuePlayback.PlayDamage(
                 defender,
                 damage,
-                isMyAttack,
+                !isMyAttack,
                 cardAnimator,
                 playerLifeBar,
                 enemyLifeBar
@@ -48,4 +48,5 @@ public class Attack23Handler
         }
     }
 }
+
 

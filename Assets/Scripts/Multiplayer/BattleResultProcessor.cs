@@ -1913,29 +1913,23 @@ public class BattleResultProcessor : MonoBehaviour
 
             case 3: // SLEEP
                 Debug.LogWarning(
-                    $"?? [SLEEP_ONGOING] Playing SLEEP animation (ongoing Sleep, not initial)"
+                    $"[SLEEP_ONGOING] Playing sleep animation (ongoing Sleep, not initial)"
                 );
                 yield return StartCoroutine(animations.PlaySleepAnimation(card.transform));
                 yield return StartCoroutine(ShowDialog($"{card.cardName} is sleeping..."));
                 break;
             case 27: // KNOCKOUT -> ongoing flow behaves like sleep
                 Debug.LogWarning(
-                    $"?? [KNOCKOUT_ONGOING_AS_SLEEP] Playing SLEEP animation (ongoing Knockout)"
+                    $"[KNOCKOUT_ONGOING_AS_SLEEP] Playing sleep animation (ongoing Knockout)"
                 );
                 yield return StartCoroutine(animations.PlaySleepAnimation(card.transform));
                 yield return StartCoroutine(ShowDialog($"{card.cardName} is sleeping..."));
                 break;
 
-            case 5: // STUN (example)
-                // TODO: ImplementovaLA stun animAciu
-                // yield return StartCoroutine(animations.PlayStunAnimation(card.transform));
-                yield return StartCoroutine(ShowDialog($"{card.cardName} is stunned!"));
-                break;
-
-            case 6: // FREEZE (example)
-                // TODO: ImplementovaLA freeze animAciu
-                // yield return StartCoroutine(animations.PlayFreezeAnimation(card.transform));
-                yield return StartCoroutine(ShowDialog($"{card.cardName} is frozen!"));
+            case 8: // ELECTRICITY
+                Debug.LogWarning("[ELECTRICITY_ONGOING] Playing electricity block animation");
+                yield return StartCoroutine(animations.PlayElectricityAnimation(card.transform));
+                yield return StartCoroutine(ShowDialog($"{card.cardName} cannot move"));
                 break;
 
             default:
@@ -1948,33 +1942,7 @@ public class BattleResultProcessor : MonoBehaviour
     }
 
     /// <summary>
-    /// DEPRECATED: Replaced by PlayBlockAnimation(blockedBy)
-    /// PrehrA Sleep blocking animAciu (Astok blocked, duration decremented)
-    /// VOLA SA keAZ karta UL MA Sleep a Astok je blokovanA (Turn 2+)
-    /// </summary>
-    [System.Obsolete("Use PlayBlockAnimation(card, blockedBy, isMyCard) instead")]
-    private IEnumerator PlaySleepBlockAnimation(Kard card, bool isMyCard)
-    {
-        string cardOwner = isMyCard ? "MY" : "ENEMY";
-        Debug.LogWarning(
-            $"[SLEEP_BLOCK] {cardOwner} card ({card.cardName}) is sleeping, attack blocked!"
-        );
-
-        AttackAnimations animations = attackComponent?.attackAnimations;
-        if (animations != null)
-        {
-            // OveATka animAcia (karta UL spA, nie prvA aplikAcia)
-            Debug.LogWarning(
-                $"[SLEEP_ONGOING] Playing SLEEP animation (ongoing Sleep, not initial)"
-            );
-            yield return StartCoroutine(animations.PlaySleepAnimation(card.transform));
-        }
-
-        yield return StartCoroutine(ShowDialog($"{card.cardName} is sleeping..."));
-    }
-
-    /// <summary>
-    /// VrAti nAzov Astoku pre attackId (pre dialog text)
+    /// Returns the attack name for an attackId (for dialog text).
     /// </summary>
     private string GetAttackName(int attackId)
     {
@@ -2430,6 +2398,8 @@ public class BattleResultProcessor : MonoBehaviour
         }
     }
 }
+
+
 
 
 

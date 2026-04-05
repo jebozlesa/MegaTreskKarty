@@ -41,6 +41,10 @@ AttackHandlers/
   Attack35Handler.cs  - Fury
   Attack36Handler.cs  - Guerilla
   Attack37Handler.cs  - Famine
+  Attack38Handler.cs  - Marxism
+  Attack39Handler.cs  - Tesla Coil
+  Attack40Handler.cs  - Wireless Charger
+  Attack41Handler.cs  - Experiment
   ...
   Attack123Handler.cs
 ```
@@ -107,7 +111,7 @@ switch (attackId)
 - New handlers should focus on attack animation, sequencing, special-case visuals, and dialogs.
 - Do not add fallback damage logic in BattleResultProcessor for ordinary attack damage.
 - Do not add new ordinary attack handlers that manually subtract defender HP unless the mechanic truly requires custom damage timing.
-- Explicit timing exceptions such as Attack7Handler must stay documented and intentional.
+- Explicit timing exceptions such as Attack7Handler and Attack41Handler must stay documented and intentional.
 
 ##  Vyhody
 
@@ -122,7 +126,8 @@ Rovnaka struktura ako server:
 - **Server:** `api/attacks/implementations/attack{ID}.js`
 - **Unity:** `AttackHandlers/Attack{ID}Handler.cs`
 
-Progress: 36/123 attacks (29.3%)
+Progress: 41/123 attacks (33.3%)
+
 
 
 

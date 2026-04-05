@@ -36,7 +36,7 @@ public class Attack37Handler
             yield return BattleValuePlayback.PlayDamage(
                 defender,
                 damage,
-                isMyAttack,
+                !isMyAttack,
                 cardAnimator,
                 playerLifeBar,
                 enemyLifeBar
@@ -46,4 +46,5 @@ public class Attack37Handler
         yield return showDialog($"{attacker.cardName} caused a famine");
     }
 }
+
 

@@ -167,8 +167,6 @@ public class BattleResultParserTests
         {
             { "firstAttacker", ToAttackerDict(result.firstAttacker) },
             { "secondAttacker", ToAttackerDict(result.secondAttacker) },
-            { "bothBlocked", result.bothBlocked },
-            { "secondAttackerBlocked", result.secondAttackerBlocked },
             { "cardDied", result.cardDied },
             { "winnerCardId", result.winnerCardId },
             { "loserCardId", result.loserCardId }
@@ -467,7 +465,7 @@ public class BattleResultParserTests
     {
         public bool success;
         public bool bothPlayersReady;
-        public int playersReady;
+        public int playersReadyCount;
         public string message;
         public FixtureBattleResult battleResult;
     }
@@ -477,8 +475,6 @@ public class BattleResultParserTests
     {
         public FixtureAttacker firstAttacker;
         public FixtureAttacker secondAttacker;
-        public bool bothBlocked;
-        public bool secondAttackerBlocked;
         public bool cardDied;
         public string winnerCardId;
         public string loserCardId;

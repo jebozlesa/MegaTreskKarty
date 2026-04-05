@@ -40,7 +40,7 @@ public class Attack17Handler
             yield return BattleValuePlayback.PlayDamage(
                 defender,
                 damage,
-                isMyAttack,
+                !isMyAttack,
                 cardAnimator,
                 playerLifeBar,
                 enemyLifeBar
@@ -50,4 +50,5 @@ public class Attack17Handler
         yield return showDialog($"{defender.cardName} is heavily bombarded");
     }
 }
+
 

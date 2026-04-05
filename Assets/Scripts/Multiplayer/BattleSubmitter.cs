@@ -33,31 +33,15 @@ public class BattleSubmitter : MonoBehaviour
         
         Debug.Log($"[BattleSubmitter] Submitting attack: roomCode={roomCode}, cardId={cardId}, attackId={attackId}, attackSlot={attackSlot}");
         
-        // [OK] V3 - MINIMALNY PAYLOAD: iba cardId + attackId + attackSlot
-        // Server trackuje HP v room.battleState.playerHealths
+        // Minimalny submit kontrakt: klient posiela iba identifikaciu utoku.
+        // Server nacita zivy card state zo selectedCards v roomke.
         var submission = new AttackSubmission
         {
             playerId = playerId,
             roomCode = roomCode,
             cardId = cardId,
             attackId = attackId,
-            attackSlot = attackSlot,  // [OK] NOVE - pre attack count decrement
-            
-            // DEPRECATED - server v3 tieto fieldy IGNORUJE
-            // Ponechane kvoli backward compatibility s starsimi server verziami
-            currentHealth = 0,  // Server ma HP v battleState
-            attackerHealth = 0,
-            defenderHealth = 0,
-            attackerMaxHealth = 0,
-            attackerStrength = 0,
-            attackerDefense = 0,
-            attackerSpeed = 0,
-            attackerMagic = 0,
-            defenderMaxHealth = 0,
-            defenderStrength = 0,
-            defenderDefense = 0,
-            defenderSpeed = 0,
-            defenderMagic = 0
+            attackSlot = attackSlot
         };
         
         // Odosli na server
@@ -103,8 +87,8 @@ public class BattleSubmitter : MonoBehaviour
         else
         {
             // Cakaj na druheho hraca
-            int playersReady = resultData.ContainsKey("playersReady") ? int.Parse(resultData["playersReady"].ToString()) : 0;
-            Debug.Log($"[BattleSubmitter] Waiting for opponent... ({playersReady}/2)");
+            int playersReadyCount = resultData.ContainsKey("playersReadyCount") ? int.Parse(resultData["playersReadyCount"].ToString()) : 0;
+            Debug.Log($"[BattleSubmitter] Waiting for opponent... ({playersReadyCount}/2)");
             
             // Pokracuj v pollingu
             StartCoroutine(PollForBattleResult());

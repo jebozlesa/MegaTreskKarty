@@ -25,8 +25,8 @@ public class BattleResult
 
 /// <summary>
 /// Data odosielane na server pre simulaciu utoku
-/// [OK] V3 - MINIMALNY PAYLOAD (iba IDs)
-/// Server trackuje HP v battleState.playerHealths
+/// Minimalny payload pre battle submit.
+/// Server nacita card state a stats z room.selectedCards.
 /// </summary>
 [Serializable]
 public class AttackSubmission
@@ -36,24 +36,6 @@ public class AttackSubmission
     public string cardId;             // ID karty (server nacita stats z DB)
     public int attackId;              // ID utoku (1 = Punch)
     public int attackSlot;            // Slot utoku (1-4) - pre attack count decrement
-    
-    // DEPRECATED - server trackuje HP sam v room.battleState
-    // Ponechane pre backward compatibility, ale server ich ignoruje
-    public int currentHealth;         // IGNORED by server v3
-    public int attackerHealth;        // IGNORED
-    public int attackerMaxHealth;     // IGNORED
-    public int attackerStrength;      // IGNORED
-    public int attackerDefense;       // IGNORED
-    public int attackerSpeed;         // IGNORED
-    public int attackerMagic;         // IGNORED
-    
-    // Stats obrancu (budu potrebne pre vypocet)
-    public int defenderHealth;
-    public int defenderMaxHealth;
-    public int defenderStrength;
-    public int defenderDefense;
-    public int defenderSpeed;
-    public int defenderMagic;
 }
 
 /// <summary>

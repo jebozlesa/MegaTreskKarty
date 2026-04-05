@@ -26,7 +26,7 @@ public class Attack36Handler
             yield return BattleValuePlayback.PlayDamage(
                 defender,
                 damage,
-                isMyAttack,
+                !isMyAttack,
                 cardAnimator,
                 playerLifeBar,
                 enemyLifeBar
@@ -36,4 +36,5 @@ public class Attack36Handler
         yield return showDialog($"{attacker.cardName} sends Guerillas");
     }
 }
+
 

@@ -28,7 +28,7 @@ public class Attack18Handler
             yield return BattleValuePlayback.PlayDamage(
                 defender,
                 damage,
-                isMyAttack,
+                !isMyAttack,
                 cardAnimator,
                 playerLifeBar,
                 enemyLifeBar
@@ -50,4 +50,5 @@ public class Attack18Handler
         yield return showDialog($"{defender.cardName} was drained");
     }
 }
+
 

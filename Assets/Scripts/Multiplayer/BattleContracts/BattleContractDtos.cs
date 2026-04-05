@@ -6,7 +6,7 @@ public class ExecuteBattleEnvelopeDto
 {
     public bool success;
     public bool bothPlayersReady;
-    public int playersReady;
+    public int playersReadyCount;
     public string message;
     public BattleResultDto battleResult;
 }
@@ -16,16 +16,10 @@ public class BattleResultDto
 {
     public BattleAttackerDto firstAttacker;
     public BattleAttackerDto secondAttacker;
-    public Dictionary<string, BattleAttackerDto> attacks;
 
     public bool cardDied;
     public string winnerCardId;
     public string loserCardId;
-
-    // Legacy convenience fields.
-    public bool bothBlocked;
-    public bool secondAttackerBlocked;
-    public bool wokeUp;
 }
 
 [Serializable]

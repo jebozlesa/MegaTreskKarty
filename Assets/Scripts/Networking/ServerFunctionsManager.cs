@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using PlayFab;
 using PlayFab.CloudScriptModels;
@@ -50,7 +50,7 @@ public class ServerFunctionsManager : MonoBehaviour
         PlayFabCloudScriptAPI.ExecuteFunction(request, result => {
             Debug.LogWarning($"ExecuteFunction result: {Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}");
             
-            // ✅ Úspech - skry error indikátor
+            // Success - hide network error indicator
             HideNetworkError();
             
             callback?.Invoke(result);
@@ -58,7 +58,7 @@ public class ServerFunctionsManager : MonoBehaviour
             // Transient cloud/network failures are often resolved by retry.
             Debug.LogWarning(error.GenerateErrorReport());
             
-            // ❌ Chyba - zobraz error indikátor
+            // Failure - show network error indicator
             ShowNetworkError($"Server error: {functionName}");
             
             callback?.Invoke(null);
@@ -239,7 +239,7 @@ public class ServerFunctionsManager : MonoBehaviour
             }
         };
 
-        // ✅ Použij retry mechanizmus - často failne ak hráč opustil room
+        // Use retry for this request because it can fail when a player leaves the room.
         CallFunctionWithRetry("setSelectedCard", parameters, callback);
     }
 
@@ -263,7 +263,7 @@ public class ServerFunctionsManager : MonoBehaviour
         {
             roomCode
         };
-        // ✅ Retry - polling funkcia, môže failnúť pri network glitchoch
+        // Retry because polling can fail on transient network issues.
         CallFunctionWithRetry("getSelectedCards", parameters, callback);
     }
 
@@ -274,7 +274,7 @@ public class ServerFunctionsManager : MonoBehaviour
         {
             roomCode
         };
-        // ✅ Retry - kritická operácia pre card replacement!
+        // Retry because this is critical for card replacement.
         CallFunctionWithRetry("clearSelectedCards", parameters, callback ?? (_ => { }));
     }
 
@@ -289,7 +289,7 @@ public class ServerFunctionsManager : MonoBehaviour
             roomCode = roomCode,
             cardIdToClear = cardIdToClear
         };
-        // ✅ Retry - SUPER KRITICKÉ! Ak failne, mŕtva karta ostane v DB!
+        // Retry because a failed clear would leave a dead card in the database.
         CallFunctionWithRetry("clearSelectedCards", parameters, callback ?? (_ => { }));
     }
 
@@ -304,15 +304,15 @@ public class ServerFunctionsManager : MonoBehaviour
             roomCode = roomCode,
             playerId = playerId
         };
-        // ✅ Retry - kritická operácia pre turn cleanup!
+        // Retry because this is critical for turn cleanup.
         CallFunctionWithRetry("clearBattleData", parameters, callback ?? (_ => { }));
     }
 
     // ============================================================
-    // ✅ V8: Attack Counts (Server Auto-Init + Auto-Decrement)
+    // V8: Attack counts (server auto-init and auto-decrement)
     // ============================================================
-    // ❌ REMOVED: CalculateAttackCounts() - Server má auto-init v setSelectedCard
-    // ❌ REMOVED: DecrementAttackCount() - Server má auto-decrement v executeBattle
+    // Removed: CalculateAttackCounts() because the server auto-initializes counts in setSelectedCard.
+    // Removed: DecrementAttackCount() because the server auto-decrements counts in executeBattle.
 
     /// <summary>
     /// Načíta persisted attack counts z MongoDB (read-only)
@@ -334,7 +334,7 @@ public class ServerFunctionsManager : MonoBehaviour
             playerId = playerId,
             cardId = cardId
         };
-        // ✅ Retry - attack counts sú kritické pre UI
+        // Retry because attack counts are critical for the UI.
         CallFunctionWithRetry("getAttackCounts", parameters, callback);
     }
 
@@ -358,7 +358,7 @@ public class ServerFunctionsManager : MonoBehaviour
             attackData = attackData
         };
         
-        // ✅ Retry - executeBattle je NAJKRITICKEJŠIA funkcia!
+        // Retry because executeBattle is the most critical battle request.
         CallFunctionWithRetry("executeBattle", parameters, callback);
     }
 
@@ -403,7 +403,7 @@ public class ServerFunctionsManager : MonoBehaviour
             playerId = playerId
         };
         
-        // ✅ Retry - turn synchronizácia je kritická
+        // Retry because turn synchronization is critical.
         CallFunctionWithRetry("markReadyForNextTurn", parameters, callback);
     }
     
@@ -425,7 +425,7 @@ public class ServerFunctionsManager : MonoBehaviour
             roomCode = roomCode
         };
         
-        // ✅ Retry - polling funkcia pre next turn ready state
+        // Retry because this polls next-turn readiness.
         CallFunctionWithRetry("checkNextTurnReady", parameters, callback);
     }
     
@@ -437,7 +437,7 @@ public class ServerFunctionsManager : MonoBehaviour
         if (networkErrorIndicator != null)
         {
             networkErrorIndicator.SetActive(true);
-            Debug.LogWarning($"[ServerFunctionsManager] 🔴 Network error shown: {errorMessage}");
+            Debug.LogWarning($"[ServerFunctionsManager] Network error shown: {errorMessage}");
         }
     }
     
@@ -449,7 +449,7 @@ public class ServerFunctionsManager : MonoBehaviour
         if (networkErrorIndicator != null && networkErrorIndicator.activeSelf)
         {
             networkErrorIndicator.SetActive(false);
-            Debug.LogWarning("[ServerFunctionsManager] ✅ Network error hidden - connection OK");
+            Debug.LogWarning("[ServerFunctionsManager] Network error hidden - connection OK");
         }
     }
     
@@ -470,13 +470,13 @@ public class ServerFunctionsManager : MonoBehaviour
             else if (retriesLeft > 0)
             {
                 // Neúspech - skús znova
-                Debug.LogWarning($"[ServerFunctionsManager] 🔄 Retrying {functionName} ({retriesLeft} attempts left)...");
+                Debug.LogWarning($"[ServerFunctionsManager] Retrying {functionName} ({retriesLeft} attempts left)...");
                 StartCoroutine(RetryAfterDelay(functionName, parameters, callback, retriesLeft - 1));
             }
             else
             {
                 // Vyčerpané pokusy
-                Debug.LogError($"[ServerFunctionsManager] ❌ {functionName} failed after {maxRetries} retries!");
+                Debug.LogError($"[ServerFunctionsManager] Failed: {functionName} failed after {maxRetries} retries!");
                 callback?.Invoke(null);
             }
         });
@@ -496,7 +496,7 @@ public class ServerFunctionsManager : MonoBehaviour
     // ====================================
     
     /// <summary>
-    /// ✅ V11: Otvor card pack na serveri (server-authoritative generation)
+    /// V11: Open a card pack on the server (server-authoritative generation).
     /// Server vygeneruje 6 kariet z themed packu a vráti ich
     /// </summary>
     /// <param name="playFabId">PlayFab ID hráča</param>

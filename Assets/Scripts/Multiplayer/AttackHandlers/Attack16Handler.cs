@@ -40,7 +40,7 @@ public class Attack16Handler
             yield return BattleValuePlayback.PlayDamage(
                 defender,
                 damage,
-                isMyAttack,
+                !isMyAttack,
                 cardAnimator,
                 playerLifeBar,
                 enemyLifeBar
@@ -50,4 +50,5 @@ public class Attack16Handler
         yield return showDialog($"Bang! {attacker.cardName} hits target");
     }
 }
+
 

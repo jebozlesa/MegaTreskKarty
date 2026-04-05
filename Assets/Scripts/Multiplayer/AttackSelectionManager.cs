@@ -133,8 +133,7 @@ public class AttackSelectionManager : MonoBehaviour
 
         Debug.Log($"[AttackSelectionManager] Confirming attack {selectedAttackType}");
 
-        // Tu bude logika pre odoslanie utoku na server
-        // TODO: Implement server communication
+        // Potvrdenie len deleguje vybrany utok do fight systemu, ktory riesi submit na server.
         ConfirmAttackSelection();
     }
 

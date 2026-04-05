@@ -29,7 +29,7 @@ public class Attack12Handler
         yield return BattleValuePlayback.PlayDamage(
             defender,
             damage,
-            isMyAttack,
+            !isMyAttack,
             cardAnimator,
             playerLifeBar,
             enemyLifeBar
@@ -38,4 +38,5 @@ public class Attack12Handler
         Debug.Log($"[Attack12] {attacker.cardName} -> Chi Sau ({visualMultiply} strikes) -> {defender.cardName}: {damage} damage");
     }
 }
+
 
