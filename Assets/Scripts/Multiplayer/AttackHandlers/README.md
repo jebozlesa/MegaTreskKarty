@@ -45,6 +45,10 @@ AttackHandlers/
   Attack39Handler.cs  - Tesla Coil
   Attack40Handler.cs  - Wireless Charger
   Attack41Handler.cs  - Experiment
+  Attack42Handler.cs  - Tommy Gun
+  Attack43Handler.cs  - Tie Up
+  Attack44Handler.cs  - Corruption
+  Attack45Handler.cs  - Colt 1911
   ...
   Attack123Handler.cs
 ```
@@ -112,6 +116,8 @@ switch (attackId)
 - Do not add fallback damage logic in BattleResultProcessor for ordinary attack damage.
 - Do not add new ordinary attack handlers that manually subtract defender HP unless the mechanic truly requires custom damage timing.
 - Explicit timing exceptions such as Attack7Handler and Attack41Handler must stay documented and intentional.
+- Pure stat attacks such as Attack38Handler and Attack44Handler should keep mutation in shared stat playback and leave only cast/dialog flow in the handler.
+- Simple ranged hit/miss attacks such as Attack34Handler and Attack45Handler should branch from server-provided attackResult and keep target damage in BattleValuePlayback.
 
 ##  Vyhody
 
@@ -126,7 +132,7 @@ Rovnaka struktura ako server:
 - **Server:** `api/attacks/implementations/attack{ID}.js`
 - **Unity:** `AttackHandlers/Attack{ID}Handler.cs`
 
-Progress: 41/123 attacks (33.3%)
+Progress: 45/123 attacks (36.6%)
 
 
 

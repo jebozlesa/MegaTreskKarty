@@ -40,6 +40,7 @@ public class BattleSharedDamagePlaybackTests
             "Attack32Handler.cs",
             "Attack34Handler.cs",
             "Attack36Handler.cs",
+            "Attack45Handler.cs",
         };
 
         foreach (string fileName in helperHandlers)

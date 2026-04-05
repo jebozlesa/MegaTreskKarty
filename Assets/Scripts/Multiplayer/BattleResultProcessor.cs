@@ -1932,6 +1932,12 @@ public class BattleResultProcessor : MonoBehaviour
                 yield return StartCoroutine(ShowDialog($"{card.cardName} cannot move"));
                 break;
 
+            case 9: // TETHER
+                Debug.LogWarning("[TETHER_ONGOING] Playing tether block animation");
+                yield return StartCoroutine(animations.PlayTetherAnimation(card.transform));
+                yield return StartCoroutine(ShowDialog($"{card.cardName} is locked"));
+                break;
+
             default:
                 Debug.LogWarning(
                     $"[PlayBlockAnimation] Unknown effect type {blockedBy}, using default message"

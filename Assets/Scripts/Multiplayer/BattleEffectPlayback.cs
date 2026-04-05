@@ -74,6 +74,10 @@ public static class BattleEffectPlayback
         {
             yield return animations.PlayElectricityEndAnimation(card.transform);
         }
+        else if (animations != null && effectType == 9)
+        {
+            yield return animations.PlayTetherEndAnimation(card.transform);
+        }
 
         Debug.LogWarning(
             $"[EFFECT_ICON] Removing {effectName} from {(isMyCard ? "MY" : "ENEMY")} card {card.cardName}"

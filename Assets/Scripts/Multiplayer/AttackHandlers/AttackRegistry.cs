@@ -547,6 +547,51 @@ public static class AttackRegistry
                     ctx.ShowDialog
                 )
             ),
+            [42] = new AttackDefinition("Tommy Gun", ctx =>
+                Attack42Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied
+                )
+            ),
+            [43] = new AttackDefinition("Tie Up", ctx =>
+                Attack43Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied
+                )
+            ),
+            [44] = new AttackDefinition("Corruption", ctx =>
+                Attack44Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [45] = new AttackDefinition("Colt 1911", ctx =>
+                Attack45Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
         };
 
     public static string GetAttackName(int attackId)
