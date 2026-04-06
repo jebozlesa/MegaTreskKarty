@@ -6,7 +6,7 @@ using UnityEngine;
 public class BattleRecentAttackCoverageTests
 {
     [Test]
-    public void AttackRegistry_RegistersRecentHandlersThroughAttack45()
+    public void AttackRegistry_RegistersRecentHandlersThroughAttack49()
     {
         string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "AttackRegistry.cs");
 
@@ -26,6 +26,12 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("Attack44Handler.Execute(", source);
         StringAssert.Contains("[45] = new AttackDefinition(\"Colt 1911\"", source);
         StringAssert.Contains("Attack45Handler.Execute(", source);
+        StringAssert.Contains("[46] = new AttackDefinition(\"Mortar\"", source);
+        StringAssert.Contains("Attack46Handler.Execute(", source);
+        StringAssert.Contains("[47] = new AttackDefinition(\"Great Army\"", source);
+        StringAssert.Contains("Attack47Handler.Execute(", source);
+        StringAssert.Contains("[49] = new AttackDefinition(\"Double Envelopment\"", source);
+        StringAssert.Contains("Attack49Handler.Execute(", source);
     }
 
     [Test]
@@ -68,6 +74,23 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("PlayColt1911Animation(attacker.transform, defender.transform, hit)", colt);
         StringAssert.Contains("BattleValuePlayback.PlayDamage(", colt);
         StringAssert.Contains("!isMyAttack", colt);
+
+        string mortar = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack46Handler.cs");
+        StringAssert.Contains("attackResult == \"backfire\"", mortar);
+        StringAssert.Contains("PlayMortarAnimation(attacker.transform, attacker.transform, true)", mortar);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", mortar);
+        StringAssert.Contains("attackerSelfDamage", mortar);
+
+        string greatArmy = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack47Handler.cs");
+        StringAssert.Contains("PlayGreatArmyAnimation(attacker.transform)", greatArmy);
+        StringAssert.Contains("attackResult == \"fortified\"", greatArmy);
+        Assert.IsFalse(greatArmy.Contains("HandleAttack("), "Attack47 should rely on shared stat playback, not direct stat mutation.");
+        Assert.IsFalse(greatArmy.Contains("HandleStrength("), "Attack47 should rely on shared stat playback, not direct stat mutation.");
+        Assert.IsFalse(greatArmy.Contains("HandleDefense("), "Attack47 should rely on shared stat playback, not direct stat mutation.");
+
+        string doubleEnvelopment = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack49Handler.cs");
+        StringAssert.Contains("PlayDoubleEnvelopmentAnimation(attacker.transform)", doubleEnvelopment);
+        Assert.IsFalse(doubleEnvelopment.Contains("HandleDefense("), "Attack49 should rely on shared stat playback, not direct stat mutation.");
     }
 
     [Test]
@@ -88,6 +111,9 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("case 9: // TETHER", resultProcessor);
         StringAssert.Contains("PlayTetherAnimation(card.transform)", resultProcessor);
         StringAssert.Contains("ShowDialog($\"{card.cardName} is locked\")", resultProcessor);
+        StringAssert.Contains("doubleEnvelopment", resultProcessor);
+        StringAssert.Contains("PlayDoubleEnvelopmentWaitAnimation(actor.transform)", resultProcessor);
+        StringAssert.Contains("PlayDoubleEnvelopAttackAnimation(target.transform)", resultProcessor);
     }
 
     [Test]
@@ -103,7 +129,10 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("Attack43Handler.cs  - Tie Up", readme);
         StringAssert.Contains("Attack44Handler.cs  - Corruption", readme);
         StringAssert.Contains("Attack45Handler.cs  - Colt 1911", readme);
-        StringAssert.Contains("Progress: 45/123 attacks (36.6%)", readme);
+        StringAssert.Contains("Attack46Handler.cs  - Mortar", readme);
+        StringAssert.Contains("Attack47Handler.cs  - Great Army", readme);
+        StringAssert.Contains("Attack49Handler.cs  - Double Envelopment", readme);
+        StringAssert.Contains("Progress: 48/123 attacks (39.0%)", readme);
     }
 
     private static string ReadProjectFile(params string[] relativeParts)
@@ -115,3 +144,6 @@ public class BattleRecentAttackCoverageTests
         return File.ReadAllText(fullPath);
     }
 }
+
+
+

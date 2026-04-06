@@ -1,4 +1,4 @@
-﻿# Attack Handlers
+# Attack Handlers
 
 Modularna struktura pre attack animacie a logiku v multiplayer systeme.
 
@@ -49,6 +49,9 @@ AttackHandlers/
   Attack43Handler.cs  - Tie Up
   Attack44Handler.cs  - Corruption
   Attack45Handler.cs  - Colt 1911
+  Attack46Handler.cs  - Mortar
+  Attack47Handler.cs  - Great Army
+  Attack49Handler.cs  - Double Envelopment
   ...
   Attack123Handler.cs
 ```
@@ -118,6 +121,9 @@ switch (attackId)
 - Explicit timing exceptions such as Attack7Handler and Attack41Handler must stay documented and intentional.
 - Pure stat attacks such as Attack38Handler and Attack44Handler should keep mutation in shared stat playback and leave only cast/dialog flow in the handler.
 - Simple ranged hit/miss attacks such as Attack34Handler and Attack45Handler should branch from server-provided attackResult and keep target damage in BattleValuePlayback.
+- Backfire attacks such as Attack46Handler should keep each branch explicit and still route all damage through shared playback helpers.
+- Pure self-buff attacks such as Attack47Handler should keep all stat mutation in shared stat playback and limit the handler to cast/dialog orchestration.
+- Delayed maneuver attacks such as Attack49Handler should use ongoing-action timeline flow instead of building a parallel custom effect system.
 
 ##  Vyhody
 
@@ -132,7 +138,9 @@ Rovnaka struktura ako server:
 - **Server:** `api/attacks/implementations/attack{ID}.js`
 - **Unity:** `AttackHandlers/Attack{ID}Handler.cs`
 
-Progress: 45/123 attacks (36.6%)
+Progress: 48/123 attacks (39.0%)
+
+
 
 
 

@@ -558,6 +558,27 @@ public class BattleResultProcessor : MonoBehaviour
                             yield return StartCoroutine(ShowDialog(step.Note));
                         }
                     }
+                    else if (
+                        string.Equals(
+                            step.ActionType,
+                            "doubleEnvelopment",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                    {
+                        AttackAnimations animations = attackComponent?.attackAnimations;
+                        if (animations != null && actor != null)
+                        {
+                            yield return StartCoroutine(
+                                animations.PlayDoubleEnvelopmentWaitAnimation(actor.transform)
+                            );
+                        }
+
+                        if (!string.IsNullOrEmpty(step.Note))
+                        {
+                            yield return StartCoroutine(ShowDialog(step.Note));
+                        }
+                    }
                     break;
 
                 case BattleStepType.OngoingActionResolved:
@@ -568,6 +589,27 @@ public class BattleResultProcessor : MonoBehaviour
                         {
                             yield return StartCoroutine(
                                 animations.PlaySiegeEndAnimation(target.transform)
+                            );
+                        }
+
+                        if (!string.IsNullOrEmpty(step.Note))
+                        {
+                            yield return StartCoroutine(ShowDialog(step.Note));
+                        }
+                    }
+                    else if (
+                        string.Equals(
+                            step.ActionType,
+                            "doubleEnvelopment",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                    {
+                        AttackAnimations animations = attackComponent?.attackAnimations;
+                        if (animations != null && target != null)
+                        {
+                            yield return StartCoroutine(
+                                animations.PlayDoubleEnvelopAttackAnimation(target.transform)
                             );
                         }
 

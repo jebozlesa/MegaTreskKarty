@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -592,6 +592,36 @@ public static class AttackRegistry
                     ctx.AttackResult
                 )
             ),
+            [46] = new AttackDefinition("Mortar", ctx =>
+                Attack46Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.AttackerSelfDamage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [47] = new AttackDefinition("Great Army", ctx =>
+                Attack47Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [49] = new AttackDefinition("Double Envelopment", ctx =>
+                Attack49Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Animations,
+                    ctx.ShowDialog
+                )
+            ),
         };
 
     public static string GetAttackName(int attackId)
@@ -614,6 +644,7 @@ public static class AttackRegistry
         return Definitions[1].Execute(context);
     }
 }
+
 
 
 
