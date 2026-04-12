@@ -78,6 +78,14 @@ public static class BattleEffectPlayback
         {
             yield return animations.PlayTetherEndAnimation(card.transform);
         }
+        else if (animations != null && effectType == 12)
+        {
+            yield return animations.PlayBlocadeEndAnimation(card.transform);
+        }
+        else if (animations != null && effectType == 13)
+        {
+            yield return animations.PlayDepressionEndAnimation(card.transform);
+        }
 
         Debug.LogWarning(
             $"[EFFECT_ICON] Removing {effectName} from {(isMyCard ? "MY" : "ENEMY")} card {card.cardName}"
@@ -170,3 +178,4 @@ public static class BattleEffectPlayback
         yield break;
     }
 }
+

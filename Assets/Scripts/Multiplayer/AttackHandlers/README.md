@@ -52,6 +52,18 @@ AttackHandlers/
   Attack46Handler.cs  - Mortar
   Attack47Handler.cs  - Great Army
   Attack49Handler.cs  - Double Envelopment
+  Attack50Handler.cs  - Continental Blockade
+  Attack51Handler.cs  - Depression
+  Attack52Handler.cs  - Self Isolation
+  Attack53Handler.cs  - Knife
+  Attack54Handler.cs  - Autoportrait
+  Attack55Handler.cs  - Gravity Pull
+  Attack56Handler.cs  - Kamikaze
+  Attack57Handler.cs  - Take Off
+  Attack58Handler.cs  - Air Strike
+  Attack59Handler.cs  - Justice Crusade
+  Attack60Handler.cs  - Rapier
+  Attack61Handler.cs  - Expeditionary Assault
   ...
   Attack123Handler.cs
 ```
@@ -124,6 +136,7 @@ switch (attackId)
 - Backfire attacks such as Attack46Handler should keep each branch explicit and still route all damage through shared playback helpers.
 - Pure self-buff attacks such as Attack47Handler should keep all stat mutation in shared stat playback and limit the handler to cast/dialog orchestration.
 - Delayed maneuver attacks such as Attack49Handler should use ongoing-action timeline flow instead of building a parallel custom effect system.
+- Status attacks such as Attack50Handler should keep the cast/apply moment in the handler and let shared effect/stat/value playback own the ongoing blockade ticks.
 
 ##  Vyhody
 
@@ -138,7 +151,17 @@ Rovnaka struktura ako server:
 - **Server:** `api/attacks/implementations/attack{ID}.js`
 - **Unity:** `AttackHandlers/Attack{ID}Handler.cs`
 
-Progress: 48/123 attacks (39.0%)
+Progress: 60/123 attacks (48.8%)
+
+
+
+
+
+
+
+
+
+
 
 
 

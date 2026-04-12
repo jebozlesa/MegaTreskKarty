@@ -622,6 +622,155 @@ public static class AttackRegistry
                     ctx.ShowDialog
                 )
             ),
+            [50] = new AttackDefinition("Continental Blockade", ctx =>
+                Attack50Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [51] = new AttackDefinition("Depression", ctx =>
+                Attack51Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [52] = new AttackDefinition("Self Isolation", ctx =>
+                Attack52Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [53] = new AttackDefinition("Knife", ctx =>
+                Attack53Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [54] = new AttackDefinition("Autoportrait", ctx =>
+                Attack54Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Animations,
+                    ctx.ShowDialog
+                )
+            ),
+            [55] = new AttackDefinition("Gravity Pull", ctx =>
+                Attack55Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [56] = new AttackDefinition("Kamikaze", ctx =>
+                Attack56Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.AttackerSelfDamage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [57] = new AttackDefinition("Take Off", ctx =>
+                Attack57Handler.Execute(
+                    ctx.Attacker,
+                    ctx.AttackerSelfDamage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [58] = new AttackDefinition("Air Strike", ctx =>
+                Attack58Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [59] = new AttackDefinition("Justice Crusade", ctx =>
+                Attack59Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog
+                )
+            ),
+            [60] = new AttackDefinition("Rapier", ctx =>
+                Attack60Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [61] = new AttackDefinition("Expeditionary Assault", ctx =>
+                Attack61Handler.Execute(
+                    ctx.Attacker,
+                    ctx.AttackerSelfDamage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
         };
 
     public static string GetAttackName(int attackId)
@@ -644,6 +793,15 @@ public static class AttackRegistry
         return Definitions[1].Execute(context);
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 

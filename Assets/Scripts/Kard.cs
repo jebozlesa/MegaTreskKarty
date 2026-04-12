@@ -549,8 +549,23 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
     Sprite iconSprite = Resources.Load<Sprite>("Game/EffectIcons/" + effectName);
     if (iconSprite == null)
     {
-        Debug.LogError("Ikonka efektu nebola nájdená: " + effectName);
-        return;
+        string placeholderPath = effectName == "Blockade"
+            ? "Game/Animations/continentalblocade"
+            : null;
+        if (!string.IsNullOrEmpty(placeholderPath))
+        {
+            iconSprite = Resources.Load<Sprite>(placeholderPath);
+            if (iconSprite != null)
+            {
+                Debug.LogWarning($"Ikonka efektu nebola nájdená: {effectName}. Používam placeholder sprite z {placeholderPath}.");
+            }
+        }
+
+        if (iconSprite == null)
+        {
+            Debug.LogError("Ikonka efektu nebola nájdená: " + effectName);
+            return;
+        }
     }
 
     // Vytvorenie unikátneho názvu pre ikonku

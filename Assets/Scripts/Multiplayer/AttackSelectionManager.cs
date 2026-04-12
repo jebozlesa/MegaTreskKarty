@@ -212,6 +212,9 @@ public class AttackSelectionManager : MonoBehaviour
         return actionType.ToLowerInvariant() switch
         {
             "siege" => "Siege",
+            "doubleenvelopment" => "Double Envelopment",
+            "artinspiration" => "Art Inspiration",
+            "autoportrait" => "Autoportrait",
             _ => char.ToUpperInvariant(actionType[0]) + actionType.Substring(1)
         };
     }

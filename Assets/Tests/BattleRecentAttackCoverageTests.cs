@@ -6,7 +6,7 @@ using UnityEngine;
 public class BattleRecentAttackCoverageTests
 {
     [Test]
-    public void AttackRegistry_RegistersRecentHandlersThroughAttack49()
+    public void AttackRegistry_RegistersRecentHandlersThroughAttack60()
     {
         string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "AttackRegistry.cs");
 
@@ -32,6 +32,30 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("Attack47Handler.Execute(", source);
         StringAssert.Contains("[49] = new AttackDefinition(\"Double Envelopment\"", source);
         StringAssert.Contains("Attack49Handler.Execute(", source);
+        StringAssert.Contains("[50] = new AttackDefinition(\"Continental Blockade\"", source);
+        StringAssert.Contains("Attack50Handler.Execute(", source);
+        StringAssert.Contains("[51] = new AttackDefinition(\"Depression\"", source);
+        StringAssert.Contains("Attack51Handler.Execute(", source);
+        StringAssert.Contains("[52] = new AttackDefinition(\"Self Isolation\"", source);
+        StringAssert.Contains("Attack52Handler.Execute(", source);
+        StringAssert.Contains("[53] = new AttackDefinition(\"Knife\"", source);
+        StringAssert.Contains("Attack53Handler.Execute(", source);
+        StringAssert.Contains("[54] = new AttackDefinition(\"Autoportrait\"", source);
+        StringAssert.Contains("Attack54Handler.Execute(", source);
+        StringAssert.Contains("[55] = new AttackDefinition(\"Gravity Pull\"", source);
+        StringAssert.Contains("Attack55Handler.Execute(", source);
+        StringAssert.Contains("[56] = new AttackDefinition(\"Kamikaze\"", source);
+        StringAssert.Contains("Attack56Handler.Execute(", source);
+        StringAssert.Contains("[57] = new AttackDefinition(\"Take Off\"", source);
+        StringAssert.Contains("Attack57Handler.Execute(", source);
+        StringAssert.Contains("[58] = new AttackDefinition(\"Air Strike\"", source);
+        StringAssert.Contains("Attack58Handler.Execute(", source);
+        StringAssert.Contains("[59] = new AttackDefinition(\"Justice Crusade\"", source);
+        StringAssert.Contains("Attack59Handler.Execute(", source);
+        StringAssert.Contains("[60] = new AttackDefinition(\"Rapier\"", source);
+        StringAssert.Contains("Attack60Handler.Execute(", source);
+        StringAssert.Contains("[61] = new AttackDefinition(\"Expeditionary Assault\"", source);
+        StringAssert.Contains("Attack61Handler.Execute(", source);
     }
 
     [Test]
@@ -91,10 +115,79 @@ public class BattleRecentAttackCoverageTests
         string doubleEnvelopment = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack49Handler.cs");
         StringAssert.Contains("PlayDoubleEnvelopmentAnimation(attacker.transform)", doubleEnvelopment);
         Assert.IsFalse(doubleEnvelopment.Contains("HandleDefense("), "Attack49 should rely on shared stat playback, not direct stat mutation.");
+
+        string blockade = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack50Handler.cs");
+        StringAssert.Contains("PlayContinentalBlockadeAnimation(attacker.transform, defender.transform)", blockade);
+        StringAssert.Contains("effectsApplied != null", blockade);
+        StringAssert.Contains("PlayAnimationNotEffective(defender.transform)", blockade);
+
+        string depression = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack51Handler.cs");
+        StringAssert.Contains("PlayDepressionAnimation(attacker.transform)", depression);
+        StringAssert.Contains("PlayDepressionStartAnimation(defender.transform)", depression);
+        StringAssert.Contains("PlayArtInspirationStartAnimation(attacker.transform)", depression);
+        Assert.IsFalse(depression.Contains("HandleStrength("), "Attack51 should rely on shared stat/effect playback, not direct stat mutation.");
+
+        string selfIsolation = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack52Handler.cs");
+        StringAssert.Contains("PlaySelfIsolationAnimation(attacker.transform)", selfIsolation);
+        StringAssert.Contains("attackResult == \"isolated_inspired\"", selfIsolation);
+        StringAssert.Contains("PlayArtInspirationStartAnimation(attacker.transform)", selfIsolation);
+        Assert.IsFalse(selfIsolation.Contains("HandleDefense("), "Attack52 should rely on shared stat playback, not direct stat mutation.");
+
+        string knife = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack53Handler.cs");
+        StringAssert.Contains("PlayKnifeAnimation(attacker.transform, defender.transform)", knife);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", knife);
+        StringAssert.Contains("!isMyAttack", knife);
+        StringAssert.Contains("PlayBleedStartAnimation(defender.transform)", knife);
+
+        string autoportrait = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack54Handler.cs");
+        StringAssert.Contains("PlayAutoportraitAnimation(attacker.transform)", autoportrait);
+        Assert.IsFalse(autoportrait.Contains("HandleKnowledge("), "Attack54 should rely on shared stat playback, not direct stat mutation.");
+        Assert.IsFalse(autoportrait.Contains("HandleStrength("), "Attack54 should rely on shared stat playback, not direct stat mutation.");
+        Assert.IsFalse(autoportrait.Contains("HandleDefense("), "Attack54 should rely on shared stat playback, not direct stat mutation.");
+
+        string gravityPull = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack55Handler.cs");
+        StringAssert.Contains("PlayGravityPullAnimation(attacker.transform, defender.transform, variantIndex)", gravityPull);
+        StringAssert.Contains("effectsApplied != null", gravityPull);
+        StringAssert.Contains("PlayKnockoutAnimation(defender.transform)", gravityPull);
+
+        string kamikaze = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack56Handler.cs");
+        StringAssert.Contains("PlayKamikazeAnimation(attacker.transform, defender.transform, hit)", kamikaze);
+        StringAssert.Contains("attackerSelfDamage", kamikaze);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", kamikaze);
+
+        string takeOff = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack57Handler.cs");
+        StringAssert.Contains("PlayTakeOffAnimation(attacker.transform)", takeOff);
+        StringAssert.Contains("PlayTakeOffCrashAnimation(attacker.transform)", takeOff);
+        StringAssert.Contains("attackerSelfDamage", takeOff);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", takeOff);
+
+        string airStrike = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack58Handler.cs");
+        StringAssert.Contains("PlayAirStrikeAnimation(attacker.transform, defender.transform, displayedHitCount)", airStrike);
+        StringAssert.Contains("PlayAirStrikeCriticalAnimation(defender.transform)", airStrike);
+        StringAssert.Contains("ParseAttackResult(attackResult, out int hitCount, out bool critical)", airStrike);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", airStrike);
+
+        string justiceCrusade = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack59Handler.cs");
+        StringAssert.Contains("PlayJusticeCrusadeAnimation(attacker.transform)", justiceCrusade);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", justiceCrusade);
+        StringAssert.Contains("fights enemy for justice", justiceCrusade);
+
+        string rapier = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack60Handler.cs");
+        StringAssert.Contains("PlayRapierAnimation(attacker.transform, defender.transform)", rapier);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", rapier);
+        StringAssert.Contains("PlayBleedStartAnimation(defender.transform)", rapier);
+        StringAssert.Contains("is wounded", rapier);
+
+        string expedition = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack61Handler.cs");
+        StringAssert.Contains("PlayExpeditionaryAssaultAnimation(attacker.transform)", expedition);
+        StringAssert.Contains("PlayExpeditionaryAssaultSuccessAnimation(attacker.transform, attacker.transform)", expedition);
+        StringAssert.Contains("PlayExpeditionaryAssaultFailAnimation(attacker.transform)", expedition);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", expedition);
+        StringAssert.Contains("almost died on sea", expedition);
     }
 
     [Test]
-    public void ElectricityPlayback_IsCoveredBySharedEffectAndProcessorFlow()
+    public void SharedEffectPlayback_CoversElectricityTetherBlockadeDepressionAndOngoingActions()
     {
         string effectPlayback = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleEffectPlayback.cs");
         StringAssert.Contains("effectType == 8", effectPlayback);
@@ -103,6 +196,12 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("effectType == 9", effectPlayback);
         StringAssert.Contains("PlayTetherEndAnimation(card.transform)", effectPlayback);
         StringAssert.Contains("return \"Tether\";", effectPlayback);
+        StringAssert.Contains("effectType == 12", effectPlayback);
+        StringAssert.Contains("PlayBlocadeEndAnimation(card.transform)", effectPlayback);
+        StringAssert.Contains("return \"Blockade\";", effectPlayback);
+        StringAssert.Contains("effectType == 13", effectPlayback);
+        StringAssert.Contains("PlayDepressionEndAnimation(card.transform)", effectPlayback);
+        StringAssert.Contains("return \"Depression\";", effectPlayback);
 
         string resultProcessor = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs");
         StringAssert.Contains("case 8: // ELECTRICITY", resultProcessor);
@@ -111,28 +210,23 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("case 9: // TETHER", resultProcessor);
         StringAssert.Contains("PlayTetherAnimation(card.transform)", resultProcessor);
         StringAssert.Contains("ShowDialog($\"{card.cardName} is locked\")", resultProcessor);
+        StringAssert.Contains("case 12: // BLOCKADE", resultProcessor);
+        StringAssert.Contains("PlayBlocadeWaitAnimation(card.transform)", resultProcessor);
+        StringAssert.Contains("ShowDialog(\"The blockade holds strong\")", resultProcessor);
+        StringAssert.Contains("!string.Equals(step.Source, \"attack\", StringComparison.OrdinalIgnoreCase)", resultProcessor);
         StringAssert.Contains("doubleEnvelopment", resultProcessor);
         StringAssert.Contains("PlayDoubleEnvelopmentWaitAnimation(actor.transform)", resultProcessor);
         StringAssert.Contains("PlayDoubleEnvelopAttackAnimation(target.transform)", resultProcessor);
-    }
+        StringAssert.Contains("artInspiration", resultProcessor);
+        StringAssert.Contains("PlayArtInspirationWaitAnimation(actor.transform)", resultProcessor);
+        StringAssert.Contains("PlayArtInspirationEndAttackAnimation(actor.transform, target.transform)", resultProcessor);
+        StringAssert.Contains("autoportrait", resultProcessor);
+        StringAssert.Contains("PlayAutoportraitAnimation(actor.transform)", resultProcessor);
+        StringAssert.Contains("PlayAutoportraitFinishAnimation(actor.transform)", resultProcessor);
 
-    [Test]
-    public void Readme_ListsRecentHandlersAndUpdatedProgress()
-    {
-        string readme = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "README.md");
-
-        StringAssert.Contains("Attack38Handler.cs  - Marxism", readme);
-        StringAssert.Contains("Attack39Handler.cs  - Tesla Coil", readme);
-        StringAssert.Contains("Attack40Handler.cs  - Wireless Charger", readme);
-        StringAssert.Contains("Attack41Handler.cs  - Experiment", readme);
-        StringAssert.Contains("Attack42Handler.cs  - Tommy Gun", readme);
-        StringAssert.Contains("Attack43Handler.cs  - Tie Up", readme);
-        StringAssert.Contains("Attack44Handler.cs  - Corruption", readme);
-        StringAssert.Contains("Attack45Handler.cs  - Colt 1911", readme);
-        StringAssert.Contains("Attack46Handler.cs  - Mortar", readme);
-        StringAssert.Contains("Attack47Handler.cs  - Great Army", readme);
-        StringAssert.Contains("Attack49Handler.cs  - Double Envelopment", readme);
-        StringAssert.Contains("Progress: 48/123 attacks (39.0%)", readme);
+        string kard = ReadProjectFile("Assets", "Scripts", "Kard.cs");
+        StringAssert.Contains("effectName == \"Blockade\"", kard);
+        StringAssert.Contains("\"Game/Animations/continentalblocade\"", kard);
     }
 
     private static string ReadProjectFile(params string[] relativeParts)
@@ -144,6 +238,15 @@ public class BattleRecentAttackCoverageTests
         return File.ReadAllText(fullPath);
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using UnityEngine;
@@ -128,6 +128,30 @@ public class BattleSharedDamagePlaybackTests
         StringAssert.Contains("PlayFamineEndAnimation(card.transform)", source);
     }
 
+
+    [Test]
+    public void BattleResultProcessor_DotTickHandlersOwnTheirDamagePlayback()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs");
+        StringAssert.Contains("case BattleStepType.BleedTick:", source);
+        StringAssert.Contains("case BattleStepType.BurnTick:", source);
+        StringAssert.Contains("case BattleStepType.ExposureTick:", source);
+        StringAssert.Contains("PlaySingleBleedAnimation(actor, step.Amount, isMyActor)", source);
+        StringAssert.Contains("PlayBurnAnimation(actor, step.Amount, isMyActor)", source);
+        StringAssert.Contains("PlayExposureAnimation(actor, step.Amount, false, isMyActor)", source);
+    }
+
+    [Test]
+    public void BattleResultProcessor_GenericDamageBranch_DoesNotReplayDotTickDamage()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs");
+        StringAssert.Contains("bool isTickDamage =", source);
+        StringAssert.Contains("string.Equals(step.Source, \"bleed\", StringComparison.OrdinalIgnoreCase)", source);
+        StringAssert.Contains("string.Equals(step.Source, \"burn\", StringComparison.OrdinalIgnoreCase)", source);
+        StringAssert.Contains("string.Equals(step.Source, \"exposure\", StringComparison.OrdinalIgnoreCase)", source);
+        StringAssert.Contains("!isTickDamage", source);
+    }
+
     [Test]
     public void BattleSubmitter_PollsViaGetBattleStatusNotDummyAttackZero()
     {
@@ -163,4 +187,6 @@ public class BattleSharedDamagePlaybackTests
         return File.ReadAllText(fullPath);
     }
 }
+
+
 

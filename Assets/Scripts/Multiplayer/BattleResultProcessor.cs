@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
@@ -579,6 +579,48 @@ public class BattleResultProcessor : MonoBehaviour
                             yield return StartCoroutine(ShowDialog(step.Note));
                         }
                     }
+                    else if (
+                        string.Equals(
+                            step.ActionType,
+                            "artInspiration",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                    {
+                        AttackAnimations animations = attackComponent?.attackAnimations;
+                        if (animations != null && actor != null)
+                        {
+                            yield return StartCoroutine(
+                                animations.PlayArtInspirationWaitAnimation(actor.transform)
+                            );
+                        }
+
+                        if (!string.IsNullOrEmpty(step.Note))
+                        {
+                            yield return StartCoroutine(ShowDialog(step.Note));
+                        }
+                    }
+                    else if (
+                        string.Equals(
+                            step.ActionType,
+                            "autoportrait",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                    {
+                        AttackAnimations animations = attackComponent?.attackAnimations;
+                        if (animations != null && actor != null)
+                        {
+                            yield return StartCoroutine(
+                                animations.PlayAutoportraitAnimation(actor.transform)
+                            );
+                        }
+
+                        if (!string.IsNullOrEmpty(step.Note))
+                        {
+                            yield return StartCoroutine(ShowDialog(step.Note));
+                        }
+                    }
                     break;
 
                 case BattleStepType.OngoingActionResolved:
@@ -618,6 +660,68 @@ public class BattleResultProcessor : MonoBehaviour
                             yield return StartCoroutine(ShowDialog(step.Note));
                         }
                     }
+                    else if (
+                        string.Equals(
+                            step.ActionType,
+                            "artInspiration",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                    {
+                        AttackAnimations animations = attackComponent?.attackAnimations;
+                        if (animations != null && actor != null)
+                        {
+                            yield return StartCoroutine(
+                                animations.PlayArtInspirationEndAnimation(actor.transform)
+                            );
+                            yield return StartCoroutine(
+                                ShowDialog($"{actor.cardName} finished his creation")
+                            );
+                        }
+
+                        if (animations != null && target != null)
+                        {
+                            yield return StartCoroutine(
+                                animations.PlayArtInspirationEndEnemyAnimation(target.transform)
+                            );
+                            yield return StartCoroutine(
+                                ShowDialog($"{target.cardName} is impressed by masterpiece")
+                            );
+                        }
+
+                        if (animations != null && actor != null && target != null)
+                        {
+                            yield return StartCoroutine(
+                                animations.PlayArtInspirationEndAttackAnimation(actor.transform, target.transform)
+                            );
+                        }
+
+                        if (!string.IsNullOrEmpty(step.Note))
+                        {
+                            yield return StartCoroutine(ShowDialog(step.Note));
+                        }
+                    }
+                    else if (
+                        string.Equals(
+                            step.ActionType,
+                            "autoportrait",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                    {
+                        AttackAnimations animations = attackComponent?.attackAnimations;
+                        if (animations != null && actor != null)
+                        {
+                            yield return StartCoroutine(
+                                animations.PlayAutoportraitFinishAnimation(actor.transform)
+                            );
+                        }
+
+                        if (!string.IsNullOrEmpty(step.Note))
+                        {
+                            yield return StartCoroutine(ShowDialog(step.Note));
+                        }
+                    }
                     break;
 
                 case BattleStepType.OngoingActionCancelled:
@@ -628,22 +732,30 @@ public class BattleResultProcessor : MonoBehaviour
                     break;
 
                 case BattleStepType.Damage:
-                    if (
-                        string.Equals(step.Source, "ongoingAction", StringComparison.OrdinalIgnoreCase)
-                        && target != null
-                    )
+                    if (target != null)
                     {
-                        bool isMyTarget = target.cardId == myCardId;
-                        yield return StartCoroutine(
-                            BattleValuePlayback.PlayDamage(
-                                target,
-                                step.Amount,
-                                isMyTarget,
-                                cardAnimator,
-                                playerLifeBar,
-                                enemyLifeBar
-                            )
-                        );
+                        bool isTickDamage =
+                            string.Equals(step.Source, "bleed", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(step.Source, "burn", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(step.Source, "exposure", StringComparison.OrdinalIgnoreCase);
+
+                        if (
+                            !isTickDamage
+                            && !string.Equals(step.Source, "attack", StringComparison.OrdinalIgnoreCase)
+                        )
+                        {
+                            bool isMyTarget = target.cardId == myCardId;
+                            yield return StartCoroutine(
+                                BattleValuePlayback.PlayDamage(
+                                    target,
+                                    step.Amount,
+                                    isMyTarget,
+                                    cardAnimator,
+                                    playerLifeBar,
+                                    enemyLifeBar
+                                )
+                            );
+                        }
                     }
                     break;
 
@@ -1980,6 +2092,12 @@ public class BattleResultProcessor : MonoBehaviour
                 yield return StartCoroutine(ShowDialog($"{card.cardName} is locked"));
                 break;
 
+            case 12: // BLOCKADE
+                Debug.LogWarning("[BLOCKADE_ONGOING] Playing blockade hold animation");
+                yield return StartCoroutine(animations.PlayBlocadeWaitAnimation(card.transform));
+                yield return StartCoroutine(ShowDialog("The blockade holds strong"));
+                break;
+
             default:
                 Debug.LogWarning(
                     $"[PlayBlockAnimation] Unknown effect type {blockedBy}, using default message"
@@ -2446,6 +2564,8 @@ public class BattleResultProcessor : MonoBehaviour
         }
     }
 }
+
+
 
 
 
