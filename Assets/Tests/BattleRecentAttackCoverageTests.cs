@@ -68,6 +68,8 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("Attack66Handler.Execute(", source);
         StringAssert.Contains("[67] = new AttackDefinition(\"Winchester\"", source);
         StringAssert.Contains("Attack67Handler.Execute(", source);
+        StringAssert.Contains("[82] = new AttackDefinition(\"Iaijutsu\"", source);
+        StringAssert.Contains("Attack82Handler.Execute(", source);
         StringAssert.Contains("[68] = new AttackDefinition(\"Ambush\"", source);
         StringAssert.Contains("Attack68Handler.Execute(", source);
         StringAssert.Contains("[69] = new AttackDefinition(\"Space Rocket\"", source);
@@ -84,6 +86,40 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("Attack74Handler.Execute(", source);
         StringAssert.Contains("[75] = new AttackDefinition(\"Iambic Pentameter\"", source);
         StringAssert.Contains("Attack75Handler.Execute(", source);
+        StringAssert.Contains("[76] = new AttackDefinition(\"Ghost\"", source);
+        StringAssert.Contains("Attack76Handler.Execute(", source);
+        StringAssert.Contains("[77] = new AttackDefinition(\"Buffalo Horns\"", source);
+        StringAssert.Contains("Attack77Handler.Execute(", source);
+        StringAssert.Contains("[78] = new AttackDefinition(\"Iklwa\"", source);
+        StringAssert.Contains("Attack78Handler.Execute(", source);
+        StringAssert.Contains("[79] = new AttackDefinition(\"Iwisa\"", source);
+        StringAssert.Contains("Attack79Handler.Execute(", source);
+        StringAssert.Contains("[80] = new AttackDefinition(\"Niten Ichi-ryū\"", source);
+        StringAssert.Contains("Attack80Handler.Execute(", source);
+        StringAssert.Contains("[81] = new AttackDefinition(\"Tessenjutsu\"", source);
+        StringAssert.Contains("Attack81Handler.Execute(", source);
+        StringAssert.Contains("[68] = new AttackDefinition(\"Ambush\"", source);
+        StringAssert.Contains("Attack68Handler.Execute(", source);
+        StringAssert.Contains("[69] = new AttackDefinition(\"Space Rocket\"", source);
+        StringAssert.Contains("Attack69Handler.Execute(", source);
+        StringAssert.Contains("[70] = new AttackDefinition(\"V-2\"", source);
+        StringAssert.Contains("Attack70Handler.Execute(", source);
+        StringAssert.Contains("[71] = new AttackDefinition(\"Battle Cry\"", source);
+        StringAssert.Contains("Attack71Handler.Execute(", source);
+        StringAssert.Contains("[72] = new AttackDefinition(\"Revelation\"", source);
+        StringAssert.Contains("Attack72Handler.Execute(", source);
+        StringAssert.Contains("[73] = new AttackDefinition(\"Standard\"", source);
+        StringAssert.Contains("Attack73Handler.Execute(", source);
+        StringAssert.Contains("[74] = new AttackDefinition(\"Pen\"", source);
+        StringAssert.Contains("Attack74Handler.Execute(", source);
+        StringAssert.Contains("[75] = new AttackDefinition(\"Iambic Pentameter\"", source);
+        StringAssert.Contains("Attack75Handler.Execute(", source);
+        StringAssert.Contains("[76] = new AttackDefinition(\"Ghost\"", source);
+        StringAssert.Contains("Attack76Handler.Execute(", source);
+        StringAssert.Contains("[77] = new AttackDefinition(\"Buffalo Horns\"", source);
+        StringAssert.Contains("Attack77Handler.Execute(", source);
+        StringAssert.Contains("[78] = new AttackDefinition(\"Iklwa\"", source);
+        StringAssert.Contains("Attack78Handler.Execute(", source);
     }
 
     [Test]
@@ -299,6 +335,50 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("BattleValuePlayback.PlayHeal(", iambicPentameter);
         StringAssert.Contains("does not understand", iambicPentameter);
         StringAssert.Contains("likes this poetry", iambicPentameter);
+
+        string ghost = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack76Handler.cs");
+        StringAssert.Contains("PlayGhostAnimation(attacker.transform, defender.transform)", ghost);
+        StringAssert.Contains("PlayFearStartAnimation(defender.transform)", ghost);
+        StringAssert.Contains("PlayAnimationNotEffective(defender.transform)", ghost);
+        StringAssert.Contains("summons ghost", ghost);
+        StringAssert.Contains("does not fear", ghost);
+
+        string buffaloHorns = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack77Handler.cs");
+        StringAssert.Contains("PlayBuffaloHornsAnimation(attacker.transform)", buffaloHorns);
+        StringAssert.Contains("uses Buffalo Horns", buffaloHorns);
+        StringAssert.Contains("Launching the maneuver!", buffaloHorns);
+
+        string iklwa = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack78Handler.cs");
+        StringAssert.Contains("PlayIklwaAnimation(attacker.transform, defender.transform, hit)", iklwa);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", iklwa);
+        StringAssert.Contains("PlayBleedStartAnimation(defender.transform)", iklwa);
+        StringAssert.Contains("uses Iklwa", iklwa);
+        StringAssert.Contains("throw missed", iklwa);
+
+        string iwisa = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack79Handler.cs");
+        StringAssert.Contains("PlayIwisaAnimation(attacker.transform, defender.transform)", iwisa);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", iwisa);
+        StringAssert.Contains("PlayKnockoutAnimation(defender.transform)", iwisa);
+        StringAssert.Contains("uses Iwisa", iwisa);
+        StringAssert.Contains("attacks with Iwisa", iwisa);
+
+        string nitenIchiRyu = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack80Handler.cs");
+        StringAssert.Contains("PlayNitenIchiRyuKatanaAnimation(attacker.transform, defender.transform)", nitenIchiRyu);
+        StringAssert.Contains("PlayNitenIchiRyuWakizashiAnimation(attacker.transform, defender.transform)", nitenIchiRyu);
+        StringAssert.Contains("ParseSplitDamage", nitenIchiRyu);
+        StringAssert.Contains("uses Niten Ichi-Ryu", nitenIchiRyu);
+        StringAssert.Contains("attacks wit Katana and Wakizashi", nitenIchiRyu);
+
+        string tessenjutsu = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack81Handler.cs");
+        StringAssert.Contains("PlayTessenjutsuAnimation(attacker.transform)", tessenjutsu);
+        StringAssert.Contains("uses Tessenjutsu", tessenjutsu);
+        StringAssert.Contains("moves like Kitana", tessenjutsu);
+
+        string iaijutsu = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack82Handler.cs");
+        StringAssert.Contains("PlayIaijutsuAnimation(attacker.transform, defender.transform)", iaijutsu);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", iaijutsu);
+        StringAssert.Contains("uses Iaijutsu", iaijutsu);
+        StringAssert.Contains("Flash of steel by", iaijutsu);
     }
 
     [Test]
@@ -317,6 +397,9 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("effectType == 13", effectPlayback);
         StringAssert.Contains("PlayDepressionEndAnimation(card.transform)", effectPlayback);
         StringAssert.Contains("return \"Depression\";", effectPlayback);
+        StringAssert.Contains("effectType == 19", effectPlayback);
+        StringAssert.Contains("PlayFearEndAnimation(card.transform)", effectPlayback);
+        StringAssert.Contains("return \"Fear\";", effectPlayback);
 
         string resultProcessor = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs");
         StringAssert.Contains("case 8: // ELECTRICITY", resultProcessor);
@@ -338,6 +421,9 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("autoportrait", resultProcessor);
         StringAssert.Contains("PlayAutoportraitAnimation(actor.transform)", resultProcessor);
         StringAssert.Contains("PlayAutoportraitFinishAnimation(actor.transform)", resultProcessor);
+        StringAssert.Contains("buffaloHorns", resultProcessor);
+        StringAssert.Contains("PlayBuffaloHornsContinueAnimation(actor.transform)", resultProcessor);
+        StringAssert.Contains("PlayBuffaloHornsEndAnimation(", resultProcessor);
         StringAssert.Contains("case BattleStepType.SatelliteTick:", resultProcessor);
         StringAssert.Contains("PlaySatelliteAnimation(actor.transform)", resultProcessor);
         StringAssert.Contains("!string.IsNullOrEmpty(step.Note)", resultProcessor);

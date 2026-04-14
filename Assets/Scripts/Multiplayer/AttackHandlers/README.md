@@ -78,6 +78,13 @@ AttackHandlers/
   Attack73Handler.cs  - Standard
   Attack74Handler.cs  - Pen
   Attack75Handler.cs  - Iambic Pentameter
+  Attack76Handler.cs  - Ghost
+  Attack77Handler.cs  - Buffalo Horns
+  Attack78Handler.cs  - Iklwa
+  Attack79Handler.cs  - Iwisa
+  Attack80Handler.cs  - Niten Ichi-ryu
+  Attack81Handler.cs  - Tessenjutsu
+  Attack82Handler.cs  - Iaijutsu
   ...
   Attack123Handler.cs
 ```

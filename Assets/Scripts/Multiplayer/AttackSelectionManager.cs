@@ -215,6 +215,7 @@ public class AttackSelectionManager : MonoBehaviour
             "doubleenvelopment" => "Double Envelopment",
             "artinspiration" => "Art Inspiration",
             "autoportrait" => "Autoportrait",
+            "buffalohorns" => "Buffalo Horns",
             _ => char.ToUpperInvariant(actionType[0]) + actionType.Substring(1)
         };
     }

@@ -641,6 +641,27 @@ public class BattleResultProcessor : MonoBehaviour
                             yield return StartCoroutine(ShowDialog(step.Note));
                         }
                     }
+                    else if (
+                        string.Equals(
+                            step.ActionType,
+                            "buffaloHorns",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                    {
+                        AttackAnimations animations = attackComponent?.attackAnimations;
+                        if (animations != null && actor != null)
+                        {
+                            yield return StartCoroutine(
+                                animations.PlayBuffaloHornsContinueAnimation(actor.transform)
+                            );
+                        }
+
+                        if (!string.IsNullOrEmpty(step.Note))
+                        {
+                            yield return StartCoroutine(ShowDialog(step.Note));
+                        }
+                    }
                     break;
 
                 case BattleStepType.OngoingActionResolved:
@@ -734,6 +755,30 @@ public class BattleResultProcessor : MonoBehaviour
                         {
                             yield return StartCoroutine(
                                 animations.PlayAutoportraitFinishAnimation(actor.transform)
+                            );
+                        }
+
+                        if (!string.IsNullOrEmpty(step.Note))
+                        {
+                            yield return StartCoroutine(ShowDialog(step.Note));
+                        }
+                    }
+                    else if (
+                        string.Equals(
+                            step.ActionType,
+                            "buffaloHorns",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                    {
+                        AttackAnimations animations = attackComponent?.attackAnimations;
+                        if (animations != null && actor != null && target != null)
+                        {
+                            yield return StartCoroutine(
+                                animations.PlayBuffaloHornsEndAnimation(
+                                    actor.transform,
+                                    target.transform
+                                )
                             );
                         }
 

@@ -945,6 +945,88 @@ public static class AttackRegistry
                     ctx.AttackResult
                 )
             ),
+            [76] = new AttackDefinition("Ghost", ctx =>
+                Attack76Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [77] = new AttackDefinition("Buffalo Horns", ctx =>
+                Attack77Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Animations,
+                    ctx.ShowDialog
+                )
+            ),
+            [78] = new AttackDefinition("Iklwa", ctx =>
+                Attack78Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [79] = new AttackDefinition("Iwisa", ctx =>
+                Attack79Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [80] = new AttackDefinition("Niten Ichi-ryū", ctx =>
+                Attack80Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [81] = new AttackDefinition("Tessenjutsu", ctx =>
+                Attack81Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [82] = new AttackDefinition("Iaijutsu", ctx =>
+                Attack82Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
         };
 
     public static string GetAttackName(int attackId)

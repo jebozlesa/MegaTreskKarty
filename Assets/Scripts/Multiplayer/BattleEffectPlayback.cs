@@ -86,6 +86,10 @@ public static class BattleEffectPlayback
         {
             yield return animations.PlayDepressionEndAnimation(card.transform);
         }
+        else if (animations != null && effectType == 19)
+        {
+            yield return animations.PlayFearEndAnimation(card.transform);
+        }
 
         Debug.LogWarning(
             $"[EFFECT_ICON] Removing {effectName} from {(isMyCard ? "MY" : "ENEMY")} card {card.cardName}"
