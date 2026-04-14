@@ -233,7 +233,7 @@ public class AttackDescriptions : MonoBehaviour
             case 68://Ambush
                 count = 5 + (attacker.charisma / 2);
                 break;
-            case 69://JupiterC
+            case 69://SpaceRocket
                 count = 3 + (attacker.knowledge / 3);
                 break;
             case 70://V2
@@ -1017,7 +1017,7 @@ public class AttackDescriptions : MonoBehaviour
                 Ambush(buttonText);
                 break;
             case 69:
-                JupiterC(buttonText);
+                SpaceRocket(buttonText);
                 break;
             case 70:
                 V2(buttonText);
@@ -1591,7 +1591,7 @@ public class AttackDescriptions : MonoBehaviour
         buttonText.text = "Ambush";
     }
     //69
-    public void JupiterC(TMP_Text buttonText)
+    public void SpaceRocket(TMP_Text buttonText)
     {
         buttonText.text = "Space Rocket";
     }
@@ -1938,7 +1938,7 @@ public class AttackDescriptions : MonoBehaviour
             case 66: return "Carcano M91";
             case 67: return "Winchester";
             case 68: return "Ambush";
-            case 69: return "Jupiter-C";
+            case 69: return "Space Rocket";
             case 70: return "V-2";
             case 71: return "Battle Cry";
             case 72: return "Revelation";

@@ -536,6 +536,26 @@ public class BattleResultProcessor : MonoBehaviour
                     }
                     break;
 
+                case BattleStepType.SatelliteTick:
+                    if (actor != null)
+                    {
+                        AttackAnimations animations = attackComponent?.attackAnimations;
+                        if (animations != null)
+                        {
+                            yield return StartCoroutine(
+                                animations.PlaySatelliteAnimation(actor.transform)
+                            );
+                        }
+
+                        if (!string.IsNullOrEmpty(step.Note))
+                        {
+                            yield return StartCoroutine(ShowDialog(step.Note));
+                        }
+
+                        yield return new WaitForSeconds(0.2f);
+                    }
+                    break;
+
                 case BattleStepType.OngoingActionStarted:
                     Debug.Log(
                         $"[TimelinePilot] Ongoing action started: type={step.ActionType}, actor={step.ActorCardId}, target={step.TargetCardId}, turnsRemaining={step.TurnsRemaining}"

@@ -771,6 +771,180 @@ public static class AttackRegistry
                     ctx.AttackResult
                 )
             ),
+            [62] = new AttackDefinition("Culverin", ctx =>
+                Attack62Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [63] = new AttackDefinition("Fire Ship", ctx =>
+                Attack63Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [64] = new AttackDefinition("Handcuff Escape", ctx =>
+                Attack64Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [65] = new AttackDefinition("Illusion", ctx =>
+                Attack65Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [66] = new AttackDefinition("Carcano M91", ctx =>
+                Attack66Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [67] = new AttackDefinition("Winchester", ctx =>
+                Attack67Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [68] = new AttackDefinition("Ambush", ctx =>
+                Attack68Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [69] = new AttackDefinition("Space Rocket", ctx =>
+                Attack69Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [70] = new AttackDefinition("V-2", ctx =>
+                Attack70Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [71] = new AttackDefinition("Battle Cry", ctx =>
+                Attack71Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [72] = new AttackDefinition("Revelation", ctx =>
+                Attack72Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [73] = new AttackDefinition("Standard", ctx =>
+                Attack73Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [74] = new AttackDefinition("Pen", ctx =>
+                Attack74Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [75] = new AttackDefinition("Iambic Pentameter", ctx =>
+                Attack75Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
         };
 
     public static string GetAttackName(int attackId)
@@ -793,6 +967,14 @@ public static class AttackRegistry
         return Definitions[1].Execute(context);
     }
 }
+
+
+
+
+
+
+
+
 
 
 

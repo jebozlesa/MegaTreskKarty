@@ -315,7 +315,7 @@ public class Attack : MonoBehaviour
                 yield return StartCoroutine(Ambush(attacker, receiver, dialogText));
                 break;
             case 69:
-                yield return StartCoroutine(JupiterC(attacker, receiver, dialogText));
+                yield return StartCoroutine(SpaceRocket(attacker, receiver, dialogText));
                 break;
             case 70:
                 yield return StartCoroutine(V2(attacker, receiver, dialogText));
@@ -1653,7 +1653,7 @@ public class Attack : MonoBehaviour
     }
 
     //69
-    public IEnumerator JupiterC(Kard attacker, Kard receiver, TMP_Text dialogText)
+    public IEnumerator SpaceRocket(Kard attacker, Kard receiver, TMP_Text dialogText)
     {
         yield return StartCoroutine(ShowAttackDialog(dialogText, attacker.cardName + " uses Space Rocket"));
         if (UnityEngine.Random.value <= Mathf.Min(1f, 0.7f))// && !attacker.CheckEffect(18))
@@ -1670,7 +1670,7 @@ public class Attack : MonoBehaviour
             attacker.HandleKnowledge(1);
             attacker.HandleCharisma(-2);
         }
-        Debug.Log(attacker.cardName + " -> JupiterC => " + receiver.cardName);
+        Debug.Log(attacker.cardName + " -> SpaceRocket => " + receiver.cardName);
     }
 
     //70

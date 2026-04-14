@@ -64,6 +64,20 @@ AttackHandlers/
   Attack59Handler.cs  - Justice Crusade
   Attack60Handler.cs  - Rapier
   Attack61Handler.cs  - Expeditionary Assault
+  Attack62Handler.cs  - Culverin
+  Attack63Handler.cs  - Fire Ship
+  Attack64Handler.cs  - Handcuff Escape
+  Attack65Handler.cs  - Illusion
+  Attack66Handler.cs  - Carcano M91
+  Attack67Handler.cs  - Winchester
+  Attack68Handler.cs  - Ambush
+  Attack69Handler.cs  - Space Rocket
+  Attack70Handler.cs  - V-2
+  Attack71Handler.cs  - Battle Cry
+  Attack72Handler.cs  - Revelation
+  Attack73Handler.cs  - Standard
+  Attack74Handler.cs  - Pen
+  Attack75Handler.cs  - Iambic Pentameter
   ...
   Attack123Handler.cs
 ```
@@ -151,7 +165,12 @@ Rovnaka struktura ako server:
 - **Server:** `api/attacks/implementations/attack{ID}.js`
 - **Unity:** `AttackHandlers/Attack{ID}Handler.cs`
 
-Progress: 60/123 attacks (48.8%)
+Progress: 73/123 attacks (59.3%)
+
+
+
+
+
 
 
 

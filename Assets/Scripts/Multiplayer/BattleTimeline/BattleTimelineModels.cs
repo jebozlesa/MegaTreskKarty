@@ -17,6 +17,7 @@ public enum BattleStepType
     Recovery,
     EffectApplied,
     EffectRemoved,
+    SatelliteTick,
     OngoingActionStarted,
     OngoingActionProgress,
     OngoingActionResolved,
