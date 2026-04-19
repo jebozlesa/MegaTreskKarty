@@ -9,117 +9,20 @@ public class BattleRecentAttackCoverageTests
     public void AttackRegistry_RegistersRecentHandlersThroughAttack60()
     {
         string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "AttackRegistry.cs");
+        int[] recentAttackIds =
+        {
+            38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+            49, 50, 51, 52, 53, 54, 55, 56, 57, 58,
+            59, 60, 61, 62, 63, 64, 65, 66, 67, 68,
+            69, 70, 71, 72, 73, 74, 75, 76, 77, 78,
+            79, 80, 81, 82, 83, 84, 85, 86, 87, 88,
+            89, 90, 91, 92, 93, 94, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 123,
+        };
 
-        StringAssert.Contains("[38] = new AttackDefinition(\"Marxism\"", source);
-        StringAssert.Contains("Attack38Handler.Execute(", source);
-        StringAssert.Contains("[39] = new AttackDefinition(\"Tesla Coil\"", source);
-        StringAssert.Contains("Attack39Handler.Execute(", source);
-        StringAssert.Contains("[40] = new AttackDefinition(\"Wireless Charger\"", source);
-        StringAssert.Contains("Attack40Handler.Execute(", source);
-        StringAssert.Contains("[41] = new AttackDefinition(\"Experiment\"", source);
-        StringAssert.Contains("Attack41Handler.Execute(", source);
-        StringAssert.Contains("[42] = new AttackDefinition(\"Tommy Gun\"", source);
-        StringAssert.Contains("Attack42Handler.Execute(", source);
-        StringAssert.Contains("[43] = new AttackDefinition(\"Tie Up\"", source);
-        StringAssert.Contains("Attack43Handler.Execute(", source);
-        StringAssert.Contains("[44] = new AttackDefinition(\"Corruption\"", source);
-        StringAssert.Contains("Attack44Handler.Execute(", source);
-        StringAssert.Contains("[45] = new AttackDefinition(\"Colt 1911\"", source);
-        StringAssert.Contains("Attack45Handler.Execute(", source);
-        StringAssert.Contains("[46] = new AttackDefinition(\"Mortar\"", source);
-        StringAssert.Contains("Attack46Handler.Execute(", source);
-        StringAssert.Contains("[47] = new AttackDefinition(\"Great Army\"", source);
-        StringAssert.Contains("Attack47Handler.Execute(", source);
-        StringAssert.Contains("[49] = new AttackDefinition(\"Double Envelopment\"", source);
-        StringAssert.Contains("Attack49Handler.Execute(", source);
-        StringAssert.Contains("[50] = new AttackDefinition(\"Continental Blockade\"", source);
-        StringAssert.Contains("Attack50Handler.Execute(", source);
-        StringAssert.Contains("[51] = new AttackDefinition(\"Depression\"", source);
-        StringAssert.Contains("Attack51Handler.Execute(", source);
-        StringAssert.Contains("[52] = new AttackDefinition(\"Self Isolation\"", source);
-        StringAssert.Contains("Attack52Handler.Execute(", source);
-        StringAssert.Contains("[53] = new AttackDefinition(\"Knife\"", source);
-        StringAssert.Contains("Attack53Handler.Execute(", source);
-        StringAssert.Contains("[54] = new AttackDefinition(\"Autoportrait\"", source);
-        StringAssert.Contains("Attack54Handler.Execute(", source);
-        StringAssert.Contains("[55] = new AttackDefinition(\"Gravity Pull\"", source);
-        StringAssert.Contains("Attack55Handler.Execute(", source);
-        StringAssert.Contains("[56] = new AttackDefinition(\"Kamikaze\"", source);
-        StringAssert.Contains("Attack56Handler.Execute(", source);
-        StringAssert.Contains("[57] = new AttackDefinition(\"Take Off\"", source);
-        StringAssert.Contains("Attack57Handler.Execute(", source);
-        StringAssert.Contains("[58] = new AttackDefinition(\"Air Strike\"", source);
-        StringAssert.Contains("Attack58Handler.Execute(", source);
-        StringAssert.Contains("[59] = new AttackDefinition(\"Justice Crusade\"", source);
-        StringAssert.Contains("Attack59Handler.Execute(", source);
-        StringAssert.Contains("[60] = new AttackDefinition(\"Rapier\"", source);
-        StringAssert.Contains("Attack60Handler.Execute(", source);
-        StringAssert.Contains("[61] = new AttackDefinition(\"Expeditionary Assault\"", source);
-        StringAssert.Contains("Attack61Handler.Execute(", source);
-        StringAssert.Contains("[62] = new AttackDefinition(\"Culverin\"", source);
-        StringAssert.Contains("Attack62Handler.Execute(", source);
-        StringAssert.Contains("[63] = new AttackDefinition(\"Fire Ship\"", source);
-        StringAssert.Contains("Attack63Handler.Execute(", source);
-        StringAssert.Contains("[64] = new AttackDefinition(\"Handcuff Escape\"", source);
-        StringAssert.Contains("Attack64Handler.Execute(", source);
-        StringAssert.Contains("[65] = new AttackDefinition(\"Illusion\"", source);
-        StringAssert.Contains("Attack65Handler.Execute(", source);
-        StringAssert.Contains("[66] = new AttackDefinition(\"Carcano M91\"", source);
-        StringAssert.Contains("Attack66Handler.Execute(", source);
-        StringAssert.Contains("[67] = new AttackDefinition(\"Winchester\"", source);
-        StringAssert.Contains("Attack67Handler.Execute(", source);
-        StringAssert.Contains("[82] = new AttackDefinition(\"Iaijutsu\"", source);
-        StringAssert.Contains("Attack82Handler.Execute(", source);
-        StringAssert.Contains("[68] = new AttackDefinition(\"Ambush\"", source);
-        StringAssert.Contains("Attack68Handler.Execute(", source);
-        StringAssert.Contains("[69] = new AttackDefinition(\"Space Rocket\"", source);
-        StringAssert.Contains("Attack69Handler.Execute(", source);
-        StringAssert.Contains("[70] = new AttackDefinition(\"V-2\"", source);
-        StringAssert.Contains("Attack70Handler.Execute(", source);
-        StringAssert.Contains("[71] = new AttackDefinition(\"Battle Cry\"", source);
-        StringAssert.Contains("Attack71Handler.Execute(", source);
-        StringAssert.Contains("[72] = new AttackDefinition(\"Revelation\"", source);
-        StringAssert.Contains("Attack72Handler.Execute(", source);
-        StringAssert.Contains("[73] = new AttackDefinition(\"Standard\"", source);
-        StringAssert.Contains("Attack73Handler.Execute(", source);
-        StringAssert.Contains("[74] = new AttackDefinition(\"Pen\"", source);
-        StringAssert.Contains("Attack74Handler.Execute(", source);
-        StringAssert.Contains("[75] = new AttackDefinition(\"Iambic Pentameter\"", source);
-        StringAssert.Contains("Attack75Handler.Execute(", source);
-        StringAssert.Contains("[76] = new AttackDefinition(\"Ghost\"", source);
-        StringAssert.Contains("Attack76Handler.Execute(", source);
-        StringAssert.Contains("[77] = new AttackDefinition(\"Buffalo Horns\"", source);
-        StringAssert.Contains("Attack77Handler.Execute(", source);
-        StringAssert.Contains("[78] = new AttackDefinition(\"Iklwa\"", source);
-        StringAssert.Contains("Attack78Handler.Execute(", source);
-        StringAssert.Contains("[79] = new AttackDefinition(\"Iwisa\"", source);
-        StringAssert.Contains("Attack79Handler.Execute(", source);
-        StringAssert.Contains("[80] = new AttackDefinition(\"Niten Ichi-ryū\"", source);
-        StringAssert.Contains("Attack80Handler.Execute(", source);
-        StringAssert.Contains("[81] = new AttackDefinition(\"Tessenjutsu\"", source);
-        StringAssert.Contains("Attack81Handler.Execute(", source);
-        StringAssert.Contains("[68] = new AttackDefinition(\"Ambush\"", source);
-        StringAssert.Contains("Attack68Handler.Execute(", source);
-        StringAssert.Contains("[69] = new AttackDefinition(\"Space Rocket\"", source);
-        StringAssert.Contains("Attack69Handler.Execute(", source);
-        StringAssert.Contains("[70] = new AttackDefinition(\"V-2\"", source);
-        StringAssert.Contains("Attack70Handler.Execute(", source);
-        StringAssert.Contains("[71] = new AttackDefinition(\"Battle Cry\"", source);
-        StringAssert.Contains("Attack71Handler.Execute(", source);
-        StringAssert.Contains("[72] = new AttackDefinition(\"Revelation\"", source);
-        StringAssert.Contains("Attack72Handler.Execute(", source);
-        StringAssert.Contains("[73] = new AttackDefinition(\"Standard\"", source);
-        StringAssert.Contains("Attack73Handler.Execute(", source);
-        StringAssert.Contains("[74] = new AttackDefinition(\"Pen\"", source);
-        StringAssert.Contains("Attack74Handler.Execute(", source);
-        StringAssert.Contains("[75] = new AttackDefinition(\"Iambic Pentameter\"", source);
-        StringAssert.Contains("Attack75Handler.Execute(", source);
-        StringAssert.Contains("[76] = new AttackDefinition(\"Ghost\"", source);
-        StringAssert.Contains("Attack76Handler.Execute(", source);
-        StringAssert.Contains("[77] = new AttackDefinition(\"Buffalo Horns\"", source);
-        StringAssert.Contains("Attack77Handler.Execute(", source);
-        StringAssert.Contains("[78] = new AttackDefinition(\"Iklwa\"", source);
-        StringAssert.Contains("Attack78Handler.Execute(", source);
+        foreach (int attackId in recentAttackIds)
+        {
+            AssertRegistryEntry(source, attackId);
+        }
     }
 
     [Test]
@@ -242,6 +145,12 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("PlayBleedStartAnimation(defender.transform)", rapier);
         StringAssert.Contains("is wounded", rapier);
 
+        string curse = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack123Handler.cs");
+        StringAssert.Contains("PlayCurseAnimation(attacker.transform, defender.transform)", curse);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", curse);
+        StringAssert.Contains("uses Curse", curse);
+        StringAssert.Contains("curses the enemy", curse);
+
         string expedition = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack61Handler.cs");
         StringAssert.Contains("PlayExpeditionaryAssaultAnimation(attacker.transform)", expedition);
         StringAssert.Contains("PlayExpeditionaryAssaultSuccessAnimation(attacker.transform, attacker.transform)", expedition);
@@ -286,6 +195,259 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("BattleValuePlayback.PlayDamage(", winchester);
         StringAssert.Contains("Bang! aaaand miss", winchester);
         StringAssert.Contains("Bang! {attacker.cardName} shoots", winchester);
+
+        string yumi = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack85Handler.cs");
+        StringAssert.Contains("PlayYumiAnimation(attacker.transform, defender.transform, hit)", yumi);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", yumi);
+        StringAssert.Contains("uses Yumi", yumi);
+        StringAssert.Contains("arrow missed", yumi);
+        StringAssert.Contains("shoots arrow", yumi);
+
+        string jujutsu = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack86Handler.cs");
+        StringAssert.Contains("PlayJujutsuAnimation(attacker.transform, defender.transform)", jujutsu);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", jujutsu);
+        StringAssert.Contains("uses Jujutsu", jujutsu);
+        StringAssert.Contains("Jujutsu Takedown", jujutsu);
+
+        string espionage = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack87Handler.cs");
+        StringAssert.Contains("PlayEspionageAnimation(attacker.transform, defender.transform)", espionage);
+        StringAssert.Contains("uses Espionage", espionage);
+        StringAssert.Contains("spies on enemy", espionage);
+
+        string sabre = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack88Handler.cs");
+        StringAssert.Contains("PlaySabreAnimation(attacker.transform, defender.transform)", sabre);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", sabre);
+        StringAssert.Contains("uses Sabre", sabre);
+        StringAssert.Contains("cuts with Sabre", sabre);
+
+        string gamble = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack89Handler.cs");
+        StringAssert.Contains("PlayGambleAnimation(attacker.transform, defender.transform, attackResult == \"win\")", gamble);
+        StringAssert.Contains("uses Gamble", gamble);
+        StringAssert.Contains("is taking bets", gamble);
+
+        string philosophy = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack90Handler.cs");
+        StringAssert.Contains("PlayPhilosophyAnimation(attacker.transform)", philosophy);
+        StringAssert.Contains("PlayAnimationImpressed(defender.transform)", philosophy);
+        StringAssert.Contains("PlayBoredomAnimation(defender.transform)", philosophy);
+        StringAssert.Contains("PlayConfusionStartAnimation(defender.transform)", philosophy);
+        StringAssert.Contains("uses Philosophy", philosophy);
+        StringAssert.Contains("philosophizes!!!", philosophy);
+        StringAssert.Contains("Attack has no effect", philosophy);
+
+        string calm = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack91Handler.cs");
+        StringAssert.Contains("PlayCalmAnimation(attacker.transform)", calm);
+        StringAssert.Contains("PlayCalmStartAnimation(defender.transform)", calm);
+        StringAssert.Contains("PlayAnimationNotEffective(defender.transform)", calm);
+        StringAssert.Contains("uses Calm", calm);
+        StringAssert.Contains("trying to calm enemy", calm);
+        StringAssert.Contains("is calm already", calm);
+        StringAssert.Contains("And wins", gamble);
+        StringAssert.Contains("And loses", gamble);
+
+        string honesty = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack92Handler.cs");
+        StringAssert.Contains("PlayHonestyAnimation(attacker.transform)", honesty);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", honesty);
+        StringAssert.Contains("PlayDepressionStartAnimation(defender.transform)", honesty);
+        StringAssert.Contains("uses Honesty", honesty);
+        StringAssert.Contains("is brutally honest", honesty);
+        StringAssert.Contains("feels bad for enemy", honesty);
+
+        string valaska = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack93Handler.cs");
+        StringAssert.Contains("PlayValaskaAnimation(attacker.transform, defender.transform)", valaska);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", valaska);
+        StringAssert.Contains("PlayBleedStartAnimation(defender.transform)", valaska);
+        StringAssert.Contains("uses Valaska", valaska);
+        StringAssert.Contains("valaska strikes", valaska);
+        StringAssert.Contains("is wounded", valaska);
+
+        string moonshine = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack94Handler.cs");
+        StringAssert.Contains("PlayMoonshineAnimation(attacker.transform)", moonshine);
+        StringAssert.Contains("BattleValuePlayback.PlayHeal(", moonshine);
+        StringAssert.Contains("PlayFuryAnimation(attacker.transform)", moonshine);
+        StringAssert.Contains("PlayDrunkAnimation(attacker.transform)", moonshine);
+        StringAssert.Contains("uses Moonshine", moonshine);
+        StringAssert.Contains("is getting pretty drunk", moonshine);
+        StringAssert.Contains("is furious!", moonshine);
+        StringAssert.Contains("falls asleep", moonshine);
+
+        string flintlock = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack96Handler.cs");
+        StringAssert.Contains("PlayFlintlockPistolLoadingAnimation(attacker.transform)", flintlock);
+        StringAssert.Contains("uses Flintlock Pistol", flintlock);
+        StringAssert.Contains("is loading the pistol", flintlock);
+
+        string passiveResistance = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack97Handler.cs");
+        StringAssert.Contains("PlayPassiveResistanceAnimation(attacker.transform)", passiveResistance);
+        StringAssert.Contains("uses Passive Resistance", passiveResistance);
+        StringAssert.Contains("is resisting passively!!!", passiveResistance);
+
+        string hungerStrike = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack98Handler.cs");
+        StringAssert.Contains("PlayHungerStrikeAnimation(attacker.transform)", hungerStrike);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", hungerStrike);
+        StringAssert.Contains("PlayDepressionStartAnimation(defender.transform)", hungerStrike);
+        StringAssert.Contains("uses Hunger Strike", hungerStrike);
+        StringAssert.Contains("refuses to eat", hungerStrike);
+        StringAssert.Contains("doesn't care", hungerStrike);
+
+        string gladius = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack99Handler.cs");
+        StringAssert.Contains("PlayGladiusAnimation(attacker.transform, defender.transform)", gladius);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", gladius);
+        StringAssert.Contains("uses Gladius", gladius);
+        StringAssert.Contains("attacks with gladius", gladius);
+
+        string shieldBash = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack100Handler.cs");
+        StringAssert.Contains("PlayShieldBashAnimation(attacker.transform, defender.transform)", shieldBash);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", shieldBash);
+        StringAssert.Contains("uses Shield Bash", shieldBash);
+        StringAssert.Contains("smashes with his shield", shieldBash);
+
+        string yperit = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack101Handler.cs");
+        StringAssert.Contains("PlayYperitSuccessAnimation(attacker.transform, defender.transform)", yperit);
+        StringAssert.Contains("PlayYperitFailAnimation(attacker.transform)", yperit);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", yperit);
+        StringAssert.Contains("uses Yperit", yperit);
+        StringAssert.Contains("Yperit strikes", yperit);
+        StringAssert.Contains("A breeze blows", yperit);
+
+        string blitzkrieg = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack102Handler.cs");
+        StringAssert.Contains("PlayBlitzkriegAnimation(attacker.transform, defender.transform)", blitzkrieg);
+        StringAssert.Contains("PlayAnimationNotEffective(defender.transform)", blitzkrieg);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", blitzkrieg);
+        StringAssert.Contains("uses Blitzkrieg", blitzkrieg);
+        StringAssert.Contains("Too slow", blitzkrieg);
+        StringAssert.Contains("uses Blitzkrieg tactics", blitzkrieg);
+
+        string propaganda = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack103Handler.cs");
+        StringAssert.Contains("PlayPropagandaAnimation(attacker.transform, defender.transform)", propaganda);
+        StringAssert.Contains("uses Propaganda", propaganda);
+        StringAssert.Contains("was hit by propaganda", propaganda);
+
+        string retiarius = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack104Handler.cs");
+        StringAssert.Contains("PlayRetiariusAnimation(attacker.transform, defender.transform)", retiarius);
+        StringAssert.Contains("PlayAnimationTiedUp(defender.transform)", retiarius);
+        StringAssert.Contains("PlayAnimationNotEffective(defender.transform)", retiarius);
+        StringAssert.Contains("uses Retiarius", retiarius);
+        StringAssert.Contains("throws the net", retiarius);
+        StringAssert.Contains("was captured", retiarius);
+        StringAssert.Contains("jumped away", retiarius);
+
+        string shuriken = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack105Handler.cs");
+        StringAssert.Contains("PlayShurikenAnimation(attacker.transform, defender.transform, hit)", shuriken);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", shuriken);
+        StringAssert.Contains("uses Shuriken", shuriken);
+        StringAssert.Contains("throw missed", shuriken);
+        StringAssert.Contains("hrows stars", shuriken);
+
+        string kusarigama = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack106Handler.cs");
+        StringAssert.Contains("PlayKusarigamaAnimation(attacker.transform, defender.transform)", kusarigama);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", kusarigama);
+        StringAssert.Contains("PlayAnimationTiedUp(defender.transform)", kusarigama);
+        StringAssert.Contains("uses Kusarigama", kusarigama);
+        StringAssert.Contains("Kusarigama strikes", kusarigama);
+        StringAssert.Contains("is trapped in chain", kusarigama);
+
+        string comboPlayback = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "ComboAttackPlayback.cs");
+        StringAssert.Contains("JObject.Parse(parentContext.AttackResult)", comboPlayback);
+        StringAssert.Contains("AttackRegistry.ExecuteOrFallback(subAttackId, subAttackContext)", comboPlayback);
+
+        string ninjutsu = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack107Handler.cs");
+        StringAssert.Contains("uses Ninjutsu", ninjutsu);
+        StringAssert.Contains("ComboAttackPlayback.PlaySequence(comboContext)", ninjutsu);
+        string shaolinSoccer = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack121Handler.cs");
+        StringAssert.Contains("uses Shaolin Soccer", shaolinSoccer);
+        StringAssert.Contains("ComboAttackPlayback.PlaySequence(comboContext)", shaolinSoccer);
+
+
+        string orientalSpice = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack108Handler.cs");
+        StringAssert.Contains("PlayOrientalSpiceAnimation(attacker.transform, defender.transform)", orientalSpice);
+        StringAssert.Contains("offers some spices to enemy", orientalSpice);
+        StringAssert.Contains("PlayPoisonStartAnimation(defender.transform)", orientalSpice);
+        StringAssert.Contains("PlayAnimationNotEffective(defender.transform)", orientalSpice);
+        StringAssert.Contains("Poison has no effect", orientalSpice);
+
+        string arquebus = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack109Handler.cs");
+        StringAssert.Contains("PlayArquebusExplosionAnimation(attacker.transform)", arquebus);
+        StringAssert.Contains("PlayArquebusShotAnimation(attacker.transform, defender.transform, true)", arquebus);
+        StringAssert.Contains("PlayArquebusShotAnimation(attacker.transform, defender.transform, false)", arquebus);
+        StringAssert.Contains("Arquebus exploded", arquebus);
+        StringAssert.Contains("Bang! aaaand miss", arquebus);
+
+        string pirateRaid = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack110Handler.cs");
+        StringAssert.Contains("PlayPirateRaidAnimation(attacker.transform, defender.transform)", pirateRaid);
+        StringAssert.Contains("PlayPirateRaidFailAnimation(attacker.transform, defender.transform)", pirateRaid);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", pirateRaid);
+        StringAssert.Contains("Raiding didn't go well", pirateRaid);
+        StringAssert.Contains("raids the enemy", pirateRaid);
+
+        string axe = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack111Handler.cs");
+        StringAssert.Contains("PlayAxeAnimation(attacker.transform, defender.transform)", axe);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", axe);
+        StringAssert.Contains("attacks with axe", axe);
+        StringAssert.Contains("PlayBleedStartAnimation(defender.transform)", axe);
+        StringAssert.Contains("is wounded", axe);
+
+        string jaguarWarriors = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack112Handler.cs");
+        StringAssert.Contains("PlayJaguarWarriorsAnimation(attacker.transform, defender.transform)", jaguarWarriors);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", jaguarWarriors);
+        StringAssert.Contains("sends Jaguar Warriors", jaguarWarriors);
+
+        string atlatl = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack113Handler.cs");
+        StringAssert.Contains("PlayAtlatlAnimation(attacker.transform, defender.transform, hit)", atlatl);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", atlatl);
+        StringAssert.Contains("throws spear", atlatl);
+        StringAssert.Contains("spear missed", atlatl);
+        StringAssert.Contains("PlayBleedStartAnimation(defender.transform)", atlatl);
+
+        string macuahuitl = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack114Handler.cs");
+        StringAssert.Contains("PlayMacuahuitlAnimation(attacker.transform, defender.transform)", macuahuitl);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", macuahuitl);
+        StringAssert.Contains("PlayBleedStartAnimation(defender.transform)", macuahuitl);
+        StringAssert.Contains("PlayKnockoutAnimation(defender.transform)", macuahuitl);
+        StringAssert.Contains("smashes with Macuahuitl", macuahuitl);
+
+        string cubism = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack115Handler.cs");
+        StringAssert.Contains("PlayCubismAnimation(attacker.transform)", cubism);
+        StringAssert.Contains("PlayConfusionStartAnimation(defender.transform)", cubism);
+        StringAssert.Contains("BattleValuePlayback.PlayHeal(", cubism);
+        StringAssert.Contains("uses Cubism", cubism);
+        StringAssert.Contains("picture confuses the enemy", cubism);
+        StringAssert.Contains("likes this art", cubism);
+
+        string cosaNostra = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack116Handler.cs");
+        StringAssert.Contains("PlayCosaNostraAnimation(attacker.transform, defender.transform)", cosaNostra);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", cosaNostra);
+        StringAssert.Contains("uses Cosa Nostra", cosaNostra);
+        StringAssert.Contains("orders mafia to attack", cosaNostra);
+
+        string actAFool = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack117Handler.cs");
+        StringAssert.Contains("PlayActAnimation(attacker.transform)", actAFool);
+        StringAssert.Contains("PlayAnimationTerrified(defender.transform)", actAFool);
+        StringAssert.Contains("PlayAnimationImpressed(defender.transform)", actAFool);
+        StringAssert.Contains("uses Act a fool", actAFool);
+        StringAssert.Contains("behaves like insane", actAFool);
+        StringAssert.Contains("is scared", actAFool);
+        StringAssert.Contains("is impressed", actAFool);
+
+        string football = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack118Handler.cs");
+        StringAssert.Contains("PlayFootballAnimation(attacker.transform, defender.transform, hit)", football);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", football);
+        StringAssert.Contains("PlayKnockoutAnimation(defender.transform)", football);
+        StringAssert.Contains("uses Football", football);
+        StringAssert.Contains("kicks football", football);
+        StringAssert.Contains("kick missed", football);
+        StringAssert.Contains("is KO", football);
+
+        string bicycleKick = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack119Handler.cs");
+        StringAssert.Contains("PlayBicycleKickAnimation(attacker.transform, defender.transform)", bicycleKick);
+        StringAssert.Contains("PlayBicycleKickFailAnimation(attacker.transform)", bicycleKick);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", bicycleKick);
+        StringAssert.Contains("uses Bicycle Kick", bicycleKick);
+        StringAssert.Contains("Plesk! Big kick from", bicycleKick);
+        StringAssert.Contains("faces gravity", bicycleKick);
+
+        string worldChampion = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack120Handler.cs");
+        StringAssert.Contains("PlayWorldChampionAnimation(attacker.transform)", worldChampion);
+        StringAssert.Contains("uses World Champion", worldChampion);
+        StringAssert.Contains("is world champion", worldChampion);
 
         string ambush = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack68Handler.cs");
         StringAssert.Contains("PlayAmbushAnimation(defender.transform)", ambush);
@@ -379,6 +541,20 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("BattleValuePlayback.PlayDamage(", iaijutsu);
         StringAssert.Contains("uses Iaijutsu", iaijutsu);
         StringAssert.Contains("Flash of steel by", iaijutsu);
+
+        string katana = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack83Handler.cs");
+        StringAssert.Contains("PlayKatanaAnimation(attacker.transform, defender.transform)", katana);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", katana);
+        StringAssert.Contains("PlayBleedStartAnimation(defender.transform)", katana);
+        StringAssert.Contains("uses Katana", katana);
+        StringAssert.Contains("slashes with katana", katana);
+
+        string nodachi = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack84Handler.cs");
+        StringAssert.Contains("PlayNodachiAnimation(attacker.transform, defender.transform)", nodachi);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", nodachi);
+        StringAssert.Contains("PlayBleedStartAnimation(defender.transform)", nodachi);
+        StringAssert.Contains("uses Nodachi", nodachi);
+        StringAssert.Contains("slashes with Nodachi", nodachi);
     }
 
     [Test]
@@ -424,6 +600,9 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("buffaloHorns", resultProcessor);
         StringAssert.Contains("PlayBuffaloHornsContinueAnimation(actor.transform)", resultProcessor);
         StringAssert.Contains("PlayBuffaloHornsEndAnimation(", resultProcessor);
+        StringAssert.Contains("flintlockPistol", resultProcessor);
+        StringAssert.Contains("PlayFlintlockPistolLoadingAnimation(actor.transform)", resultProcessor);
+        StringAssert.Contains("PlayFlintlockPistolShotAnimation(", resultProcessor);
         StringAssert.Contains("case BattleStepType.SatelliteTick:", resultProcessor);
         StringAssert.Contains("PlaySatelliteAnimation(actor.transform)", resultProcessor);
         StringAssert.Contains("!string.IsNullOrEmpty(step.Note)", resultProcessor);
@@ -434,6 +613,11 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("\"Game/Animations/continentalblocade\"", kard);
     }
 
+    private static void AssertRegistryEntry(string source, int attackId)
+    {
+        StringAssert.Contains($"[{attackId}] = new AttackDefinition(", source);
+        StringAssert.Contains($"Attack{attackId}Handler.Execute(", source);
+    }
     private static string ReadProjectFile(params string[] relativeParts)
     {
         var allParts = new List<string> { Application.dataPath };
@@ -443,6 +627,23 @@ public class BattleRecentAttackCoverageTests
         return File.ReadAllText(fullPath);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

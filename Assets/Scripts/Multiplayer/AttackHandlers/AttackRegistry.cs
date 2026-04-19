@@ -991,7 +991,7 @@ public static class AttackRegistry
                     ctx.AttackResult
                 )
             ),
-            [80] = new AttackDefinition("Niten Ichi-ryū", ctx =>
+            [80] = new AttackDefinition("Niten Ichi-ryu", ctx =>
                 Attack80Handler.Execute(
                     ctx.Attacker,
                     ctx.Defender,
@@ -1027,6 +1027,520 @@ public static class AttackRegistry
                     ctx.AttackResult
                 )
             ),
+            [83] = new AttackDefinition("Katana", ctx =>
+                Attack83Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [84] = new AttackDefinition("Nodachi", ctx =>
+                Attack84Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [85] = new AttackDefinition("Yumi", ctx =>
+                Attack85Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [86] = new AttackDefinition("Jujutsu", ctx =>
+                Attack86Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog
+                )
+            ),
+            [87] = new AttackDefinition("Espionage", ctx =>
+                Attack87Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog
+                )
+            ),
+            [88] = new AttackDefinition("Sabre", ctx =>
+                Attack88Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [89] = new AttackDefinition("Gamble", ctx =>
+                Attack89Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [90] = new AttackDefinition("Philosophy", ctx =>
+                Attack90Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [91] = new AttackDefinition("Calm", ctx =>
+                Attack91Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [92] = new AttackDefinition("Honesty", ctx =>
+                Attack92Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [93] = new AttackDefinition("Valaska", ctx =>
+                Attack93Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [94] = new AttackDefinition("Moonshine", ctx =>
+                Attack94Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.HealAmount,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackerEffects,
+                    ctx.AttackResult
+                )
+            ),
+            [96] = new AttackDefinition("Flintlock Pistol", ctx =>
+                Attack96Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Animations,
+                    ctx.ShowDialog
+                )
+            ),
+            [97] = new AttackDefinition("Passive Resistance", ctx =>
+                Attack97Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [98] = new AttackDefinition("Hunger Strike", ctx =>
+                Attack98Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.AttackerSelfDamage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [99] = new AttackDefinition("Gladius", ctx =>
+                Attack99Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [100] = new AttackDefinition("Shield Bash", ctx =>
+                Attack100Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [101] = new AttackDefinition("Yperit", ctx =>
+                Attack101Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.AttackerSelfDamage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [102] = new AttackDefinition("Blitzkrieg", ctx =>
+                Attack102Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.AttackerSelfDamage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [103] = new AttackDefinition("Propaganda", ctx =>
+                Attack103Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [104] = new AttackDefinition("Retiarius", ctx =>
+                Attack104Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [105] = new AttackDefinition("Shuriken", ctx =>
+                Attack105Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [106] = new AttackDefinition("Kusarigama", ctx =>
+                Attack106Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [107] = new AttackDefinition("Ninjutsu", ctx =>
+                Attack107Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [108] = new AttackDefinition("Oriental Spice", ctx =>
+                Attack108Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [109] = new AttackDefinition("Arquebus", ctx =>
+                Attack109Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [110] = new AttackDefinition("Pirate Raid", ctx =>
+                Attack110Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.AttackerSelfDamage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [111] = new AttackDefinition("Axe", ctx =>
+                Attack111Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [112] = new AttackDefinition("Jaguar Warriors", ctx =>
+                Attack112Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [113] = new AttackDefinition("Atlatl", ctx =>
+                Attack113Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [114] = new AttackDefinition("Macuahuitl", ctx =>
+                Attack114Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [115] = new AttackDefinition("Cubism", ctx =>
+                Attack115Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.HealAmount,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [116] = new AttackDefinition("La Cosa Nostra", ctx =>
+                Attack116Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [117] = new AttackDefinition("Act a fool", ctx =>
+                Attack117Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [118] = new AttackDefinition("Football", ctx =>
+                Attack118Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
+                    ctx.AttackResult
+                )
+            ),
+            [119] = new AttackDefinition("Bicycle Kick", ctx =>
+                Attack119Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.AttackerSelfDamage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [120] = new AttackDefinition("World Champion", ctx =>
+                Attack120Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [121] = new AttackDefinition("Shaolin Soccer", ctx =>
+                Attack121Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [123] = new AttackDefinition("Curse", ctx =>
+                Attack123Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
         };
 
     public static string GetAttackName(int attackId)
@@ -1049,6 +1563,18 @@ public static class AttackRegistry
         return Definitions[1].Execute(context);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

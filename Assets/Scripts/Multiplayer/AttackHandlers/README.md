@@ -85,8 +85,46 @@ AttackHandlers/
   Attack80Handler.cs  - Niten Ichi-ryu
   Attack81Handler.cs  - Tessenjutsu
   Attack82Handler.cs  - Iaijutsu
+  Attack83Handler.cs  - Katana
+  Attack84Handler.cs  - Nodachi
+  Attack85Handler.cs  - Yumi
+  Attack86Handler.cs  - Jujutsu
+  Attack87Handler.cs  - Espionage
+  Attack88Handler.cs  - Sabre
+  Attack89Handler.cs  - Gamble
+  Attack90Handler.cs  - Philosophy
+  Attack91Handler.cs  - Calm
+  Attack92Handler.cs  - Honesty
+  Attack94Handler.cs  - Moonshine
+  Attack96Handler.cs  - Flintlock Pistol
+  Attack97Handler.cs  - Passive Resistance
+  Attack98Handler.cs  - Hunger Strike
+  Attack99Handler.cs  - Gladius
+  Attack100Handler.cs - Shield Bash
+  Attack101Handler.cs - Yperit
+  Attack102Handler.cs - Blitzkrieg
+  Attack103Handler.cs - Propaganda
+  Attack104Handler.cs - Retiarius
+  Attack105Handler.cs - Shuriken
+  Attack106Handler.cs - Kusarigama
+  Attack107Handler.cs - Ninjutsu
+  Attack108Handler.cs - Oriental Spice
+  Attack109Handler.cs - Arquebus
+  Attack110Handler.cs - Pirate Raid
+  Attack111Handler.cs - Axe
+  Attack112Handler.cs - Jaguar Warriors
+  Attack113Handler.cs - Atlatl
+  Attack114Handler.cs - Macuahuitl
+  Attack115Handler.cs - Cubism
+  Attack116Handler.cs - La Cosa Nostra
+  Attack117Handler.cs - Act a fool
+  Attack118Handler.cs - Football
+  Attack119Handler.cs - Bicycle Kick
+  Attack120Handler.cs - World Champion
+  Attack121Handler.cs - Shaolin Soccer
+  ComboAttackPlayback.cs - Reusable combo/composite playback helper
   ...
-  Attack123Handler.cs
+  Attack123Handler.cs - Curse
 ```
 
 ##  Pattern
@@ -146,6 +184,7 @@ switch (attackId)
 - Attack handlers must not call AnimateStatChange(...) directly for battle-result stat changes.
 - BattleResultProcessor and attack handlers should use BattleStatPlayback for shared stat mutation + popup playback.
 - BattleResultProcessor and attack handlers should use BattleEffectPlayback for shared effect icon and effect-end visual playback.
+- Combo attacks should serialize chosen sub-attacks in `attackResult` and replay them through `ComboAttackPlayback`.
 - Server-driven stat changes are rendered only through shared battle playback/timeline flow in BattleResultProcessor.
 - Standard target damage and self-heal playback should default to BattleValuePlayback shared helpers.
 - New handlers should focus on attack animation, sequencing, special-case visuals, and dialogs.
@@ -173,6 +212,19 @@ Rovnaka struktura ako server:
 - **Unity:** `AttackHandlers/Attack{ID}Handler.cs`
 
 Progress: 73/123 attacks (59.3%)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
