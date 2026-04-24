@@ -1,267 +1,187 @@
 # Attack Handlers
 
-Modularna struktura pre attack animacie a logiku v multiplayer systeme.
+Client multiplayer attack playback lives here.
 
-##  Struktura
+Last updated: 2026-04-24
 
+## Current Status
+
+- Implemented handlers: `121/123`
+- Implemented IDs: `1-30`, `32-47`, `49-123`
+- Missing IDs: `31`, `48`
+
+## Core Files
+
+- `Attack{ID}Handler.cs` - per-attack playback/animation orchestration
+- `AttackRegistry.cs` - central client registry and dispatch
+- `ComboAttackPlayback.cs` - shared combo/composite attack playback
+- `BattleValuePlayback.cs` - shared damage/heal playback
+- `BattleStatPlayback.cs` - shared stat playback
+- `BattleEffectPlayback.cs` - shared effect playback
+
+## Important Rule
+
+Attack handlers should focus on:
+
+- attack animation sequencing
+- branch-specific visuals
+- dialogs
+- exceptional timing only when really needed
+
+Attack handlers should not reimplement ordinary shared battle mutation.
+
+Use shared playback for:
+
+- target damage
+- self damage
+- heals
+- stat changes
+- effect icon/effect-end visuals
+
+## Registry Pattern
+
+New handlers are wired through `AttackRegistry.cs`, not through a giant switch in `BattleResultProcessor.cs`.
+
+Standard flow:
+
+1. create `Attack{ID}Handler.cs`
+2. add `[ID] = new AttackDefinition(...)` to `AttackRegistry.cs`
+3. add the file to `Assembly-CSharp.csproj`
+4. update this README
+5. update `Assets/Tests/BattleRecentAttackCoverageTests.cs`
+
+## Combo Attacks
+
+Composite attacks such as `107` and `121` should use:
+
+- server: serialized combo payload in `attackResult`
+- client: `ComboAttackPlayback.cs`
+
+Do not build one-off combo playback when the shared helper fits.
+
+## Implemented Handler Files
+
+```text
+Attack1Handler.cs   - Punch
+Attack2Handler.cs   - Kick
+Attack3Handler.cs   - Heal
+Attack4Handler.cs   - Forgiveness
+Attack5Handler.cs   - Crusade
+Attack6Handler.cs   - Water To Wine
+Attack7Handler.cs   - Car Hit
+Attack8Handler.cs   - Monkey Wrench
+Attack9Handler.cs   - Radiation
+Attack10Handler.cs  - Scratch
+Attack11Handler.cs  - Scientific Lecture
+Attack12Handler.cs  - Chi Sau
+Attack13Handler.cs  - One Inch Punch
+Attack14Handler.cs  - Up In Smoke
+Attack15Handler.cs  - Sing
+Attack16Handler.cs  - Revolver
+Attack17Handler.cs  - Artillery Regiment
+Attack18Handler.cs  - Bloodthirst
+Attack19Handler.cs  - Sword
+Attack20Handler.cs  - Pike
+Attack21Handler.cs  - Terrify
+Attack22Handler.cs  - Drink Wine
+Attack23Handler.cs  - Flaming Gun
+Attack24Handler.cs  - Cleaver
+Attack25Handler.cs  - Pan
+Attack26Handler.cs  - Boost
+Attack27Handler.cs  - Temptation
+Attack28Handler.cs  - Shamshir
+Attack29Handler.cs  - Diplomacy
+Attack30Handler.cs  - Siege
+Attack32Handler.cs  - Tomahawk
+Attack33Handler.cs  - Peace Pipe
+Attack34Handler.cs  - Recurve Bow
+Attack35Handler.cs  - Fury
+Attack36Handler.cs  - Guerilla
+Attack37Handler.cs  - Famine
+Attack38Handler.cs  - Marxism
+Attack39Handler.cs  - Tesla Coil
+Attack40Handler.cs  - Wireless Charger
+Attack41Handler.cs  - Experiment
+Attack42Handler.cs  - Tommy Gun
+Attack43Handler.cs  - Tie Up
+Attack44Handler.cs  - Corruption
+Attack45Handler.cs  - Colt 1911
+Attack46Handler.cs  - Mortar
+Attack47Handler.cs  - Great Army
+Attack49Handler.cs  - Double Envelopment
+Attack50Handler.cs  - Continental Blockade
+Attack51Handler.cs  - Depression
+Attack52Handler.cs  - Self Isolation
+Attack53Handler.cs  - Knife
+Attack54Handler.cs  - Autoportrait
+Attack55Handler.cs  - Gravity Pull
+Attack56Handler.cs  - Kamikaze
+Attack57Handler.cs  - Take Off
+Attack58Handler.cs  - Air Strike
+Attack59Handler.cs  - Justice Crusade
+Attack60Handler.cs  - Rapier
+Attack61Handler.cs  - Expeditionary Assault
+Attack62Handler.cs  - Culverin
+Attack63Handler.cs  - Fire Ship
+Attack64Handler.cs  - Handcuff Escape
+Attack65Handler.cs  - Illusion
+Attack66Handler.cs  - Carcano M91
+Attack67Handler.cs  - Winchester
+Attack68Handler.cs  - Ambush
+Attack69Handler.cs  - Space Rocket
+Attack70Handler.cs  - V-2
+Attack71Handler.cs  - Battle Cry
+Attack72Handler.cs  - Revelation
+Attack73Handler.cs  - Standard
+Attack74Handler.cs  - Pen
+Attack75Handler.cs  - Iambic Pentameter
+Attack76Handler.cs  - Ghost
+Attack77Handler.cs  - Buffalo Horns
+Attack78Handler.cs  - Iklwa
+Attack79Handler.cs  - Iwisa
+Attack80Handler.cs  - Niten Ichi-ryu
+Attack81Handler.cs  - Tessenjutsu
+Attack82Handler.cs  - Iaijutsu
+Attack83Handler.cs  - Katana
+Attack84Handler.cs  - Nodachi
+Attack85Handler.cs  - Yumi
+Attack86Handler.cs  - Jujutsu
+Attack87Handler.cs  - Espionage
+Attack88Handler.cs  - Sabre
+Attack89Handler.cs  - Gamble
+Attack90Handler.cs  - Philosophy
+Attack91Handler.cs  - Calm
+Attack92Handler.cs  - Honesty
+Attack93Handler.cs  - Valaska
+Attack94Handler.cs  - Moonshine
+Attack95Handler.cs  - Outlaw Band
+Attack96Handler.cs  - Flintlock Pistol
+Attack97Handler.cs  - Passive Resistance
+Attack98Handler.cs  - Hunger Strike
+Attack99Handler.cs  - Gladius
+Attack100Handler.cs - Shield Bash
+Attack101Handler.cs - Yperit
+Attack102Handler.cs - Blitzkrieg
+Attack103Handler.cs - Propaganda
+Attack104Handler.cs - Retiarius
+Attack105Handler.cs - Shuriken
+Attack106Handler.cs - Kusarigama
+Attack107Handler.cs - Ninjutsu
+Attack108Handler.cs - Oriental Spice
+Attack109Handler.cs - Arquebus
+Attack110Handler.cs - Pirate Raid
+Attack111Handler.cs - Axe
+Attack112Handler.cs - Jaguar Warriors
+Attack113Handler.cs - Atlatl
+Attack114Handler.cs - Macuahuitl
+Attack115Handler.cs - Cubism
+Attack116Handler.cs - La Cosa Nostra
+Attack117Handler.cs - Act a fool
+Attack118Handler.cs - Football
+Attack119Handler.cs - Bicycle Kick
+Attack120Handler.cs - World Champion
+Attack121Handler.cs - Shaolin Soccer
+Attack122Handler.cs - Sport Skills
+Attack123Handler.cs - Curse
+ComboAttackPlayback.cs - shared combo playback helper
 ```
-AttackHandlers/
-  Attack1Handler.cs   - Punch (Sleep 20%)
-  Attack2Handler.cs   - Kick (Crit 20%)
-  Attack3Handler.cs   - Heal (Self-heal + cleanse)
-  Attack4Handler.cs   - Forgiveness (Asceticism 75%)
-  Attack5Handler.cs   - Crusade (STR damage + DEF debuff)
-  Attack6Handler.cs   - WaterToWine (Self buff)
-  Attack7Handler.cs   - CarHit (Random damage, multi-effect)
-  Attack8Handler.cs   - MonkeyWrench (STR/2 + crit/sleep)
-  Attack9Handler.cs   - Radiation (Exposure risk)
-  Attack10Handler.cs  - Scratch (Bleed 20%)
-  Attack11Handler.cs  - Scientific Lecture
-  Attack12Handler.cs  - Chi Sau
-  Attack13Handler.cs  - One Inch Punch
-  Attack14Handler.cs  - Up In Smoke
-  Attack15Handler.cs  - Sing
-  Attack16Handler.cs  - Revolver
-  Attack17Handler.cs  - Artillery Regiment
-  Attack18Handler.cs  - Bloodthirst
-  Attack19Handler.cs  - Sword
-  Attack20Handler.cs  - Pike
-  Attack21Handler.cs  - Terrify
-  Attack22Handler.cs  - Drink Wine
-  Attack23Handler.cs  - Flaming Gun
-  Attack24Handler.cs  - Cleaver
-  Attack25Handler.cs  - Pan
-  Attack26Handler.cs  - Boost
-  Attack27Handler.cs  - Temptation
-  Attack28Handler.cs  - Shamshir
-  Attack29Handler.cs  - Diplomacy
-  Attack30Handler.cs  - Siege
-  Attack32Handler.cs  - Tomahawk
-  Attack33Handler.cs  - Peace Pipe
-  Attack35Handler.cs  - Fury
-  Attack36Handler.cs  - Guerilla
-  Attack37Handler.cs  - Famine
-  Attack38Handler.cs  - Marxism
-  Attack39Handler.cs  - Tesla Coil
-  Attack40Handler.cs  - Wireless Charger
-  Attack41Handler.cs  - Experiment
-  Attack42Handler.cs  - Tommy Gun
-  Attack43Handler.cs  - Tie Up
-  Attack44Handler.cs  - Corruption
-  Attack45Handler.cs  - Colt 1911
-  Attack46Handler.cs  - Mortar
-  Attack47Handler.cs  - Great Army
-  Attack49Handler.cs  - Double Envelopment
-  Attack50Handler.cs  - Continental Blockade
-  Attack51Handler.cs  - Depression
-  Attack52Handler.cs  - Self Isolation
-  Attack53Handler.cs  - Knife
-  Attack54Handler.cs  - Autoportrait
-  Attack55Handler.cs  - Gravity Pull
-  Attack56Handler.cs  - Kamikaze
-  Attack57Handler.cs  - Take Off
-  Attack58Handler.cs  - Air Strike
-  Attack59Handler.cs  - Justice Crusade
-  Attack60Handler.cs  - Rapier
-  Attack61Handler.cs  - Expeditionary Assault
-  Attack62Handler.cs  - Culverin
-  Attack63Handler.cs  - Fire Ship
-  Attack64Handler.cs  - Handcuff Escape
-  Attack65Handler.cs  - Illusion
-  Attack66Handler.cs  - Carcano M91
-  Attack67Handler.cs  - Winchester
-  Attack68Handler.cs  - Ambush
-  Attack69Handler.cs  - Space Rocket
-  Attack70Handler.cs  - V-2
-  Attack71Handler.cs  - Battle Cry
-  Attack72Handler.cs  - Revelation
-  Attack73Handler.cs  - Standard
-  Attack74Handler.cs  - Pen
-  Attack75Handler.cs  - Iambic Pentameter
-  Attack76Handler.cs  - Ghost
-  Attack77Handler.cs  - Buffalo Horns
-  Attack78Handler.cs  - Iklwa
-  Attack79Handler.cs  - Iwisa
-  Attack80Handler.cs  - Niten Ichi-ryu
-  Attack81Handler.cs  - Tessenjutsu
-  Attack82Handler.cs  - Iaijutsu
-  Attack83Handler.cs  - Katana
-  Attack84Handler.cs  - Nodachi
-  Attack85Handler.cs  - Yumi
-  Attack86Handler.cs  - Jujutsu
-  Attack87Handler.cs  - Espionage
-  Attack88Handler.cs  - Sabre
-  Attack89Handler.cs  - Gamble
-  Attack90Handler.cs  - Philosophy
-  Attack91Handler.cs  - Calm
-  Attack92Handler.cs  - Honesty
-  Attack94Handler.cs  - Moonshine
-  Attack96Handler.cs  - Flintlock Pistol
-  Attack97Handler.cs  - Passive Resistance
-  Attack98Handler.cs  - Hunger Strike
-  Attack99Handler.cs  - Gladius
-  Attack100Handler.cs - Shield Bash
-  Attack101Handler.cs - Yperit
-  Attack102Handler.cs - Blitzkrieg
-  Attack103Handler.cs - Propaganda
-  Attack104Handler.cs - Retiarius
-  Attack105Handler.cs - Shuriken
-  Attack106Handler.cs - Kusarigama
-  Attack107Handler.cs - Ninjutsu
-  Attack108Handler.cs - Oriental Spice
-  Attack109Handler.cs - Arquebus
-  Attack110Handler.cs - Pirate Raid
-  Attack111Handler.cs - Axe
-  Attack112Handler.cs - Jaguar Warriors
-  Attack113Handler.cs - Atlatl
-  Attack114Handler.cs - Macuahuitl
-  Attack115Handler.cs - Cubism
-  Attack116Handler.cs - La Cosa Nostra
-  Attack117Handler.cs - Act a fool
-  Attack118Handler.cs - Football
-  Attack119Handler.cs - Bicycle Kick
-  Attack120Handler.cs - World Champion
-  Attack121Handler.cs - Shaolin Soccer
-  ComboAttackPlayback.cs - Reusable combo/composite playback helper
-  ...
-  Attack123Handler.cs - Curse
-```
-
-##  Pattern
-
-Kazdy handler ma static Execute() metodu:
-
-```csharp
-public class Attack{ID}Handler
-{
-    public static IEnumerator Execute(
-        Kard attacker,
-        Kard defender,
-        int damage,
-        bool isMyAttack,
-        AttackAnimations animations,
-        CardAnimator cardAnimator,
-        HPBar playerLifeBar,
-        HPBar enemyLifeBar,
-        System.Func<string, IEnumerator> showDialog)
-    {
-        yield return showDialog($"{attacker.cardName} uses AttackName!");
-        yield return animations.PlayAttackAnimation(...);
-        
-        // Apply damage/heal/buffs/debuffs
-        // Update HP bars
-        // Show result dialog
-    }
-}
-```
-
-## [RETRY] Routing
-
-`BattleResultProcessor.cs` -> `ExecuteAttackAnimation()` vola handler:
-
-```csharp
-switch (attackId)
-{
-    case 1:
-        yield return Attack1Handler.Execute(...);
-        break;
-    case 2:
-        yield return Attack2Handler.Execute(...);
-        break;
-    // ... 123 cases total
-}
-```
-
-##  Pridat dalsi Attack
-
-1. **Create handler:** `Attack{ID}Handler.cs`
-2. **Add case:** BattleResultProcessor.cs (+3 lines)
-3. **Done!**
-
-## Stat Rules
-
-- Attack handlers must not call HandleAttack/HandleStrength/HandleDefense/HandleKnowledge/HandleSpeed/HandleCharisma directly for battle-result stat changes.
-- Attack handlers must not call AnimateStatChange(...) directly for battle-result stat changes.
-- BattleResultProcessor and attack handlers should use BattleStatPlayback for shared stat mutation + popup playback.
-- BattleResultProcessor and attack handlers should use BattleEffectPlayback for shared effect icon and effect-end visual playback.
-- Combo attacks should serialize chosen sub-attacks in `attackResult` and replay them through `ComboAttackPlayback`.
-- Server-driven stat changes are rendered only through shared battle playback/timeline flow in BattleResultProcessor.
-- Standard target damage and self-heal playback should default to BattleValuePlayback shared helpers.
-- New handlers should focus on attack animation, sequencing, special-case visuals, and dialogs.
-- Do not add fallback damage logic in BattleResultProcessor for ordinary attack damage.
-- Do not add new ordinary attack handlers that manually subtract defender HP unless the mechanic truly requires custom damage timing.
-- Explicit timing exceptions such as Attack7Handler and Attack41Handler must stay documented and intentional.
-- Pure stat attacks such as Attack38Handler and Attack44Handler should keep mutation in shared stat playback and leave only cast/dialog flow in the handler.
-- Simple ranged hit/miss attacks such as Attack34Handler and Attack45Handler should branch from server-provided attackResult and keep target damage in BattleValuePlayback.
-- Backfire attacks such as Attack46Handler should keep each branch explicit and still route all damage through shared playback helpers.
-- Pure self-buff attacks such as Attack47Handler should keep all stat mutation in shared stat playback and limit the handler to cast/dialog orchestration.
-- Delayed maneuver attacks such as Attack49Handler should use ongoing-action timeline flow instead of building a parallel custom effect system.
-- Status attacks such as Attack50Handler should keep the cast/apply moment in the handler and let shared effect/stat/value playback own the ongoing blockade ticks.
-
-##  Vyhody
-
-- **Modularnost:** 123 suborov po ~30-100 lines vs 1 switch 2000+ lines
-- **Udrzba:** Kazdy utok samostatne testovatelny
-- **Skalovatelnost:** Attack 123 = 123 handlers + minimal router
-- **Citatelnost:** Attack9Handler.cs = iba Radiation logic
-
-##  Server Parity
-
-Rovnaka struktura ako server:
-- **Server:** `api/attacks/implementations/attack{ID}.js`
-- **Unity:** `AttackHandlers/Attack{ID}Handler.cs`
-
-Progress: 73/123 attacks (59.3%)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

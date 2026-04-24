@@ -1185,6 +1185,21 @@ public static class AttackRegistry
                     ctx.AttackResult
                 )
             ),
+            [95] = new AttackDefinition("Outlaw Band", ctx =>
+                Attack95Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Damage,
+                    ctx.AttackerSelfDamage,
+                    ctx.IsMyAttack,
+                    ctx.Animations,
+                    ctx.CardAnimator,
+                    ctx.PlayerLifeBar,
+                    ctx.EnemyLifeBar,
+                    ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
             [96] = new AttackDefinition("Flintlock Pistol", ctx =>
                 Attack96Handler.Execute(
                     ctx.Attacker,
@@ -1524,6 +1539,16 @@ public static class AttackRegistry
                     ctx.PlayerLifeBar,
                     ctx.EnemyLifeBar,
                     ctx.ShowDialog,
+                    ctx.AttackResult
+                )
+            ),
+            [122] = new AttackDefinition("Sport Skills", ctx =>
+                Attack122Handler.Execute(
+                    ctx.Attacker,
+                    ctx.Defender,
+                    ctx.Animations,
+                    ctx.ShowDialog,
+                    ctx.EffectsApplied,
                     ctx.AttackResult
                 )
             ),

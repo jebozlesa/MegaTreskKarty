@@ -1,4 +1,5 @@
 using System.Collections;
+using UnityEngine;
 
 /// <summary>
 /// Attack ID 109: Arquebus
@@ -23,6 +24,19 @@ public class Attack109Handler
         if (attackResult == "exploded")
         {
             yield return animations.PlayArquebusExplosionAnimation(attacker.transform);
+
+            if (damage > 0)
+            {
+                yield return BattleValuePlayback.PlayDamage(
+                    attacker,
+                    damage,
+                    isMyAttack,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar
+                );
+            }
+
             yield return showDialog("Arquebus exploded");
             yield break;
         }
@@ -30,6 +44,19 @@ public class Attack109Handler
         if (attackResult == "hit")
         {
             yield return animations.PlayArquebusShotAnimation(attacker.transform, defender.transform, true);
+
+            if (damage > 0)
+            {
+                yield return BattleValuePlayback.PlayDamage(
+                    defender,
+                    damage,
+                    !isMyAttack,
+                    cardAnimator,
+                    playerLifeBar,
+                    enemyLifeBar
+                );
+            }
+
             yield return showDialog($"Bang! {attacker.cardName} hits target");
             yield break;
         }

@@ -16,7 +16,7 @@ public class BattleRecentAttackCoverageTests
             59, 60, 61, 62, 63, 64, 65, 66, 67, 68,
             69, 70, 71, 72, 73, 74, 75, 76, 77, 78,
             79, 80, 81, 82, 83, 84, 85, 86, 87, 88,
-            89, 90, 91, 92, 93, 94, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 123,
+            89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123,
         };
 
         foreach (int attackId in recentAttackIds)
@@ -151,6 +151,21 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("uses Curse", curse);
         StringAssert.Contains("curses the enemy", curse);
 
+        string sportSkills = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack122Handler.cs");
+        StringAssert.Contains("PlayFootballAnimation(attacker.transform, defender.transform, true)", sportSkills);
+        StringAssert.Contains("PlayBoredomAnimation(defender.transform)", sportSkills);
+        StringAssert.Contains("uses Sport Skills", sportSkills);
+        StringAssert.Contains("plays football", sportSkills);
+        StringAssert.Contains("is bored by Football", sportSkills);
+        StringAssert.Contains("likes it", sportSkills);
+
+        string arquebus = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack109Handler.cs");
+        StringAssert.Contains("PlayArquebusShotAnimation(attacker.transform, defender.transform, true)", arquebus);
+        StringAssert.Contains("PlayArquebusExplosionAnimation(attacker.transform)", arquebus);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", arquebus);
+        StringAssert.Contains("Bang! aaaand miss", arquebus);
+        StringAssert.Contains("hits target", arquebus);
+
         string expedition = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack61Handler.cs");
         StringAssert.Contains("PlayExpeditionaryAssaultAnimation(attacker.transform)", expedition);
         StringAssert.Contains("PlayExpeditionaryAssaultSuccessAnimation(attacker.transform, attacker.transform)", expedition);
@@ -270,6 +285,14 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("is furious!", moonshine);
         StringAssert.Contains("falls asleep", moonshine);
 
+        string outlawBand = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack95Handler.cs");
+        StringAssert.Contains("PlayOutlawBandAnimation(defender.transform)", outlawBand);
+        StringAssert.Contains("PlayOutlawBandFailAnimation(defender.transform)", outlawBand);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", outlawBand);
+        StringAssert.Contains("uses Outlaw Band", outlawBand);
+        StringAssert.Contains("The outlaw band run in fear", outlawBand);
+        StringAssert.Contains("band attacks", outlawBand);
+
         string flintlock = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack96Handler.cs");
         StringAssert.Contains("PlayFlintlockPistolLoadingAnimation(attacker.transform)", flintlock);
         StringAssert.Contains("uses Flintlock Pistol", flintlock);
@@ -364,7 +387,6 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("PlayAnimationNotEffective(defender.transform)", orientalSpice);
         StringAssert.Contains("Poison has no effect", orientalSpice);
 
-        string arquebus = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack109Handler.cs");
         StringAssert.Contains("PlayArquebusExplosionAnimation(attacker.transform)", arquebus);
         StringAssert.Contains("PlayArquebusShotAnimation(attacker.transform, defender.transform, true)", arquebus);
         StringAssert.Contains("PlayArquebusShotAnimation(attacker.transform, defender.transform, false)", arquebus);

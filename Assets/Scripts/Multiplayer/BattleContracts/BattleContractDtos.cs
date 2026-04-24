@@ -53,19 +53,7 @@ public class BattleAttackerDto
 
     public string attackResult;
 
-    public int attackBuff;
-    public int strengthBuff;
-    public int defenseBuff;
-    public int knowledgeBuff;
-    public int speedBuff;
-    public int charismaBuff;
-
-    public int attackDebuff;
-    public int strengthDebuff;
-    public int defenseDebuff;
-    public int knowledgeDebuff;
-    public int speedDebuff;
-    public int charismaDebuff;
+    public List<BattleStatChangeDto> statChanges;
 
     public List<BattleEffectDto> effects;
     public bool isDead;
@@ -78,4 +66,14 @@ public class BattleEffectDto
     public int duration;
     public string source;
     public int intensity;
+}
+
+[Serializable]
+public class BattleStatChangeDto
+{
+    public string statName;
+    public int amount;
+    public string actorCardId;
+    public string targetCardId;
+    public string source;
 }

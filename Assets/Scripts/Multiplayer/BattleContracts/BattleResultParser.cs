@@ -189,21 +189,63 @@ public static class BattleResultParser
 
     private static AttackStatChanges BuildStatChanges(Dictionary<string, object> data)
     {
-        return new AttackStatChanges
+        var result = AttackStatChanges.Zero;
+        string attackerCardId = GetStringOrNull(data, "cardId");
+        var statChanges = GetObjectArray(data, "statChanges");
+
+        foreach (var item in statChanges)
         {
-            attackerAttack = GetInt(data, "attackBuff", 0),
-            attackerStrength = GetInt(data, "strengthBuff", 0),
-            attackerDefense = GetInt(data, "defenseBuff", 0),
-            attackerKnowledge = GetInt(data, "knowledgeBuff", 0),
-            attackerSpeed = GetInt(data, "speedBuff", 0),
-            attackerCharisma = GetInt(data, "charismaBuff", 0),
-            defenderAttack = GetInt(data, "attackDebuff", 0),
-            defenderStrength = GetInt(data, "strengthDebuff", 0),
-            defenderDefense = GetInt(data, "defenseDebuff", 0),
-            defenderKnowledge = GetInt(data, "knowledgeDebuff", 0),
-            defenderSpeed = GetInt(data, "speedDebuff", 0),
-            defenderCharisma = GetInt(data, "charismaDebuff", 0)
-        };
+            var change = ToDictionary(item);
+            if (change == null)
+            {
+                continue;
+            }
+
+            string targetCardId = GetStringOrNull(change, "targetCardId");
+            string statName = GetStringOrNull(change, "statName");
+            int amount = GetInt(change, "amount", 0);
+
+            if (string.IsNullOrEmpty(statName) || amount == 0)
+            {
+                continue;
+            }
+
+            bool targetsAttacker = targetCardId == attackerCardId;
+            ApplyStatChange(ref result, targetsAttacker, statName, amount);
+        }
+
+        return result;
+    }
+
+    private static void ApplyStatChange(ref AttackStatChanges result, bool targetsAttacker, string statName, int amount)
+    {
+        switch (statName)
+        {
+            case "ATT":
+                if (targetsAttacker) result.attackerAttack += amount;
+                else result.defenderAttack += amount;
+                break;
+            case "STR":
+                if (targetsAttacker) result.attackerStrength += amount;
+                else result.defenderStrength += amount;
+                break;
+            case "DEF":
+                if (targetsAttacker) result.attackerDefense += amount;
+                else result.defenderDefense += amount;
+                break;
+            case "KNO":
+                if (targetsAttacker) result.attackerKnowledge += amount;
+                else result.defenderKnowledge += amount;
+                break;
+            case "SPD":
+                if (targetsAttacker) result.attackerSpeed += amount;
+                else result.defenderSpeed += amount;
+                break;
+            case "CHA":
+                if (targetsAttacker) result.attackerCharisma += amount;
+                else result.defenderCharisma += amount;
+                break;
+        }
     }
 
     private static Dictionary<string, object> GetEffectDict(Dictionary<string, object> data, string key)
@@ -327,6 +369,16 @@ public static class BattleResultParser
         }
 
         return data[key].ToString();
+    }
+
+    private static List<object> GetObjectArray(Dictionary<string, object> data, string key)
+    {
+        if (!data.ContainsKey(key) || data[key] == null)
+        {
+            return new List<object>();
+        }
+
+        return ToObjectList(data[key]) ?? new List<object>();
     }
 
     private static List<int> GetIntArray(Dictionary<string, object> data, string key)

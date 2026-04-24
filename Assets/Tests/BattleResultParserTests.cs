@@ -203,18 +203,7 @@ public class BattleResultParserTests
             { "attackerSelfDamage", attacker.attackerSelfDamage },
             { "attackerEffectsApplied", ToEffectDictList(attacker.attackerEffectsApplied) },
             { "attackResult", attacker.attackResult },
-            { "attackBuff", attacker.attackBuff },
-            { "strengthBuff", attacker.strengthBuff },
-            { "defenseBuff", attacker.defenseBuff },
-            { "knowledgeBuff", attacker.knowledgeBuff },
-            { "speedBuff", attacker.speedBuff },
-            { "charismaBuff", attacker.charismaBuff },
-            { "attackDebuff", attacker.attackDebuff },
-            { "strengthDebuff", attacker.strengthDebuff },
-            { "defenseDebuff", attacker.defenseDebuff },
-            { "knowledgeDebuff", attacker.knowledgeDebuff },
-            { "speedDebuff", attacker.speedDebuff },
-            { "charismaDebuff", attacker.charismaDebuff },
+            { "statChanges", ToStatChangeDictList(attacker.statChanges) },
             { "effects", ToEffectDictList(attacker.effects) },
             { "isDead", attacker.isDead }
         };
@@ -246,20 +235,86 @@ public class BattleResultParserTests
         return effects.Select(e => (object)ToEffectDict(e)).ToList();
     }
 
+    private static List<object> ToStatChangeDictList(List<FixtureStatChange> statChanges)
+    {
+        if (statChanges == null)
+        {
+            return new List<object>();
+        }
+
+        return statChanges.Select(s => (object)new Dictionary<string, object>
+        {
+            { "type", s.type },
+            { "statName", s.statName },
+            { "amount", s.amount },
+            { "actorCardId", s.actorCardId },
+            { "targetCardId", s.targetCardId },
+            { "source", s.source }
+        }).ToList();
+    }
+
     private static void AssertStatChanges(object actualStats, Dictionary<string, object> expected, string messagePrefix)
     {
-        Assert.AreEqual(GetInt(expected, "attackBuff", 0), ReadIntField(actualStats, "attackerAttack"), $"{messagePrefix}: attackBuff");
-        Assert.AreEqual(GetInt(expected, "strengthBuff", 0), ReadIntField(actualStats, "attackerStrength"), $"{messagePrefix}: strengthBuff");
-        Assert.AreEqual(GetInt(expected, "defenseBuff", 0), ReadIntField(actualStats, "attackerDefense"), $"{messagePrefix}: defenseBuff");
-        Assert.AreEqual(GetInt(expected, "knowledgeBuff", 0), ReadIntField(actualStats, "attackerKnowledge"), $"{messagePrefix}: knowledgeBuff");
-        Assert.AreEqual(GetInt(expected, "speedBuff", 0), ReadIntField(actualStats, "attackerSpeed"), $"{messagePrefix}: speedBuff");
-        Assert.AreEqual(GetInt(expected, "charismaBuff", 0), ReadIntField(actualStats, "attackerCharisma"), $"{messagePrefix}: charismaBuff");
-        Assert.AreEqual(GetInt(expected, "attackDebuff", 0), ReadIntField(actualStats, "defenderAttack"), $"{messagePrefix}: attackDebuff");
-        Assert.AreEqual(GetInt(expected, "strengthDebuff", 0), ReadIntField(actualStats, "defenderStrength"), $"{messagePrefix}: strengthDebuff");
-        Assert.AreEqual(GetInt(expected, "defenseDebuff", 0), ReadIntField(actualStats, "defenderDefense"), $"{messagePrefix}: defenseDebuff");
-        Assert.AreEqual(GetInt(expected, "knowledgeDebuff", 0), ReadIntField(actualStats, "defenderKnowledge"), $"{messagePrefix}: knowledgeDebuff");
-        Assert.AreEqual(GetInt(expected, "speedDebuff", 0), ReadIntField(actualStats, "defenderSpeed"), $"{messagePrefix}: speedDebuff");
-        Assert.AreEqual(GetInt(expected, "charismaDebuff", 0), ReadIntField(actualStats, "defenderCharisma"), $"{messagePrefix}: charismaDebuff");
+        var expectedStats = BuildExpectedStatChanges(expected);
+
+        Assert.AreEqual(expectedStats["attackerAttack"], ReadIntField(actualStats, "attackerAttack"), $"{messagePrefix}: attackerAttack");
+        Assert.AreEqual(expectedStats["attackerStrength"], ReadIntField(actualStats, "attackerStrength"), $"{messagePrefix}: attackerStrength");
+        Assert.AreEqual(expectedStats["attackerDefense"], ReadIntField(actualStats, "attackerDefense"), $"{messagePrefix}: attackerDefense");
+        Assert.AreEqual(expectedStats["attackerKnowledge"], ReadIntField(actualStats, "attackerKnowledge"), $"{messagePrefix}: attackerKnowledge");
+        Assert.AreEqual(expectedStats["attackerSpeed"], ReadIntField(actualStats, "attackerSpeed"), $"{messagePrefix}: attackerSpeed");
+        Assert.AreEqual(expectedStats["attackerCharisma"], ReadIntField(actualStats, "attackerCharisma"), $"{messagePrefix}: attackerCharisma");
+        Assert.AreEqual(expectedStats["defenderAttack"], ReadIntField(actualStats, "defenderAttack"), $"{messagePrefix}: defenderAttack");
+        Assert.AreEqual(expectedStats["defenderStrength"], ReadIntField(actualStats, "defenderStrength"), $"{messagePrefix}: defenderStrength");
+        Assert.AreEqual(expectedStats["defenderDefense"], ReadIntField(actualStats, "defenderDefense"), $"{messagePrefix}: defenderDefense");
+        Assert.AreEqual(expectedStats["defenderKnowledge"], ReadIntField(actualStats, "defenderKnowledge"), $"{messagePrefix}: defenderKnowledge");
+        Assert.AreEqual(expectedStats["defenderSpeed"], ReadIntField(actualStats, "defenderSpeed"), $"{messagePrefix}: defenderSpeed");
+        Assert.AreEqual(expectedStats["defenderCharisma"], ReadIntField(actualStats, "defenderCharisma"), $"{messagePrefix}: defenderCharisma");
+    }
+
+    private static Dictionary<string, int> BuildExpectedStatChanges(Dictionary<string, object> expected)
+    {
+        var result = new Dictionary<string, int>
+        {
+            { "attackerAttack", 0 },
+            { "attackerStrength", 0 },
+            { "attackerDefense", 0 },
+            { "attackerKnowledge", 0 },
+            { "attackerSpeed", 0 },
+            { "attackerCharisma", 0 },
+            { "defenderAttack", 0 },
+            { "defenderStrength", 0 },
+            { "defenderDefense", 0 },
+            { "defenderKnowledge", 0 },
+            { "defenderSpeed", 0 },
+            { "defenderCharisma", 0 }
+        };
+
+        string attackerCardId = GetString(expected, "cardId");
+        foreach (var change in ToDictList(GetValue(expected, "statChanges")))
+        {
+            string prefix = GetString(change, "targetCardId") == attackerCardId ? "attacker" : "defender";
+            string key = prefix + StatNameToFieldSuffix(GetString(change, "statName"));
+            if (result.ContainsKey(key))
+            {
+                result[key] += GetInt(change, "amount");
+            }
+        }
+
+        return result;
+    }
+
+    private static string StatNameToFieldSuffix(string statName)
+    {
+        switch (statName)
+        {
+            case "ATT": return "Attack";
+            case "STR": return "Strength";
+            case "DEF": return "Defense";
+            case "KNO": return "Knowledge";
+            case "SPD": return "Speed";
+            case "CHA": return "Charisma";
+            default: return string.Empty;
+        }
     }
 
     private static void AssertEffect(Dictionary<string, object> actual, Dictionary<string, object> expected, string messagePrefix)
@@ -504,20 +559,20 @@ public class BattleResultParserTests
         public int attackerSelfDamage;
         public List<FixtureEffect> attackerEffectsApplied;
         public string attackResult;
-        public int attackBuff;
-        public int strengthBuff;
-        public int defenseBuff;
-        public int knowledgeBuff;
-        public int speedBuff;
-        public int charismaBuff;
-        public int attackDebuff;
-        public int strengthDebuff;
-        public int defenseDebuff;
-        public int knowledgeDebuff;
-        public int speedDebuff;
-        public int charismaDebuff;
+        public List<FixtureStatChange> statChanges;
         public List<FixtureEffect> effects;
         public bool isDead;
+    }
+
+    [Serializable]
+    private class FixtureStatChange
+    {
+        public string type;
+        public string statName;
+        public int amount;
+        public string actorCardId;
+        public string targetCardId;
+        public string source;
     }
 
     [Serializable]
