@@ -8,11 +8,21 @@ using Newtonsoft.Json.Linq;
 
 public class MultiplayerLobbyUI : MonoBehaviour
 {
+    private static bool VerboseLobbyLogs => false;
+
     public Button joinButton;
     public TMP_Text statusText;
     public ServerFunctionsManager serverFunctionsManager;
 
     private string PlayerId => PlayFabManagerLogin.Instance.LoggedInPlayerId;
+
+    private static void LogVerbose(string message)
+    {
+        if (VerboseLobbyLogs)
+        {
+            Debug.Log(message);
+        }
+    }
 
     void Start()
     {
@@ -32,7 +42,7 @@ public class MultiplayerLobbyUI : MonoBehaviour
         string username = PlayerPrefs.GetString("username", PlayerId);
         serverFunctionsManager.JoinOrCreateRoom(PlayerId, username, result =>
         {
-            Debug.LogWarning($"FunctionResult raw: {Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}");
+            LogVerbose($"FunctionResult raw: {Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}");
             if (result != null && result.FunctionResult != null)
             {
                 JObject functionResult = null;
@@ -41,11 +51,11 @@ public class MultiplayerLobbyUI : MonoBehaviour
                 } catch {
                     Debug.LogError("Failed to parse FunctionResult to JObject");
                 }
-                Debug.LogWarning($"FunctionResult JObject: {functionResult}");
+                LogVerbose($"FunctionResult JObject: {functionResult}");
                 if (functionResult != null && functionResult["room"] != null)
                 {
                     var room = functionResult["room"];
-                    Debug.LogWarning($"Room object: {room}");
+                    LogVerbose($"Room object: {room}");
                     string myId = PlayerId;
                     
                     // Ulozenie informacii o miestnosti

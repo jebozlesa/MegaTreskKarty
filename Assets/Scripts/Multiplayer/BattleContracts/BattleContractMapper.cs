@@ -41,6 +41,24 @@ public static class BattleContractMapper
         return dto;
     }
 
+    public static MatchStateDto ParseMatchStateResult(object functionResult)
+    {
+        var token = ToToken(functionResult);
+        if (token == null || token.Type == JTokenType.Null)
+        {
+            return null;
+        }
+
+        var envelope = token.ToObject<MatchStateEnvelopeDto>();
+        if (envelope?.matchState == null)
+        {
+            return null;
+        }
+
+        Normalize(envelope.matchState);
+        return envelope.matchState;
+    }
+
     private static void Normalize(BattleResultDto dto)
     {
         if (dto == null)
@@ -87,6 +105,38 @@ public static class BattleContractMapper
         if (attacker.attackResult == null)
         {
             attacker.attackResult = string.Empty;
+        }
+    }
+
+    private static void Normalize(MatchStateDto dto)
+    {
+        if (dto == null)
+        {
+            return;
+        }
+
+        dto.phase ??= string.Empty;
+        dto.inferredPhase ??= string.Empty;
+        dto.status ??= string.Empty;
+        dto.seats ??= new List<MatchSeatDto>();
+        dto.decks ??= new MatchDeckStateDto();
+        dto.selectedCards ??= new Dictionary<string, SelectedCardData>();
+        dto.battle ??= new MatchBattleStateDto();
+        dto.nextTurnReady ??= new MatchNextTurnReadyDto();
+        dto.replacementRequiredPlayerIds ??= new List<string>();
+        dto.warnings ??= new List<string>();
+
+        dto.decks.loadedPlayerIds ??= new List<string>();
+        dto.battle.submittedByPlayerId ??= new Dictionary<string, bool>();
+        dto.nextTurnReady.readyByPlayerId ??= new Dictionary<string, bool>();
+        dto.nextTurnReady.readyPlayerIds ??= new List<string>();
+
+        foreach (var kvp in dto.selectedCards)
+        {
+            if (kvp.Value != null && string.IsNullOrEmpty(kvp.Value.playerId))
+            {
+                kvp.Value.playerId = kvp.Key;
+            }
         }
     }
 

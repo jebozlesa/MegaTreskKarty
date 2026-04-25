@@ -91,6 +91,12 @@ public class MultiplayerBoardManager : MonoBehaviour
             {
                 await MultiplayerService.SubmitSelectedCardAsync(RoomCode, MyPlayerId, localSelectedCardData);
             }
+
+            if (fightSystem != null)
+            {
+                fightSystem.LoadAttackCounts(card);
+            }
+
             MultiplayerUI?.ShowStatus(MultiplayerUI.MSG_WAITING_OPPONENT);
 
             await WaitForOpponentSelectionAsync();
@@ -126,12 +132,23 @@ public class MultiplayerBoardManager : MonoBehaviour
         opponentSelectionCancellation = new CancellationTokenSource();
         var token = opponentSelectionCancellation.Token;
 
+        try
+        {
+            await WaitForOpponentSelectionViaMatchStateAsync(token);
+        }
+        finally
+        {
+            opponentSelectionCancellation?.Dispose();
+            opponentSelectionCancellation = null;
+        }
+    }
+
+    private async Task WaitForOpponentSelectionViaMatchStateAsync(CancellationToken token)
+    {
         for (int attempt = 0; attempt < selectedCardPollAttempts; attempt++)
         {
             if (token.IsCancellationRequested)
             {
-                opponentSelectionCancellation?.Dispose();
-                opponentSelectionCancellation = null;
                 return;
             }
 
@@ -141,46 +158,81 @@ public class MultiplayerBoardManager : MonoBehaviour
                 return;
             }
 
-            Debug.Log($"[WaitForOpponentSelectionAsync] Polling attempt {attempt + 1}/{selectedCardPollAttempts}");
-            
-            var selectedCards = await MultiplayerService.GetSelectedCardsAsync(RoomCode);
-            if (selectedCards != null)
-            {
-                Debug.Log($"[WaitForOpponentSelectionAsync] Retrieved {selectedCards.Count} selected cards");
-                foreach (var kvp in selectedCards)
-                {
-                    Debug.Log($"[WaitForOpponentSelectionAsync] Player {kvp.Key}: card {kvp.Value?.cardId} ({kvp.Value?.name})");
-                }
-                
-                if (!string.IsNullOrEmpty(MyPlayerId) && selectedCards.TryGetValue(MyPlayerId, out var mine) && mine != null)
-                {
-                    localSelectedCardData = mine;
-                    Debug.Log($"[WaitForOpponentSelectionAsync] Found my card: {mine.cardId}");
-                }
+            Debug.Log($"[WaitForOpponentSelectionAsync] MatchState poll attempt {attempt + 1}/{selectedCardPollAttempts}");
 
-                var opponentId = GetOpponentPlayerId(selectedCards);
-                Debug.Log($"[WaitForOpponentSelectionAsync] Opponent ID: {opponentId}");
-                
-                if (!string.IsNullOrEmpty(opponentId) && selectedCards.TryGetValue(opponentId, out var opponentCard) && opponentCard != null)
-                {
-                    opponentSelectedCardData = opponentCard;
-                    Debug.Log($"[FightSystemMultiplayer] Opponent selected card {opponentCard.cardId}");
-                    opponentSelectionCancellation?.Cancel();
-                    opponentSelectionCancellation?.Dispose();
-                    opponentSelectionCancellation = null;
-                    return;
-                }
-                else
-                {
-                    Debug.Log($"[WaitForOpponentSelectionAsync] Opponent {opponentId} hasn't selected a card yet");
-                }
+            MatchStateDto matchState = await MultiplayerService.GetMatchStateAsync(RoomCode, MyPlayerId);
+            if (matchState == null)
+            {
+                await Task.Delay(System.TimeSpan.FromSeconds(selectedCardPollIntervalSeconds), token);
+                continue;
             }
 
-            await Task.Delay(System.TimeSpan.FromSeconds(selectedCardPollIntervalSeconds));
+            ApplySelectedCardsFromMatchState(matchState);
+
+            if (TryGetOpponentSelectionFromMatchState(matchState, out var opponentCard))
+            {
+                opponentSelectedCardData = opponentCard;
+                Debug.Log($"[FightSystemMultiplayer] Opponent selected replacement card {opponentCard.cardId} via matchState");
+                return;
+            }
+
+            await Task.Delay(System.TimeSpan.FromSeconds(selectedCardPollIntervalSeconds), token);
         }
 
-        opponentSelectionCancellation?.Dispose();
-        opponentSelectionCancellation = null;
+        Debug.LogWarning("[WaitForOpponentSelectionAsync] Opponent replacement selection timed out while polling matchState");
+    }
+
+    private void ApplySelectedCardsFromMatchState(MatchStateDto matchState)
+    {
+        if (matchState?.selectedCards == null)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(MyPlayerId)
+            && matchState.selectedCards.TryGetValue(MyPlayerId, out var mine)
+            && mine != null)
+        {
+            localSelectedCardData = mine;
+        }
+    }
+
+    private bool TryGetOpponentSelectionFromMatchState(MatchStateDto matchState, out SelectedCardData opponentCard)
+    {
+        opponentCard = null;
+
+        if (matchState?.selectedCards == null || matchState.selectedCards.Count == 0)
+        {
+            return false;
+        }
+
+        string opponentId = !string.IsNullOrEmpty(matchState.opponentPlayerId)
+            ? matchState.opponentPlayerId
+            : GetOpponentPlayerId(matchState.selectedCards);
+
+        if (string.IsNullOrEmpty(opponentId))
+        {
+            return false;
+        }
+
+        if (matchState.replacementRequiredPlayerIds != null
+            && matchState.replacementRequiredPlayerIds.Contains(opponentId))
+        {
+            return false;
+        }
+
+        if (!matchState.selectedCards.TryGetValue(opponentId, out var candidate) || !IsAliveCardSelection(candidate))
+        {
+            return false;
+        }
+
+        opponentCard = candidate;
+        return true;
+    }
+
+    private static bool IsAliveCardSelection(SelectedCardData cardData)
+    {
+        return cardData != null && cardData.health > 0;
     }
 
     private string GetOpponentPlayerId(Dictionary<string, SelectedCardData> selectedCards)

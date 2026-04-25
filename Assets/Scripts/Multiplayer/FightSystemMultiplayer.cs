@@ -17,6 +17,10 @@ public enum FightStateMultiplayer { START, TURN, ENDTURN, PLAYERDEATH, ENEMYDEAT
 
 public class FightSystemMultiplayer : MonoBehaviour
 {
+    private const string MatchPhaseCompleted = "completed";
+    private const int MatchReadyPollDelayMs = 1000;
+    private const int MatchReadyMaxAttempts = 30;
+
     [System.Serializable]
     public class PendingOngoingActionTurn
     {
@@ -159,7 +163,15 @@ public class FightSystemMultiplayer : MonoBehaviour
         Debug.LogWarning($"[FightSystemMultiplayer] Initializing game for player {myPlayerId} in room {roomCode}");
         await multiplayerService.InitGame();
         
-        Debug.LogWarning("[FightSystemMultiplayer] InitGame completed, loading cards...");
+        bool decksReady = await WaitForDecksReadyAsync();
+        if (!decksReady)
+        {
+            Debug.LogError("[FightSystemMultiplayer] Timed out waiting for both decks to load");
+            multiplayerUI?.ShowStatus("Failed to sync decks!");
+            return;
+        }
+
+        Debug.LogWarning("[FightSystemMultiplayer] InitGame completed and decks are ready, loading cards...");
         
         // Use retry logic for card loading
         bool cardsLoaded = await LoadPlayerCardsWithRetry(myPlayerId, roomCode);
@@ -172,6 +184,43 @@ public class FightSystemMultiplayer : MonoBehaviour
         
         Debug.LogWarning("[FightSystemMultiplayer] Cards loaded successfully! Setting status to 'Choose fighter!'");
         multiplayerUI?.ShowStatus(MultiplayerUI.MSG_CHOOSE_FIGHTER);
+    }
+
+    private async Task<bool> WaitForDecksReadyAsync()
+    {
+        for (int attempt = 1; attempt <= MatchReadyMaxAttempts; attempt++)
+        {
+            multiplayerUI?.ShowStatus("Syncing decks...");
+
+            MatchStateDto matchState = await multiplayerService.GetMatchStateAsync(roomCode, myPlayerId);
+            if (matchState != null)
+            {
+                bool allDecksLoaded = matchState.decks != null && matchState.decks.allLoaded;
+                Debug.Log($"[FightSystemMultiplayer] MatchState poll {attempt}/{MatchReadyMaxAttempts}: phase={matchState.phase}, loaded={matchState.decks?.loadedCount ?? 0}, allLoaded={allDecksLoaded}");
+
+                if (allDecksLoaded)
+                {
+                    return true;
+                }
+
+                if (string.Equals(matchState.phase, MatchPhaseCompleted, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    Debug.LogWarning("[FightSystemMultiplayer] Room completed while waiting for decks");
+                    return false;
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[FightSystemMultiplayer] MatchState poll {attempt}/{MatchReadyMaxAttempts} returned null");
+            }
+
+            if (attempt < MatchReadyMaxAttempts)
+            {
+                await Task.Delay(MatchReadyPollDelayMs);
+            }
+        }
+
+        return false;
     }
 
     private async System.Threading.Tasks.Task<bool> LoadPlayerCardsWithRetry(string myPlayerId, string roomCode)
@@ -238,9 +287,8 @@ public class FightSystemMultiplayer : MonoBehaviour
             dragHandler?.ResetToOriginalPosition();
         }
         
-        // Nacitaj nazvy a pocty utokov
+        // Nacitaj nazvy utokov hned, count-y az po serverom potvrdenom setSelectedCard.
         LoadAttackNames(card);
-        LoadAttackCounts(card);
     }
 
     /// <summary>

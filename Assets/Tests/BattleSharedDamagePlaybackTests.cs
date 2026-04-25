@@ -178,6 +178,69 @@ public class BattleSharedDamagePlaybackTests
         StringAssert.Contains("FindFirstObjectByType<ServerFunctionsManager>(FindObjectsInactive.Include)", source);
     }
 
+    [Test]
+    public void BattleSubmitter_DoesNotUseLegacyBattlePollingFallback()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleSubmitter.cs");
+        Assert.IsFalse(source.Contains("PollForBattleResultLegacy("));
+        Assert.IsFalse(source.Contains("falling back to legacy battle polling"));
+        Assert.IsFalse(source.Contains("switching to legacy GetBattleStatus polling"));
+    }
+
+    [Test]
+    public void BattleRoundCoordinator_DoesNotUseLegacyNextTurnPollingFallback()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleRoundCoordinator.cs");
+        Assert.IsFalse(source.Contains("PollForNextTurnReadyLegacy("));
+        Assert.IsFalse(source.Contains("switching to legacy CheckNextTurnReady polling"));
+    }
+
+    [Test]
+    public void MultiplayerBoardManager_DoesNotFallbackToSelectedCardsPolling()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "MultiplayerBoardManager.cs");
+        Assert.IsFalse(source.Contains("WaitForOpponentSelectionLegacyAsync"));
+        Assert.IsFalse(source.Contains("falling back to getSelectedCards polling"));
+    }
+
+    [Test]
+    public void MultiplayerService_EmergencyLeaveRoom_DoesNotPassNullCallback()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "MultiplayerService.cs");
+        Assert.IsFalse(source.Contains("LeaveRoom(myPlayerId, null)"));
+        StringAssert.Contains("LeaveRoom(myPlayerId);", source);
+    }
+
+    [Test]
+    public void MultiplayerLobbyScene_DoesNotContainObsoleteMissingMatchmakingComponent()
+    {
+        string source = ReadProjectFile("Assets", "Scenes", "MultiplayerLobby.unity");
+        Assert.IsFalse(source.Contains("guid: 5a48533f13544dc47b7d808bc555a419"));
+        Assert.IsFalse(source.Contains("component: {fileID: 1347824464}"));
+    }
+
+    [Test]
+    public void LegacyPlaceholderScripts_AreNotPresent()
+    {
+        string[] legacyPaths =
+        {
+            Path.Combine(Application.dataPath, "Scripts", "MultiplayerLobby.cs"),
+            Path.Combine(Application.dataPath, "Scripts", "MultiplayerLobbyUI.cs"),
+            Path.Combine(Application.dataPath, "Scripts", "MultiplayerMatchmakingUI.cs"),
+            Path.Combine(Application.dataPath, "Scripts", "ServerFunctionsManager.cs"),
+            Path.Combine(Application.dataPath, "Scripts", "Multiplayer", "MultiplayerNetworkManager.cs"),
+            Path.Combine(Application.dataPath, "Scripts", "Multiplayer", "MultiplayerPlayerManager.cs"),
+            Path.Combine(Application.dataPath, "Scripts", "Multiplayer", "MultiplayerRoomManager.cs"),
+            Path.Combine(Application.dataPath, "Scripts", "Album", "Animations", "Animations.cs"),
+        };
+
+        foreach (string path in legacyPaths)
+        {
+            Assert.IsFalse(File.Exists(path), $"Legacy placeholder script should not exist: {path}");
+            Assert.IsFalse(File.Exists(path + ".meta"), $"Legacy placeholder meta should not exist: {path}.meta");
+        }
+    }
+
     private static string ReadProjectFile(params string[] relativeParts)
     {
         var allParts = new List<string> { Application.dataPath };
@@ -187,6 +250,3 @@ public class BattleSharedDamagePlaybackTests
         return File.ReadAllText(fullPath);
     }
 }
-
-
-

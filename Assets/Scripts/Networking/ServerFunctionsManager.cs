@@ -6,6 +6,12 @@ using UnityEngine;
 
 public class ServerFunctionsManager : MonoBehaviour
 {
+    private const string MatchStateFunctionMissingMessage = "No function named getMatchState was found to execute";
+    private const string AttackCountsNotInitializedMessage = "Attack counts not initialized - select card first!";
+    private const string PlayerNotInRoomMessage = "Player not in any room";
+    private static bool VerboseFunctionLogs => false;
+    private static readonly Action<ExecuteFunctionResult> NoOpCallback = _ => { };
+
     [Header("Network Error Indicator")]
     [Tooltip("GameObject ktorý sa zobrazí pri network error (napr. Image s error ikonou)")]
     public GameObject networkErrorIndicator;
@@ -16,7 +22,25 @@ public class ServerFunctionsManager : MonoBehaviour
     
     [Tooltip("Delay medzi pokusmi v sekundách")]
     public float retryDelay = 1f;
-    
+
+    private bool isMatchStateFunctionUnavailable;
+
+    private static void LogVerbose(string message)
+    {
+        if (VerboseFunctionLogs)
+        {
+            Debug.Log(message);
+        }
+    }
+
+    private static void LogVerboseWarning(string message)
+    {
+        if (VerboseFunctionLogs)
+        {
+            Debug.LogWarning(message);
+        }
+    }
+
     // Nová funkcia: načítanie balíčkov hráčov do miestnosti
     public async System.Threading.Tasks.Task<ExecuteFunctionResult> LoadPlayerDecksIntoRoomAsync(string playerId, string roomCode)
     {
@@ -34,12 +58,8 @@ public class ServerFunctionsManager : MonoBehaviour
     // Univerzálne volanie PlayFab funkcie
     public void CallFunction(string functionName, object parameters, Action<ExecuteFunctionResult> callback)
     {
-        if (callback == null)
-        {
-            Debug.LogError($"CallFunction: callback is null! functionName={functionName}");
-            return;
-        }
-        Debug.LogWarning($"CallFunction: {functionName}, parameters: {Newtonsoft.Json.JsonConvert.SerializeObject(parameters)}");
+        callback ??= NoOpCallback;
+        LogVerboseWarning($"CallFunction: {functionName}, parameters: {Newtonsoft.Json.JsonConvert.SerializeObject(parameters)}");
         var request = new ExecuteFunctionRequest
         {
             FunctionName = functionName,
@@ -48,7 +68,7 @@ public class ServerFunctionsManager : MonoBehaviour
         };
 
         PlayFabCloudScriptAPI.ExecuteFunction(request, result => {
-            Debug.LogWarning($"ExecuteFunction result: {Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}");
+            LogVerboseWarning($"ExecuteFunction result: {Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}");
             
             // Success - hide network error indicator
             HideNetworkError();
@@ -56,11 +76,19 @@ public class ServerFunctionsManager : MonoBehaviour
             callback?.Invoke(result);
         }, error => {
             // Transient cloud/network failures are often resolved by retry.
-            Debug.LogWarning(error.GenerateErrorReport());
-            
-            // Failure - show network error indicator
-            ShowNetworkError($"Server error: {functionName}");
-            
+            string errorReport = error?.GenerateErrorReport() ?? string.Empty;
+            Debug.LogWarning(errorReport);
+
+            if (ShouldShowNetworkError(functionName, errorReport))
+            {
+                ShowNetworkError($"Server error: {functionName}");
+            }
+            else
+            {
+                HideNetworkError();
+                Debug.LogWarning($"[ServerFunctionsManager] Suppressed network indicator for expected {functionName} error");
+            }
+             
             callback?.Invoke(null);
         });
     }
@@ -68,12 +96,8 @@ public class ServerFunctionsManager : MonoBehaviour
     // Upravené: pripojenie do miestnosti podľa novej logiky s username
     public void JoinOrCreateRoom(string playerId, string username, Action<ExecuteFunctionResult> callback)
     {
-        if (callback == null)
-        {
-            Debug.LogError("JoinOrCreateRoom: callback is null!");
-            return;
-        }
-        Debug.LogWarning($"JoinOrCreateRoom called with playerId: {playerId}, username: {username}");
+        callback ??= NoOpCallback;
+        LogVerboseWarning($"JoinOrCreateRoom called with playerId: {playerId}, username: {username}");
         var parameters = new {
             playerId = playerId,
             username = username
@@ -84,27 +108,47 @@ public class ServerFunctionsManager : MonoBehaviour
     // Nová funkcia: získanie informácií o hráčoch v miestnosti
     public void GetRoomPlayersInfo(string roomCode, Action<ExecuteFunctionResult> callback)
     {
-        if (callback == null)
-        {
-            Debug.LogError("GetRoomPlayersInfo: callback is null!");
-            return;
-        }
-        Debug.LogWarning($"GetRoomPlayersInfo called with roomCode: {roomCode}");
+        callback ??= NoOpCallback;
+        LogVerboseWarning($"GetRoomPlayersInfo called with roomCode: {roomCode}");
         var parameters = new {
             roomCode = roomCode
         };
         CallFunction("getRoomPlayersInfo", parameters, callback);
     }
 
+    public void GetMatchState(string roomCode, string playerId, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        if (string.IsNullOrEmpty(roomCode) && string.IsNullOrEmpty(playerId))
+        {
+            Debug.LogError("GetMatchState: roomCode or playerId is required!");
+            callback?.Invoke(null);
+            return;
+        }
+
+        if (isMatchStateFunctionUnavailable)
+        {
+            Debug.LogWarning("[ServerFunctionsManager] getMatchState is unavailable in PlayFab, skipping repeated requests");
+            callback?.Invoke(null);
+            return;
+        }
+
+        LogVerboseWarning($"GetMatchState called with roomCode: {roomCode}, playerId: {playerId}");
+        var parameters = new
+        {
+            roomCode,
+            playerId
+        };
+
+        CallMatchStateFunction(parameters, callback, maxRetries);
+    }
+
     // Nová funkcia: aktualizácia informácií o hráčovi
     public void UpdatePlayerInfo(string playerId, string username, Action<ExecuteFunctionResult> callback)
     {
-        if (callback == null)
-        {
-            Debug.LogError("UpdatePlayerInfo: callback is null!");
-            return;
-        }
-        Debug.LogWarning($"UpdatePlayerInfo called with playerId: {playerId}, username: {username}");
+        callback ??= NoOpCallback;
+        LogVerboseWarning($"UpdatePlayerInfo called with playerId: {playerId}, username: {username}");
         var parameters = new {
             playerId = playerId,
             username = username
@@ -120,24 +164,19 @@ public class ServerFunctionsManager : MonoBehaviour
     }
 
     // Nová funkcia: opustenie miestnosti
-    public void LeaveRoom(string playerId, Action<ExecuteFunctionResult> callback)
+    public void LeaveRoom(string playerId, Action<ExecuteFunctionResult> callback = null)
     {
-        if (callback == null)
-        {
-            Debug.LogError("LeaveRoom: callback is null!");
-            return;
-        }
-        Debug.LogWarning($"LeaveRoom called with playerId: {playerId}");
+        LogVerboseWarning($"LeaveRoom called with playerId: {playerId}");
         var parameters = new {
             playerId = playerId
         };
-        CallFunction("leaveRoom", parameters, callback);
+        CallFunction("leaveRoom", parameters, callback ?? (_ => { }));
     }
 
     // Nová funkcia: heartbeat (životný signál)
     public void Heartbeat(string playerId, Action<ExecuteFunctionResult> callback = null)
     {
-        Debug.Log($"Heartbeat called with playerId: {playerId}");
+        LogVerbose($"Heartbeat called with playerId: {playerId}");
         var parameters = new {
             playerId = playerId
         };
@@ -166,7 +205,7 @@ public class ServerFunctionsManager : MonoBehaviour
     // Nová funkcia: označenie miestnosti ako completed
     public void MarkRoomAsCompleted(string roomCode, string playerId, Action<ExecuteFunctionResult> callback = null)
     {
-        Debug.Log($"MarkRoomAsCompleted called with roomCode: {roomCode}, playerId: {playerId}");
+        LogVerbose($"MarkRoomAsCompleted called with roomCode: {roomCode}, playerId: {playerId}");
         var parameters = new {
             roomCode = roomCode,
             playerId = playerId
@@ -182,12 +221,8 @@ public class ServerFunctionsManager : MonoBehaviour
     // Nová funkcia: získanie deckov v miestnosti cez getRoomDecks
     public void GetRoomDecks(string roomCode, Action<ExecuteFunctionResult> callback)
     {
-        if (callback == null)
-        {
-            Debug.LogError("GetRoomDecks: callback is null!");
-            return;
-        }
-        Debug.LogWarning($"GetRoomDecks called with roomCode: {roomCode}");
+        callback ??= NoOpCallback;
+        LogVerboseWarning($"GetRoomDecks called with roomCode: {roomCode}");
         var parameters = new {
             roomCode = roomCode
         };
@@ -210,7 +245,7 @@ public class ServerFunctionsManager : MonoBehaviour
             return;
         }
 
-        Debug.LogWarning($"SetSelectedCard called with roomCode: {roomCode}, playerId: {playerId}, cardId: {cardData.cardId}");
+        LogVerboseWarning($"SetSelectedCard called with roomCode: {roomCode}, playerId: {playerId}, cardId: {cardData.cardId}");
         var parameters = new
         {
             roomCode,
@@ -245,11 +280,7 @@ public class ServerFunctionsManager : MonoBehaviour
 
     public void GetSelectedCards(string roomCode, Action<ExecuteFunctionResult> callback)
     {
-        if (callback == null)
-        {
-            Debug.LogError("GetSelectedCards: callback is null!");
-            return;
-        }
+        callback ??= NoOpCallback;
 
         if (string.IsNullOrEmpty(roomCode))
         {
@@ -258,7 +289,7 @@ public class ServerFunctionsManager : MonoBehaviour
             return;
         }
 
-        Debug.LogWarning($"GetSelectedCards called with roomCode: {roomCode}");
+        LogVerboseWarning($"GetSelectedCards called with roomCode: {roomCode}");
         var parameters = new
         {
             roomCode
@@ -269,7 +300,7 @@ public class ServerFunctionsManager : MonoBehaviour
 
     public void ClearSelectedCards(string roomCode, Action<ExecuteFunctionResult> callback)
     {
-        Debug.LogWarning($"ClearSelectedCards called with roomCode: {roomCode}");
+        LogVerboseWarning($"ClearSelectedCards called with roomCode: {roomCode}");
         var parameters = new
         {
             roomCode
@@ -283,7 +314,7 @@ public class ServerFunctionsManager : MonoBehaviour
     /// </summary>
     public void ClearDeadCard(string roomCode, string cardIdToClear, Action<ExecuteFunctionResult> callback)
     {
-        Debug.LogWarning($"[ServerFunctionsManager] ClearDeadCard called - roomCode: {roomCode}, cardId: {cardIdToClear}");
+        LogVerboseWarning($"[ServerFunctionsManager] ClearDeadCard called - roomCode: {roomCode}, cardId: {cardIdToClear}");
         var parameters = new
         {
             roomCode = roomCode,
@@ -298,7 +329,7 @@ public class ServerFunctionsManager : MonoBehaviour
     /// </summary>
     public void ClearBattleData(string roomCode, string playerId, Action<ExecuteFunctionResult> callback)
     {
-        Debug.Log($"[ServerFunctionsManager] ClearBattleData called - roomCode: {roomCode}, playerId: {playerId}");
+        LogVerbose($"[ServerFunctionsManager] ClearBattleData called - roomCode: {roomCode}, playerId: {playerId}");
         var parameters = new
         {
             roomCode = roomCode,
@@ -321,13 +352,9 @@ public class ServerFunctionsManager : MonoBehaviour
     /// </summary>
     public void GetAttackCounts(string roomCode, string playerId, string cardId, Action<ExecuteFunctionResult> callback)
     {
-        if (callback == null)
-        {
-            Debug.LogError("GetAttackCounts: callback is null!");
-            return;
-        }
+        callback ??= NoOpCallback;
 
-        Debug.LogWarning($"[ServerFunctionsManager] GetAttackCounts: roomCode={roomCode}, playerId={playerId}, cardId={cardId}");
+        LogVerboseWarning($"[ServerFunctionsManager] GetAttackCounts: roomCode={roomCode}, playerId={playerId}, cardId={cardId}");
         var parameters = new
         {
             roomCode = roomCode,
@@ -343,13 +370,9 @@ public class ServerFunctionsManager : MonoBehaviour
     /// </summary>
     public void ExecuteBattle(string roomCode, string playerId, AttackSubmission attackData, Action<ExecuteFunctionResult> callback)
     {
-        if (callback == null)
-        {
-            Debug.LogError("ExecuteBattle: callback is null!");
-            return;
-        }
+        callback ??= NoOpCallback;
 
-        Debug.LogWarning($"ExecuteBattle called for room: {roomCode}, player: {playerId}");
+        LogVerboseWarning($"ExecuteBattle called for room: {roomCode}, player: {playerId}");
         
         var parameters = new
         {
@@ -367,13 +390,9 @@ public class ServerFunctionsManager : MonoBehaviour
     /// </summary>
     public void GetBattleStatus(string roomCode, string playerId, Action<ExecuteFunctionResult> callback)
     {
-        if (callback == null)
-        {
-            Debug.LogError("GetBattleStatus: callback is null!");
-            return;
-        }
+        callback ??= NoOpCallback;
 
-        Debug.LogWarning($"GetBattleStatus called for room: {roomCode}, player: {playerId}");
+        LogVerboseWarning($"GetBattleStatus called for room: {roomCode}, player: {playerId}");
 
         var parameters = new
         {
@@ -389,13 +408,9 @@ public class ServerFunctionsManager : MonoBehaviour
     /// </summary>
     public void MarkReadyForNextTurn(string roomCode, string playerId, Action<ExecuteFunctionResult> callback)
     {
-        if (callback == null)
-        {
-            Debug.LogError("MarkReadyForNextTurn: callback is null!");
-            return;
-        }
+        callback ??= NoOpCallback;
 
-        Debug.LogWarning($"MarkReadyForNextTurn called for room: {roomCode}, player: {playerId}");
+        LogVerboseWarning($"MarkReadyForNextTurn called for room: {roomCode}, player: {playerId}");
         
         var parameters = new
         {
@@ -412,13 +427,9 @@ public class ServerFunctionsManager : MonoBehaviour
     /// </summary>
     public void CheckNextTurnReady(string roomCode, Action<ExecuteFunctionResult> callback)
     {
-        if (callback == null)
-        {
-            Debug.LogError("CheckNextTurnReady: callback is null!");
-            return;
-        }
+        callback ??= NoOpCallback;
 
-        Debug.Log($"CheckNextTurnReady called for room: {roomCode}");
+        LogVerbose($"CheckNextTurnReady called for room: {roomCode}");
         
         var parameters = new
         {
@@ -490,6 +501,78 @@ public class ServerFunctionsManager : MonoBehaviour
         yield return new WaitForSeconds(retryDelay);
         CallFunctionWithRetry(functionName, parameters, callback, retriesLeft);
     }
+
+    private void CallMatchStateFunction(object parameters, Action<ExecuteFunctionResult> callback, int retriesLeft)
+    {
+        var request = new ExecuteFunctionRequest
+        {
+            FunctionName = "getMatchState",
+            FunctionParameter = parameters,
+            GeneratePlayStreamEvent = true
+        };
+
+        PlayFabCloudScriptAPI.ExecuteFunction(request, result =>
+        {
+            LogVerboseWarning($"ExecuteFunction result: {Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}");
+            HideNetworkError();
+            callback?.Invoke(result);
+        }, error =>
+        {
+            string errorReport = error?.GenerateErrorReport() ?? string.Empty;
+            bool isMissingFunction = errorReport.IndexOf(MatchStateFunctionMissingMessage, StringComparison.OrdinalIgnoreCase) >= 0;
+
+            if (isMissingFunction)
+            {
+                isMatchStateFunctionUnavailable = true;
+                HideNetworkError();
+                Debug.LogWarning("[ServerFunctionsManager] getMatchState is not registered in PlayFab.");
+                callback?.Invoke(null);
+                return;
+            }
+
+            Debug.LogWarning(errorReport);
+            ShowNetworkError("Server error: getMatchState");
+
+            if (retriesLeft > 0)
+            {
+                Debug.LogWarning($"[ServerFunctionsManager] Retrying getMatchState ({retriesLeft} attempts left)...");
+                StartCoroutine(RetryMatchStateAfterDelay(parameters, callback, retriesLeft - 1));
+            }
+            else
+            {
+                Debug.LogError($"[ServerFunctionsManager] Failed: getMatchState failed after {maxRetries} retries!");
+                callback?.Invoke(null);
+            }
+        });
+    }
+
+    private static bool ShouldShowNetworkError(string functionName, string errorReport)
+    {
+        if (string.IsNullOrEmpty(errorReport))
+        {
+            return true;
+        }
+
+        if (string.Equals(functionName, "getAttackCounts", StringComparison.OrdinalIgnoreCase)
+            && errorReport.IndexOf(AttackCountsNotInitializedMessage, StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return false;
+        }
+
+        if (string.Equals(functionName, "leaveRoom", StringComparison.OrdinalIgnoreCase)
+            && errorReport.IndexOf(PlayerNotInRoomMessage, StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private IEnumerator RetryMatchStateAfterDelay(object parameters, Action<ExecuteFunctionResult> callback, int retriesLeft)
+    {
+        yield return new WaitForSeconds(retryDelay);
+        CallMatchStateFunction(parameters, callback, retriesLeft);
+    }
     
     // ====================================
     // V11: SERVER-SIDE CARD PACK GENERATION
@@ -504,11 +587,7 @@ public class ServerFunctionsManager : MonoBehaviour
     /// <param name="callback">Callback s vygenerovanými kartami</param>
     public void OpenCardPack(string playFabId, int packIndex, Action<ExecuteFunctionResult> callback)
     {
-        if (callback == null)
-        {
-            Debug.LogError("[ServerFunctionsManager] OpenCardPack: callback is null!");
-            return;
-        }
+        callback ??= NoOpCallback;
         
         Debug.LogWarning($"[ServerFunctionsManager] OpenCardPack: playFabId={playFabId}, packIndex={packIndex}");
         

@@ -9,6 +9,79 @@ using UnityEngine;
 public class BattleResultParserTests
 {
     [Test]
+    public void ParseMatchStateResult_NormalizesCollections()
+    {
+        var raw = new Dictionary<string, object>
+        {
+            { "success", true },
+            { "matchState", new Dictionary<string, object>
+                {
+                    { "roomCode", "ROOM01" },
+                    { "phase", "loading_decks" },
+                    { "decks", new Dictionary<string, object> { { "loadedCount", 1 }, { "allLoaded", false } } },
+                    { "selectedCards", new Dictionary<string, object>
+                        {
+                            { "p1", new Dictionary<string, object>
+                                {
+                                    { "cardId", "c1" },
+                                    { "name", "Card One" },
+                                    { "health", 10 },
+                                    { "maxHealth", 10 }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        object dto = InvokeParseMatchStateResult(raw);
+
+        Assert.IsNotNull(dto);
+        Assert.AreEqual("ROOM01", ReadField<string>(dto, "roomCode"));
+        Assert.AreEqual("loading_decks", ReadField<string>(dto, "phase"));
+
+        object seats = ReadField<object>(dto, "seats");
+        object decks = ReadField<object>(dto, "decks");
+        object battle = ReadField<object>(dto, "battle");
+        object nextTurnReady = ReadField<object>(dto, "nextTurnReady");
+        object selectedCards = ReadField<object>(dto, "selectedCards");
+        object replacementRequiredPlayerIds = ReadField<object>(dto, "replacementRequiredPlayerIds");
+        object warnings = ReadField<object>(dto, "warnings");
+
+        Assert.IsNotNull(seats);
+        Assert.IsNotNull(decks);
+        Assert.IsNotNull(ReadField<object>(decks, "loadedPlayerIds"));
+        Assert.IsNotNull(selectedCards);
+        Assert.IsNotNull(battle);
+        Assert.IsNotNull(ReadField<object>(battle, "submittedByPlayerId"));
+        Assert.IsNotNull(nextTurnReady);
+        Assert.IsNotNull(ReadField<object>(nextTurnReady, "readyByPlayerId"));
+        Assert.IsNotNull(ReadField<object>(nextTurnReady, "readyPlayerIds"));
+        Assert.IsNotNull(replacementRequiredPlayerIds);
+        Assert.IsNotNull(warnings);
+
+        var selectedCardsMap = selectedCards as System.Collections.IDictionary;
+        Assert.IsNotNull(selectedCardsMap);
+        Assert.IsTrue(selectedCardsMap.Contains("p1"));
+        object selectedCard = selectedCardsMap["p1"];
+        Assert.AreEqual("p1", ReadField<string>(selectedCard, "playerId"));
+    }
+
+    [Test]
+    public void ParseMatchStateResult_ReturnsNull_WhenMatchStateMissing()
+    {
+        var raw = new Dictionary<string, object>
+        {
+            { "success", true }
+        };
+
+        object dto = InvokeParseMatchStateResult(raw);
+
+        Assert.IsNull(dto);
+    }
+
+    [Test]
     public void TryParse_ReturnsFalse_WhenRequiredAttackersAreMissing()
     {
         var invalid = new Dictionary<string, object>();
@@ -18,6 +91,45 @@ public class BattleResultParserTests
         Assert.IsFalse(ok);
         Assert.IsNull(parsed);
         Assert.IsFalse(string.IsNullOrWhiteSpace(error));
+    }
+
+    [Test]
+    public void TryParse_PreservesComboAttackResultString()
+    {
+        const string comboPayload =
+            "{\"type\":\"combo\",\"comboType\":\"sequential_subattacks\",\"selectionMode\":\"sequence\",\"subAttacks\":[{\"attackId\":118,\"damage\":3},{\"attackId\":10,\"damage\":1}]}";
+
+        var battleResult = new Dictionary<string, object>
+        {
+            ["firstAttacker"] = new Dictionary<string, object>
+            {
+                ["cardId"] = "pele_card",
+                ["attackId"] = 121,
+                ["attackResult"] = comboPayload,
+                ["damageReceived"] = 0
+            },
+            ["secondAttacker"] = new Dictionary<string, object>
+            {
+                ["cardId"] = "ford_card",
+                ["attackId"] = 8,
+                ["attackResult"] = null,
+                ["damageReceived"] = 4
+            }
+        };
+
+        bool ok = TryParseWithReflection(
+            battleResult,
+            "pele_card",
+            out var parsed,
+            out var error
+        );
+
+        Assert.IsTrue(ok, error);
+        Assert.IsNotNull(parsed);
+        Assert.AreEqual(comboPayload, ReadField<string>(parsed, "MyAttackResult"));
+        Assert.IsNull(ReadField<string>(parsed, "EnemyAttackResult"));
+        Assert.AreEqual("pele_card", GetCardId(ReadField<Dictionary<string, object>>(parsed, "MyAttackData")));
+        Assert.AreEqual("ford_card", GetCardId(ReadField<Dictionary<string, object>>(parsed, "EnemyAttackData")));
     }
 
     [Test]
@@ -513,6 +625,17 @@ public class BattleResultParserTests
         parsed = args[2];
         error = args[3] as string;
         return ok;
+    }
+
+    private static object InvokeParseMatchStateResult(object payload)
+    {
+        var mapperType = Type.GetType("BattleContractMapper, Assembly-CSharp");
+        Assert.IsNotNull(mapperType, "Type BattleContractMapper was not found in Assembly-CSharp.");
+
+        var method = mapperType.GetMethod("ParseMatchStateResult", BindingFlags.Public | BindingFlags.Static);
+        Assert.IsNotNull(method, "Method ParseMatchStateResult was not found.");
+
+        return method.Invoke(null, new[] { payload });
     }
 
     [Serializable]

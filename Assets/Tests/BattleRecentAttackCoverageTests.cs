@@ -599,7 +599,9 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("PlayFearEndAnimation(card.transform)", effectPlayback);
         StringAssert.Contains("return \"Fear\";", effectPlayback);
 
-        string resultProcessor = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs");
+        string resultProcessor =
+            ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs")
+            + ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.UiFlow.cs");
         StringAssert.Contains("case 8: // ELECTRICITY", resultProcessor);
         StringAssert.Contains("PlayElectricityAnimation(card.transform)", resultProcessor);
         StringAssert.Contains("ShowDialog($\"{card.cardName} cannot move\")", resultProcessor);
@@ -631,7 +633,9 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("ShowDialog(step.Note)", resultProcessor);
 
         string kard = ReadProjectFile("Assets", "Scripts", "Kard.cs");
-        StringAssert.Contains("effectName == \"Blockade\"", kard);
+        StringAssert.Contains("string placeholderPath = effectName switch", kard);
+        StringAssert.Contains("\"Blockade\" => \"Game/Animations/continentalblocade\"", kard);
+        StringAssert.Contains("\"Trident\" => \"Game/Animations/trident\"", kard);
         StringAssert.Contains("\"Game/Animations/continentalblocade\"", kard);
     }
 

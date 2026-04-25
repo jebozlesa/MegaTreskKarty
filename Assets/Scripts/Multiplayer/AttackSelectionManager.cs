@@ -340,7 +340,7 @@ public class AttackSelectionManager : MonoBehaviour
     {
         if (currentCard == null || currentAttackCounts == null)
         {
-            Debug.LogWarning("[AttackSelectionManager] Cannot enable buttons - no card/counts prepared");
+            Debug.Log("[AttackSelectionManager] Reveal completed before attack counts were ready; buttons will enable after PrepareAttackSelection");
             return;
         }
         

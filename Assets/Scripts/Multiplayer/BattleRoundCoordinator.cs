@@ -7,6 +7,10 @@ using UnityEngine;
 
 public class BattleRoundCoordinator
 {
+    private const string MatchPhaseSelectingAttacks = "selecting_attacks";
+    private const string MatchPhaseWaitingForAttacks = "waiting_for_attacks";
+    private const string MatchPhaseResolvingBattle = "resolving_battle";
+    private const string MatchPhaseWaitingForResultAck = "waiting_for_result_ack";
     private readonly FightSystemMultiplayer fightSystem;
     private readonly MultiplayerService multiplayerService;
     private readonly MultiplayerKillCounterManager killCounterManager;
@@ -82,6 +86,11 @@ public class BattleRoundCoordinator
     public IEnumerator PollForNextTurnReady()
     {
         var serverFunctions = fightSystem.serverFunctionsManager;
+        yield return PollForNextTurnReadyViaMatchState(serverFunctions);
+    }
+
+    private IEnumerator PollForNextTurnReadyViaMatchState(ServerFunctionsManager serverFunctions)
+    {
         int pollAttempts = 0;
         const int MAX_POLL_ATTEMPTS = 30;
         const int RETRY_MARK_READY_AFTER_POLLS = 3;
@@ -91,48 +100,43 @@ public class BattleRoundCoordinator
             yield return new WaitForSeconds(1f);
             pollAttempts++;
 
-            bool isCompleted = false;
-            bool bothReady = false;
-            bool iAmMarkedReady = true;
+            var matchStateTask = multiplayerService.GetMatchStateAsync(fightSystem.roomCode, fightSystem.myPlayerId);
+            yield return new WaitUntil(() => matchStateTask.IsCompleted);
 
-            serverFunctions.CheckNextTurnReady(fightSystem.roomCode, result => {
-                if (result?.FunctionResult != null)
-                {
-                    var resultData = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
-                        .DeserializeObject<Dictionary<string, object>>(result.FunctionResult.ToString());
+            MatchStateDto matchState = null;
+            if (matchStateTask.Status == System.Threading.Tasks.TaskStatus.RanToCompletion)
+            {
+                matchState = matchStateTask.Result;
+            }
 
-                    if (resultData.ContainsKey("bothPlayersReady"))
-                    {
-                        bothReady = (bool)resultData["bothPlayersReady"];
-                    }
+            if (matchState == null)
+            {
+                Debug.LogWarning($"[BattleRoundCoordinator] MatchState next-turn poll {pollAttempts}/{MAX_POLL_ATTEMPTS} returned null");
+                continue;
+            }
 
-                    if (resultData.ContainsKey("playersReadyByPlayerId"))
-                    {
-                        var playersReadyByPlayerId = resultData["playersReadyByPlayerId"] as Dictionary<string, object>;
-                        if (playersReadyByPlayerId != null && playersReadyByPlayerId.ContainsKey(fightSystem.myPlayerId))
-                        {
-                            iAmMarkedReady = (bool)playersReadyByPlayerId[fightSystem.myPlayerId];
-                            if (!iAmMarkedReady)
-                            {
-                                Debug.LogWarning($"[BattleRoundCoordinator] Poll #{pollAttempts}: I'm NOT marked ready in DB!");
-                            }
-                        }
-                    }
-                }
-                isCompleted = true;
-            });
+            bool bothReady = IsBothPlayersReadyFromMatchState(matchState);
+            bool iAmMarkedReady = IsPlayerMarkedReadyInMatchState(matchState, fightSystem.myPlayerId);
 
-            yield return new WaitUntil(() => isCompleted);
+            Debug.Log($"[BattleRoundCoordinator] MatchState next-turn poll {pollAttempts}/{MAX_POLL_ATTEMPTS}: phase={matchState.phase}, bothReady={bothReady}, iAmMarkedReady={iAmMarkedReady}");
 
             if (bothReady)
             {
-                Debug.Log("[BattleRoundCoordinator] Both players ready after polling!");
-                break;
+                Debug.Log("[BattleRoundCoordinator] Both players ready after MatchState polling!");
+                yield break;
             }
 
-            if (!iAmMarkedReady && pollAttempts % RETRY_MARK_READY_AFTER_POLLS == 0)
+            if (HasNextTurnReadyPhaseAdvanced(matchState))
             {
-                Debug.LogWarning($"[BattleRoundCoordinator] Retrying MarkReadyForNextTurn (attempt {pollAttempts / RETRY_MARK_READY_AFTER_POLLS})");
+                Debug.Log($"[BattleRoundCoordinator] Next turn already advanced to phase '{matchState.phase}', stopping ready polling");
+                yield break;
+            }
+
+            if (!iAmMarkedReady
+                && IsWaitingForResultAcknowledgement(matchState)
+                && pollAttempts % RETRY_MARK_READY_AFTER_POLLS == 0)
+            {
+                Debug.LogWarning($"[BattleRoundCoordinator] Retrying MarkReadyForNextTurn via MatchState flow (attempt {pollAttempts / RETRY_MARK_READY_AFTER_POLLS})");
 
                 bool retryCompleted = false;
                 serverFunctions.MarkReadyForNextTurn(fightSystem.roomCode, fightSystem.myPlayerId, result => {
@@ -147,13 +151,10 @@ public class BattleRoundCoordinator
             }
         }
 
-        if (pollAttempts >= MAX_POLL_ATTEMPTS)
+        Debug.LogError("[BattleRoundCoordinator] Timeout waiting for opponent to be ready");
+        if (dialogText != null)
         {
-            Debug.LogError("[BattleRoundCoordinator] Timeout waiting for opponent to be ready");
-            if (dialogText != null)
-            {
-                dialogText.text = "Opponent disconnected?";
-            }
+            dialogText.text = "Opponent disconnected?";
         }
     }
 
@@ -204,78 +205,7 @@ public class BattleRoundCoordinator
             Object.Destroy(deadCard.gameObject);
         }
 
-        var serverFunctions = fightSystem.serverFunctionsManager;
-        if (serverFunctions == null)
-        {
-            Debug.LogError("[BattleRoundCoordinator] ServerFunctionsManager not found! Cannot clear dead card from server.");
-            yield break;
-        }
-
-        string roomCode = multiplayerService?.RoomCode;
-        if (string.IsNullOrEmpty(roomCode))
-        {
-            Debug.LogError("[BattleRoundCoordinator] RoomCode is null/empty! Cannot clear dead card from server.");
-            yield break;
-        }
-
-        Debug.Log($"[BattleRoundCoordinator] Calling server to clear dead card - roomCode: {roomCode}, cardId: {cardId}");
-
-        bool serverCallCompleted = false;
-        bool serverCallSuccess = false;
-
-        serverFunctions.ClearDeadCard(roomCode, cardId, (result) =>
-        {
-            serverCallCompleted = true;
-
-            if (result != null && result.FunctionResult != null)
-            {
-                if (TryGetSuccessFlag(result.FunctionResult, out var successFlag))
-                {
-                    serverCallSuccess = successFlag;
-
-                    if (serverCallSuccess)
-                    {
-                        Debug.Log($"[BattleRoundCoordinator] Dead card cleared from server: {cardName} (ID: {cardId})");
-                    }
-                    else
-                    {
-                        string errorMsg = TryGetErrorMessage(result.FunctionResult) ?? "Unknown error";
-                        Debug.LogError($"[BattleRoundCoordinator] Server failed to clear dead card: {errorMsg}");
-                    }
-                }
-                else
-                {
-                    Debug.LogWarning("[BattleRoundCoordinator] Could not parse clear-dead-card response format");
-                }
-            }
-            else
-            {
-                Debug.LogError("[BattleRoundCoordinator] Server call returned null result!");
-            }
-        });
-
-        float timeout = 10f;
-        float elapsed = 0f;
-        while (!serverCallCompleted && elapsed < timeout)
-        {
-            yield return new WaitForSeconds(0.1f);
-            elapsed += 0.1f;
-        }
-
-        if (!serverCallCompleted)
-        {
-            Debug.LogError($"[BattleRoundCoordinator] Server call timeout after {timeout}s - dead card may still be in selectedCards!");
-        }
-        else if (!serverCallSuccess)
-        {
-            Debug.LogWarning("[BattleRoundCoordinator] Server call completed but failed - check server logs");
-        }
-
-        // Guard against callback races: ensure dead card is really gone from selectedCards before continuing.
-        if (!serverCallSuccess)
-        {
-            yield return WaitForCardRemovalFromSelectedCards(roomCode, cardId, 10f);
-        }
+        Debug.Log($"[BattleRoundCoordinator] Skipping explicit dead-card clear for {cardName} (ID: {cardId}); replacement flow now relies on matchState dead-card inference");
 
         Debug.Log($"[BattleRoundCoordinator] Card death handling complete for {cardName}");
     }
@@ -378,49 +308,7 @@ public class BattleRoundCoordinator
         Debug.Log("[BattleRoundCoordinator] Enemy card revealed! Battle continues.");
 
         yield return new WaitForSeconds(0.5f);
-
-        var serverFunctions = fightSystem.serverFunctionsManager;
-        if (serverFunctions != null)
-        {
-            Debug.Log("[BattleRoundCoordinator] Clearing old battle result from server...");
-
-            bool clearCompleted = false;
-            bool clearSuccess = false;
-
-            serverFunctions.ClearBattleData(fightSystem.roomCode, fightSystem.myPlayerId, result =>
-            {
-                clearCompleted = true;
-                clearSuccess = result != null &&
-                               result.FunctionResult != null &&
-                               TryGetSuccessFlag(result.FunctionResult, out var success) &&
-                               success;
-
-                if (clearSuccess)
-                {
-                    Debug.Log("[BattleRoundCoordinator] Old battle result cleared successfully!");
-                }
-                else
-                {
-                    Debug.LogWarning("[BattleRoundCoordinator] Failed to clear battle result - may cause issues!");
-                }
-            });
-
-            float waitTime = 0f;
-            while (!clearCompleted && waitTime < 5f)
-            {
-                yield return new WaitForSeconds(0.1f);
-                waitTime += 0.1f;
-            }
-
-            if (!clearCompleted)
-            {
-                Debug.LogWarning("[BattleRoundCoordinator] ClearBattleData timeout after 5s - continuing anyway");
-            }
-        }
-        else
-        {
-            Debug.LogError("[BattleRoundCoordinator] ServerFunctionsManager not found!");
-        }
+        Debug.Log("[BattleRoundCoordinator] Replacement selection completed - continuing without legacy ClearBattleData cleanup");
 
         fightSystem.state = FightStateMultiplayer.TURN;
         Debug.Log($"[BattleRoundCoordinator] State set to TURN. Current state: {fightSystem.state}");
@@ -494,79 +382,6 @@ public class BattleRoundCoordinator
         }
     }
 
-    private IEnumerator WaitForCardRemovalFromSelectedCards(string roomCode, string deadCardId, float timeoutSeconds)
-    {
-        var serverFunctions = fightSystem.serverFunctionsManager;
-        if (serverFunctions == null)
-        {
-            yield break;
-        }
-
-        float elapsed = 0f;
-        const float pollInterval = 0.5f;
-
-        while (elapsed < timeoutSeconds)
-        {
-            bool completed = false;
-            bool cardStillPresent = true;
-
-            serverFunctions.GetSelectedCards(roomCode, result =>
-            {
-                cardStillPresent = IsCardPresentInSelectedCards(result?.FunctionResult, deadCardId);
-                completed = true;
-            });
-
-            yield return new WaitUntil(() => completed);
-
-            if (!cardStillPresent)
-            {
-                Debug.Log($"[BattleRoundCoordinator] Confirmed dead card removal from selectedCards: {deadCardId}");
-                yield break;
-            }
-
-            yield return new WaitForSeconds(pollInterval);
-            elapsed += pollInterval;
-        }
-
-        Debug.LogWarning($"[BattleRoundCoordinator] Timed out waiting for dead card removal from selectedCards: {deadCardId}");
-    }
-
-    private static bool IsCardPresentInSelectedCards(object functionResult, string cardId)
-    {
-        if (string.IsNullOrEmpty(cardId))
-        {
-            return false;
-        }
-
-        Dictionary<string, object> payload = DeserializeToDictionary(functionResult);
-        if (payload == null || !payload.TryGetValue("selectedCards", out var selectedCardsObj))
-        {
-            return true;
-        }
-
-        Dictionary<string, object> selectedCards = DeserializeToDictionary(selectedCardsObj);
-        if (selectedCards == null)
-        {
-            return true;
-        }
-
-        foreach (var kvp in selectedCards)
-        {
-            Dictionary<string, object> cardData = DeserializeToDictionary(kvp.Value);
-            if (cardData == null)
-            {
-                continue;
-            }
-
-            if (cardData.TryGetValue("cardId", out var idObj) && idObj != null && idObj.ToString() == cardId)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private static bool TryGetSuccessFlag(object functionResult, out bool success)
     {
         success = false;
@@ -589,6 +404,67 @@ public class BattleRoundCoordinator
         }
 
         return false;
+    }
+
+    private static bool IsBothPlayersReadyFromMatchState(MatchStateDto matchState)
+    {
+        if (matchState == null)
+        {
+            return false;
+        }
+
+        if (matchState.nextTurnReady != null && matchState.nextTurnReady.bothReady)
+        {
+            return true;
+        }
+
+        return string.Equals(matchState.phase, MatchPhaseSelectingAttacks, System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool HasNextTurnReadyPhaseAdvanced(MatchStateDto matchState)
+    {
+        if (matchState == null || string.IsNullOrEmpty(matchState.phase))
+        {
+            return false;
+        }
+
+        return string.Equals(matchState.phase, MatchPhaseSelectingAttacks, System.StringComparison.OrdinalIgnoreCase)
+            || string.Equals(matchState.phase, MatchPhaseWaitingForAttacks, System.StringComparison.OrdinalIgnoreCase)
+            || string.Equals(matchState.phase, MatchPhaseResolvingBattle, System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsWaitingForResultAcknowledgement(MatchStateDto matchState)
+    {
+        return matchState != null
+            && string.Equals(matchState.phase, MatchPhaseWaitingForResultAck, System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsPlayerMarkedReadyInMatchState(MatchStateDto matchState, string playerId)
+    {
+        if (matchState == null || string.IsNullOrEmpty(playerId))
+        {
+            return true;
+        }
+
+        if (matchState.nextTurnReady?.readyByPlayerId != null
+            && matchState.nextTurnReady.readyByPlayerId.TryGetValue(playerId, out var readyById))
+        {
+            return readyById;
+        }
+
+        if (matchState.seats != null)
+        {
+            for (int i = 0; i < matchState.seats.Count; i++)
+            {
+                MatchSeatDto seat = matchState.seats[i];
+                if (seat != null && seat.playerId == playerId)
+                {
+                    return seat.readyForNextTurn;
+                }
+            }
+        }
+
+        return true;
     }
 
     private static string TryGetErrorMessage(object functionResult)

@@ -549,9 +549,12 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
     Sprite iconSprite = Resources.Load<Sprite>("Game/EffectIcons/" + effectName);
     if (iconSprite == null)
     {
-        string placeholderPath = effectName == "Blockade"
-            ? "Game/Animations/continentalblocade"
-            : null;
+        string placeholderPath = effectName switch
+        {
+            "Blockade" => "Game/Animations/continentalblocade",
+            "Trident" => "Game/Animations/trident",
+            _ => null
+        };
         if (!string.IsNullOrEmpty(placeholderPath))
         {
             iconSprite = Resources.Load<Sprite>(placeholderPath);

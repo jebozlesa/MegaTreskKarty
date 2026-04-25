@@ -8,6 +8,8 @@ using PlayFab;
 /// </summary>
 public class BattleSubmitter : MonoBehaviour
 {
+    private const string MatchPhaseWaitingForResultAck = "waiting_for_result_ack";
+    private const string MatchPhaseWaitingForReplacement = "waiting_for_replacement";
     [Header("Dependencies")]
     public ServerFunctionsManager serverFunctionsManager;
     public FightSystemMultiplayer fightSystem;
@@ -89,32 +91,103 @@ public class BattleSubmitter : MonoBehaviour
             // Cakaj na druheho hraca
             int playersReadyCount = resultData.ContainsKey("playersReadyCount") ? int.Parse(resultData["playersReadyCount"].ToString()) : 0;
             Debug.Log($"[BattleSubmitter] Waiting for opponent... ({playersReadyCount}/2)");
-            
-            // Pokracuj v pollingu
-            StartCoroutine(PollForBattleResult());
+
+            StartNextBattlePoll();
         }
+    }
+
+    private void StartNextBattlePoll()
+    {
+        StartCoroutine(PollForBattleResultViaMatchState());
+    }
+
+    private static bool IsBattleResultReady(MatchStateDto matchState)
+    {
+        if (matchState == null)
+        {
+            return false;
+        }
+
+        if (matchState.battle != null && matchState.battle.hasLastResult)
+        {
+            return true;
+        }
+
+        return string.Equals(matchState.phase, MatchPhaseWaitingForResultAck, System.StringComparison.OrdinalIgnoreCase)
+            || string.Equals(matchState.phase, MatchPhaseWaitingForReplacement, System.StringComparison.OrdinalIgnoreCase);
     }
     
     /// <summary>
-    /// Polling - caka kym nie su obaja hraci ready
+    /// Polling battle resultu prebieha iba cez matchState, finálny payload sa doťahuje cez getBattleStatus.
     /// </summary>
-    private IEnumerator PollForBattleResult()
+    private IEnumerator PollForBattleResultViaMatchState()
     {
         yield return new WaitForSeconds(1f);
-        
+
         pollAttempts++;
-        
+
         if (pollAttempts >= MAX_POLL_ATTEMPTS)
         {
             Debug.LogError("[BattleSubmitter] Timeout waiting for opponent");
             isWaitingForBattle = false;
             yield break;
         }
-        
-        serverFunctionsManager.GetBattleStatus(fightSystem.roomCode, fightSystem.myPlayerId, result =>
+
+        if (fightSystem?.multiplayerService == null)
         {
-            OnBattleResponse(result);
-        });
+            Debug.LogError("[BattleSubmitter] MultiplayerService missing, aborting battle polling");
+            isWaitingForBattle = false;
+            yield break;
+        }
+
+        var matchStateTask = fightSystem.multiplayerService.GetMatchStateAsync(fightSystem.roomCode, fightSystem.myPlayerId);
+        yield return new WaitUntil(() => matchStateTask.IsCompleted);
+
+        MatchStateDto matchState = null;
+        if (matchStateTask.Status == System.Threading.Tasks.TaskStatus.RanToCompletion)
+        {
+            matchState = matchStateTask.Result;
+        }
+
+        if (matchState == null)
+        {
+            Debug.LogWarning($"[BattleSubmitter] MatchState battle poll {pollAttempts}/{MAX_POLL_ATTEMPTS} returned null");
+
+            StartCoroutine(PollForBattleResultViaMatchState());
+            yield break;
+        }
+
+        Debug.Log($"[BattleSubmitter] MatchState battle poll {pollAttempts}/{MAX_POLL_ATTEMPTS}: phase={matchState.phase}, hasLastResult={matchState.battle?.hasLastResult ?? false}");
+
+        if (IsBattleResultReady(matchState))
+        {
+            Debug.Log("[BattleSubmitter] MatchState indicates battle result is ready, fetching final battle payload");
+            serverFunctionsManager.GetBattleStatus(fightSystem.roomCode, fightSystem.myPlayerId, result =>
+            {
+                HandlePolledBattleStatusResult(result);
+            });
+            yield break;
+        }
+
+        StartCoroutine(PollForBattleResultViaMatchState());
+    }
+
+    private void HandlePolledBattleStatusResult(PlayFab.CloudScriptModels.ExecuteFunctionResult result)
+    {
+        if (result == null || result.FunctionResult == null)
+        {
+            Debug.LogWarning("[BattleSubmitter] Battle status fetch returned null after retries; continuing polling instead of aborting flow");
+
+            if (!isWaitingForBattle)
+            {
+                return;
+            }
+
+            StartCoroutine(PollForBattleResultViaMatchState());
+            return;
+        }
+
+        OnBattleResponse(result);
     }
 }
 

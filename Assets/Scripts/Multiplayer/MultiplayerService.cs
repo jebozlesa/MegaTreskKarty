@@ -128,7 +128,7 @@ public class MultiplayerService : MonoBehaviour
         {
             // Pri emergency cleanup len opustime miestnost
             // MarkRoomAsCompleted sa zavola len pri manualnom exite
-            serverFunctionsManager.LeaveRoom(myPlayerId, null);
+            serverFunctionsManager.LeaveRoom(myPlayerId);
         }
     }
 
@@ -634,6 +634,46 @@ public class MultiplayerService : MonoBehaviour
 
             Debug.Log($"[GetSelectedCardsAsync] Final result: {map.Count} cards loaded");
             tcs.TrySetResult(map);
+        });
+
+        return await tcs.Task;
+    }
+
+    public async Task<MatchStateDto> GetMatchStateAsync(string roomCode, string playerId)
+    {
+        var tcs = new TaskCompletionSource<MatchStateDto>();
+
+        if (serverFunctionsManager == null)
+        {
+            Debug.LogError("GetMatchStateAsync: serverFunctionsManager is null");
+            tcs.TrySetResult(null);
+            return await tcs.Task;
+        }
+
+        serverFunctionsManager.GetMatchState(roomCode, playerId, result =>
+        {
+            if (result?.FunctionResult == null)
+            {
+                Debug.LogWarning("GetMatchStateAsync: No result returned from server");
+                tcs.TrySetResult(null);
+                return;
+            }
+
+            try
+            {
+                var matchState = BattleContractMapper.ParseMatchStateResult(result.FunctionResult);
+                if (matchState == null)
+                {
+                    Debug.LogWarning($"GetMatchStateAsync: Failed to parse match state for room {roomCode}");
+                }
+
+                tcs.TrySetResult(matchState);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"GetMatchStateAsync: Error parsing response - {ex.Message}");
+                tcs.TrySetResult(null);
+            }
         });
 
         return await tcs.Task;
