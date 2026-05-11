@@ -52,11 +52,27 @@ public class BattleAttackerDto
     public List<BattleEffectDto> attackerEffectsApplied;
 
     public string attackResult;
+    public bool ongoingActionConsumed;
+    public List<BattleOngoingActionStepDto> ongoingActionSteps;
 
     public List<BattleStatChangeDto> statChanges;
 
     public List<BattleEffectDto> effects;
     public bool isDead;
+}
+
+[Serializable]
+public class BattleOngoingActionStepDto
+{
+    public string type;
+    public string actionType;
+    public string actorCardId;
+    public string targetCardId;
+    public int amount;
+    public int effectType;
+    public string source;
+    public string attackResult;
+    public string note;
 }
 
 [Serializable]

@@ -24,6 +24,7 @@ public class ServerFunctionsManager : MonoBehaviour
     public float retryDelay = 1f;
 
     private bool isMatchStateFunctionUnavailable;
+    private bool isShuttingDown;
 
     private static void LogVerbose(string message)
     {
@@ -443,6 +444,106 @@ public class ServerFunctionsManager : MonoBehaviour
     /// <summary>
     /// Zobraz network error indikátor
     /// </summary>
+    public void CreateRoyalRumbleSession(string playerId, string username, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        LogVerboseWarning($"CreateRoyalRumbleSession called for player: {playerId}");
+        var parameters = new
+        {
+            playerId = playerId,
+            username = username
+        };
+
+        CallFunctionWithRetry("createRoyalRumbleSession", parameters, callback);
+    }
+
+    public void GetRoyalRumbleSession(string sessionId, string playerId, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        LogVerboseWarning($"GetRoyalRumbleSession called for session: {sessionId}, player: {playerId}");
+        var parameters = new
+        {
+            sessionId = sessionId,
+            playerId = playerId
+        };
+
+        CallFunctionWithRetry("getRoyalRumbleSession", parameters, callback);
+    }
+
+    public void LoadRoyalRumblePlayerDeck(string sessionId, string playerId, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        LogVerboseWarning($"LoadRoyalRumblePlayerDeck called for session: {sessionId}, player: {playerId}");
+        var parameters = new
+        {
+            sessionId = sessionId,
+            playerId = playerId
+        };
+
+        CallFunctionWithRetry("loadRoyalRumblePlayerDeck", parameters, callback);
+    }
+
+    public void LoadRoyalRumbleEnemyDeck(string sessionId, string playerId, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        LogVerboseWarning($"LoadRoyalRumbleEnemyDeck called for session: {sessionId}, player: {playerId}");
+        var parameters = new
+        {
+            sessionId = sessionId,
+            playerId = playerId
+        };
+
+        CallFunctionWithRetry("loadRoyalRumbleEnemyDeck", parameters, callback);
+    }
+
+    public void SelectRoyalRumbleCard(string sessionId, string playerId, string cardId, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        LogVerboseWarning($"SelectRoyalRumbleCard called for session: {sessionId}, player: {playerId}, card: {cardId}");
+        var parameters = new
+        {
+            sessionId = sessionId,
+            playerId = playerId,
+            cardId = cardId
+        };
+
+        CallFunctionWithRetry("selectRoyalRumbleCard", parameters, callback);
+    }
+
+    public void SubmitRoyalRumbleAttack(string sessionId, string playerId, int attackSlot, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        LogVerboseWarning($"SubmitRoyalRumbleAttack called for session: {sessionId}, player: {playerId}, slot: {attackSlot}");
+        var parameters = new
+        {
+            sessionId = sessionId,
+            playerId = playerId,
+            attackSlot = attackSlot
+        };
+
+        CallFunctionWithRetry("submitRoyalRumbleAttack", parameters, callback);
+    }
+
+    public void AbandonRoyalRumbleSession(string sessionId, string playerId, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        LogVerboseWarning($"AbandonRoyalRumbleSession called for session: {sessionId}, player: {playerId}");
+        var parameters = new
+        {
+            sessionId = sessionId,
+            playerId = playerId
+        };
+
+        CallFunctionWithRetry("abandonRoyalRumbleSession", parameters, callback);
+    }
+
     private void ShowNetworkError(string errorMessage = "Network error")
     {
         if (networkErrorIndicator != null)
@@ -469,10 +570,22 @@ public class ServerFunctionsManager : MonoBehaviour
     /// </summary>
     public void CallFunctionWithRetry(string functionName, object parameters, Action<ExecuteFunctionResult> callback, int retriesLeft = -1)
     {
+        if (this == null || isShuttingDown || !isActiveAndEnabled)
+        {
+            callback?.Invoke(null);
+            return;
+        }
+
         if (retriesLeft == -1) retriesLeft = maxRetries;
         
         CallFunction(functionName, parameters, result =>
         {
+            if (this == null || isShuttingDown || !isActiveAndEnabled)
+            {
+                callback?.Invoke(null);
+                return;
+            }
+
             if (result != null)
             {
                 // Úspech!
@@ -499,6 +612,12 @@ public class ServerFunctionsManager : MonoBehaviour
     private IEnumerator RetryAfterDelay(string functionName, object parameters, Action<ExecuteFunctionResult> callback, int retriesLeft)
     {
         yield return new WaitForSeconds(retryDelay);
+        if (this == null || isShuttingDown || !isActiveAndEnabled)
+        {
+            callback?.Invoke(null);
+            yield break;
+        }
+
         CallFunctionWithRetry(functionName, parameters, callback, retriesLeft);
     }
 
@@ -571,7 +690,19 @@ public class ServerFunctionsManager : MonoBehaviour
     private IEnumerator RetryMatchStateAfterDelay(object parameters, Action<ExecuteFunctionResult> callback, int retriesLeft)
     {
         yield return new WaitForSeconds(retryDelay);
+        if (this == null || isShuttingDown || !isActiveAndEnabled)
+        {
+            callback?.Invoke(null);
+            yield break;
+        }
+
         CallMatchStateFunction(parameters, callback, retriesLeft);
+    }
+
+    private void OnDestroy()
+    {
+        isShuttingDown = true;
+        StopAllCoroutines();
     }
     
     // ====================================
@@ -601,3 +732,6 @@ public class ServerFunctionsManager : MonoBehaviour
         CallFunctionWithRetry("openCardPack", parameters, callback);
     }
 }
+
+
+

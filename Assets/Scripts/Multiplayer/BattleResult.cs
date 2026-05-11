@@ -49,3 +49,12 @@ public class SelectedAttackData
     public int attackCount;    // Zobrazovany pocet (damage preview)
     public string cardId;      // ID karty
 }
+
+[Serializable]
+public class PendingOngoingActionTurnData
+{
+    public string actionType;
+    public int sourceAttackId;
+    public string targetCardId;
+    public int turnsRemaining;
+}

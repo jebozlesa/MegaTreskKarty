@@ -142,7 +142,7 @@ public static class BattleEffectPlayback
             case 19:
                 return "Fear";
             case 20:
-                return "Horns";
+                return null;
             case 21:
                 return "Calm";
             case 22:

@@ -135,22 +135,22 @@ public class AttackCountLoader : MonoBehaviour
     {
         if (button1CountText != null)
         {
-            button1CountText.text = counts.count1 > 0 ? counts.count1.ToString() : "";
+            button1CountText.text = counts.count1.ToString();
         }
 
         if (button2CountText != null)
         {
-            button2CountText.text = counts.count2 > 0 ? counts.count2.ToString() : "";
+            button2CountText.text = counts.count2.ToString();
         }
 
         if (button3CountText != null)
         {
-            button3CountText.text = counts.count3 > 0 ? counts.count3.ToString() : "";
+            button3CountText.text = counts.count3.ToString();
         }
 
         if (button4CountText != null)
         {
-            button4CountText.text = counts.count4 > 0 ? counts.count4.ToString() : "";
+            button4CountText.text = counts.count4.ToString();
         }
     }
 

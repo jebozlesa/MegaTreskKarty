@@ -409,8 +409,8 @@ MonoBehaviour:
   onDelayedClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1262796434}
-        m_TargetAssemblyTypeName: FightSystem, Assembly-CSharp
+      - m_Target: {fileID: 1135657040}
+        m_TargetAssemblyTypeName: RoyalRumbleShellController, Assembly-CSharp
         m_MethodName: AttackButton
         m_Mode: 3
         m_Arguments:
@@ -726,8 +726,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1262796434}
-        m_TargetAssemblyTypeName: FightSystem, Assembly-CSharp
+      - m_Target: {fileID: 1262796439}
+        m_TargetAssemblyTypeName: RoyalRumbleBattleCoordinator, Assembly-CSharp
         m_MethodName: ConfirmAttackButton
         m_Mode: 1
         m_Arguments:
@@ -1362,6 +1362,53 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &520951887
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 520951889}
+  - component: {fileID: 520951888}
+  m_Layer: 0
+  m_Name: ServerFunctionsManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &520951888
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 520951887}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed25fe0a5a462db408eda59fa87ac5b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  networkErrorIndicator: {fileID: 0}
+  maxRetries: 3
+  retryDelay: 1
+--- !u!4 &520951889
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 520951887}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 462.639, y: 1144.1023, z: -7.561945}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &575752761
 GameObject:
   m_ObjectHideFlags: 0
@@ -1477,6 +1524,51 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!1 &728201083
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 728201085}
+  - component: {fileID: 728201084}
+  m_Layer: 0
+  m_Name: RoyalRumbleService
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &728201084
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 728201083}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8b6236fe60e2eb449beb4dfa3790dd3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  serverFunctionsManager: {fileID: 520951888}
+--- !u!4 &728201085
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 728201083}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 462.639, y: 1144.1023, z: -7.561945}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &730788228
 GameObject:
   m_ObjectHideFlags: 0
@@ -1751,8 +1843,8 @@ MonoBehaviour:
   onDelayedClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1262796434}
-        m_TargetAssemblyTypeName: FightSystem, Assembly-CSharp
+      - m_Target: {fileID: 1135657040}
+        m_TargetAssemblyTypeName: RoyalRumbleShellController, Assembly-CSharp
         m_MethodName: AttackButton
         m_Mode: 3
         m_Arguments:
@@ -2407,6 +2499,55 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 938.67, y: 795.3184, z: -23.335587}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &958345688
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 958345690}
+  - component: {fileID: 958345689}
+  m_Layer: 0
+  m_Name: RoyalRumbleBattlePlayback
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &958345689
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 958345688}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ab4823ed7a850b47b1fb852a475424f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attackComponent: {fileID: 979303243}
+  cardAnimator: {fileID: 1878885165}
+  playerLifeBar: {fileID: 1249644392}
+  enemyLifeBar: {fileID: 852969667}
+  dialogText: {fileID: 1977828724}
+--- !u!4 &958345690
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 958345688}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 462.639, y: 1144.1023, z: -7.561945}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3136,6 +3277,77 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!1 &1135657039
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1135657041}
+  - component: {fileID: 1135657040}
+  m_Layer: 0
+  m_Name: RoyalRumbleShellController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1135657040
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1135657039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2768d90b923514c4c8a7ddb78e951ee2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  royalRumbleService: {fileID: 728201084}
+  turnAdapter: {fileID: 0}
+  player: {fileID: 1437369627}
+  enemy: {fileID: 1603169479}
+  playerLifeBar: {fileID: 1249644392}
+  enemyLifeBar: {fileID: 852969667}
+  dialogText: {fileID: 1977828724}
+  attackDescriptions: {fileID: 0}
+  cardPrefab: {fileID: 7734858602410694466, guid: c344d5014f7eb6b4397da6812d4003e5, type: 3}
+  playerBoard: {fileID: 2078776981}
+  enemyBoard: {fileID: 2143713771}
+  attackButton1: {fileID: 0}
+  attackButton2: {fileID: 0}
+  attackButton3: {fileID: 0}
+  attackButton4: {fileID: 0}
+  confirmButton: {fileID: 0}
+  attackButton1Text: {fileID: 0}
+  attackButton2Text: {fileID: 0}
+  attackButton3Text: {fileID: 0}
+  attackButton4Text: {fileID: 0}
+  attackButton1CountText: {fileID: 0}
+  attackButton2CountText: {fileID: 0}
+  attackButton3CountText: {fileID: 0}
+  attackButton4CountText: {fileID: 0}
+  autoStart: 1
+  enemyRevealDelaySeconds: 0.05
+  enemyPostRevealDelaySeconds: 1
+--- !u!4 &1135657041
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1135657039}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 462.639, y: 1144.1023, z: -7.561945}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1145757367
 GameObject:
   m_ObjectHideFlags: 0
@@ -3389,7 +3601,7 @@ GameObject:
   - component: {fileID: 1262796431}
   - component: {fileID: 1262796433}
   - component: {fileID: 1262796432}
-  - component: {fileID: 1262796434}
+  - component: {fileID: 1262796439}
   m_Layer: 5
   m_Name: FightPit
   m_TagString: Untagged
@@ -3456,48 +3668,47 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1262796430}
   m_CullTransparentMesh: 1
---- !u!114 &1262796434
+--- !u!114 &1262796439
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1262796430}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5e54471e2c9ac384396981d6824289d5, type: 3}
+  m_Script: {fileID: 11500000, guid: 00eaa392ed1554c4687bfd95b37a4a50, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  royalRumbleService: {fileID: 0}
+  battlePlayback: {fileID: 0}
   player: {fileID: 1437369627}
   enemy: {fileID: 1603169479}
-  playerBoard: {fileID: 2078776981}
-  enemyBoard: {fileID: 2143713771}
-  dialogText: {fileID: 1977828724}
-  dialogButtonBorder: {fileID: 1594415404}
-  button1Text: {fileID: 871965705}
-  button2Text: {fileID: 1168539317}
-  button3Text: {fileID: 963544669}
-  button4Text: {fileID: 1947659555}
-  button1CountText: {fileID: 1719253126}
-  button2CountText: {fileID: 1549975907}
-  button3CountText: {fileID: 838758858}
-  button4CountText: {fileID: 1110878432}
-  button1: {fileID: 0}
-  button2: {fileID: 0}
-  button3: {fileID: 0}
-  button4: {fileID: 0}
   playerLifeBar: {fileID: 1249644392}
   enemyLifeBar: {fileID: 852969667}
-  state: 0
-  kartaPrefab: {fileID: 7734858602410694466, guid: c344d5014f7eb6b4397da6812d4003e5, type: 3}
-  hrac: {fileID: 1437369625}
-  nepriatel: {fileID: 1603169474}
-  cardDatabase: {fileID: 4900000, guid: 4288f3fb0e3c4e94cb530538ae047559, type: 3}
-  playerCardDatabase: {fileID: 4900000, guid: f3d0b3a1afe75654895bb25c7314fed0, type: 3}
-  attack: {fileID: 979303243}
+  dialogText: {fileID: 1977828724}
   attackDescriptions: {fileID: 1619011059}
-  effects: {fileID: 1902416957}
-  recordHandler: {fileID: 1324943462}
+  cardPrefab: {fileID: 7734858602410694466, guid: c344d5014f7eb6b4397da6812d4003e5, type: 3}
+  playerHandRoot: {fileID: 1437369625}
+  enemyHandRoot: {fileID: 0}
+  playerBoard: {fileID: 2078776981}
+  enemyBoard: {fileID: 2143713771}
+  attackButton1: {fileID: 1645726106}
+  attackButton2: {fileID: 2120759761}
+  attackButton3: {fileID: 102429878}
+  attackButton4: {fileID: 774023924}
+  confirmButton: {fileID: 0}
+  attackButton1Text: {fileID: 0}
+  attackButton2Text: {fileID: 0}
+  attackButton3Text: {fileID: 0}
+  attackButton4Text: {fileID: 0}
+  attackButton1CountText: {fileID: 0}
+  attackButton2CountText: {fileID: 0}
+  attackButton3CountText: {fileID: 0}
+  attackButton4CountText: {fileID: 0}
+  autoStart: 1
+  enemyRevealDelaySeconds: 0.05
+  enemyPostRevealDelaySeconds: 1
 --- !u!1001 &1324943459
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4444,17 +4655,6 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
---- !u!114 &1594415404 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8340746167580787268, guid: c6ed0527a7e3ca24ba8a23cbce5c93e9, type: 3}
-  m_PrefabInstance: {fileID: 1913255134}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1913255135}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!224 &1601455619 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 1141800933215233331, guid: c6ed0527a7e3ca24ba8a23cbce5c93e9, type: 3}
@@ -4824,8 +5024,8 @@ MonoBehaviour:
   onDelayedClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1262796434}
-        m_TargetAssemblyTypeName: FightSystem, Assembly-CSharp
+      - m_Target: {fileID: 1135657040}
+        m_TargetAssemblyTypeName: RoyalRumbleShellController, Assembly-CSharp
         m_MethodName: AttackButton
         m_Mode: 3
         m_Arguments:
@@ -5268,6 +5468,66 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1878885164
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1878885166}
+  - component: {fileID: 1878885165}
+  m_Layer: 0
+  m_Name: MultiplayerCardAnimator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1878885165
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1878885164}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e24caa23fe7466744b7349dc21a73dd3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  effectAnimationPrefab: {fileID: 0}
+  redColor:
+    serializedVersion: 2
+    rgba: 4278190335
+  greenColor:
+    serializedVersion: 2
+    rgba: 4278255360
+  blueColor:
+    serializedVersion: 2
+    rgba: 4294901760
+  yellowColor:
+    serializedVersion: 2
+    rgba: 4278255615
+  purpleColor:
+    serializedVersion: 2
+    rgba: 4286578816
+--- !u!4 &1878885166
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1878885164}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1901798870
 GameObject:
   m_ObjectHideFlags: 0
@@ -5534,7 +5794,7 @@ PrefabInstance:
     - target: {fileID: 4298181560895731028, guid: c6ed0527a7e3ca24ba8a23cbce5c93e9, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 1262796434}
+      objectReference: {fileID: 1262796439}
     - target: {fileID: 4298181560895731028, guid: c6ed0527a7e3ca24ba8a23cbce5c93e9, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
       value: 2
@@ -5545,7 +5805,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4298181560895731028, guid: c6ed0527a7e3ca24ba8a23cbce5c93e9, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: FightSystem, Assembly-CSharp
+      value: RoyalRumbleBattleCoordinator, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 4298181560895731028, guid: c6ed0527a7e3ca24ba8a23cbce5c93e9, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -5595,8 +5855,8 @@ MonoBehaviour:
   onDelayedClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1262796434}
-        m_TargetAssemblyTypeName: FightSystem, Assembly-CSharp
+      - m_Target: {fileID: 1135657040}
+        m_TargetAssemblyTypeName: RoyalRumbleShellController, Assembly-CSharp
         m_MethodName: ConfirmAttackButton
         m_Mode: 1
         m_Arguments:
@@ -6210,8 +6470,8 @@ MonoBehaviour:
   onDelayedClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1262796434}
-        m_TargetAssemblyTypeName: FightSystem, Assembly-CSharp
+      - m_Target: {fileID: 1135657040}
+        m_TargetAssemblyTypeName: RoyalRumbleShellController, Assembly-CSharp
         m_MethodName: AttackButton
         m_Mode: 3
         m_Arguments:
@@ -6529,7 +6789,7 @@ PrefabInstance:
     - target: {fileID: 4298181560895731028, guid: c6ed0527a7e3ca24ba8a23cbce5c93e9, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 1262796434}
+      objectReference: {fileID: 1262796439}
     - target: {fileID: 4298181560895731028, guid: c6ed0527a7e3ca24ba8a23cbce5c93e9, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
       value: 
@@ -6552,7 +6812,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4298181560895731028, guid: c6ed0527a7e3ca24ba8a23cbce5c93e9, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: FightSystem, Assembly-CSharp
+      value: RoyalRumbleBattleCoordinator, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 4298181560895731028, guid: c6ed0527a7e3ca24ba8a23cbce5c93e9, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
@@ -6734,7 +6994,7 @@ PrefabInstance:
     - target: {fileID: 3518227811020080132, guid: efdb9002191ce904da2c4c323080f9a1, type: 3}
       propertyPath: fightSystem
       value: 
-      objectReference: {fileID: 1262796434}
+      objectReference: {fileID: 0}
     - target: {fileID: 3518227811020080133, guid: efdb9002191ce904da2c4c323080f9a1, type: 3}
       propertyPath: m_Name
       value: AttackDescriptions
@@ -7033,3 +7293,8 @@ SceneRoots:
   - {fileID: 52333100}
   - {fileID: 1860959065}
   - {fileID: 1644917293}
+  - {fileID: 728201085}
+  - {fileID: 520951889}
+  - {fileID: 958345690}
+  - {fileID: 1878885166}
+  - {fileID: 1135657041}

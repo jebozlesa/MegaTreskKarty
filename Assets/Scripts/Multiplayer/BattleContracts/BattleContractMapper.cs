@@ -106,6 +106,11 @@ public static class BattleContractMapper
         {
             attacker.attackResult = string.Empty;
         }
+
+        if (attacker.ongoingActionSteps == null)
+        {
+            attacker.ongoingActionSteps = new List<BattleOngoingActionStepDto>();
+        }
     }
 
     private static void Normalize(MatchStateDto dto)

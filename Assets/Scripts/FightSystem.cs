@@ -15,7 +15,6 @@ public enum FightState { START, TURN, ENDTURN, PLAYERDEATH, ENEMYDEATH, WON, LOS
 
 public class FightSystem : MonoBehaviour
 {
-
     public Player player;
     public Player enemy;
 
