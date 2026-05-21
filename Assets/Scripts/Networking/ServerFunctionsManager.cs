@@ -8,7 +8,6 @@ public class ServerFunctionsManager : MonoBehaviour
 {
     private const string MatchStateFunctionMissingMessage = "No function named getMatchState was found to execute";
     private const string AttackCountsNotInitializedMessage = "Attack counts not initialized - select card first!";
-    private const string PlayerNotInRoomMessage = "Player not in any room";
     private static bool VerboseFunctionLogs => false;
     private static readonly Action<ExecuteFunctionResult> NoOpCallback = _ => { };
 
@@ -23,7 +22,6 @@ public class ServerFunctionsManager : MonoBehaviour
     [Tooltip("Delay medzi pokusmi v sekundách")]
     public float retryDelay = 1f;
 
-    private bool isMatchStateFunctionUnavailable;
     private bool isShuttingDown;
 
     private static void LogVerbose(string message)
@@ -40,6 +38,13 @@ public class ServerFunctionsManager : MonoBehaviour
         {
             Debug.LogWarning(message);
         }
+    }
+
+    private static bool ShouldAlwaysLogFunction(string functionName)
+    {
+        return string.Equals(functionName, "leaveRoom", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(functionName, "getMatchState", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(functionName, "cancelMatchmaking", StringComparison.OrdinalIgnoreCase);
     }
 
     // Nová funkcia: načítanie balíčkov hráčov do miestnosti
@@ -61,6 +66,11 @@ public class ServerFunctionsManager : MonoBehaviour
     {
         callback ??= NoOpCallback;
         LogVerboseWarning($"CallFunction: {functionName}, parameters: {Newtonsoft.Json.JsonConvert.SerializeObject(parameters)}");
+        if (ShouldAlwaysLogFunction(functionName))
+        {
+            Debug.Log($"[ServerFunctionsManager] ExecuteFunction request: {functionName}, parameters={Newtonsoft.Json.JsonConvert.SerializeObject(parameters)}");
+        }
+
         var request = new ExecuteFunctionRequest
         {
             FunctionName = functionName,
@@ -70,6 +80,10 @@ public class ServerFunctionsManager : MonoBehaviour
 
         PlayFabCloudScriptAPI.ExecuteFunction(request, result => {
             LogVerboseWarning($"ExecuteFunction result: {Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}");
+            if (ShouldAlwaysLogFunction(functionName))
+            {
+                Debug.Log($"[ServerFunctionsManager] ExecuteFunction success: {functionName}, result={Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}");
+            }
             
             // Success - hide network error indicator
             HideNetworkError();
@@ -79,6 +93,10 @@ public class ServerFunctionsManager : MonoBehaviour
             // Transient cloud/network failures are often resolved by retry.
             string errorReport = error?.GenerateErrorReport() ?? string.Empty;
             Debug.LogWarning(errorReport);
+            if (ShouldAlwaysLogFunction(functionName))
+            {
+                Debug.LogError($"[ServerFunctionsManager] ExecuteFunction error: {functionName}, error={errorReport}");
+            }
 
             if (ShouldShowNetworkError(functionName, errorReport))
             {
@@ -106,16 +124,7 @@ public class ServerFunctionsManager : MonoBehaviour
         CallFunction("joinOrCreateRoom", parameters, callback);
     }
 
-    // Nová funkcia: získanie informácií o hráčoch v miestnosti
-    public void GetRoomPlayersInfo(string roomCode, Action<ExecuteFunctionResult> callback)
-    {
-        callback ??= NoOpCallback;
-        LogVerboseWarning($"GetRoomPlayersInfo called with roomCode: {roomCode}");
-        var parameters = new {
-            roomCode = roomCode
-        };
-        CallFunction("getRoomPlayersInfo", parameters, callback);
-    }
+    // Legacy note: room/player polling now uses getMatchState, not getRoomPlayersInfo.
 
     public void GetMatchState(string roomCode, string playerId, Action<ExecuteFunctionResult> callback)
     {
@@ -128,14 +137,7 @@ public class ServerFunctionsManager : MonoBehaviour
             return;
         }
 
-        if (isMatchStateFunctionUnavailable)
-        {
-            Debug.LogWarning("[ServerFunctionsManager] getMatchState is unavailable in PlayFab, skipping repeated requests");
-            callback?.Invoke(null);
-            return;
-        }
-
-        LogVerboseWarning($"GetMatchState called with roomCode: {roomCode}, playerId: {playerId}");
+        Debug.Log($"[ServerFunctionsManager] GetMatchState requested: roomCode={roomCode}, playerId={playerId}");
         var parameters = new
         {
             roomCode,
@@ -143,6 +145,20 @@ public class ServerFunctionsManager : MonoBehaviour
         };
 
         CallMatchStateFunction(parameters, callback, maxRetries);
+    }
+
+    public void CancelMatchmaking(string playerId, string roomCode, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        Debug.Log($"[ServerFunctionsManager] CancelMatchmaking requested: playerId={playerId}, roomCode={roomCode}");
+        var parameters = new
+        {
+            playerId,
+            roomCode
+        };
+
+        CallFunctionWithRetry("cancelMatchmaking", parameters, callback);
     }
 
     // Nová funkcia: aktualizácia informácií o hráčovi
@@ -167,7 +183,7 @@ public class ServerFunctionsManager : MonoBehaviour
     // Nová funkcia: opustenie miestnosti
     public void LeaveRoom(string playerId, Action<ExecuteFunctionResult> callback = null)
     {
-        LogVerboseWarning($"LeaveRoom called with playerId: {playerId}");
+        Debug.Log($"[ServerFunctionsManager] LeaveRoom requested: playerId={playerId}");
         var parameters = new {
             playerId = playerId
         };
@@ -199,22 +215,6 @@ public class ServerFunctionsManager : MonoBehaviour
             if (result != null && result.FunctionResult != null)
             {
                 Debug.Log($"Cleanup result: {result.FunctionResult}");
-            }
-        }));
-    }
-
-    // Nová funkcia: označenie miestnosti ako completed
-    public void MarkRoomAsCompleted(string roomCode, string playerId, Action<ExecuteFunctionResult> callback = null)
-    {
-        LogVerbose($"MarkRoomAsCompleted called with roomCode: {roomCode}, playerId: {playerId}");
-        var parameters = new {
-            roomCode = roomCode,
-            playerId = playerId
-        };
-        CallFunction("markRoomAsCompleted", parameters, callback ?? (result => {
-            if (result != null && result.FunctionResult != null)
-            {
-                Debug.Log($"Mark room completed result: {result.FunctionResult}");
             }
         }));
     }
@@ -279,66 +279,8 @@ public class ServerFunctionsManager : MonoBehaviour
         CallFunctionWithRetry("setSelectedCard", parameters, callback);
     }
 
-    public void GetSelectedCards(string roomCode, Action<ExecuteFunctionResult> callback)
-    {
-        callback ??= NoOpCallback;
-
-        if (string.IsNullOrEmpty(roomCode))
-        {
-            Debug.LogError("GetSelectedCards: roomCode is empty!");
-            callback?.Invoke(null);
-            return;
-        }
-
-        LogVerboseWarning($"GetSelectedCards called with roomCode: {roomCode}");
-        var parameters = new
-        {
-            roomCode
-        };
-        // Retry because polling can fail on transient network issues.
-        CallFunctionWithRetry("getSelectedCards", parameters, callback);
-    }
-
-    public void ClearSelectedCards(string roomCode, Action<ExecuteFunctionResult> callback)
-    {
-        LogVerboseWarning($"ClearSelectedCards called with roomCode: {roomCode}");
-        var parameters = new
-        {
-            roomCode
-        };
-        // Retry because this is critical for card replacement.
-        CallFunctionWithRetry("clearSelectedCards", parameters, callback ?? (_ => { }));
-    }
-
-    /// <summary>
-    /// Vymaže mŕtvu kartu zo selectedCards na serveri (selective clear)
-    /// </summary>
-    public void ClearDeadCard(string roomCode, string cardIdToClear, Action<ExecuteFunctionResult> callback)
-    {
-        LogVerboseWarning($"[ServerFunctionsManager] ClearDeadCard called - roomCode: {roomCode}, cardId: {cardIdToClear}");
-        var parameters = new
-        {
-            roomCode = roomCode,
-            cardIdToClear = cardIdToClear
-        };
-        // Retry because a failed clear would leave a dead card in the database.
-        CallFunctionWithRetry("clearSelectedCards", parameters, callback ?? (_ => { }));
-    }
-
-    /// <summary>
-    /// Vyčistí battle data po výmene karty - resetuje lastResult aby server vytvoril nový
-    /// </summary>
-    public void ClearBattleData(string roomCode, string playerId, Action<ExecuteFunctionResult> callback)
-    {
-        LogVerbose($"[ServerFunctionsManager] ClearBattleData called - roomCode: {roomCode}, playerId: {playerId}");
-        var parameters = new
-        {
-            roomCode = roomCode,
-            playerId = playerId
-        };
-        // Retry because this is critical for turn cleanup.
-        CallFunctionWithRetry("clearBattleData", parameters, callback ?? (_ => { }));
-    }
+    // Legacy note: selected-card refresh and replacement flow now use getMatchState.
+    // Do not add new client flow-control calls to getSelectedCards/clearSelectedCards/clearBattleData.
 
     // ============================================================
     // V8: Attack counts (server auto-init and auto-decrement)
@@ -423,23 +365,7 @@ public class ServerFunctionsManager : MonoBehaviour
         CallFunctionWithRetry("markReadyForNextTurn", parameters, callback);
     }
     
-    /// <summary>
-    /// Skontroluje ready stav pre ďalší turn (polling)
-    /// </summary>
-    public void CheckNextTurnReady(string roomCode, Action<ExecuteFunctionResult> callback)
-    {
-        callback ??= NoOpCallback;
-
-        LogVerbose($"CheckNextTurnReady called for room: {roomCode}");
-        
-        var parameters = new
-        {
-            roomCode = roomCode
-        };
-        
-        // Retry because this polls next-turn readiness.
-        CallFunctionWithRetry("checkNextTurnReady", parameters, callback);
-    }
+    // Legacy note: next-turn readiness polling now uses getMatchState.
     
     /// <summary>
     /// Zobraz network error indikátor
@@ -623,6 +549,7 @@ public class ServerFunctionsManager : MonoBehaviour
 
     private void CallMatchStateFunction(object parameters, Action<ExecuteFunctionResult> callback, int retriesLeft)
     {
+        Debug.Log($"[ServerFunctionsManager] ExecuteFunction request: getMatchState, parameters={Newtonsoft.Json.JsonConvert.SerializeObject(parameters)}, retriesLeft={retriesLeft}");
         var request = new ExecuteFunctionRequest
         {
             FunctionName = "getMatchState",
@@ -633,6 +560,7 @@ public class ServerFunctionsManager : MonoBehaviour
         PlayFabCloudScriptAPI.ExecuteFunction(request, result =>
         {
             LogVerboseWarning($"ExecuteFunction result: {Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}");
+            Debug.Log($"[ServerFunctionsManager] ExecuteFunction success: getMatchState, result={Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}");
             HideNetworkError();
             callback?.Invoke(result);
         }, error =>
@@ -642,14 +570,11 @@ public class ServerFunctionsManager : MonoBehaviour
 
             if (isMissingFunction)
             {
-                isMatchStateFunctionUnavailable = true;
-                HideNetworkError();
-                Debug.LogWarning("[ServerFunctionsManager] getMatchState is not registered in PlayFab.");
-                callback?.Invoke(null);
-                return;
+                Debug.LogError("[ServerFunctionsManager] getMatchState is not registered in PlayFab.");
             }
 
             Debug.LogWarning(errorReport);
+            Debug.LogError($"[ServerFunctionsManager] ExecuteFunction error: getMatchState, error={errorReport}");
             ShowNetworkError("Server error: getMatchState");
 
             if (retriesLeft > 0)
@@ -674,12 +599,6 @@ public class ServerFunctionsManager : MonoBehaviour
 
         if (string.Equals(functionName, "getAttackCounts", StringComparison.OrdinalIgnoreCase)
             && errorReport.IndexOf(AttackCountsNotInitializedMessage, StringComparison.OrdinalIgnoreCase) >= 0)
-        {
-            return false;
-        }
-
-        if (string.Equals(functionName, "leaveRoom", StringComparison.OrdinalIgnoreCase)
-            && errorReport.IndexOf(PlayerNotInRoomMessage, StringComparison.OrdinalIgnoreCase) >= 0)
         {
             return false;
         }

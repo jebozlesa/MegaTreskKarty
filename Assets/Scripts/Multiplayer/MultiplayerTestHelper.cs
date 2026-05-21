@@ -20,7 +20,7 @@ public class MultiplayerTestHelper : MonoBehaviour
         if (testGetRoomInfo && !string.IsNullOrEmpty(testRoomCode))
         {
             testGetRoomInfo = false;
-            TestGetRoomPlayersInfo();
+            TestGetMatchState();
         }
         
         if (testUpdatePlayerInfo && !string.IsNullOrEmpty(testUsername))
@@ -30,33 +30,30 @@ public class MultiplayerTestHelper : MonoBehaviour
         }
     }
 
-    void TestGetRoomPlayersInfo()
+    void TestGetMatchState()
     {
-        Debug.Log($"Testing GetRoomPlayersInfo with roomCode: {testRoomCode}");
-        serverFunctionsManager.GetRoomPlayersInfo(testRoomCode, result =>
+        string playerId = PlayFabManagerLogin.Instance.LoggedInPlayerId;
+        Debug.Log($"Testing GetMatchState with roomCode: {testRoomCode}");
+        serverFunctionsManager.GetMatchState(testRoomCode, playerId, result =>
         {
             if (result != null && result.FunctionResult != null)
             {
                 JObject functionResult = JObject.Parse(result.FunctionResult.ToString());
-                Debug.Log($"GetRoomPlayersInfo result: {functionResult}");
+                Debug.Log($"GetMatchState result: {functionResult}");
                 
                 if (functionResult["success"].Value<bool>())
                 {
-                    JArray playersInfo = functionResult["playersInfo"] as JArray;
-                    Debug.Log($"Found {playersInfo.Count} players in room:");
-                    foreach (JObject player in playersInfo)
-                    {
-                        Debug.Log($"  - Player ID: {player["playerId"]}, Username: {player["username"]}");
-                    }
+                    var matchState = functionResult["matchState"];
+                    Debug.Log($"Phase: {matchState?["phase"]}, players: {matchState?["playersCount"]}");
                 }
                 else
                 {
-                    Debug.LogError($"GetRoomPlayersInfo failed: {functionResult["message"]}");
+                    Debug.LogError($"GetMatchState failed: {functionResult["message"] ?? functionResult["error"]}");
                 }
             }
             else
             {
-                Debug.LogError("GetRoomPlayersInfo: No result received");
+                Debug.LogError("GetMatchState: No result received");
             }
         });
     }

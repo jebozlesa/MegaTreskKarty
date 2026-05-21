@@ -9698,6 +9698,26 @@ PrefabInstance:
       propertyPath: m_Name
       value: BackButton
       objectReference: {fileID: 0}
+    - target: {fileID: 6781960581273301257, guid: 1ca9b146e665c3c4db9fbe2e6012970f, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6863361547228968546, guid: 1ca9b146e665c3c4db9fbe2e6012970f, type: 3}
+      propertyPath: onDelayedClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6863361547228968546, guid: 1ca9b146e665c3c4db9fbe2e6012970f, type: 3}
+      propertyPath: onDelayedClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 261861852}
+    - target: {fileID: 6863361547228968546, guid: 1ca9b146e665c3c4db9fbe2e6012970f, type: 3}
+      propertyPath: onDelayedClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnExitToLobby
+      objectReference: {fileID: 0}
+    - target: {fileID: 6863361547228968546, guid: 1ca9b146e665c3c4db9fbe2e6012970f, type: 3}
+      propertyPath: onDelayedClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: MultiplayerService, Assembly-CSharp
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

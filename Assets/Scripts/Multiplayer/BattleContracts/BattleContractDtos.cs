@@ -124,7 +124,20 @@ public class MatchStateDto
     public MatchBattleStateDto battle;
     public MatchNextTurnReadyDto nextTurnReady;
     public List<string> replacementRequiredPlayerIds;
+    public MatchResultDto matchResult;
+    public string completionReason;
+    public string completedAt;
+    public string completedBy;
     public List<string> warnings;
+}
+
+[Serializable]
+public class MatchResultDto
+{
+    public string winnerPlayerId;
+    public string loserPlayerId;
+    public string reason;
+    public string completedAt;
 }
 
 [Serializable]

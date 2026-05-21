@@ -14,9 +14,9 @@ public partial class BattleResultProcessor
             yield break;
         }
 
-        LogVerboseBattle("[BattleResultProcessor] Refreshing selectedCards from server...");
+        LogVerboseBattle("[BattleResultProcessor] Refreshing selectedCards from matchState...");
 
-        var task = multiplayerService.GetSelectedCardsAsync(fightSystem.roomCode);
+        var task = multiplayerService.GetSelectedCardsFromMatchStateAsync(fightSystem.roomCode, fightSystem.myPlayerId);
         yield return new WaitUntil(() => task.IsCompleted);
 
         if (task.Result == null || task.Result.Count <= 0)

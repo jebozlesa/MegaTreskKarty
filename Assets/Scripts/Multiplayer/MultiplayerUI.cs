@@ -35,6 +35,11 @@ public class MultiplayerUI : MonoBehaviour
         {
             exitButton.onClick.RemoveAllListeners();
             exitButton.onClick.AddListener(action);
+            Debug.Log("[MultiplayerUI] Exit button listener registered");
+        }
+        else
+        {
+            Debug.LogError("[MultiplayerUI] Exit button is not assigned");
         }
     }
 

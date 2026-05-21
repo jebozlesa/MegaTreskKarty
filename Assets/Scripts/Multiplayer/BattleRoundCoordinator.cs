@@ -308,7 +308,7 @@ public class BattleRoundCoordinator
         Debug.Log("[BattleRoundCoordinator] Enemy card revealed! Battle continues.");
 
         yield return new WaitForSeconds(0.5f);
-        Debug.Log("[BattleRoundCoordinator] Replacement selection completed - continuing without legacy ClearBattleData cleanup");
+        Debug.Log("[BattleRoundCoordinator] Replacement selection completed - matchState is authoritative for next flow");
 
         fightSystem.state = FightStateMultiplayer.TURN;
         Debug.Log($"[BattleRoundCoordinator] State set to TURN. Current state: {fightSystem.state}");

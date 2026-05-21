@@ -189,7 +189,7 @@ public partial class BattleResultProcessor
 
         yield return new WaitForSeconds(0.5f);
         Debug.Log(
-            "[BattleResultProcessor] Replacement selection completed - continuing without legacy ClearBattleData cleanup"
+            "[BattleResultProcessor] Replacement selection completed - matchState is authoritative for next flow"
         );
 
         fightSystem.state = FightStateMultiplayer.TURN;
