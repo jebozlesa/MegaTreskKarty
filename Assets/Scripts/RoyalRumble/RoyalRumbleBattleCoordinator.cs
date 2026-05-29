@@ -59,6 +59,8 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
     private Kard renderedEnemyActiveCard;
     public string CurrentSessionId => currentSession?.sessionId ?? string.Empty;
     public RoyalRumbleSessionDto CurrentSession => currentSession;
+    private string ActivePlayerCardId => currentSession?.active?.playerCardId ?? string.Empty;
+    private string ActiveEnemyCardId => currentSession?.active?.enemyCardId ?? string.Empty;
 
     public bool CanDragCard(Kard card)
     {
@@ -67,7 +69,7 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
             return false;
         }
 
-        return (currentSession.status == "awaiting_player_card" || currentSession.status == "awaiting_next_player_card")
+        return IsFighterSelectionStatus()
             && renderedPlayerHandCards.Contains(card);
     }
 
@@ -244,16 +246,9 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
         {
             Debug.LogWarning("[RoyalRumbleBattleCoordinator] RR enemy deck is still empty after hydration.");
         }
-        else if (string.IsNullOrWhiteSpace(currentSession.enemySelectedCardId))
+        else if (string.IsNullOrWhiteSpace(ActiveEnemyCardId))
         {
-            SelectedCardData fallbackEnemy = currentSession.enemyDeck.cards.FirstOrDefault(IsAlive);
-            if (fallbackEnemy != null)
-            {
-                currentSession.enemySelectedCardId = fallbackEnemy.cardId;
-                Debug.LogWarning(
-                    $"[RoyalRumbleBattleCoordinator] RR enemy deck had no selected active card after hydration. Falling back locally to {fallbackEnemy.cardId}."
-                );
-            }
+            Debug.LogWarning("[RoyalRumbleBattleCoordinator] Server active enemy card is missing after hydration; RR cannot choose one locally.");
         }
     }
 
@@ -371,7 +366,7 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
         ClearRenderedCards();
         RenderPlayerHand();
         RenderEnemyHand();
-        if (!string.IsNullOrWhiteSpace(currentSession?.playerSelectedCardId))
+        if (!string.IsNullOrWhiteSpace(ActivePlayerCardId))
         {
             RenderPlayerActiveCard();
         }
@@ -393,7 +388,7 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
             return;
         }
 
-        string selectedCardId = currentSession.playerSelectedCardId;
+        string selectedCardId = ActivePlayerCardId;
         foreach (SelectedCardData cardData in currentSession.playerDeck.cards.Where(IsAlive))
         {
             if (!string.IsNullOrEmpty(selectedCardId) && cardData.cardId == selectedCardId)
@@ -439,7 +434,7 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
             return;
         }
 
-        string selectedCardId = currentSession.enemySelectedCardId;
+        string selectedCardId = ActiveEnemyCardId;
         int aliveEnemyCards = 0;
 
         foreach (SelectedCardData cardData in currentSession.enemyDeck.cards.Where(IsAlive))
@@ -477,7 +472,7 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
 
     private void RenderPlayerActiveCard()
     {
-        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId);
+        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
         if (selected == null || player == null)
         {
             return;
@@ -503,10 +498,10 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
         SelectedCardData selected = ResolveSelectedEnemyCard();
         if (selected == null || enemy == null)
         {
-            if (selected == null && !string.IsNullOrEmpty(currentSession?.enemySelectedCardId))
+            if (selected == null && !string.IsNullOrEmpty(ActiveEnemyCardId))
             {
                 Debug.LogWarning(
-                    $"[RoyalRumbleBattleCoordinator] Active enemy card '{currentSession.enemySelectedCardId}' was not found in the loaded enemy deck."
+                    $"[RoyalRumbleBattleCoordinator] Active enemy card '{ActiveEnemyCardId}' was not found in the loaded enemy deck."
                 );
             }
 
@@ -587,11 +582,11 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
         switch (currentSession.status)
         {
             case "awaiting_player_card":
-            case "awaiting_next_player_card":
+            case "awaiting_replacement":
                 SetStatus("Choose fighter!");
                 break;
             case "awaiting_attack":
-                SetStatus(string.IsNullOrEmpty(currentSession.playerSelectedCardId) ? "Choose fighter!" : "Choose attack!");
+                SetStatus(string.IsNullOrEmpty(ActivePlayerCardId) ? "Choose fighter!" : "Choose attack!");
                 break;
             case "won":
                 SetStatus("You won the Royal Rumble!");
@@ -638,11 +633,11 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
         SetStatus($"Using attack {attackSlot}...");
         PendingOngoingActionTurnData pendingTurnBeforeSubmit = GetPendingOngoingAction();
         Debug.LogWarning(
-            $"[RoyalRumbleBattleCoordinator] Submitting RR attack. slot={attackSlot}, playerCard={currentSession?.playerSelectedCardId}, enemyCard={currentSession?.enemySelectedCardId}, " +
+            $"[RoyalRumbleBattleCoordinator] Submitting RR attack. slot={attackSlot}, playerCard={ActivePlayerCardId}, enemyCard={ActiveEnemyCardId}, " +
             $"pendingOngoingBeforeSubmit={(pendingTurnBeforeSubmit != null ? $"{pendingTurnBeforeSubmit.actionType}/{pendingTurnBeforeSubmit.sourceAttackId}/turns={pendingTurnBeforeSubmit.turnsRemaining}" : "none")}"
         );
-        string previousPlayerSelectedCardId = currentSession?.playerSelectedCardId;
-        string previousEnemySelectedCardId = currentSession?.enemySelectedCardId;
+        string previousPlayerSelectedCardId = ActivePlayerCardId;
+        string previousEnemySelectedCardId = ActiveEnemyCardId;
 
         Task<RoyalRumbleBattleEnvelopeDto> submitTask =
             royalRumbleService.SubmitAttackAsync(CurrentSessionId, playerId, attackSlot);
@@ -667,7 +662,7 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
                     envelope,
                     renderedPlayerActiveCard,
                     renderedEnemyActiveCard,
-                    currentSession.playerSelectedCardId
+                    previousPlayerSelectedCardId
                 )
             );
         }
@@ -755,7 +750,7 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
     {
         bool attackPhaseActive = currentSession != null
             && currentSession.status == "awaiting_attack"
-            && !string.IsNullOrWhiteSpace(currentSession.playerSelectedCardId)
+            && !string.IsNullOrWhiteSpace(ActivePlayerCardId)
             && !isBusy;
 
         SetAttackButtonsInteractable(false);
@@ -812,7 +807,7 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
             return;
         }
 
-        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId);
+        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
         if (selected == null)
         {
             SetAttackCountText(countText, -1);
@@ -846,7 +841,7 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
 
     private string GetAttackDisplayText(int attackSlot)
     {
-        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId);
+        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
         if (selected == null)
         {
             return $"Attack {attackSlot}";
@@ -866,7 +861,7 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
 
     private bool CanUseAttackSlot(int attackSlot)
     {
-        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId);
+        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
         if (selected == null)
         {
             return false;
@@ -907,7 +902,7 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
 
     private SharedAttackSelectionFlow.AttackCountsState BuildCurrentAttackCountsState()
     {
-        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId);
+        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
         if (selected == null)
         {
             return null;
@@ -929,26 +924,18 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
 
     private PendingOngoingActionTurnData GetPendingOngoingAction()
     {
-        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId);
-        SelectedCardData.OngoingActionData action = selected?.ongoingActions != null && selected.ongoingActions.Length > 0
-            ? selected.ongoingActions[0]
-            : null;
+        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
+        PendingOngoingActionTurnData pendingAction = RoyalRumbleTurnAdapter.CreatePendingOngoingAction(selected);
 
-        if (action == null || action.sourceAttackId <= 0)
+        if (pendingAction == null)
         {
             return null;
         }
 
         Debug.LogWarning(
-            $"[RoyalRumbleBattleCoordinator] Pending RR ongoing action detected on card {selected?.cardId}. type={action.type}, sourceAttackId={action.sourceAttackId}, turnsRemaining={action.turnsRemaining}, target={action.targetCardId}"
+            $"[RoyalRumbleBattleCoordinator] Pending RR ongoing action detected on card {selected?.cardId}. type={pendingAction.actionType}, sourceAttackId={pendingAction.sourceAttackId}, turnsRemaining={pendingAction.turnsRemaining}, target={pendingAction.targetCardId}"
         );
-        return new PendingOngoingActionTurnData
-        {
-            actionType = action.type,
-            sourceAttackId = action.sourceAttackId,
-            targetCardId = action.targetCardId,
-            turnsRemaining = action.turnsRemaining
-        };
+        return pendingAction;
     }
 
     private void SubmitSelectedAttack(SelectedAttackData attackData)
@@ -1057,7 +1044,7 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
         }
 
         if (currentSession.status == "awaiting_player_card"
-            || currentSession.status == "awaiting_next_player_card"
+            || currentSession.status == "awaiting_replacement"
             || currentSession.status == "won"
             || currentSession.status == "lost"
             || currentSession.status == "abandoned")
@@ -1076,13 +1063,13 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
     private void SyncActiveCardsFromSession()
     {
         ApplyCardSnapshotToRenderedCard(
-            FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId),
+            FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId),
             renderedPlayerActiveCard,
             playerLifeBar
         );
 
         ApplyCardSnapshotToRenderedCard(
-            FindCard(currentSession?.enemyDeck?.cards, currentSession?.enemySelectedCardId),
+            FindCard(currentSession?.enemyDeck?.cards, ActiveEnemyCardId),
             renderedEnemyActiveCard,
             enemyLifeBar
         );
@@ -1172,7 +1159,7 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
 
         foreach (Transform icon in iconsToRemove)
         {
-            Destroy(icon.gameObject);
+            DestroyEffectIconBeforeReposition(icon);
         }
 
         foreach (string effectName in expectedEffectNames)
@@ -1197,6 +1184,18 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
         {
             card.RepositionEffectIcons();
         }
+    }
+
+    private void DestroyEffectIconBeforeReposition(Transform icon)
+    {
+        if (icon == null)
+        {
+            return;
+        }
+
+        GameObject iconObject = icon.gameObject;
+        icon.SetParent(null, false);
+        Destroy(iconObject);
     }
 
     private void ResolveDependencies()
@@ -1275,12 +1274,19 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
         return currentSession != null
             && !isBusy
             && !openingSequenceRunning
-            && (currentSession.status == "awaiting_player_card" || currentSession.status == "awaiting_next_player_card");
+            && IsFighterSelectionStatus();
+    }
+
+    private bool IsFighterSelectionStatus()
+    {
+        return currentSession != null
+            && (currentSession.status == "awaiting_player_card"
+                || currentSession.status == "awaiting_replacement");
     }
 
     private bool ShouldRenderEnemyActiveCard()
     {
-        if (openingSequenceRunning || currentSession == null || string.IsNullOrWhiteSpace(currentSession.enemySelectedCardId))
+        if (openingSequenceRunning || currentSession == null || string.IsNullOrWhiteSpace(ActiveEnemyCardId))
         {
             return false;
         }
@@ -1308,7 +1314,7 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
 
     private SelectedCardData ResolveSelectedEnemyCard()
     {
-        SelectedCardData selected = FindCard(currentSession?.enemyDeck?.cards, currentSession?.enemySelectedCardId);
+        SelectedCardData selected = FindCard(currentSession?.enemyDeck?.cards, ActiveEnemyCardId);
         if (selected != null)
         {
             return selected;
@@ -1319,17 +1325,7 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
             return null;
         }
 
-        SelectedCardData fallbackEnemy = currentSession.enemyDeck.cards.FirstOrDefault(IsAlive);
-        if (fallbackEnemy != null)
-        {
-            currentSession.enemySelectedCardId = fallbackEnemy.cardId;
-            Debug.LogWarning(
-                $"[RoyalRumbleBattleCoordinator] Enemy deck loaded without active enemy card. Falling back locally to {fallbackEnemy.cardId}."
-            );
-            return fallbackEnemy;
-        }
-
-        Debug.LogWarning("[RoyalRumbleBattleCoordinator] Enemy deck loaded but no active enemy card is selected yet.");
+        Debug.LogWarning("[RoyalRumbleBattleCoordinator] Enemy deck loaded but server active enemy card is missing.");
         return null;
     }
 

@@ -58,7 +58,19 @@ public static class BattleEffectPlayback
         }
 
         AttackAnimations animations = attackComponent?.attackAnimations;
-        if (animations != null && effectType == 21)
+        if (animations != null && effectType == 2)
+        {
+            yield return animations.PlayAscetismEndAnimation(card.transform);
+        }
+        else if (animations != null && (effectType == 3 || effectType == 27))
+        {
+            yield return animations.PlaySleepEndAnimation(card.transform);
+        }
+        else if (animations != null && effectType == 4)
+        {
+            yield return animations.PlayExposureEndAnimation(card.transform);
+        }
+        else if (animations != null && effectType == 21)
         {
             yield return animations.PlayCalmEndAnimation(card.transform);
         }
@@ -142,13 +154,13 @@ public static class BattleEffectPlayback
             case 19:
                 return "Fear";
             case 20:
+            case 22:
+            case 23:
+                // Online ongoing maneuvers are rendered from timeline ongoing-action steps,
+                // not from effect icons.
                 return null;
             case 21:
                 return "Calm";
-            case 22:
-                return "Reloading";
-            case 23:
-                return "Trident";
             case 24:
                 return "Poison";
             case 26:

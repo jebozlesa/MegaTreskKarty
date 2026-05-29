@@ -28,6 +28,33 @@ public static class BattleTimelineBuilder
         return false;
     }
 
+    public static bool TryBuild(BattleResultDto battleResult, out List<BattleStep> steps, out string error)
+    {
+        steps = new List<BattleStep>();
+        error = null;
+
+        if (battleResult == null)
+        {
+            error = "battleResult is null";
+            return false;
+        }
+
+        if (battleResult.timelineV2 == null)
+        {
+            error = "timelineV2 missing";
+            return false;
+        }
+
+        return TryBuild(
+            new Dictionary<string, object>
+            {
+                { "timelineV2", battleResult.timelineV2 }
+            },
+            out steps,
+            out error
+        );
+    }
+
     private static bool TryBuildFromTimelineV2(
         Dictionary<string, object> battleResult,
         out List<BattleStep> steps,

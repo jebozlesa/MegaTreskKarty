@@ -38,6 +38,11 @@ public class RoyalRumbleTurnAdapter : MonoBehaviour
 
     public PendingOngoingActionTurnData GetPendingOngoingAction(SelectedCardData selectedCard)
     {
+        return CreatePendingOngoingAction(selectedCard);
+    }
+
+    public static PendingOngoingActionTurnData CreatePendingOngoingAction(SelectedCardData selectedCard)
+    {
         SelectedCardData.OngoingActionData action = selectedCard?.ongoingActions != null && selectedCard.ongoingActions.Length > 0
             ? selectedCard.ongoingActions[0]
             : null;

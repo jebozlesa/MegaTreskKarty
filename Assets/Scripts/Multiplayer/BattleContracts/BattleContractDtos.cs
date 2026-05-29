@@ -16,6 +16,7 @@ public class BattleResultDto
 {
     public BattleAttackerDto firstAttacker;
     public BattleAttackerDto secondAttacker;
+    public Dictionary<string, object> timelineV2;
 
     public bool cardDied;
     public string winnerCardId;

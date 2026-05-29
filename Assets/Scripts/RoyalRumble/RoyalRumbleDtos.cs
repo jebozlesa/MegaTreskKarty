@@ -25,6 +25,7 @@ public class RoyalRumbleBattleEnvelopeDto
     public bool enemyNeedsReplacement;
     public bool runEnded;
     public string runStatus;
+    public RoyalRumbleRecordSyncDto recordSync;
 }
 
 [Serializable]
@@ -39,10 +40,8 @@ public class RoyalRumbleSessionDto
     public RoyalRumbleDeckDto playerDeck;
     public RoyalRumbleDeckDto enemyDeck;
     public RoyalRumbleAttackCountsDto attackCounts;
-    public string playerSelectedCardId;
-    public string enemySelectedCardId;
-    public int turnNumber;
-    public int battleCount;
+    public RoyalRumbleActiveDto active;
+    public RoyalRumbleProgressDto progress;
     public RoyalRumbleModeConfigDto modeConfig;
     public RoyalRumbleResultSummaryDto resultSummary;
     public BattleResultDto lastBattleResult;
@@ -87,6 +86,27 @@ public class RoyalRumbleAttackCountEntryDto
 }
 
 [Serializable]
+public class RoyalRumbleActiveDto
+{
+    public string playerCardId;
+    public string enemyCardId;
+}
+
+[Serializable]
+public class RoyalRumbleProgressDto
+{
+    public int turnNumber;
+    public int battleCount;
+    public int defeatedEnemyCount;
+    public int playerDeaths;
+    public int bestSubmittedScore;
+    public int? pendingRecordScore;
+    public string lastRecordError;
+    public string campaignId;
+    public int? levelId;
+}
+
+[Serializable]
 public class RoyalRumbleModeConfigDto
 {
     public int playerDeckSize;
@@ -116,15 +136,26 @@ public class RoyalRumbleSessionSummaryDto
     public string mode;
     public string playerId;
     public string status;
-    public string playerSelectedCardId;
-    public string enemySelectedCardId;
-    public int turnNumber;
-    public int battleCount;
-    public int playerDeckCount;
-    public int enemyDeckCount;
+    public RoyalRumbleDeckSummaryDto playerDeck;
+    public RoyalRumbleDeckSummaryDto enemyDeck;
+    public RoyalRumbleAttackCountsDto attackCounts;
+    public RoyalRumbleActiveDto active;
+    public RoyalRumbleProgressDto progress;
+    public RoyalRumbleModeConfigDto modeConfig;
+    public BattleResultDto lastBattleResult;
+    public RoyalRumbleResultSummaryDto resultSummary;
     public string createdAt;
     public string updatedAt;
     public string abandonedAt;
+}
+
+[Serializable]
+public class RoyalRumbleDeckSummaryDto
+{
+    public string deckId;
+    public string deckName;
+    public int deckSize;
+    public bool loaded;
 }
 
 [Serializable]
@@ -134,4 +165,14 @@ public class RoyalRumbleBotAttackDto
     public int attackId;
     public List<int> validSlots;
     public string reason;
+}
+
+[Serializable]
+public class RoyalRumbleRecordSyncDto
+{
+    public bool submitted;
+    public bool pending;
+    public bool skipped;
+    public int score;
+    public string error;
 }

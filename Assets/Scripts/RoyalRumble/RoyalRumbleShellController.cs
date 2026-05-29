@@ -27,6 +27,7 @@ public class RoyalRumbleShellController : MonoBehaviour
     public HealthBar enemyLifeBar;
     public TMP_Text dialogText;
     public AttackDescriptions attackDescriptions;
+    public RecordHandler recordHandler;
     public GameObject cardPrefab;
 
     [Header("Scene References")]
@@ -59,7 +60,6 @@ public class RoyalRumbleShellController : MonoBehaviour
     private bool hasStartedRun;
     private bool isShuttingDown;
     private string lastAutoSubmittedPendingKey;
-    private PendingOngoingActionTurnData localPendingOngoingAction;
     private SharedAttackSelectionFlow attackSelectionFlow;
     private readonly List<Kard> renderedPlayerHandCards = new List<Kard>();
     private readonly List<Kard> renderedEnemyHandCards = new List<Kard>();
@@ -75,6 +75,8 @@ public class RoyalRumbleShellController : MonoBehaviour
     private string defaultAttackButton4Count;
 
     public RoyalRumbleSessionDto CurrentSession => currentSession;
+    private string ActivePlayerCardId => currentSession?.active?.playerCardId ?? string.Empty;
+    private string ActiveEnemyCardId => currentSession?.active?.enemyCardId ?? string.Empty;
 
     public bool CanDragCard(Kard card)
     {
@@ -83,8 +85,15 @@ public class RoyalRumbleShellController : MonoBehaviour
             return false;
         }
 
-        return (currentSession.status == "awaiting_player_card" || currentSession.status == "awaiting_next_player_card")
+        return IsFighterSelectionStatus()
             && renderedPlayerHandCards.Contains(card);
+    }
+
+    private bool IsFighterSelectionStatus()
+    {
+        return currentSession != null
+            && (currentSession.status == "awaiting_player_card"
+                || currentSession.status == "awaiting_replacement");
     }
 
     private void Awake()
@@ -154,6 +163,7 @@ public class RoyalRumbleShellController : MonoBehaviour
         }
 
         currentSession = sessionEnvelope.session;
+        SyncRoyalRumbleRecordDisplay(null, "create_session");
         LogVerboseWarning(
             $"[RoyalRumbleShellController] RR shell created session {currentSession.sessionId} with status {currentSession.status}."
         );
@@ -200,12 +210,12 @@ public class RoyalRumbleShellController : MonoBehaviour
             return;
         }
 
-        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId);
+        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
         int attackId = GetAttackIdForSlot(selected, attackType);
         int remainingCount = selected != null ? GetRemainingCountForSlot(selected.cardId, attackType) : -1;
         LogVerboseWarning(
             $"[RoyalRumbleShellController] Attack button clicked. slot={attackType}, attackId={attackId}, attackName={GetAttackName(attackId)}, " +
-            $"remainingCount={remainingCount}, status={currentSession?.status}, isBusy={isBusy}, selectedCard={currentSession?.playerSelectedCardId}"
+            $"remainingCount={remainingCount}, status={currentSession?.status}, isBusy={isBusy}, selectedCard={ActivePlayerCardId}"
         );
         attackSelectionFlow?.OnAttackButtonClicked(attackType);
     }
@@ -221,13 +231,13 @@ public class RoyalRumbleShellController : MonoBehaviour
             return;
         }
 
-        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId);
+        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
         int selectedSlot = attackSelectionFlow?.SelectedAttackType ?? 0;
         int attackId = GetAttackIdForSlot(selected, selectedSlot);
         int remainingCount = selected != null ? GetRemainingCountForSlot(selected.cardId, selectedSlot) : -1;
         LogVerboseWarning(
             $"[RoyalRumbleShellController] Confirm attack clicked. selectedSlot={selectedSlot}, attackId={attackId}, attackName={GetAttackName(attackId)}, " +
-            $"remainingCount={remainingCount}, status={currentSession?.status}, isBusy={isBusy}, selectedCard={currentSession?.playerSelectedCardId}"
+            $"remainingCount={remainingCount}, status={currentSession?.status}, isBusy={isBusy}, selectedCard={ActivePlayerCardId}"
         );
         attackSelectionFlow?.OnConfirmAttackClicked();
     }
@@ -278,8 +288,8 @@ public class RoyalRumbleShellController : MonoBehaviour
             }
 
             currentSession = envelope.session;
+            SyncRoyalRumbleRecordDisplay(null, "select_card");
             renderedPlayerHandCards.Remove(card);
-            localPendingOngoingAction = null;
             lastAutoSubmittedPendingKey = null;
             LogVerboseWarning(
                 $"[RoyalRumbleShellController] Fighter selected via drag: cardId={card.cardId}, name={card.cardName}, hp={card.health}/{card.maxHealth}, " +
@@ -301,6 +311,7 @@ public class RoyalRumbleShellController : MonoBehaviour
         turnAdapter ??= FindFirstObjectByType<RoyalRumbleTurnAdapter>();
         battlePlayback ??= GetComponent<RoyalRumbleBattlePlayback>();
         battlePlayback ??= FindFirstObjectByType<RoyalRumbleBattlePlayback>();
+        recordHandler ??= FindFirstObjectByType<RecordHandler>();
         dialogText ??= FindFirstObjectByType<TMP_Text>();
         attackDescriptions ??= FindFirstObjectByType<AttackDescriptions>();
         player ??= FindPlayers(false).FirstOrDefault();
@@ -337,8 +348,9 @@ public class RoyalRumbleShellController : MonoBehaviour
             if (playerDeckEnvelope?.session != null)
             {
                 currentSession = playerDeckEnvelope.session;
+                SyncRoyalRumbleRecordDisplay(null, "load_player_deck");
                 LogVerboseWarning(
-                    $"[RoyalRumbleShellController] Player deck loaded: cards={currentSession.playerDeck?.cards?.Count ?? 0}, selected={currentSession.playerSelectedCardId}"
+                    $"[RoyalRumbleShellController] Player deck loaded: cards={currentSession.playerDeck?.cards?.Count ?? 0}, selected={ActivePlayerCardId}"
                 );
             }
             else
@@ -353,8 +365,9 @@ public class RoyalRumbleShellController : MonoBehaviour
             if (enemyDeckEnvelope?.session != null)
             {
                 currentSession = enemyDeckEnvelope.session;
+                SyncRoyalRumbleRecordDisplay(null, "load_enemy_deck");
                 LogVerboseWarning(
-                    $"[RoyalRumbleShellController] Enemy deck loaded: cards={currentSession.enemyDeck?.cards?.Count ?? 0}, selected={currentSession.enemySelectedCardId}"
+                    $"[RoyalRumbleShellController] Enemy deck loaded: cards={currentSession.enemyDeck?.cards?.Count ?? 0}, selected={ActiveEnemyCardId}"
                 );
             }
             else
@@ -454,17 +467,15 @@ public class RoyalRumbleShellController : MonoBehaviour
 
     private SelectedCardData ResolveSelectedEnemyCard()
     {
-        SelectedCardData selected = FindCard(currentSession?.enemyDeck?.cards, currentSession?.enemySelectedCardId);
+        SelectedCardData selected = FindCard(currentSession?.enemyDeck?.cards, ActiveEnemyCardId);
         if (selected != null)
         {
             return selected;
         }
 
-        SelectedCardData fallbackEnemy = currentSession?.enemyDeck?.cards?.FirstOrDefault(IsAlive);
-        if (fallbackEnemy != null)
+        if (currentSession?.enemyDeck?.cards != null && currentSession.enemyDeck.cards.Any(IsAlive))
         {
-            currentSession.enemySelectedCardId = fallbackEnemy.cardId;
-            return fallbackEnemy;
+            Debug.LogWarning("[RoyalRumbleShellController] Server active enemy card is missing; RR cannot choose one locally.");
         }
 
         return null;
@@ -658,18 +669,8 @@ public class RoyalRumbleShellController : MonoBehaviour
 
     private PendingOngoingActionTurnData GetPendingOngoingAction()
     {
-        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId);
-        PendingOngoingActionTurnData sessionPending = turnAdapter != null
-            ? turnAdapter.GetPendingOngoingAction(selected)
-            : null;
-
-        if (sessionPending != null)
-        {
-            localPendingOngoingAction = sessionPending;
-            return sessionPending;
-        }
-
-        return localPendingOngoingAction;
+        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
+        return RoyalRumbleTurnAdapter.CreatePendingOngoingAction(selected);
     }
 
     private void SubmitSelectedAttack(SelectedAttackData attackData)
@@ -680,7 +681,7 @@ public class RoyalRumbleShellController : MonoBehaviour
         }
 
         PendingOngoingActionTurnData pendingAction = GetPendingOngoingAction();
-        string pendingKey = BuildPendingActionKey(currentSession?.playerSelectedCardId, pendingAction);
+        string pendingKey = BuildPendingActionKey(ActivePlayerCardId, pendingAction);
         if (pendingAction != null)
         {
             if (!string.IsNullOrWhiteSpace(pendingKey) && string.Equals(lastAutoSubmittedPendingKey, pendingKey, StringComparison.Ordinal))
@@ -713,8 +714,8 @@ public class RoyalRumbleShellController : MonoBehaviour
         isBusy = true;
         UpdateAttackButtons();
         SetStatus("Resolving battle...");
-        SelectedCardData playerSnapshotBefore = FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId);
-        SelectedCardData enemySnapshotBefore = FindCard(currentSession?.enemyDeck?.cards, currentSession?.enemySelectedCardId);
+        SelectedCardData playerSnapshotBefore = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
+        SelectedCardData enemySnapshotBefore = FindCard(currentSession?.enemyDeck?.cards, ActiveEnemyCardId);
         int attackId = GetAttackIdForSlot(playerSnapshotBefore, attackSlot);
         int countBefore = playerSnapshotBefore != null ? GetRemainingCountForSlot(playerSnapshotBefore.cardId, attackSlot) : -1;
         PendingOngoingActionTurnData pendingBefore = GetPendingOngoingAction();
@@ -746,8 +747,8 @@ public class RoyalRumbleShellController : MonoBehaviour
             yield break;
         }
 
-        string previousPlayerSelectedCardId = currentSession?.playerSelectedCardId;
-        string previousEnemySelectedCardId = currentSession?.enemySelectedCardId;
+        string previousPlayerSelectedCardId = ActivePlayerCardId;
+        string previousEnemySelectedCardId = ActiveEnemyCardId;
 
         if (battlePlayback != null && renderedPlayerActiveCard != null && renderedEnemyActiveCard != null)
         {
@@ -781,15 +782,15 @@ public class RoyalRumbleShellController : MonoBehaviour
             }
         }
 
+        SyncRoyalRumbleRecordDisplay(envelope.recordSync, "post_battle");
+
         if (this == null || isShuttingDown)
         {
             yield break;
         }
 
-        UpdateLocalPendingOngoingFallback(envelope, previousPlayerSelectedCardId);
-
-        SelectedCardData playerSnapshotAfter = FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId);
-        SelectedCardData enemySnapshotAfter = FindCard(currentSession?.enemyDeck?.cards, currentSession?.enemySelectedCardId);
+        SelectedCardData playerSnapshotAfter = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
+        SelectedCardData enemySnapshotAfter = FindCard(currentSession?.enemyDeck?.cards, ActiveEnemyCardId);
         int countAfter = playerSnapshotAfter != null ? GetRemainingCountForSlot(playerSnapshotAfter.cardId, attackSlot) : -1;
         PendingOngoingActionTurnData pendingAfter = GetPendingOngoingAction();
         LogVerboseWarning(
@@ -802,7 +803,7 @@ public class RoyalRumbleShellController : MonoBehaviour
             $"[RoyalRumbleShellController] Battle summary: {DescribeBattleSummary(envelope.battleResult, previousPlayerSelectedCardId)}"
         );
 
-        string nextPendingKey = BuildPendingActionKey(currentSession?.playerSelectedCardId, pendingAfter);
+        string nextPendingKey = BuildPendingActionKey(ActivePlayerCardId, pendingAfter);
         if (pendingAfter == null)
         {
             lastAutoSubmittedPendingKey = null;
@@ -823,7 +824,7 @@ public class RoyalRumbleShellController : MonoBehaviour
     {
         bool attackPhaseActive = currentSession != null
             && currentSession.status == "awaiting_attack"
-            && !string.IsNullOrWhiteSpace(currentSession.playerSelectedCardId)
+            && !string.IsNullOrWhiteSpace(ActivePlayerCardId)
             && !isBusy
             && player?.cardInGame != null;
 
@@ -896,7 +897,7 @@ public class RoyalRumbleShellController : MonoBehaviour
         bool needsRebuild = ShouldRebuildViewAfterBattle(envelope, previousPlayerSelectedCardId, previousEnemySelectedCardId);
         LogVerboseWarning(
             $"[RoyalRumbleShellController] RefreshPostBattleView: rebuild={needsRebuild}, status={currentSession?.status}, previousPlayer={previousPlayerSelectedCardId}, " +
-            $"currentPlayer={currentSession?.playerSelectedCardId}, previousEnemy={previousEnemySelectedCardId}, currentEnemy={currentSession?.enemySelectedCardId}"
+            $"currentPlayer={ActivePlayerCardId}, previousEnemy={previousEnemySelectedCardId}, currentEnemy={ActiveEnemyCardId}"
         );
         if (needsRebuild)
         {
@@ -908,6 +909,27 @@ public class RoyalRumbleShellController : MonoBehaviour
         }
 
         ApplyPostBattleStatus(envelope);
+    }
+
+    private void SyncRoyalRumbleRecordDisplay(RoyalRumbleRecordSyncDto recordSync, string source)
+    {
+        if (recordHandler == null)
+        {
+            return;
+        }
+
+        int before = recordHandler.bestRecord;
+        recordHandler.ApplyRoyalRumbleRecordSnapshot(currentSession, recordSync);
+        int after = recordHandler.bestRecord;
+
+        if (before != after || recordSync != null)
+        {
+            LogVerboseWarning(
+                $"[RoyalRumbleShellController] RR record display sync: source={source}, before={before}, after={after}, " +
+                $"defeated={currentSession?.progress?.defeatedEnemyCount ?? 0}, bestSubmitted={currentSession?.progress?.bestSubmittedScore ?? 0}, " +
+                $"pending={currentSession?.progress?.pendingRecordScore ?? 0}, recordSync={recordSync?.score ?? 0}/pending={recordSync?.pending ?? false}"
+            );
+        }
     }
 
     private bool ShouldRebuildViewAfterBattle(
@@ -926,7 +948,7 @@ public class RoyalRumbleShellController : MonoBehaviour
         }
 
         if (currentSession.status == "awaiting_player_card"
-            || currentSession.status == "awaiting_next_player_card"
+            || currentSession.status == "awaiting_replacement"
             || currentSession.status == "won"
             || currentSession.status == "lost"
             || currentSession.status == "abandoned")
@@ -939,8 +961,8 @@ public class RoyalRumbleShellController : MonoBehaviour
             return true;
         }
 
-        return !string.Equals(currentSession.playerSelectedCardId, previousPlayerSelectedCardId, StringComparison.Ordinal)
-            || !string.Equals(currentSession.enemySelectedCardId, previousEnemySelectedCardId, StringComparison.Ordinal);
+        return !string.Equals(ActivePlayerCardId, previousPlayerSelectedCardId, StringComparison.Ordinal)
+            || !string.Equals(ActiveEnemyCardId, previousEnemySelectedCardId, StringComparison.Ordinal);
     }
 
     private void RebuildShellView()
@@ -948,11 +970,6 @@ public class RoyalRumbleShellController : MonoBehaviour
         LogVerboseWarning("[RoyalRumbleShellController] Rebuilding RR shell view after battle.");
         ResetAttackSelectionForShellState();
         ClearRenderedCards();
-
-        if (currentSession?.playerSelectedCardId == null)
-        {
-            RenderPlayerHand();
-        }
 
         SelectedCardData currentEnemy = ResolveSelectedEnemyCard();
         List<SelectedCardData> enemyHandCards = currentSession?.enemyDeck?.cards?
@@ -982,7 +999,7 @@ public class RoyalRumbleShellController : MonoBehaviour
 
     private void RestorePlayerActiveOrHand()
     {
-        SelectedCardData selectedPlayer = FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId);
+        SelectedCardData selectedPlayer = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
         if (selectedPlayer == null)
         {
             RenderPlayerHand();
@@ -1041,17 +1058,17 @@ public class RoyalRumbleShellController : MonoBehaviour
     private void SyncActiveCardsFromSession()
     {
         LogVerboseWarning(
-            $"[RoyalRumbleShellController] Applying lightweight RR sync: player={DescribeCard(FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId))}, " +
-            $"enemy={DescribeCard(FindCard(currentSession?.enemyDeck?.cards, currentSession?.enemySelectedCardId))}"
+            $"[RoyalRumbleShellController] Applying lightweight RR sync: player={DescribeCard(FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId))}, " +
+            $"enemy={DescribeCard(FindCard(currentSession?.enemyDeck?.cards, ActiveEnemyCardId))}"
         );
         ApplyCardSnapshotToRenderedCard(
-            FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId),
+            FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId),
             renderedPlayerActiveCard,
             playerLifeBar
         );
 
         ApplyCardSnapshotToRenderedCard(
-            FindCard(currentSession?.enemyDeck?.cards, currentSession?.enemySelectedCardId),
+            FindCard(currentSession?.enemyDeck?.cards, ActiveEnemyCardId),
             renderedEnemyActiveCard,
             enemyLifeBar
         );
@@ -1141,7 +1158,7 @@ public class RoyalRumbleShellController : MonoBehaviour
 
         foreach (Transform icon in iconsToRemove)
         {
-            Destroy(icon.gameObject);
+            DestroyEffectIconBeforeReposition(icon);
         }
 
         foreach (string effectName in expectedEffectNames)
@@ -1166,6 +1183,18 @@ public class RoyalRumbleShellController : MonoBehaviour
         {
             card.RepositionEffectIcons();
         }
+    }
+
+    private void DestroyEffectIconBeforeReposition(Transform icon)
+    {
+        if (icon == null)
+        {
+            return;
+        }
+
+        GameObject iconObject = icon.gameObject;
+        icon.SetParent(null, false);
+        Destroy(iconObject);
     }
 
     private void ApplyPostBattleStatus(RoyalRumbleBattleEnvelopeDto envelope)
@@ -1209,7 +1238,7 @@ public class RoyalRumbleShellController : MonoBehaviour
             return;
         }
 
-        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId);
+        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
         if (selected == null)
         {
             RestoreAttackButtonDefaults(attackSlot, button, nameText, countText);
@@ -1240,7 +1269,7 @@ public class RoyalRumbleShellController : MonoBehaviour
 
     private SharedAttackSelectionFlow.AttackCountsState BuildCurrentAttackCountsState()
     {
-        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId);
+        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
         if (selected == null)
         {
             return null;
@@ -1373,7 +1402,6 @@ public class RoyalRumbleShellController : MonoBehaviour
 
     private void ClearPendingOngoingState()
     {
-        localPendingOngoingAction = null;
         lastAutoSubmittedPendingKey = null;
     }
 
@@ -1489,14 +1517,14 @@ public class RoyalRumbleShellController : MonoBehaviour
         return $"{pendingAction.actionType}/attackId={pendingAction.sourceAttackId}/turns={pendingAction.turnsRemaining}/target={pendingAction.targetCardId}";
     }
 
-    private static string BuildPendingActionKey(string playerSelectedCardId, PendingOngoingActionTurnData pendingAction)
+    private static string BuildPendingActionKey(string playerCardId, PendingOngoingActionTurnData pendingAction)
     {
         if (pendingAction == null)
         {
             return null;
         }
 
-        return $"{playerSelectedCardId ?? string.Empty}|{pendingAction.actionType}|{pendingAction.sourceAttackId}|{pendingAction.turnsRemaining}|{pendingAction.targetCardId ?? string.Empty}";
+        return $"{playerCardId ?? string.Empty}|{pendingAction.actionType}|{pendingAction.sourceAttackId}|{pendingAction.turnsRemaining}|{pendingAction.targetCardId ?? string.Empty}";
     }
 
     private static string DescribeCard(SelectedCardData card)
@@ -1552,195 +1580,7 @@ public class RoyalRumbleShellController : MonoBehaviour
         };
     }
 
-    private void UpdateLocalPendingOngoingFallback(RoyalRumbleBattleEnvelopeDto envelope, string previousPlayerSelectedCardId)
-    {
-        if (envelope?.runEnded == true || envelope?.playerNeedsReplacement == true)
-        {
-            localPendingOngoingAction = null;
-            return;
-        }
-
-        SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, currentSession?.playerSelectedCardId);
-        PendingOngoingActionTurnData sessionPending = turnAdapter != null
-            ? turnAdapter.GetPendingOngoingAction(selected)
-            : null;
-
-        if (sessionPending != null)
-        {
-            localPendingOngoingAction = sessionPending;
-            return;
-        }
-
-        BattleAttackerDto playerAttackResult = ResolvePlayerAttackResult(envelope?.battleResult, previousPlayerSelectedCardId);
-        if (playerAttackResult == null)
-        {
-            localPendingOngoingAction = null;
-            return;
-        }
-
-        if (playerAttackResult.ongoingActionConsumed)
-        {
-            bool resolved = playerAttackResult.ongoingActionSteps != null
-                && playerAttackResult.ongoingActionSteps.Any(step =>
-                    step != null
-                    && (string.Equals(step.type, "OngoingActionResolved", StringComparison.Ordinal)
-                        || string.Equals(step.type, "OngoingActionCancelled", StringComparison.Ordinal)));
-
-            if (resolved)
-            {
-                LogVerboseWarning("[RoyalRumbleShellController] Clearing local pending ongoing fallback after resolved/cancelled ongoing turn.");
-                localPendingOngoingAction = null;
-                return;
-            }
-
-            BattleOngoingActionStepDto progressStep = playerAttackResult.ongoingActionSteps?.FirstOrDefault(step =>
-                step != null && !string.IsNullOrWhiteSpace(step.actionType));
-
-            if (progressStep != null)
-            {
-                int nextTurnsRemaining = Math.Max(0, (localPendingOngoingAction?.turnsRemaining ?? 1) - 1);
-                localPendingOngoingAction = new PendingOngoingActionTurnData
-                {
-                    actionType = progressStep.actionType,
-                    sourceAttackId = localPendingOngoingAction?.sourceAttackId ?? InferOngoingSourceAttackId(progressStep.actionType, playerAttackResult.attackId),
-                    targetCardId = progressStep.targetCardId,
-                    turnsRemaining = nextTurnsRemaining
-                };
-                LogVerboseWarning(
-                    $"[RoyalRumbleShellController] Updated local pending ongoing fallback from consumed turn: {DescribePendingAction(localPendingOngoingAction)}"
-                );
-                return;
-            }
-        }
-
-        PendingOngoingActionTurnData startedAction = TryCreateStartedOngoingFallback(playerAttackResult, previousPlayerSelectedCardId, envelope);
-        localPendingOngoingAction = startedAction;
-        if (startedAction != null)
-        {
-            LogVerboseWarning(
-                $"[RoyalRumbleShellController] Created local pending ongoing fallback from battle result: {DescribePendingAction(startedAction)}"
-            );
-        }
-    }
-
-    private static BattleAttackerDto ResolvePlayerAttackResult(BattleResultDto battleResult, string previousPlayerSelectedCardId)
-    {
-        if (battleResult == null || string.IsNullOrWhiteSpace(previousPlayerSelectedCardId))
-        {
-            return null;
-        }
-
-        if (string.Equals(battleResult.firstAttacker?.cardId, previousPlayerSelectedCardId, StringComparison.Ordinal))
-        {
-            return battleResult.firstAttacker;
-        }
-
-        if (string.Equals(battleResult.secondAttacker?.cardId, previousPlayerSelectedCardId, StringComparison.Ordinal))
-        {
-            if (battleResult.cardDied
-                && string.Equals(battleResult.loserCardId, previousPlayerSelectedCardId, StringComparison.Ordinal))
-            {
-                return null;
-            }
-
-            return battleResult.secondAttacker;
-        }
-
-        return null;
-    }
-
-    private PendingOngoingActionTurnData TryCreateStartedOngoingFallback(
-        BattleAttackerDto playerAttackResult,
-        string previousPlayerSelectedCardId,
-        RoyalRumbleBattleEnvelopeDto envelope)
-    {
-        if (playerAttackResult == null || playerAttackResult.attackId <= 0)
-        {
-            return null;
-        }
-
-        string actionType = ResolveStartedOngoingActionType(playerAttackResult);
-        if (string.IsNullOrWhiteSpace(actionType))
-        {
-            return null;
-        }
-
-        int turnsRemaining = ResolveStartedOngoingTurnsRemaining(playerAttackResult);
-        string targetCardId = envelope?.session?.enemySelectedCardId
-            ?? currentSession?.enemySelectedCardId
-            ?? localPendingOngoingAction?.targetCardId;
-
-        return new PendingOngoingActionTurnData
-        {
-            actionType = actionType,
-            sourceAttackId = playerAttackResult.attackId,
-            targetCardId = targetCardId,
-            turnsRemaining = turnsRemaining
-        };
-    }
-
-    private static string ResolveStartedOngoingActionType(BattleAttackerDto playerAttackResult)
-    {
-        string stepActionType = playerAttackResult.ongoingActionSteps?.FirstOrDefault(step =>
-            step != null && string.Equals(step.type, "OngoingActionStarted", StringComparison.Ordinal))?.actionType;
-        if (!string.IsNullOrWhiteSpace(stepActionType))
-        {
-            return stepActionType;
-        }
-
-        return playerAttackResult.attackId switch
-        {
-            30 => "siege",
-            49 => "doubleEnvelopment",
-            51 => IsArtInspirationStart(playerAttackResult.attackResult) ? "artInspiration" : null,
-            52 => IsArtInspirationStart(playerAttackResult.attackResult) ? "artInspiration" : null,
-            54 => "autoportrait",
-            77 => "buffaloHorns",
-            96 => "flintlockPistol",
-            104 => string.Equals(playerAttackResult.attackResult, "captured", StringComparison.OrdinalIgnoreCase) ? "trident" : null,
-            _ => null
-        };
-    }
-
-    private static int ResolveStartedOngoingTurnsRemaining(BattleAttackerDto playerAttackResult)
-    {
-        return playerAttackResult.attackId switch
-        {
-            30 => 1,
-            49 => 1,
-            51 => 3,
-            52 => 3,
-            54 => 1,
-            77 => 1,
-            96 => 1,
-            104 => 1,
-            _ => 1
-        };
-    }
-
-    private static bool IsArtInspirationStart(string attackResult)
-    {
-        return string.Equals(attackResult, "inspired", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(attackResult, "depressed_inspired", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(attackResult, "isolated_inspired", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static int InferOngoingSourceAttackId(string actionType, int fallbackAttackId)
-    {
-        return actionType switch
-        {
-            "siege" => 30,
-            "doubleEnvelopment" => 49,
-            "artInspiration" => fallbackAttackId > 0 ? fallbackAttackId : 51,
-            "autoportrait" => 54,
-            "buffaloHorns" => 77,
-            "flintlockPistol" => 96,
-            "trident" => 104,
-            _ => fallbackAttackId
-        };
-    }
-
-    private static string DescribeBattleSummary(BattleResultDto battleResult, string playerSelectedCardId)
+    private static string DescribeBattleSummary(BattleResultDto battleResult, string playerCardId)
     {
         if (battleResult == null)
         {
@@ -1759,7 +1599,7 @@ public class RoyalRumbleShellController : MonoBehaviour
                 return;
             }
 
-            bool isPlayerAttack = string.Equals(attacker.cardId, playerSelectedCardId, StringComparison.Ordinal);
+            bool isPlayerAttack = string.Equals(attacker.cardId, playerCardId, StringComparison.Ordinal);
             if (isPlayerAttack)
             {
                 playerDamageDealt += attacker.damageDealt;

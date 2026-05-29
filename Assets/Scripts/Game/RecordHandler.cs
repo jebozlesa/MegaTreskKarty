@@ -20,8 +20,7 @@ public class RecordHandler : MonoBehaviour
     {
         GetMyBestScoreFromPlayFab("RoyalRumble", score =>
         {
-            bestRecord = score;
-            recordText.text = bestRecord.ToString();
+            ApplyDisplayedRecord(Mathf.Max(bestRecord, score));
         });
     }
 
@@ -50,6 +49,22 @@ public class RecordHandler : MonoBehaviour
                 // Počkajte, kým sa dokončí druhá metóda AddRandomCard
                 yield return StartCoroutine(cardGenerator.AddRandomCardCoroutine());
             }
+        }
+    }
+
+    public void ApplyRoyalRumbleRecordSnapshot(
+        RoyalRumbleSessionDto session,
+        RoyalRumbleRecordSyncDto recordSync = null)
+    {
+        ApplyDisplayedRecord(RoyalRumbleRecordDisplay.ResolveVisibleRecord(bestRecord, session, recordSync));
+    }
+
+    public void ApplyDisplayedRecord(int score)
+    {
+        bestRecord = Mathf.Max(0, score);
+        if (recordText != null)
+        {
+            recordText.text = bestRecord.ToString();
         }
     }
 

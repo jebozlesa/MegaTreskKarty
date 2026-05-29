@@ -129,6 +129,11 @@ public class MultiplayerCardAnimator : MonoBehaviour
     /// </summary>
     private IEnumerator ShakeCard(Kard card, float damageAmount)
     {
+        if (card == null)
+        {
+            yield break;
+        }
+
         Vector3 originalPosition = card.transform.position;
         Quaternion originalRotation = card.transform.rotation;
 
@@ -142,6 +147,11 @@ public class MultiplayerCardAnimator : MonoBehaviour
 
         while (currentTime < shakeTime)
         {
+            if (card == null)
+            {
+                yield break;
+            }
+
             float x = radius * Mathf.Cos(angle * Mathf.Deg2Rad);
             float y = radius * Mathf.Sin(angle * Mathf.Deg2Rad);
             Vector3 newPosition = originalPosition + new Vector3(x, y, 0f);
@@ -157,10 +167,20 @@ public class MultiplayerCardAnimator : MonoBehaviour
         float resetElapsed = 0f;
         while (resetElapsed < resetTime)
         {
+            if (card == null)
+            {
+                yield break;
+            }
+
             card.transform.position = Vector3.Lerp(card.transform.position, originalPosition, resetElapsed / resetTime);
             card.transform.rotation = Quaternion.Lerp(card.transform.rotation, originalRotation, resetElapsed / resetTime);
             resetElapsed += Time.deltaTime;
             yield return null;
+        }
+
+        if (card == null)
+        {
+            yield break;
         }
 
         // Presna finalna pozicia
@@ -173,12 +193,24 @@ public class MultiplayerCardAnimator : MonoBehaviour
     /// </summary>
     private IEnumerator PlayEffectAnimation(Kard card, int amount, string text, Color32 color)
     {
-        Debug.Log($"[MultiplayerCardAnimator] PlayEffectAnimation start: card={card.cardName}, text={text}, amount={amount}, color={color}");
+        if (card == null)
+        {
+            yield break;
+        }
+
+        string cardName = card.cardName;
+        Debug.Log($"[MultiplayerCardAnimator] PlayEffectAnimation start: card={cardName}, text={text}, amount={amount}, color={color}");
 
         for (int i = 0; i < amount; i++)
         {
             yield return new WaitForSeconds(0.1f);
-            Debug.Log($"[MultiplayerCardAnimator] Spawning effect {i + 1}/{amount}: card={card.cardName}, text={text}");
+
+            if (card == null)
+            {
+                yield break;
+            }
+
+            Debug.Log($"[MultiplayerCardAnimator] Spawning effect {i + 1}/{amount}: card={cardName}, text={text}");
             StartCoroutine(CreateSingleEffectAnimation(card, text, color));
         }
     }
@@ -188,32 +220,43 @@ public class MultiplayerCardAnimator : MonoBehaviour
     /// </summary>
     private IEnumerator CreateSingleEffectAnimation(Kard card, string text, Color32 color)
     {
+        if (card == null)
+        {
+            yield break;
+        }
+
+        string cardName = card.cardName;
+        Vector3 cardPosition = card.transform.position;
+        GameObject notsureTemplate = card.notsureGO;
+        TMP_Text notsureText = card.notsureText;
+        Transform effectParent = ResolveDetachedEffectParent(card);
+
         // [OK] Pokus sa pouzit existujuci Kard.notsureGO ak existuje
         GameObject effectObject = null;
         
-        if (card.notsureGO != null && card.notsureText != null)
+        if (notsureTemplate != null && notsureText != null)
         {
             // Pouzij originalny system z Kard.cs
-            card.notsureText.text = text;
-            card.notsureText.color = color;
-            effectObject = Instantiate(card.notsureGO, card.transform);
-            Debug.Log($"[MultiplayerCardAnimator] CreateSingleEffectAnimation: using card.notsureGO for {card.cardName}, text={text}");
+            notsureText.text = text;
+            notsureText.color = color;
+            effectObject = Instantiate(notsureTemplate, effectParent, false);
+            Debug.Log($"[MultiplayerCardAnimator] CreateSingleEffectAnimation: using card.notsureGO for {cardName}, text={text}");
         }
         else if (effectAnimationPrefab != null)
         {
             // Fallback na vlastny prefab
-            effectObject = Instantiate(effectAnimationPrefab, card.transform);
+            effectObject = Instantiate(effectAnimationPrefab, effectParent, false);
             var textComponent = effectObject.GetComponentInChildren<TMP_Text>();
             if (textComponent != null)
             {
                 textComponent.text = text;
                 textComponent.color = color;
             }
-            Debug.Log($"[MultiplayerCardAnimator] CreateSingleEffectAnimation: using effectAnimationPrefab for {card.cardName}, text={text}");
+            Debug.Log($"[MultiplayerCardAnimator] CreateSingleEffectAnimation: using effectAnimationPrefab for {cardName}, text={text}");
         }
         else
         {
-            Debug.LogWarning($"[MultiplayerCardAnimator] No effect animation prefab assigned for {card.cardName}, text={text}");
+            Debug.LogWarning($"[MultiplayerCardAnimator] No effect animation prefab assigned for {cardName}, text={text}");
             yield break;
         }
         
@@ -223,22 +266,51 @@ public class MultiplayerCardAnimator : MonoBehaviour
         float angle = Random.Range(0f, Mathf.PI * 2f);
         float radius = 50f;
         Vector2 randomPosition = new Vector2(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius);
-        effectObject.transform.position = (Vector2)card.transform.position + randomPosition;
+        effectObject.transform.position = cardPosition + (Vector3)randomPosition;
         
-        Vector2 direction = (effectObject.transform.position - card.transform.position).normalized;
+        Vector2 direction = ((Vector2)effectObject.transform.position - (Vector2)cardPosition).normalized;
         float distance = 50f;
         float elapsedTime = 0f;
         
-        Debug.Log($"[MultiplayerCardAnimator] Effect text spawned: card={card.cardName}, text={text}, startPos={effectObject.transform.position}, direction={direction}");
+        Debug.Log($"[MultiplayerCardAnimator] Effect text spawned: card={cardName}, text={text}, startPos={effectObject.transform.position}, direction={direction}");
         
         while (elapsedTime < 3f)
         {
+            if (effectObject == null)
+            {
+                yield break;
+            }
+
             effectObject.transform.position += (Vector3)(direction * distance * Time.deltaTime);
             elapsedTime += Time.deltaTime;
             yield return null;
         }
         
-        Destroy(effectObject);
+        if (effectObject != null)
+        {
+            Destroy(effectObject);
+        }
+    }
+
+    private Transform ResolveDetachedEffectParent(Kard card)
+    {
+        if (card == null)
+        {
+            return transform;
+        }
+
+        Canvas cardCanvas = card.GetComponentInParent<Canvas>();
+        if (cardCanvas != null)
+        {
+            return cardCanvas.transform;
+        }
+
+        if (card.transform.parent != null)
+        {
+            return card.transform.parent;
+        }
+
+        return transform;
     }
 }
 

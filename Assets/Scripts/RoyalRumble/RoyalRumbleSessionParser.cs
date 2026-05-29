@@ -49,6 +49,7 @@ public static class RoyalRumbleSessionParser
         dto.sessionSummary = ParseSummaryToken(token["sessionSummary"]);
         dto.botAttack = token["botAttack"]?.ToObject<RoyalRumbleBotAttackDto>() ?? new RoyalRumbleBotAttackDto();
         dto.botAttack.validSlots ??= new List<int>();
+        dto.recordSync = ParseRecordSyncToken(token["recordSync"]);
         return dto;
     }
 
@@ -66,22 +67,18 @@ public static class RoyalRumbleSessionParser
             mode = token.Value<string>("mode") ?? string.Empty,
             playerId = token.Value<string>("playerId") ?? string.Empty,
             status = token.Value<string>("status") ?? string.Empty,
-            playerSelectedCardId = token.Value<string>("playerSelectedCardId") ?? string.Empty,
-            enemySelectedCardId = token.Value<string>("enemySelectedCardId") ?? string.Empty,
-            turnNumber = token.Value<int?>("turnNumber") ?? 0,
-            battleCount = token.Value<int?>("battleCount") ?? 0,
+            active = ParseActiveToken(token["active"]),
+            progress = ParseProgressToken(token["progress"]),
             createdAt = token.Value<string>("createdAt") ?? string.Empty,
             updatedAt = token.Value<string>("updatedAt") ?? string.Empty,
             abandonedAt = token.Value<string>("abandonedAt") ?? string.Empty,
             playerInfo = token["playerInfo"]?.ToObject<RoyalRumblePlayerInfoDto>() ?? new RoyalRumblePlayerInfoDto(),
-            modeConfig = token["modeConfig"]?.ToObject<RoyalRumbleModeConfigDto>() ?? new RoyalRumbleModeConfigDto(),
+            modeConfig = ParseModeConfigToken(token["modeConfig"]),
             resultSummary = token["resultSummary"]?.ToObject<RoyalRumbleResultSummaryDto>() ?? new RoyalRumbleResultSummaryDto(),
         };
 
         dto.playerInfo.playerId ??= string.Empty;
         dto.playerInfo.username ??= string.Empty;
-        dto.modeConfig.botStrategy ??= string.Empty;
-        dto.modeConfig.persistenceScope ??= string.Empty;
         dto.resultSummary.lastBattleAt ??= string.Empty;
         dto.attackCounts = ParseAttackCounts(token["attackCounts"]);
         dto.playerDeck = ParseDeckToken(token["playerDeck"], dto.playerId);
@@ -104,15 +101,83 @@ public static class RoyalRumbleSessionParser
             mode = token.Value<string>("mode") ?? string.Empty,
             playerId = token.Value<string>("playerId") ?? string.Empty,
             status = token.Value<string>("status") ?? string.Empty,
-            playerSelectedCardId = token.Value<string>("playerSelectedCardId") ?? string.Empty,
-            enemySelectedCardId = token.Value<string>("enemySelectedCardId") ?? string.Empty,
-            turnNumber = token.Value<int?>("turnNumber") ?? 0,
-            battleCount = token.Value<int?>("battleCount") ?? 0,
-            playerDeckCount = token.Value<int?>("playerDeckCount") ?? 0,
-            enemyDeckCount = token.Value<int?>("enemyDeckCount") ?? 0,
+            playerDeck = ParseDeckSummaryToken(token["playerDeck"]),
+            enemyDeck = ParseDeckSummaryToken(token["enemyDeck"]),
+            attackCounts = ParseAttackCounts(token["attackCounts"]),
+            active = ParseActiveToken(token["active"]),
+            progress = ParseProgressToken(token["progress"]),
+            modeConfig = ParseModeConfigToken(token["modeConfig"]),
+            lastBattleResult = BattleContractMapper.ParseBattleResultObject(token["lastBattleResult"]),
+            resultSummary = token["resultSummary"]?.ToObject<RoyalRumbleResultSummaryDto>() ?? new RoyalRumbleResultSummaryDto(),
             createdAt = token.Value<string>("createdAt") ?? string.Empty,
             updatedAt = token.Value<string>("updatedAt") ?? string.Empty,
             abandonedAt = token.Value<string>("abandonedAt") ?? string.Empty,
+        };
+    }
+
+    private static RoyalRumbleActiveDto ParseActiveToken(JToken token)
+    {
+        return new RoyalRumbleActiveDto
+        {
+            playerCardId = token?.Value<string>("playerCardId") ?? string.Empty,
+            enemyCardId = token?.Value<string>("enemyCardId") ?? string.Empty,
+        };
+    }
+
+    private static RoyalRumbleProgressDto ParseProgressToken(JToken token)
+    {
+        return new RoyalRumbleProgressDto
+        {
+            turnNumber = token?.Value<int?>("turnNumber") ?? 0,
+            battleCount = token?.Value<int?>("battleCount") ?? 0,
+            defeatedEnemyCount = token?.Value<int?>("defeatedEnemyCount") ?? 0,
+            playerDeaths = token?.Value<int?>("playerDeaths") ?? 0,
+            bestSubmittedScore = token?.Value<int?>("bestSubmittedScore") ?? 0,
+            pendingRecordScore = token?.Value<int?>("pendingRecordScore"),
+            lastRecordError = token?.Value<string>("lastRecordError") ?? string.Empty,
+            campaignId = token?.Value<string>("campaignId") ?? string.Empty,
+            levelId = token?.Value<int?>("levelId"),
+        };
+    }
+
+    private static RoyalRumbleModeConfigDto ParseModeConfigToken(JToken token)
+    {
+        var dto = new RoyalRumbleModeConfigDto
+        {
+            playerDeckSize = token?.Value<int?>("playerDeckSize") ?? 0,
+            enemyDeckSize = token?.Value<int?>("enemyDeckSize") ?? 0,
+            rewardFlowEnabled = token?.Value<bool?>("rewardFlowEnabled") ?? false,
+            persistenceScope = token?.Value<string>("persistenceScope") ?? string.Empty,
+        };
+
+        JToken botStrategyToken = token?["botStrategy"];
+        dto.botStrategy = botStrategyToken?.Type == JTokenType.Object
+            ? botStrategyToken.Value<string>("type") ?? string.Empty
+            : botStrategyToken?.Value<string>() ?? string.Empty;
+
+        return dto;
+    }
+
+    private static RoyalRumbleDeckSummaryDto ParseDeckSummaryToken(JToken token)
+    {
+        return new RoyalRumbleDeckSummaryDto
+        {
+            deckId = token?.Value<string>("deckId") ?? string.Empty,
+            deckName = token?.Value<string>("deckName") ?? string.Empty,
+            deckSize = token?.Value<int?>("deckSize") ?? 0,
+            loaded = token?.Value<bool?>("loaded") ?? false,
+        };
+    }
+
+    private static RoyalRumbleRecordSyncDto ParseRecordSyncToken(JToken token)
+    {
+        return new RoyalRumbleRecordSyncDto
+        {
+            submitted = token?.Value<bool?>("submitted") ?? false,
+            pending = token?.Value<bool?>("pending") ?? false,
+            skipped = token?.Value<bool?>("skipped") ?? false,
+            score = token?.Value<int?>("score") ?? 0,
+            error = token?.Value<string>("error") ?? string.Empty,
         };
     }
 

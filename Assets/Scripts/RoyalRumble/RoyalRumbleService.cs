@@ -203,8 +203,8 @@ public class RoyalRumbleService : MonoBehaviour
             case RoyalRumbleSessionEnvelopeDto sessionEnvelope when sessionEnvelope.session != null:
                 Debug.LogWarning(
                     $"[RoyalRumbleService] {operationName} OK: session={sessionEnvelope.session.sessionId}, status={sessionEnvelope.session.status}, " +
-                    $"playerSelected={sessionEnvelope.session.playerSelectedCardId}, enemySelected={sessionEnvelope.session.enemySelectedCardId}, " +
-                    $"turn={sessionEnvelope.session.turnNumber}, battle={sessionEnvelope.session.battleCount}, " +
+                    $"playerActive={sessionEnvelope.session.active?.playerCardId}, enemyActive={sessionEnvelope.session.active?.enemyCardId}, " +
+                    $"turn={sessionEnvelope.session.progress?.turnNumber ?? 0}, battle={sessionEnvelope.session.progress?.battleCount ?? 0}, " +
                     $"playerDeck={sessionEnvelope.session.playerDeck?.cards?.Count ?? 0}, enemyDeck={sessionEnvelope.session.enemyDeck?.cards?.Count ?? 0}"
                 );
                 break;
@@ -214,7 +214,8 @@ public class RoyalRumbleService : MonoBehaviour
                     $"[RoyalRumbleService] {operationName} OK: success={battleEnvelope.success}, runStatus={battleEnvelope.runStatus}, runEnded={battleEnvelope.runEnded}, " +
                     $"playerNeedsReplacement={battleEnvelope.playerNeedsReplacement}, enemyNeedsReplacement={battleEnvelope.enemyNeedsReplacement}, " +
                     $"botAttack={battleEnvelope.botAttack?.attackSlot}/{battleEnvelope.botAttack?.attackId}, " +
-                    $"sessionStatus={battleEnvelope.session?.status}, turn={battleEnvelope.session?.turnNumber ?? 0}, battle={battleEnvelope.session?.battleCount ?? 0}"
+                    $"sessionStatus={battleEnvelope.session?.status}, turn={battleEnvelope.session?.progress?.turnNumber ?? 0}, battle={battleEnvelope.session?.progress?.battleCount ?? 0}, " +
+                    $"recordSync={battleEnvelope.recordSync?.score ?? 0}/pending={battleEnvelope.recordSync?.pending ?? false}"
                 );
                 break;
         }

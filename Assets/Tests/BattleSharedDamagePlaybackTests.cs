@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -128,23 +129,49 @@ public class BattleSharedDamagePlaybackTests
         StringAssert.Contains("PlayFamineEndAnimation(card.transform)", source);
     }
 
+    [Test]
+    public void SharedBattleEffectPlayback_DoesNotExposeOngoingMarkerEffectsAsIcons()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleEffectPlayback.cs");
+        StringAssert.Contains("case 20:", source);
+        StringAssert.Contains("case 22:", source);
+        StringAssert.Contains("case 23:", source);
+        StringAssert.Contains("Online ongoing maneuvers are rendered from timeline ongoing-action steps", source);
+        Assert.IsFalse(source.Contains("return \"Reloading\";"));
+        Assert.IsFalse(source.Contains("return \"Trident\";"));
+    }
+
 
     [Test]
-    public void BattleResultProcessor_DotTickHandlersOwnTheirDamagePlayback()
+    public void BattleTimelinePlayback_DotTickHandlersOwnTheirDamagePlayback()
     {
-        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs");
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
         StringAssert.Contains("case BattleStepType.BleedTick:", source);
         StringAssert.Contains("case BattleStepType.BurnTick:", source);
         StringAssert.Contains("case BattleStepType.ExposureTick:", source);
-        StringAssert.Contains("PlaySingleBleedAnimation(actor, step.Amount, isMyActor)", source);
-        StringAssert.Contains("PlayBurnAnimation(actor, step.Amount, isMyActor)", source);
-        StringAssert.Contains("PlayExposureAnimation(actor, step.Amount, false, isMyActor)", source);
+        StringAssert.Contains("PlaySingleBleedAnimation(context, actor, step.Amount, isPlayerActor)", source);
+        StringAssert.Contains("PlayBurnAnimation(context, actor, step.Amount, isPlayerActor)", source);
+        StringAssert.Contains("PlayExposureAnimation(context, actor, step.Amount, isPlayerActor)", source);
     }
 
     [Test]
-    public void BattleResultProcessor_GenericDamageBranch_DoesNotReplayDotTickDamage()
+    public void BattleTimelinePlayback_LogsEffectTickAnimationLifecycle()
     {
-        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs");
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
+        StringAssert.Contains("private static void LogEffectTickAnimation(", source);
+        StringAssert.Contains("[EFFECT_TICK_ANIM]", source);
+        StringAssert.Contains("LogEffectTickAnimation(\"start\", \"BleedTick\"", source);
+        StringAssert.Contains("LogEffectTickAnimation(\"start\", \"BurnTick\"", source);
+        StringAssert.Contains("LogEffectTickAnimation(\"start\", \"ExposureTick\"", source);
+        StringAssert.Contains("LogEffectTickAnimation(\"start\", \"SatelliteTick\"", source);
+        StringAssert.Contains("LogEffectTickAnimation(\"missing-animations\"", source);
+        StringAssert.Contains("LogEffectTickAnimation(\"finish\"", source);
+    }
+
+    [Test]
+    public void BattleTimelinePlayback_GenericDamageBranch_DoesNotReplayDotTickDamage()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
         StringAssert.Contains("bool isTickDamage =", source);
         StringAssert.Contains("string.Equals(step.Source, \"bleed\", StringComparison.OrdinalIgnoreCase)", source);
         StringAssert.Contains("string.Equals(step.Source, \"burn\", StringComparison.OrdinalIgnoreCase)", source);
@@ -241,6 +268,199 @@ public class BattleSharedDamagePlaybackTests
         }
     }
 
+    [Test]
+    public void MultiplayerCardAnimator_FloatingEffectAnimationsUseDetachedVisibleParent()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "MultiplayerCardAnimator.cs");
+
+        StringAssert.Contains("Vector3 cardPosition = card.transform.position;", source);
+        StringAssert.Contains("GameObject notsureTemplate = card.notsureGO;", source);
+        StringAssert.Contains("ResolveDetachedEffectParent(card)", source);
+        StringAssert.Contains("card.GetComponentInParent<Canvas>()", source);
+        StringAssert.Contains("card.transform.parent", source);
+        StringAssert.Contains("effectObject = Instantiate(notsureTemplate, effectParent, false);", source);
+        StringAssert.Contains("effectObject = Instantiate(effectAnimationPrefab, effectParent, false);", source);
+        Assert.IsFalse(source.Contains("Transform effectParent = transform;"));
+        Assert.IsFalse(source.Contains("Instantiate(card.notsureGO, card.transform)"));
+        Assert.IsFalse(source.Contains("Instantiate(effectAnimationPrefab, card.transform)"));
+        Assert.IsFalse(source.Contains("(Vector2)card.transform.position + randomPosition"));
+        Assert.IsFalse(source.Contains(" - card.transform.position"));
+    }
+
+    [Test]
+    public void RoyalRumbleBattlePlayback_UsesMultiplayerBlockEffectAnimations()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
+
+        StringAssert.Contains("PlayBlockAnimation(context, actor, step.BlockedBy)", source);
+        StringAssert.Contains("animations.PlayConfusionHurtItselfAnimation(card.transform)", source);
+        StringAssert.Contains("animations.PlaySleepAnimation(card.transform)", source);
+        StringAssert.Contains("animations.PlayElectricityAnimation(card.transform)", source);
+        StringAssert.Contains("animations.PlayTetherAnimation(card.transform)", source);
+        StringAssert.Contains("animations.PlayBlocadeWaitAnimation(card.transform)", source);
+        Assert.IsFalse(source.Contains("attack was blocked"));
+    }
+
+    [Test]
+    public void RoyalRumbleBattlePlayback_UsesSharedEffectApplicationAndSelfRemoval()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
+
+        StringAssert.Contains("BattleEffectPlayback.AddEffectIconOnly(", source);
+        StringAssert.Contains("BattleEffectPlayback.RemoveEffectIconOnly(", source);
+        Assert.IsFalse(source.Contains("SyncEffectIcons(defender, attackerResult.effectsApplied)"));
+        Assert.IsFalse(source.Contains("SyncEffectIcons(attacker, attackerResult.attackerEffectsApplied)"));
+    }
+
+    [Test]
+    public void BattleResultDto_PreservesTimelineV2ForSharedPlayback()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleContracts", "BattleContractDtos.cs");
+        string builder = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelineBuilder.cs");
+
+        StringAssert.Contains("public Dictionary<string, object> timelineV2;", source);
+        StringAssert.Contains("TryBuild(BattleResultDto battleResult", builder);
+    }
+
+    [Test]
+    public void RoyalRumbleBattlePlayback_UsesTimelineV2InsteadOfLegacyEffectFields()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "RoyalRumble", "RoyalRumbleBattlePlayback.cs");
+
+        StringAssert.Contains("BattleTimelineBuilder.TryBuild(envelope.battleResult", source);
+        StringAssert.Contains("BattleTimelinePlayback.Play(", source);
+        Assert.IsFalse(source.Contains("PlayPreAttackPassiveEffectsAsync"));
+        Assert.IsFalse(source.Contains("attackerResult.bleedDamage"));
+        Assert.IsFalse(source.Contains("attackerResult.exposureDamage"));
+        Assert.IsFalse(source.Contains("attackerResult.exposureRemoved"));
+    }
+
+    [Test]
+    public void SharedTimelinePlayback_CoversEffectLifecycleSteps()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
+
+        StringAssert.Contains("case BattleStepType.BleedTick:", source);
+        StringAssert.Contains("case BattleStepType.BurnTick:", source);
+        StringAssert.Contains("case BattleStepType.ExposureTick:", source);
+        StringAssert.Contains("case BattleStepType.ExposureRemoved:", source);
+        StringAssert.Contains("case BattleStepType.EffectApplied:", source);
+        StringAssert.Contains("case BattleStepType.EffectRemoved:", source);
+        StringAssert.Contains("case BattleStepType.Blocked:", source);
+        StringAssert.Contains("case BattleStepType.OngoingActionProgress:", source);
+        StringAssert.Contains("case BattleStepType.OngoingActionResolved:", source);
+    }
+
+    [Test]
+    public void SharedTimelinePlayback_RemovesEndedEffectIconsAtTimelineStep()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
+        string effects = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleEffectPlayback.cs");
+
+        StringAssert.Contains("PlayWakeUpAnimation(context, actor, step.EffectType)", source);
+        StringAssert.Contains("RemoveEndedEffectIcon(context, card, effectType, 3)", source);
+        StringAssert.Contains("RemoveEndedEffectIcon(context, card, 2)", source);
+        StringAssert.Contains("RemoveEndedEffectIcon(context, actor, 4)", source);
+        StringAssert.Contains("RemoveEndedEffectIcon(context, target, step.EffectType)", source);
+        StringAssert.Contains("animations.PlaySleepEndAnimation(card.transform)", effects);
+        StringAssert.Contains("animations.PlayAscetismEndAnimation(card.transform)", effects);
+        StringAssert.Contains("animations.PlayExposureEndAnimation(card.transform)", effects);
+    }
+
+    [Test]
+    public void MultiplayerTimelinePilot_UsesSharedTimelinePlayback()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs");
+
+        StringAssert.Contains("new BattleTimelinePlaybackContext", source);
+        StringAssert.Contains("BattleTimelinePlayback.Play(context, steps)", source);
+    }
+
+    [Test]
+    public void RoyalRumbleSnapshotEffectSync_DetachesRemovedIconsBeforeRepositioning()
+    {
+        string shell = ReadProjectFile("Assets", "Scripts", "RoyalRumble", "RoyalRumbleShellController.cs");
+        string coordinator = ReadProjectFile("Assets", "Scripts", "RoyalRumble", "RoyalRumbleBattleCoordinator.cs");
+
+        StringAssert.Contains("DestroyEffectIconBeforeReposition(icon);", shell);
+        StringAssert.Contains("DestroyEffectIconBeforeReposition(icon);", coordinator);
+        StringAssert.Contains("icon.SetParent(null, false);", shell);
+        StringAssert.Contains("icon.SetParent(null, false);", coordinator);
+    }
+
+    [Test]
+    public void RoyalRumbleShellRebuild_RendersReplacementHandOnlyOnce()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "RoyalRumble", "RoyalRumbleShellController.cs");
+        string rebuildMethod = ExtractMethodBlock(source, "private void RebuildShellView()");
+
+        StringAssert.Contains("RestorePlayerActiveOrHand();", rebuildMethod);
+        Assert.IsFalse(
+            rebuildMethod.Contains("RenderPlayerHand();"),
+            "RebuildShellView must not render the player hand directly; RestorePlayerActiveOrHand owns that decision."
+        );
+    }
+
+    [Test]
+    public void RoyalRumbleShell_DoesNotMaintainLocalOngoingFallback()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "RoyalRumble", "RoyalRumbleShellController.cs");
+
+        Assert.IsFalse(
+            source.Contains("localPendingOngoingAction"),
+            "RR shell must not keep local pending ongoing state; server session ongoingActions are authoritative."
+        );
+        Assert.IsFalse(
+            source.Contains("UpdateLocalPendingOngoingFallback"),
+            "RR shell must not infer ongoing state from battle results as a fallback."
+        );
+        Assert.IsFalse(
+            source.Contains("TryCreateStartedOngoingFallback"),
+            "RR shell must not synthesize started ongoing actions locally."
+        );
+        Assert.IsFalse(
+            source.Contains("Created local pending ongoing fallback"),
+            "RR shell must not log or create local ongoing fallback state."
+        );
+    }
+
+    [Test]
+    public void RoyalRumbleShell_PendingOngoingReadsCanonicalSessionStateWithoutAdapterComponent()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "RoyalRumble", "RoyalRumbleShellController.cs");
+        string pendingMethod = ExtractMethodBlock(source, "private PendingOngoingActionTurnData GetPendingOngoingAction()");
+
+        StringAssert.Contains("RoyalRumbleTurnAdapter.CreatePendingOngoingAction(selected)", pendingMethod);
+        Assert.IsFalse(
+            pendingMethod.Contains("turnAdapter != null"),
+            "RR shell pending ongoing detection must not depend on an optional scene adapter component."
+        );
+    }
+
+    [Test]
+    public void RoyalRumbleClients_DoNotSelectEnemyCardLocallyAsFallback()
+    {
+        string shell = ReadProjectFile("Assets", "Scripts", "RoyalRumble", "RoyalRumbleShellController.cs");
+        string coordinator = ReadProjectFile("Assets", "Scripts", "RoyalRumble", "RoyalRumbleBattleCoordinator.cs");
+
+        Assert.IsFalse(
+            shell.Contains("Falling back locally"),
+            "RR shell must not locally choose an enemy card when server active enemy state is missing."
+        );
+        Assert.IsFalse(
+            coordinator.Contains("Falling back locally"),
+            "RR coordinator must not locally choose an enemy card when server active enemy state is missing."
+        );
+        Assert.IsFalse(
+            shell.Contains("SetActiveEnemyCardId("),
+            "RR shell must not mutate active enemy state locally."
+        );
+        Assert.IsFalse(
+            coordinator.Contains("SetActiveEnemyCardId("),
+            "RR coordinator must not mutate active enemy state locally."
+        );
+    }
+
     private static string ReadProjectFile(params string[] relativeParts)
     {
         var allParts = new List<string> { Application.dataPath };
@@ -248,5 +468,34 @@ public class BattleSharedDamagePlaybackTests
         string fullPath = Path.Combine(allParts.ToArray());
         Assert.IsTrue(File.Exists(fullPath), $"Missing project file: {fullPath}");
         return File.ReadAllText(fullPath);
+    }
+
+    private static string ExtractMethodBlock(string source, string signature)
+    {
+        int start = source.IndexOf(signature, StringComparison.Ordinal);
+        Assert.GreaterOrEqual(start, 0, $"Missing method signature: {signature}");
+
+        int bodyStart = source.IndexOf('{', start);
+        Assert.GreaterOrEqual(bodyStart, 0, $"Missing method body for: {signature}");
+
+        int depth = 0;
+        for (int i = bodyStart; i < source.Length; i++)
+        {
+            if (source[i] == '{')
+            {
+                depth++;
+            }
+            else if (source[i] == '}')
+            {
+                depth--;
+                if (depth == 0)
+                {
+                    return source.Substring(start, i - start + 1);
+                }
+            }
+        }
+
+        Assert.Fail($"Unterminated method body for: {signature}");
+        return string.Empty;
     }
 }
