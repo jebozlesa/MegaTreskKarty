@@ -456,6 +456,79 @@ public class ServerFunctionsManager : MonoBehaviour
         CallFunctionWithRetry("submitRoyalRumbleAttack", parameters, callback);
     }
 
+    public void CreateCampaignSession(string playerId, string campaignId, int missionId, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        LogVerboseWarning($"CreateCampaignSession called for player: {playerId}, campaign: {campaignId}, mission: {missionId}");
+        var parameters = new
+        {
+            playerId = playerId,
+            campaignId = campaignId,
+            missionId = missionId
+        };
+
+        CallFunctionWithRetry("createCampaignSession", parameters, callback);
+    }
+
+    public void LoadCampaignPlayerDeck(string sessionId, string playerId, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        LogVerboseWarning($"LoadCampaignPlayerDeck called for session: {sessionId}, player: {playerId}");
+        var parameters = new
+        {
+            sessionId = sessionId,
+            playerId = playerId
+        };
+
+        CallFunctionWithRetry("loadCampaignPlayerDeck", parameters, callback);
+    }
+
+    public void LoadCampaignEnemyDeck(string sessionId, string playerId, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        LogVerboseWarning($"LoadCampaignEnemyDeck called for session: {sessionId}, player: {playerId}");
+        var parameters = new
+        {
+            sessionId = sessionId,
+            playerId = playerId
+        };
+
+        CallFunctionWithRetry("loadCampaignEnemyDeck", parameters, callback);
+    }
+
+    public void SelectCampaignCard(string sessionId, string playerId, string cardId, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        LogVerboseWarning($"SelectCampaignCard called for session: {sessionId}, player: {playerId}, card: {cardId}");
+        var parameters = new
+        {
+            sessionId = sessionId,
+            playerId = playerId,
+            cardId = cardId
+        };
+
+        CallFunctionWithRetry("selectCampaignCard", parameters, callback);
+    }
+
+    public void SubmitCampaignAttack(string sessionId, string playerId, int attackSlot, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        LogVerboseWarning($"SubmitCampaignAttack called for session: {sessionId}, player: {playerId}, slot: {attackSlot}");
+        var parameters = new
+        {
+            sessionId = sessionId,
+            playerId = playerId,
+            attackSlot = attackSlot
+        };
+
+        CallFunctionWithRetry("submitCampaignAttack", parameters, callback);
+    }
+
     public void AbandonRoyalRumbleSession(string sessionId, string playerId, Action<ExecuteFunctionResult> callback)
     {
         callback ??= NoOpCallback;
