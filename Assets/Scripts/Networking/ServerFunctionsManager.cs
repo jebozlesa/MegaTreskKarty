@@ -471,6 +471,20 @@ public class ServerFunctionsManager : MonoBehaviour
         CallFunctionWithRetry("createCampaignSession", parameters, callback);
     }
 
+    public void GetCampaignProgress(string playerId, string campaignId, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        LogVerboseWarning($"GetCampaignProgress called for player: {playerId}, campaign: {campaignId}");
+        var parameters = new
+        {
+            playerId = playerId,
+            campaignId = campaignId
+        };
+
+        CallFunctionWithRetry("getCampaignProgress", parameters, callback);
+    }
+
     public void LoadCampaignPlayerDeck(string sessionId, string playerId, Action<ExecuteFunctionResult> callback)
     {
         callback ??= NoOpCallback;

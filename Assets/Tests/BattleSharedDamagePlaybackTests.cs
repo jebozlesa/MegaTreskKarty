@@ -402,6 +402,55 @@ public class BattleSharedDamagePlaybackTests
     }
 
     [Test]
+    public void CampaignOnlineShell_RendersAndCleansEnemyHand()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Campaign", "Online", "CampaignOnlineShellController.cs");
+        string renderMethod = ExtractMethodBlock(source, "private void RenderCampaignView()");
+        string clearMethod = ExtractMethodBlock(source, "private void ClearRenderedCards()");
+
+        StringAssert.Contains("private readonly List<Kard> renderedEnemyHandCards", source);
+        StringAssert.Contains("RenderEnemyHand(selectedEnemy?.cardId);", renderMethod);
+        StringAssert.Contains("private void RenderEnemyHand(string excludeCardId)", source);
+        StringAssert.Contains("foreach (Kard card in renderedEnemyHandCards)", clearMethod);
+        StringAssert.Contains("renderedEnemyHandCards.Clear();", clearMethod);
+    }
+
+    [Test]
+    public void CampaignOnlineShell_RebindsVisibleDialogAndClearsLegacyDelayedClicks()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Campaign", "Online", "CampaignOnlineShellController.cs");
+        string rebindMethod = ExtractMethodBlock(source, "public void ReplaceSceneButtonListenersForOnlineCampaign()");
+
+        StringAssert.Contains("confirmButton = FindButtonByName(\"DialogButton\")", rebindMethod);
+        StringAssert.Contains("dialogText = FindButtonText(confirmButton)", rebindMethod);
+        StringAssert.Contains("PrepareAttackSelectionFlow();", rebindMethod);
+        StringAssert.Contains("attackSelectionFlow = new SharedAttackSelectionFlow(", source);
+        StringAssert.Contains("customButton.onDelayedClick = new UnityEvent();", source);
+    }
+
+    [Test]
+    public void CampaignOnlineShell_RefreshesReplacementHandDraggabilityAfterBusyStateClears()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Campaign", "Online", "CampaignOnlineShellController.cs");
+        string updateMethod = ExtractMethodBlock(source, "private void UpdateAttackButtons()");
+        string refreshMethod = ExtractMethodBlock(source, "private void RefreshPlayerHandDraggability()");
+
+        StringAssert.Contains("RefreshPlayerHandDraggability();", updateMethod);
+        StringAssert.Contains("foreach (Kard card in renderedPlayerHandCards)", refreshMethod);
+        StringAssert.Contains("card.isDragable = CanDragCard(card);", refreshMethod);
+    }
+
+    [Test]
+    public void CampaignMissionManager_LoadsServerAuthoritativeProgressWithoutLocalFallback()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Campaign", "MissionManager.cs");
+
+        StringAssert.Contains("campaignService.GetProgressAsync(playerId, campaignId)", source);
+        StringAssert.Contains("ApplyLevelAccess(envelope.progress.highestUnlockedMissionId);", source);
+        Assert.IsFalse(source.Contains("CampaignManager.Instance.LoadCampaignData"));
+    }
+
+    [Test]
     public void RoyalRumbleShell_DoesNotMaintainLocalOngoingFallback()
     {
         string source = ReadProjectFile("Assets", "Scripts", "RoyalRumble", "RoyalRumbleShellController.cs");
