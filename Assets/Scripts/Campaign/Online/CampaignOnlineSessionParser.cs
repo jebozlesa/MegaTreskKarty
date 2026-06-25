@@ -45,11 +45,46 @@ public static class CampaignOnlineSessionParser
             enemyNeedsReplacement = token.Value<bool?>("enemyNeedsReplacement") ?? false,
             runEnded = token.Value<bool?>("runEnded") ?? false,
             runStatus = token.Value<string>("runStatus") ?? string.Empty,
+            campaignProgress = ParseUnlockProgressToken(token["campaignProgress"]),
             botAttack = token["botAttack"]?.ToObject<CampaignOnlineBotAttackDto>() ?? new CampaignOnlineBotAttackDto()
         };
 
         dto.botAttack.validSlots ??= new List<int>();
         return dto;
+    }
+
+    public static CampaignOnlineProgressEnvelopeDto ParseProgressEnvelope(object functionResult)
+    {
+        JToken token = ToToken(functionResult);
+        if (token == null || token.Type == JTokenType.Null)
+        {
+            return null;
+        }
+
+        return new CampaignOnlineProgressEnvelopeDto
+        {
+            success = token.Value<bool?>("success") ?? false,
+            message = token.Value<string>("message") ?? string.Empty,
+            error = token.Value<string>("error") ?? string.Empty,
+            progress = ParseUnlockProgressToken(token["progress"])
+        };
+    }
+
+    private static CampaignOnlineUnlockProgressDto ParseUnlockProgressToken(JToken token)
+    {
+        if (token == null || token.Type == JTokenType.Null)
+        {
+            return null;
+        }
+
+        return new CampaignOnlineUnlockProgressDto
+        {
+            playerId = token.Value<string>("playerId") ?? string.Empty,
+            campaignId = token.Value<string>("campaignId") ?? string.Empty,
+            highestUnlockedMissionId = token.Value<int?>("highestUnlockedMissionId") ?? 1,
+            missionCount = token.Value<int?>("missionCount") ?? 0,
+            updatedAt = token.Value<string>("updatedAt") ?? string.Empty
+        };
     }
 
     private static CampaignOnlineSessionDto ParseSessionToken(JToken token)

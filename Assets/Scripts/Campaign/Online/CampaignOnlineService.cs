@@ -24,6 +24,15 @@ public class CampaignOnlineService : MonoBehaviour
         );
     }
 
+    public async Task<CampaignOnlineProgressEnvelopeDto> GetProgressAsync(string playerId, string campaignId)
+    {
+        return await ExecuteAsync(
+            callback => serverFunctionsManager.GetCampaignProgress(playerId, campaignId, callback),
+            CampaignOnlineSessionParser.ParseProgressEnvelope,
+            "GetProgressAsync"
+        );
+    }
+
     public async Task<CampaignOnlineSessionEnvelopeDto> LoadPlayerDeckAsync(string sessionId, string playerId)
     {
         return await ExecuteAsync(
@@ -131,6 +140,16 @@ public class CampaignOnlineService : MonoBehaviour
                     );
                 }
                 break;
+
+            case CampaignOnlineProgressEnvelopeDto progressEnvelope:
+                if (!progressEnvelope.success || progressEnvelope.progress == null)
+                {
+                    Debug.LogWarning(
+                        $"[CampaignOnlineService] {operationName}: success={progressEnvelope.success}, " +
+                        $"progressNull={progressEnvelope.progress == null}, error={progressEnvelope.error}, message={progressEnvelope.message}"
+                    );
+                }
+                break;
         }
     }
 
@@ -160,6 +179,13 @@ public class CampaignOnlineService : MonoBehaviour
                     $"playerNeedsReplacement={battleEnvelope.playerNeedsReplacement}, enemyNeedsReplacement={battleEnvelope.enemyNeedsReplacement}, " +
                     $"botAttack={battleEnvelope.botAttack?.attackSlot}/{battleEnvelope.botAttack?.attackId}, " +
                     $"sessionStatus={battleEnvelope.session?.status}, turn={battleEnvelope.session?.progress?.turnNumber ?? 0}, battle={battleEnvelope.session?.progress?.battleCount ?? 0}"
+                );
+                break;
+
+            case CampaignOnlineProgressEnvelopeDto progressEnvelope when progressEnvelope.progress != null:
+                Debug.LogWarning(
+                    $"[CampaignOnlineService] {operationName} OK: campaign={progressEnvelope.progress.campaignId}, " +
+                    $"highestUnlockedMission={progressEnvelope.progress.highestUnlockedMissionId}, missionCount={progressEnvelope.progress.missionCount}"
                 );
                 break;
         }

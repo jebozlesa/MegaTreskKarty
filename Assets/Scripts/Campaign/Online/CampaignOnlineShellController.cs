@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 public class CampaignOnlineShellController : MonoBehaviour
@@ -48,6 +49,7 @@ public class CampaignOnlineShellController : MonoBehaviour
     private string lastAutoSubmittedPendingKey;
     private SharedAttackSelectionFlow attackSelectionFlow;
     private readonly List<Kard> renderedPlayerHandCards = new List<Kard>();
+    private readonly List<Kard> renderedEnemyHandCards = new List<Kard>();
     private Kard renderedPlayerActiveCard;
     private Kard renderedEnemyActiveCard;
     private bool buttonListenersBound;
@@ -254,6 +256,9 @@ public class CampaignOnlineShellController : MonoBehaviour
 
     public void ReplaceSceneButtonListenersForOnlineCampaign()
     {
+        confirmButton = FindButtonByName("DialogButton") ?? FindButtonByName("DialogButton2") ?? confirmButton;
+        dialogText = FindButtonText(confirmButton) ?? dialogText;
+        PropagateDialogTextReferences();
         ResolveAttackTextReferences();
         ReplaceButtonClickEvent(attackButton1);
         ReplaceButtonClickEvent(attackButton2);
@@ -262,6 +267,26 @@ public class CampaignOnlineShellController : MonoBehaviour
         ReplaceButtonClickEvent(confirmButton);
         buttonListenersBound = false;
         BindButtonListeners();
+        PrepareAttackSelectionFlow();
+        UpdateAttackButtons();
+    }
+
+    private void PropagateDialogTextReferences()
+    {
+        if (player != null)
+        {
+            player.dialogText = dialogText;
+        }
+
+        if (enemy != null)
+        {
+            enemy.dialogText = dialogText;
+        }
+
+        if (battlePlayback != null)
+        {
+            battlePlayback.dialogText = dialogText;
+        }
     }
 
     private void ResolveDependencies()
@@ -354,6 +379,7 @@ public class CampaignOnlineShellController : MonoBehaviour
         ClearRenderedCards();
 
         SelectedCardData selectedEnemy = ResolveSelectedEnemyCard();
+        RenderEnemyHand(selectedEnemy?.cardId);
         PromoteEnemyCardToBoard(selectedEnemy);
 
         SelectedCardData selectedPlayer = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
@@ -368,6 +394,39 @@ public class CampaignOnlineShellController : MonoBehaviour
         }
 
         UpdateAttackButtons();
+    }
+
+    private void RenderEnemyHand(string excludeCardId)
+    {
+        if (currentSession?.enemyDeck?.cards == null || enemy == null)
+        {
+            return;
+        }
+
+        foreach (SelectedCardData cardData in currentSession.enemyDeck.cards.Where(IsAlive))
+        {
+            if (!string.IsNullOrWhiteSpace(excludeCardId)
+                && string.Equals(cardData.cardId, excludeCardId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            Kard createdCard = CreateCardInGame(
+                CampaignOnlineCardMapper.ToGeneratedCard(cardData),
+                enemy.gameObject,
+                enemy,
+                addToHand: true,
+                battleAreaOverride: enemyBoard
+            );
+
+            if (createdCard == null)
+            {
+                continue;
+            }
+
+            createdCard.isDragable = false;
+            renderedEnemyHandCards.Add(createdCard);
+        }
     }
 
     private void RenderPlayerHand(string excludeCardId)
@@ -492,6 +551,14 @@ public class CampaignOnlineShellController : MonoBehaviour
             }
         }
 
+        foreach (Kard card in renderedEnemyHandCards)
+        {
+            if (card != null)
+            {
+                Destroy(card.gameObject);
+            }
+        }
+
         if (renderedPlayerActiveCard != null)
         {
             Destroy(renderedPlayerActiveCard.gameObject);
@@ -503,6 +570,7 @@ public class CampaignOnlineShellController : MonoBehaviour
         }
 
         renderedPlayerHandCards.Clear();
+        renderedEnemyHandCards.Clear();
         renderedPlayerActiveCard = null;
         renderedEnemyActiveCard = null;
 
@@ -618,7 +686,7 @@ public class CampaignOnlineShellController : MonoBehaviour
 
     private void PrepareAttackSelectionFlow()
     {
-        attackSelectionFlow ??= new SharedAttackSelectionFlow(
+        attackSelectionFlow = new SharedAttackSelectionFlow(
             attackDescriptions,
             dialogText,
             "Resolving battle...",
@@ -1044,6 +1112,8 @@ public class CampaignOnlineShellController : MonoBehaviour
 
     private void UpdateAttackButtons()
     {
+        RefreshPlayerHandDraggability();
+
         bool attackPhaseActive = currentSession != null
             && currentSession.status == "awaiting_attack"
             && !string.IsNullOrWhiteSpace(ActivePlayerCardId)
@@ -1062,6 +1132,17 @@ public class CampaignOnlineShellController : MonoBehaviour
             BuildCurrentAttackCountsState(),
             attackPhaseActive
         );
+    }
+
+    private void RefreshPlayerHandDraggability()
+    {
+        foreach (Kard card in renderedPlayerHandCards)
+        {
+            if (card != null)
+            {
+                card.isDragable = CanDragCard(card);
+            }
+        }
     }
 
     private void UpdateAttackButtonDisplay(Button button, TMP_Text nameText, TMP_Text countText, int attackSlot)
@@ -1176,7 +1257,7 @@ public class CampaignOnlineShellController : MonoBehaviour
         attackButton2 ??= FindButtonByName("AttackButton (2)");
         attackButton3 ??= FindButtonByName("AttackButton (3)");
         attackButton4 ??= FindButtonByName("AttackButton (4)");
-        confirmButton ??= FindButtonByName("DialogButton2");
+        confirmButton ??= FindButtonByName("DialogButton") ?? FindButtonByName("DialogButton2");
 
         attackButton1Text ??= FindButtonText(attackButton1);
         attackButton2Text ??= FindButtonText(attackButton2);
@@ -1290,6 +1371,12 @@ public class CampaignOnlineShellController : MonoBehaviour
         if (button != null)
         {
             button.onClick = new Button.ButtonClickedEvent();
+
+            CustomButton customButton = button.GetComponent<CustomButton>();
+            if (customButton != null)
+            {
+                customButton.onDelayedClick = new UnityEvent();
+            }
         }
     }
 

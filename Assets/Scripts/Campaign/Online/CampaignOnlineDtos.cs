@@ -25,6 +25,26 @@ public class CampaignOnlineBattleEnvelopeDto
     public bool enemyNeedsReplacement;
     public bool runEnded;
     public string runStatus;
+    public CampaignOnlineUnlockProgressDto campaignProgress;
+}
+
+[Serializable]
+public class CampaignOnlineProgressEnvelopeDto
+{
+    public bool success;
+    public string message;
+    public string error;
+    public CampaignOnlineUnlockProgressDto progress;
+}
+
+[Serializable]
+public class CampaignOnlineUnlockProgressDto
+{
+    public string playerId;
+    public string campaignId;
+    public int highestUnlockedMissionId;
+    public int missionCount;
+    public string updatedAt;
 }
 
 [Serializable]
