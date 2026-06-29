@@ -1,14 +1,13 @@
-using UnityEngine;
-using System.Data;
-using Mono.Data.Sqlite;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using Mono.Data.Sqlite;
 using PlayFab;
 using PlayFab.ClientModels;
-using System.Linq;
+using UnityEngine;
 using UnityEngine.SceneManagement;
-
 
 public class CardGenerator : MonoBehaviour
 {
@@ -31,11 +30,7 @@ public class CardGenerator : MonoBehaviour
         string email = PlayerPrefs.GetString("email");
         string password = PlayerPrefs.GetString("password");
 
-        var request = new LoginWithEmailAddressRequest
-        {
-            Email = email,
-            Password = password
-        };
+        var request = new LoginWithEmailAddressRequest { Email = email, Password = password };
         PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
     }
 
@@ -89,7 +84,13 @@ public class CardGenerator : MonoBehaviour
         }
     }
 
-    public IEnumerator ShowCardOnScreen(int id, string cardName, string image, Color32 color, int level)
+    public IEnumerator ShowCardOnScreen(
+        int id,
+        string cardName,
+        string image,
+        Color32 color,
+        int level
+    )
     {
         Debug.Log("ShowCardOnScreen(" + id + "," + cardName + "," + level + ")");
         // Vytvorte inštanciu karty
@@ -124,7 +125,29 @@ public class CardGenerator : MonoBehaviour
 
     public List<int>[] themedPacks = new List<int>[]
     {
-        new List<int> { 5, 8, 11, 12, 15, 16, 20, 23, 25, 27, 28, 29, 30, 33, 38, 39, 41, 42,44, 45 }, // Balíček 0
+        new List<int>
+        {
+            5,
+            8,
+            11,
+            12,
+            15,
+            16,
+            20,
+            23,
+            25,
+            27,
+            28,
+            29,
+            30,
+            33,
+            38,
+            39,
+            41,
+            42,
+            44,
+            45,
+        }, // Balíček 0
         new List<int> { 2, 3, 4, 7, 13, 14, 18, 19, 21, 22, 24, 26, 32, 34, 37, 43 }, // Balíček 1
         new List<int> { 4, 10, 25, 30, 35, 36, 41, 44, 45 }, // Balíček 1
     };
@@ -164,7 +187,9 @@ public class CardGenerator : MonoBehaviour
             GeneratedCard randomCard = null;
 
             // Vygenerujeme kartu a získame objekt karty
-            yield return StartCoroutine(GenerateCard(randomCardID, card => randomCard = card, series));
+            yield return StartCoroutine(
+                GenerateCard(randomCardID, card => randomCard = card, series)
+            );
 
             if (randomCard != null)
             {
@@ -180,12 +205,13 @@ public class CardGenerator : MonoBehaviour
 
         displayBlock.SetActive(false);
 
-        Debug.Log("HasCompletedTutorialMarketplace pico: " + PlayerPrefs.GetInt("HasCompletedTutorialMarketplace", 0));
-
+        Debug.Log(
+            "HasCompletedTutorialMarketplace pico: "
+                + PlayerPrefs.GetInt("HasCompletedTutorialMarketplace", 0)
+        );
 
         Debug.Log("Generated cards: " + string.Join(", ", generatedCards.Select(c => c.CardID)));
         yield return StartCoroutine(CreateFirstDeck(generatedCards)); // Vytvorte prvý balíček
-
 
         // PlayerPrefs.SetInt("HasCompletedTutorialMarketplace", 1);
         // PlayerPrefs.Save();
@@ -193,7 +219,12 @@ public class CardGenerator : MonoBehaviour
 
     private IEnumerator GenerateCard(int cardId, Action<GeneratedCard> onCardCreated, int series)
     {
-        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + "CardGenerator.GenerateCard => cardID: " + cardId);
+        Debug.Log(
+            "MegaTresk: "
+                + DateTime.Now.ToString("HH:mm:ss.fff")
+                + "CardGenerator.GenerateCard => cardID: "
+                + cardId
+        );
         IDbConnection dbConnection = new SqliteConnection(connectionString);
         dbConnection.Open();
 
@@ -206,20 +237,35 @@ public class CardGenerator : MonoBehaviour
             GeneratedCard card = CreateCardFromDatabase(reader, series);
             string json = ConvertCardToJson(card);
 
-            PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
+            PlayFabClientAPI.GetUserData(
+                new GetUserDataRequest(),
+                result =>
                 {
                     string existingDataJson = GetExistingDataJson(result);
-                    Dictionary<string, GeneratedCard> data = AddCardToExistingData(existingDataJson, card);
+                    Dictionary<string, GeneratedCard> data = AddCardToExistingData(
+                        existingDataJson,
+                        card
+                    );
                     string updatedJson = ConvertUpdatedDataToJson(data);
 
                     UpdateUserDataInPlayFab(updatedJson);
-                }, error => Debug.LogError(error.GenerateErrorReport()));
+                },
+                error => Debug.LogError(error.GenerateErrorReport())
+            );
 
             onCardCreated?.Invoke(card);
 
             AudioManager.Instance.PlayCardAcquiredSound();
 
-            yield return StartCoroutine(ShowCardOnScreen(card.StyleID, card.PersonName, card.CardPicture, new Color32((byte)card.Color[0], (byte)card.Color[1], (byte)card.Color[2], 255), card.Level));
+            yield return StartCoroutine(
+                ShowCardOnScreen(
+                    card.StyleID,
+                    card.PersonName,
+                    card.CardPicture,
+                    new Color32((byte)card.Color[0], (byte)card.Color[1], (byte)card.Color[2], 255),
+                    card.Level
+                )
+            );
         }
         else
         {
@@ -270,18 +316,32 @@ public class CardGenerator : MonoBehaviour
             GeneratedCard card = CreateCardFromDatabase(reader, series);
             string json = ConvertCardToJson(card);
 
-            PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
-            {
-                string existingDataJson = GetExistingDataJson(result);
-                Dictionary<string, GeneratedCard> data = AddCardToExistingData(existingDataJson, card);
-                string updatedJson = ConvertUpdatedDataToJson(data);
-                UpdateUserDataInPlayFab(updatedJson);
-
-            }, error => Debug.LogError(error.GenerateErrorReport()));
+            PlayFabClientAPI.GetUserData(
+                new GetUserDataRequest(),
+                result =>
+                {
+                    string existingDataJson = GetExistingDataJson(result);
+                    Dictionary<string, GeneratedCard> data = AddCardToExistingData(
+                        existingDataJson,
+                        card
+                    );
+                    string updatedJson = ConvertUpdatedDataToJson(data);
+                    UpdateUserDataInPlayFab(updatedJson);
+                },
+                error => Debug.LogError(error.GenerateErrorReport())
+            );
 
             AudioManager.Instance.PlayCardAcquiredSound();
 
-            yield return StartCoroutine(ShowCardOnScreen(card.StyleID, card.PersonName, card.CardPicture, new Color32((byte)card.Color[0], (byte)card.Color[1], (byte)card.Color[2], 255), card.Level));
+            yield return StartCoroutine(
+                ShowCardOnScreen(
+                    card.StyleID,
+                    card.PersonName,
+                    card.CardPicture,
+                    new Color32((byte)card.Color[0], (byte)card.Color[1], (byte)card.Color[2], 255),
+                    card.Level
+                )
+            );
         }
         else
         {
@@ -296,7 +356,12 @@ public class CardGenerator : MonoBehaviour
     private GeneratedCard CreateCardFromDatabase(IDataReader reader, int series = 1)
     {
         string[] colorComponents = reader.GetString(10).Split(';');
-        Color32 color = new Color32(byte.Parse(colorComponents[0]), byte.Parse(colorComponents[1]), byte.Parse(colorComponents[2]), 255);
+        Color32 color = new Color32(
+            byte.Parse(colorComponents[0]),
+            byte.Parse(colorComponents[1]),
+            byte.Parse(colorComponents[2]),
+            255
+        );
 
         GeneratedCard card = new GeneratedCard
         {
@@ -311,7 +376,7 @@ public class CardGenerator : MonoBehaviour
             Attack = reader.GetInt32(5),
             Defense = reader.GetInt32(6),
             Knowledge = reader.GetInt32(7),
-            Charisma = reader.GetInt32(8)
+            Charisma = reader.GetInt32(8),
             // Color = Array.ConvertAll(reader.GetString(10).Split(';'), int.Parse),
             // CardPicture = reader.GetString(15)
 
@@ -345,7 +410,8 @@ public class CardGenerator : MonoBehaviour
         try
         {
             IDbCommand dbCommand = dbConnection.CreateCommand();
-            dbCommand.CommandText = $"SELECT Color, Image FROM CardVisuals WHERE CharacterID = {styleID} AND Series = {series}";
+            dbCommand.CommandText =
+                $"SELECT Color, Image FROM CardVisuals WHERE CharacterID = {styleID} AND Series = {series}";
             // Debug.Log($"SQL Query: {dbCommand.CommandText}");
             IDataReader reader = dbCommand.ExecuteReader();
 
@@ -377,7 +443,7 @@ public class CardGenerator : MonoBehaviour
         // Pre jednoduchosť momentálne vrátime Series 2
         // Ak v budúcnosti pridáš Series 3, 4, 5... môžeš zmeniť na náhodný výber
         return 2;
-        
+
         // BUDÚCE ROZŠÍRENIE (ak budeš mať viac sérií):
         // int[] availableSeries = new int[] { 2, 3, 4 }; // Definuj aké série máš
         // return availableSeries[UnityEngine.Random.Range(0, availableSeries.Length)];
@@ -392,7 +458,8 @@ public class CardGenerator : MonoBehaviour
         try
         {
             IDbCommand dbCommand = dbConnection.CreateCommand();
-            dbCommand.CommandText = $"SELECT AttackID FROM CharacterAttacks WHERE CharacterID = {styleID}";
+            dbCommand.CommandText =
+                $"SELECT AttackID FROM CharacterAttacks WHERE CharacterID = {styleID}";
             Debug.Log($"SELECT AttackID FROM CharacterAttacks WHERE CharacterID = {styleID}");
             IDataReader reader = dbCommand.ExecuteReader();
 
@@ -411,7 +478,6 @@ public class CardGenerator : MonoBehaviour
 
         return attacks;
     }
-
 
     private List<int> SelectRandomAttacks(List<int> attacks, int count)
     {
@@ -432,8 +498,6 @@ public class CardGenerator : MonoBehaviour
         return selectedAttacks;
     }
 
-
-
     private string ConvertCardToJson(GeneratedCard card)
     {
         return JsonUtility.ToJson(card);
@@ -449,7 +513,10 @@ public class CardGenerator : MonoBehaviour
         return "{}";
     }
 
-    private Dictionary<string, GeneratedCard> AddCardToExistingData(string existingDataJson, GeneratedCard card)
+    private Dictionary<string, GeneratedCard> AddCardToExistingData(
+        string existingDataJson,
+        GeneratedCard card
+    )
     {
         Dictionary<string, GeneratedCard> data = new Dictionary<string, GeneratedCard>();
         if (!string.IsNullOrEmpty(existingDataJson))
@@ -472,7 +539,7 @@ public class CardGenerator : MonoBehaviour
     {
         CardListWrapper updatedCards = new CardListWrapper
         {
-            cards = new List<GeneratedCard>(data.Values)
+            cards = new List<GeneratedCard>(data.Values),
         };
 
         return JsonUtility.ToJson(updatedCards);
@@ -483,10 +550,14 @@ public class CardGenerator : MonoBehaviour
         Debug.Log("Updating JSON card ");
         var updateRequest = new UpdateUserDataRequest
         {
-            Data = new Dictionary<string, string> { { "PlayerCards", updatedJson } }
+            Data = new Dictionary<string, string> { { "PlayerCards", updatedJson } },
         };
         Debug.Log("Updated JSON card: " + updatedJson);
-        PlayFabClientAPI.UpdateUserData(updateRequest, updateResult => Debug.Log("User data updated successfully"), error => Debug.LogError(error.GenerateErrorReport()));
+        PlayFabClientAPI.UpdateUserData(
+            updateRequest,
+            updateResult => Debug.Log("User data updated successfully"),
+            error => Debug.LogError(error.GenerateErrorReport())
+        );
     }
 
     public IEnumerator CreateFirstDeck(List<GeneratedCard> generatedCards)
@@ -497,19 +568,27 @@ public class CardGenerator : MonoBehaviour
         bool isRequestComplete = false;
         bool deckExists = false;
 
-        PlayFabClientAPI.GetUserData(checkDeckRequest, result =>
-        {
-            if (result.Data != null && result.Data.ContainsKey("PlayerDecks") && !string.IsNullOrEmpty(result.Data["PlayerDecks"].Value))
+        PlayFabClientAPI.GetUserData(
+            checkDeckRequest,
+            result =>
             {
-                Debug.Log("Balíček už existuje. Vytvorenie balíčka preskočíme.");
-                deckExists = true;
+                if (
+                    result.Data != null
+                    && result.Data.ContainsKey("PlayerDecks")
+                    && !string.IsNullOrEmpty(result.Data["PlayerDecks"].Value)
+                )
+                {
+                    Debug.Log("Balíček už existuje. Vytvorenie balíčka preskočíme.");
+                    deckExists = true;
+                }
+                isRequestComplete = true;
+            },
+            error =>
+            {
+                Debug.LogError(error.GenerateErrorReport());
+                isRequestComplete = true;
             }
-            isRequestComplete = true;
-        }, error =>
-        {
-            Debug.LogError(error.GenerateErrorReport());
-            isRequestComplete = true;
-        });
+        );
 
         yield return new WaitUntil(() => isRequestComplete);
 
@@ -530,44 +609,59 @@ public class CardGenerator : MonoBehaviour
             Card2 = cards[1].CardID,
             Card3 = cards[2].CardID,
             Card4 = cards[3].CardID,
-            Card5 = cards[4].CardID
+            Card5 = cards[4].CardID,
         };
 
         bool isRequestComplete = false;
         bool isDeckSaved = false;
 
         // Získanie existujúcich údajov o balíčkoch
-        PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
-        {
-            string existingDataJson = result.Data != null && result.Data.ContainsKey("PlayerDecks") ? result.Data["PlayerDecks"].Value : "{}";
-            string json = ConvertDeckToJson(newDeck, existingDataJson);
-
-            var updateUserDataRequest = new UpdateUserDataRequest
+        PlayFabClientAPI.GetUserData(
+            new GetUserDataRequest(),
+            result =>
             {
-                Data = new Dictionary<string, string> { { "PlayerDecks", json } }
-            };
+                string existingDataJson =
+                    result.Data != null && result.Data.ContainsKey("PlayerDecks")
+                        ? result.Data["PlayerDecks"].Value
+                        : "{}";
+                string json = ConvertDeckToJson(newDeck, existingDataJson);
 
-            // Aktualizácia údajov o balíčkoch
-            PlayFabClientAPI.UpdateUserData(updateUserDataRequest, updateResult =>
-            {
-                Debug.Log("Nový balíček bol úspešne uložený.");
-                isDeckSaved = true;
-            }, error =>
-            {
-                Debug.LogError("Chyba pri ukladaní nového balíčka: " + error.GenerateErrorReport());
-            });
+                var updateUserDataRequest = new UpdateUserDataRequest
+                {
+                    Data = new Dictionary<string, string> { { "PlayerDecks", json } },
+                };
 
-            isRequestComplete = true;
-        }, error =>
-        {
-            Debug.LogError("Chyba pri získavaní existujúcich údajov o balíčkoch: " + error.GenerateErrorReport());
-            isRequestComplete = true;
-        });
+                // Aktualizácia údajov o balíčkoch
+                PlayFabClientAPI.UpdateUserData(
+                    updateUserDataRequest,
+                    updateResult =>
+                    {
+                        Debug.Log("Nový balíček bol úspešne uložený.");
+                        isDeckSaved = true;
+                    },
+                    error =>
+                    {
+                        Debug.LogError(
+                            "Chyba pri ukladaní nového balíčka: " + error.GenerateErrorReport()
+                        );
+                    }
+                );
+
+                isRequestComplete = true;
+            },
+            error =>
+            {
+                Debug.LogError(
+                    "Chyba pri získavaní existujúcich údajov o balíčkoch: "
+                        + error.GenerateErrorReport()
+                );
+                isRequestComplete = true;
+            }
+        );
 
         // Čakanie na dokončenie oboch požiadaviek
         yield return new WaitUntil(() => isRequestComplete && isDeckSaved);
     }
-
 
     private string ConvertDeckToJson(Deck newDeck, string existingDataJson)
     {
@@ -582,7 +676,6 @@ public class CardGenerator : MonoBehaviour
 
         return JsonUtility.ToJson(existingDecks);
     }
-
 
     // private string ConvertDeckToJson(Deck deck)
     // {
@@ -619,10 +712,7 @@ public class CardGenerator : MonoBehaviour
 
     private string ConvertUpdatedDeckDataToJson(Dictionary<string, Deck> data)
     {
-        DeckListWrapper updatedDecks = new DeckListWrapper
-        {
-            Decks = new List<Deck>(data.Values)
-        };
+        DeckListWrapper updatedDecks = new DeckListWrapper { Decks = new List<Deck>(data.Values) };
 
         return JsonUtility.ToJson(updatedDecks);
     }
@@ -631,12 +721,13 @@ public class CardGenerator : MonoBehaviour
     {
         var updateRequest = new UpdateUserDataRequest
         {
-            Data = new Dictionary<string, string> { { "PlayerDecks", updatedJson } }
+            Data = new Dictionary<string, string> { { "PlayerDecks", updatedJson } },
         };
         Debug.Log("Updated JSON deck: " + updatedJson);
-        PlayFabClientAPI.UpdateUserData(updateRequest, updateResult => Debug.Log("User deck data updated successfully"), error => Debug.LogError(error.GenerateErrorReport()));
+        PlayFabClientAPI.UpdateUserData(
+            updateRequest,
+            updateResult => Debug.Log("User deck data updated successfully"),
+            error => Debug.LogError(error.GenerateErrorReport())
+        );
     }
-
-
-
 }

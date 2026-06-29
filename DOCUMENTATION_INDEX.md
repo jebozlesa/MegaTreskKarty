@@ -1,6 +1,6 @@
 ﻿# Documentation Index (Client)
 
-Last updated: 2026-03-09
+Last updated: 2026-06-29
 
 ## Active Docs
 
@@ -16,6 +16,7 @@ Last updated: 2026-03-09
 - `KILL_COUNTER_DEBUG_CHECKLIST.md`
 - `UNITY_BATTLE_SETUP.md`
 - `UI_Setup_Instructions.md`
+- `docs/multiplayer/README.md`
 - `REFACTORING_ARCHITECTURE.md`
 - `.github/copilot-instructions.md`
 

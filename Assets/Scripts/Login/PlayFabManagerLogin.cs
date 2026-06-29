@@ -1,12 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using PlayFab;
 using PlayFab.ClientModels;
 using TMPro;
-using UnityEngine.UI;
+using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class PlayFabManagerLogin : MonoBehaviour
 {
@@ -57,11 +57,7 @@ public class PlayFabManagerLogin : MonoBehaviour
         // Ak sú prihlasovacie údaje uložené, prihlás užívateľa
         if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(password))
         {
-            var request = new LoginWithEmailAddressRequest
-            {
-                Email = email,
-                Password = password
-            };
+            var request = new LoginWithEmailAddressRequest { Email = email, Password = password };
             PlayFabClientAPI.LoginWithEmailAddress(request, OnLoginSuccess, OnError);
         }
         else
@@ -90,7 +86,7 @@ public class PlayFabManagerLogin : MonoBehaviour
             controlPanel.SetActive(true);
             return;
         }
-        
+
         if (string.IsNullOrEmpty(usernameInput.text))
         {
             messageGandhiText.text = "Username is required!";
@@ -123,11 +119,10 @@ public class PlayFabManagerLogin : MonoBehaviour
             Email = emailInput.text,
             Username = usernameInput.text,
             Password = passwordInput.text,
-            RequireBothUsernameAndEmail = false
+            RequireBothUsernameAndEmail = false,
         };
         PlayFabClientAPI.RegisterPlayFabUser(request, OnRegisterSuccess, OnError);
     }
-
 
     void OnRegisterSuccess(RegisterPlayFabUserResult result)
     {
@@ -157,10 +152,7 @@ public class PlayFabManagerLogin : MonoBehaviour
 
     void UpdateUserTitleDisplayName(string displayName)
     {
-        var request = new UpdateUserTitleDisplayNameRequest
-        {
-            DisplayName = displayName
-        };
+        var request = new UpdateUserTitleDisplayNameRequest { DisplayName = displayName };
         PlayFabClientAPI.UpdateUserTitleDisplayName(request, OnDisplayNameUpdated, OnError);
     }
 
@@ -168,7 +160,6 @@ public class PlayFabManagerLogin : MonoBehaviour
     {
         Debug.Log("DisplayName updated successfully");
     }
-
 
     public void LoginButton()
     {
@@ -182,7 +173,7 @@ public class PlayFabManagerLogin : MonoBehaviour
         var request = new LoginWithEmailAddressRequest
         {
             Email = emailInput.text,
-            Password = passwordInput.text
+            Password = passwordInput.text,
         };
         PlayFabClientAPI.LoginWithEmailAddress(request, OnLoginSuccess, OnError);
     }
@@ -201,18 +192,25 @@ public class PlayFabManagerLogin : MonoBehaviour
         }
 
         // Get the username
-        PlayFabClientAPI.GetAccountInfo(new GetAccountInfoRequest { PlayFabId = result.PlayFabId }, resultAccountInfo =>
-        {
-            string username = resultAccountInfo.AccountInfo.Username;
-            PlayerPrefs.SetString("username", username);
+        PlayFabClientAPI.GetAccountInfo(
+            new GetAccountInfoRequest { PlayFabId = result.PlayFabId },
+            resultAccountInfo =>
+            {
+                string username = resultAccountInfo.AccountInfo.Username;
+                PlayerPrefs.SetString("username", username);
 
-            loadingImage.SetActive(false);
-            Debug.Log("Sicko dobre");
-            messageEinsteinBubble.SetActive(true);
-            messageEinsteinText.text = "Welcome " + username;
-            IsLoggedIn = true;
-            StartCoroutine(LoadMainSceneAfterDelay(2));
-        }, error => { Debug.LogError(error.GenerateErrorReport()); });
+                loadingImage.SetActive(false);
+                Debug.Log("Sicko dobre");
+                messageEinsteinBubble.SetActive(true);
+                messageEinsteinText.text = "Welcome " + username;
+                IsLoggedIn = true;
+                StartCoroutine(LoadMainSceneAfterDelay(2));
+            },
+            error =>
+            {
+                Debug.LogError(error.GenerateErrorReport());
+            }
+        );
 
         LoggedInPlayerId = result.PlayFabId;
     }
@@ -222,7 +220,6 @@ public class PlayFabManagerLogin : MonoBehaviour
         PlayerPrefs.SetString("email", email);
         PlayerPrefs.SetString("password", password);
     }
-
 
     IEnumerator LoadMainSceneAfterDelay(float delay)
     {
@@ -252,7 +249,7 @@ public class PlayFabManagerLogin : MonoBehaviour
         var request = new SendAccountRecoveryEmailRequest
         {
             Email = emailInput.text,
-            TitleId = "9AEA7"
+            TitleId = "9AEA7",
         };
         PlayFabClientAPI.SendAccountRecoveryEmail(request, OnPasswordReset, OnError);
     }
@@ -264,7 +261,7 @@ public class PlayFabManagerLogin : MonoBehaviour
 
     // void Login()
     // {
-    //     var request = new LoginWithCustomIDRequest 
+    //     var request = new LoginWithCustomIDRequest
     //     {
     //         CustomId = SystemInfo.deviceUniqueIdentifier,
     //         CreateAccount = true
@@ -289,5 +286,4 @@ public class PlayFabManagerLogin : MonoBehaviour
         Debug.Log("Nahovno daco");
         Debug.Log(error.GenerateErrorReport());
     }
-
 }

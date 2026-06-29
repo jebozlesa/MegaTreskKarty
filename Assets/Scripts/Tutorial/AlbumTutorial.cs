@@ -15,7 +15,6 @@ public class AlbumTutorial : MonoBehaviour
         Debug.Log("AlbumTutorial.Start() ===> START");
 
         tutorialPanelHint1.SetActive(true);
-
     }
 
     public void CloseFirstHint()

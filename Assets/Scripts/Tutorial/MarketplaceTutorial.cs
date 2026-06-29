@@ -1,16 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class MarketplaceTutorial : MonoBehaviour
 {
-
     public GameObject tutorialPanelHint1;
     public GameObject tutorialPanelHint2;
     public GameObject tutorialPanelEmpty;
-
 
     // Start is called before the first frame update
     void Start()
@@ -19,7 +17,6 @@ public class MarketplaceTutorial : MonoBehaviour
         // Check if the player has completed the tutorial
 
         tutorialPanelHint1.SetActive(true);
-
     }
 
     public void CloseFirstHint()

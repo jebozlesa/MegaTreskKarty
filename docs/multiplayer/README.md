@@ -2,6 +2,15 @@
 
 This note captures the current expected state of the Unity multiplayer client after the recent battle-flow cleanup.
 
+## Current loading baseline
+
+- `MultiplayerLobby` starts with a visible `CONNECT` label on the main button.
+- Clicking `CONNECT` shows the scene-local loading overlay and switches the same button to `CANCEL`.
+- Lobby loading text is owned by `LoadingOverlayView` and should move through `CONNECTING...` and `SEARCHING FOR PREY...`.
+- Clicking `CANCEL` should reset the lobby without requiring a scene reload.
+- `Multiplayer` battle startup should show the loading overlay while startup UI roots stay hidden.
+- Loading overlay graphics must not consume raycasts in the lobby, otherwise `CANCEL` will stop working.
+
 ## What was intentionally cleaned up
 
 - Raw `CallFunction` / `ExecuteFunction result` payload dumps are now treated as verbose logs.
@@ -36,6 +45,7 @@ If either message appears again after a clean Unity domain reload / scene reopen
 The current client/server flow was smoke-tested through:
 
 - lobby cleanup and rejoin
+- lobby connect/cancel loading loop
 - deck loading
 - fighter selection
 - attack submission / waiting states
@@ -46,6 +56,9 @@ The current client/server flow was smoke-tested through:
 
 ## Regression signals worth treating seriously
 
+- missing `CONNECT` label on lobby load
+- loading overlay staying interactive and blocking `CANCEL`
+- overlay text not changing between `CONNECTING...` and `SEARCHING FOR PREY...`
 - repeated network indicator popups for expected `leaveRoom` cleanup
 - battle results missing `firstAttacker` / `secondAttacker`
 - selected card HP diverging from server refresh

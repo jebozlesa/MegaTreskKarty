@@ -33,6 +33,7 @@ public class RoyalRumbleShellController : MonoBehaviour
     [Header("Scene References")]
     public GameObject playerBoard;
     public GameObject enemyBoard;
+    public GameObject startupControlPanel;
 
     [Header("Attack UI")]
     public Button attackButton1;
@@ -131,6 +132,11 @@ public class RoyalRumbleShellController : MonoBehaviour
 
         isBusy = true;
         hasStartedRun = true;
+        SetStartupUiVisible(false);
+        SceneLoadingOverlay.Show();
+
+        try
+        {
         playerId = PlayFabManagerLogin.Instance != null
             ? PlayFabManagerLogin.Instance.LoggedInPlayerId
             : PlayerPrefs.GetString("LoggedInPlayerId", string.Empty);
@@ -191,7 +197,31 @@ public class RoyalRumbleShellController : MonoBehaviour
             return;
         }
 
+        SetStartupUiVisible(true);
         StartCoroutine(PlayInitialOpeningSequence());
+        }
+        finally
+        {
+            SceneLoadingOverlay.Hide();
+        }
+    }
+
+    private void SetStartupUiVisible(bool isVisible)
+    {
+        if (startupControlPanel != null)
+        {
+            startupControlPanel.SetActive(isVisible);
+        }
+
+        if (playerBoard != null)
+        {
+            playerBoard.SetActive(isVisible);
+        }
+
+        if (enemyBoard != null)
+        {
+            enemyBoard.SetActive(isVisible);
+        }
     }
 
     public void ShowDragSelectionHint()

@@ -37,6 +37,7 @@ public class FightSystemMultiplayer : MonoBehaviour
     // Boards
     public GameObject playerBoard;
     public GameObject enemyBoard;
+    public GameObject startupControlPanel;
 
     // UI elements
     public TMP_Text dialogText;
@@ -108,32 +109,16 @@ public class FightSystemMultiplayer : MonoBehaviour
     void Start()
     {
         Debug.LogWarning("[FightSystemMultiplayer] Start() called");
-        
-        // [OK] Auto-find MultiplayerUI ak nie je assigned v Inspector
+
         if (multiplayerUI == null)
         {
-            multiplayerUI = FindFirstObjectByType<MultiplayerUI>();
-            if (multiplayerUI == null)
-            {
-                Debug.LogError("[FightSystemMultiplayer] [ERR] MultiplayerUI not found in scene!");
-            }
-            else
-            {
-                Debug.LogWarning("[FightSystemMultiplayer] [WARN] Auto-found MultiplayerUI (prefer Inspector setup)");
-            }
+            Debug.LogError("[FightSystemMultiplayer] MultiplayerUI is not assigned in the Inspector.");
         }
-        
-        // [OK] Set initial status message (replaces Unity Inspector default "Fight!")
+
         if (multiplayerUI != null)
         {
             Debug.LogWarning("[FightSystemMultiplayer] Setting status to 'Loading...'");
             multiplayerUI.ShowStatus(MultiplayerUI.MSG_LOADING);
-        }
-        else if (dialogText != null)
-        {
-            // Fallback ak MultiplayerUI chyba
-            Debug.LogWarning("[FightSystemMultiplayer] Using dialogText fallback");
-            dialogText.text = MultiplayerUI.MSG_LOADING;
         }
         
         if (multiplayerBoardManager == null)
@@ -156,34 +141,90 @@ public class FightSystemMultiplayer : MonoBehaviour
     private async Task StartMultiplayerAsync()
     {
         Debug.LogWarning("[FightSystemMultiplayer] StartMultiplayerAsync() called");
-        
-        myPlayerId = PlayFabManagerLogin.Instance.LoggedInPlayerId;
-        roomCode = PlayerPrefs.GetString("RoomCode", "");
-        
-        Debug.LogWarning($"[FightSystemMultiplayer] Initializing game for player {myPlayerId} in room {roomCode}");
-        await multiplayerService.InitGame();
-        
-        bool decksReady = await WaitForDecksReadyAsync();
-        if (!decksReady)
+
+        SetStartupUiVisible(false);
+        SceneLoadingOverlay.Show();
+
+        try
         {
-            Debug.LogError("[FightSystemMultiplayer] Timed out waiting for both decks to load");
-            multiplayerUI?.ShowStatus("Failed to sync decks!");
-            return;
+            myPlayerId = PlayFabManagerLogin.Instance.LoggedInPlayerId;
+            roomCode = PlayerPrefs.GetString("RoomCode", "");
+
+            Debug.LogWarning($"[FightSystemMultiplayer] Initializing game for player {myPlayerId} in room {roomCode}");
+            await multiplayerService.InitGame();
+
+            bool decksReady = await WaitForDecksReadyAsync();
+            if (!decksReady)
+            {
+                Debug.LogError("[FightSystemMultiplayer] Timed out waiting for both decks to load");
+                ShowStartupConnectionError("Timed out waiting for decks");
+                return;
+            }
+
+            Debug.LogWarning("[FightSystemMultiplayer] InitGame completed and decks are ready, loading cards...");
+
+            // Use retry logic for card loading
+            bool cardsLoaded = await LoadPlayerCardsWithRetry(myPlayerId, roomCode);
+            if (!cardsLoaded)
+            {
+                Debug.LogError("[FightSystemMultiplayer] Failed to load cards after all retries");
+                ShowStartupConnectionError("Failed to load cards");
+                return;
+            }
+
+            HideStartupConnectionError();
+            Debug.LogWarning("[FightSystemMultiplayer] Cards loaded successfully! Setting status to 'Choose fighter!'");
+            multiplayerUI?.ShowStatus(MultiplayerUI.MSG_CHOOSE_FIGHTER);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[FightSystemMultiplayer] Startup failed with exception: {ex}");
+            ShowStartupConnectionError("Startup exception");
+        }
+        finally
+        {
+            SceneLoadingOverlay.Hide();
+            SetStartupUiVisible(true);
+        }
+    }
+
+    private void SetStartupUiVisible(bool isVisible)
+    {
+        if (startupControlPanel != null)
+        {
+            startupControlPanel.SetActive(isVisible);
         }
 
-        Debug.LogWarning("[FightSystemMultiplayer] InitGame completed and decks are ready, loading cards...");
-        
-        // Use retry logic for card loading
-        bool cardsLoaded = await LoadPlayerCardsWithRetry(myPlayerId, roomCode);
-        if (!cardsLoaded)
+        if (playerBoard != null)
         {
-            Debug.LogError("[FightSystemMultiplayer] Failed to load cards after all retries");
-            multiplayerUI?.ShowStatus("Failed to load cards!");
-            return;
+            playerBoard.SetActive(isVisible);
         }
-        
-        Debug.LogWarning("[FightSystemMultiplayer] Cards loaded successfully! Setting status to 'Choose fighter!'");
-        multiplayerUI?.ShowStatus(MultiplayerUI.MSG_CHOOSE_FIGHTER);
+
+        if (enemyBoard != null)
+        {
+            enemyBoard.SetActive(isVisible);
+        }
+    }
+
+    private void ShowStartupConnectionError(string reason)
+    {
+        Debug.LogError($"[FightSystemMultiplayer] Showing startup network error indicator. Reason: {reason}");
+        if (serverFunctionsManager != null)
+        {
+            serverFunctionsManager.ShowNetworkErrorIndicator(reason);
+        }
+        else
+        {
+            Debug.LogError("[FightSystemMultiplayer] ServerFunctionsManager missing; cannot show network error indicator.");
+        }
+    }
+
+    private void HideStartupConnectionError()
+    {
+        if (serverFunctionsManager != null)
+        {
+            serverFunctionsManager.HideNetworkErrorIndicator();
+        }
     }
 
     private async Task<bool> WaitForDecksReadyAsync()

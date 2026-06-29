@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.UI;
 
 public class CampaignOnlineShellController : MonoBehaviour
@@ -24,6 +23,7 @@ public class CampaignOnlineShellController : MonoBehaviour
     public GameObject cardPrefab;
     public GameObject playerBoard;
     public GameObject enemyBoard;
+    public GameObject startupControlPanel;
     public Button attackButton1;
     public Button attackButton2;
     public Button attackButton3;
@@ -52,7 +52,6 @@ public class CampaignOnlineShellController : MonoBehaviour
     private readonly List<Kard> renderedEnemyHandCards = new List<Kard>();
     private Kard renderedPlayerActiveCard;
     private Kard renderedEnemyActiveCard;
-    private bool buttonListenersBound;
     private string defaultAttackButton1Name;
     private string defaultAttackButton2Name;
     private string defaultAttackButton3Name;
@@ -66,11 +65,65 @@ public class CampaignOnlineShellController : MonoBehaviour
     private string ActivePlayerCardId => currentSession?.active?.playerCardId ?? string.Empty;
     private string ActiveEnemyCardId => currentSession?.active?.enemyCardId ?? string.Empty;
 
+    public void ConfigureForMission(string configuredCampaignId, int configuredMissionId)
+    {
+        campaignId = configuredCampaignId;
+        missionId = configuredMissionId;
+        autoStart = true;
+    }
+
+    public bool HasRequiredSceneReferences(out string error)
+    {
+        var missing = new List<string>();
+
+        if (campaignService == null) missing.Add(nameof(campaignService));
+        if (campaignService != null && campaignService.serverFunctionsManager == null)
+            missing.Add("campaignService.serverFunctionsManager");
+        if (battlePlayback == null) missing.Add(nameof(battlePlayback));
+        if (player == null) missing.Add(nameof(player));
+        if (enemy == null) missing.Add(nameof(enemy));
+        if (playerLifeBar == null) missing.Add(nameof(playerLifeBar));
+        if (enemyLifeBar == null) missing.Add(nameof(enemyLifeBar));
+        if (dialogText == null) missing.Add(nameof(dialogText));
+        if (attackDescriptions == null) missing.Add(nameof(attackDescriptions));
+        if (cardPrefab == null) missing.Add(nameof(cardPrefab));
+        if (playerBoard == null) missing.Add(nameof(playerBoard));
+        if (enemyBoard == null) missing.Add(nameof(enemyBoard));
+        if (attackButton1 == null) missing.Add(nameof(attackButton1));
+        if (attackButton2 == null) missing.Add(nameof(attackButton2));
+        if (attackButton3 == null) missing.Add(nameof(attackButton3));
+        if (attackButton4 == null) missing.Add(nameof(attackButton4));
+        if (confirmButton == null) missing.Add(nameof(confirmButton));
+        if (attackButton1Text == null) missing.Add(nameof(attackButton1Text));
+        if (attackButton2Text == null) missing.Add(nameof(attackButton2Text));
+        if (attackButton3Text == null) missing.Add(nameof(attackButton3Text));
+        if (attackButton4Text == null) missing.Add(nameof(attackButton4Text));
+        if (attackButton1CountText == null) missing.Add(nameof(attackButton1CountText));
+        if (attackButton2CountText == null) missing.Add(nameof(attackButton2CountText));
+        if (attackButton3CountText == null) missing.Add(nameof(attackButton3CountText));
+        if (attackButton4CountText == null) missing.Add(nameof(attackButton4CountText));
+        if (battlePlayback != null && battlePlayback.attackComponent == null)
+            missing.Add("battlePlayback.attackComponent");
+        if (battlePlayback != null && battlePlayback.cardAnimator == null)
+            missing.Add("battlePlayback.cardAnimator");
+
+        error = string.Join(", ", missing);
+        return missing.Count == 0;
+    }
+
     private void Awake()
     {
-        ResolveDependencies();
-        ResolveAttackTextReferences();
-        BindButtonListeners();
+        if (!HasRequiredSceneReferences(out string error))
+        {
+            Debug.LogError($"[CampaignOnlineShellController] Missing required scene references: {error}");
+            enabled = false;
+            return;
+        }
+
+        player.isEnemy = false;
+        enemy.isEnemy = true;
+        PropagateDialogTextReferences();
+        CacheDefaultAttackButtonTexts();
         PrepareAttackSelectionFlow();
         UpdateAttackButtons();
     }
@@ -97,6 +150,11 @@ public class CampaignOnlineShellController : MonoBehaviour
 
         isBusy = true;
         hasStartedRun = true;
+        SetStartupUiVisible(false);
+        SceneLoadingOverlay.Show();
+
+        try
+        {
         playerId = PlayFabManagerLogin.Instance != null
             ? PlayFabManagerLogin.Instance.LoggedInPlayerId
             : PlayerPrefs.GetString("LoggedInPlayerId", string.Empty);
@@ -157,6 +215,30 @@ public class CampaignOnlineShellController : MonoBehaviour
 
         RenderCampaignView();
         ApplyCurrentSessionStatus();
+        SetStartupUiVisible(true);
+        }
+        finally
+        {
+            SceneLoadingOverlay.Hide();
+        }
+    }
+
+    private void SetStartupUiVisible(bool isVisible)
+    {
+        if (startupControlPanel != null)
+        {
+            startupControlPanel.SetActive(isVisible);
+        }
+
+        if (playerBoard != null)
+        {
+            playerBoard.SetActive(isVisible);
+        }
+
+        if (enemyBoard != null)
+        {
+            enemyBoard.SetActive(isVisible);
+        }
     }
 
     public bool CanDragCard(Kard card)
@@ -254,23 +336,6 @@ public class CampaignOnlineShellController : MonoBehaviour
         SetStatus(IsFighterSelectionStatus() ? "Drag a fighter to the battle area." : "Choose attack!");
     }
 
-    public void ReplaceSceneButtonListenersForOnlineCampaign()
-    {
-        confirmButton = FindButtonByName("DialogButton") ?? FindButtonByName("DialogButton2") ?? confirmButton;
-        dialogText = FindButtonText(confirmButton) ?? dialogText;
-        PropagateDialogTextReferences();
-        ResolveAttackTextReferences();
-        ReplaceButtonClickEvent(attackButton1);
-        ReplaceButtonClickEvent(attackButton2);
-        ReplaceButtonClickEvent(attackButton3);
-        ReplaceButtonClickEvent(attackButton4);
-        ReplaceButtonClickEvent(confirmButton);
-        buttonListenersBound = false;
-        BindButtonListeners();
-        PrepareAttackSelectionFlow();
-        UpdateAttackButtons();
-    }
-
     private void PropagateDialogTextReferences()
     {
         if (player != null)
@@ -286,55 +351,6 @@ public class CampaignOnlineShellController : MonoBehaviour
         if (battlePlayback != null)
         {
             battlePlayback.dialogText = dialogText;
-        }
-    }
-
-    private void ResolveDependencies()
-    {
-        campaignService ??= GetComponent<CampaignOnlineService>();
-        if (campaignService == null)
-        {
-            campaignService = gameObject.AddComponent<CampaignOnlineService>();
-        }
-
-        battlePlayback ??= GetComponent<CampaignOnlineBattlePlayback>();
-        if (battlePlayback == null)
-        {
-            battlePlayback = gameObject.AddComponent<CampaignOnlineBattlePlayback>();
-        }
-
-        battlePlayback ??= FindFirstObjectByType<CampaignOnlineBattlePlayback>();
-        dialogText ??= FindFirstObjectByType<TMP_Text>();
-        attackDescriptions ??= FindFirstObjectByType<AttackDescriptions>();
-        player ??= FindPlayers(false).FirstOrDefault();
-        enemy ??= FindPlayers(true).FirstOrDefault();
-        playerBoard ??= GameObject.Find("PlayerSide");
-        enemyBoard ??= GameObject.Find("EnemySide");
-
-        if (campaignService == null)
-        {
-            Debug.LogWarning("[CampaignOnlineShellController] CampaignOnlineService reference is missing.");
-        }
-
-        if (player != null)
-        {
-            player.isEnemy = false;
-            player.dialogText = dialogText;
-        }
-
-        if (enemy != null)
-        {
-            enemy.isEnemy = true;
-            enemy.dialogText = dialogText;
-        }
-
-        if (battlePlayback != null)
-        {
-            battlePlayback.playerLifeBar ??= playerLifeBar;
-            battlePlayback.enemyLifeBar ??= enemyLifeBar;
-            battlePlayback.dialogText ??= dialogText;
-            battlePlayback.attackComponent ??= FindFirstObjectByType<Attack>();
-            battlePlayback.cardAnimator ??= FindFirstObjectByType<MultiplayerCardAnimator>();
         }
     }
 
@@ -1251,41 +1267,6 @@ public class CampaignOnlineShellController : MonoBehaviour
         }
     }
 
-    private void ResolveAttackTextReferences()
-    {
-        attackButton1 ??= FindButtonByName("AttackButton (1)");
-        attackButton2 ??= FindButtonByName("AttackButton (2)");
-        attackButton3 ??= FindButtonByName("AttackButton (3)");
-        attackButton4 ??= FindButtonByName("AttackButton (4)");
-        confirmButton ??= FindButtonByName("DialogButton") ?? FindButtonByName("DialogButton2");
-
-        attackButton1Text ??= FindButtonText(attackButton1);
-        attackButton2Text ??= FindButtonText(attackButton2);
-        attackButton3Text ??= FindButtonText(attackButton3);
-        attackButton4Text ??= FindButtonText(attackButton4);
-        attackButton1CountText ??= FindAttackCountText(attackButton1);
-        attackButton2CountText ??= FindAttackCountText(attackButton2);
-        attackButton3CountText ??= FindAttackCountText(attackButton3);
-        attackButton4CountText ??= FindAttackCountText(attackButton4);
-
-        CacheDefaultAttackButtonTexts();
-    }
-
-    private void BindButtonListeners()
-    {
-        if (buttonListenersBound)
-        {
-            return;
-        }
-
-        if (attackButton1 != null) attackButton1.onClick.AddListener(() => AttackButton(1));
-        if (attackButton2 != null) attackButton2.onClick.AddListener(() => AttackButton(2));
-        if (attackButton3 != null) attackButton3.onClick.AddListener(() => AttackButton(3));
-        if (attackButton4 != null) attackButton4.onClick.AddListener(() => AttackButton(4));
-        if (confirmButton != null) confirmButton.onClick.AddListener(ConfirmAttackButton);
-        buttonListenersBound = true;
-    }
-
     private void CacheDefaultAttackButtonTexts()
     {
         defaultAttackButton1Name ??= attackButton1Text != null ? attackButton1Text.text : string.Empty;
@@ -1360,73 +1341,6 @@ public class CampaignOnlineShellController : MonoBehaviour
         }
     }
 
-    private static Button FindButtonByName(string objectName)
-    {
-        GameObject buttonObject = GameObject.Find(objectName);
-        return buttonObject != null ? buttonObject.GetComponent<Button>() : null;
-    }
-
-    private static void ReplaceButtonClickEvent(Button button)
-    {
-        if (button != null)
-        {
-            button.onClick = new Button.ButtonClickedEvent();
-
-            CustomButton customButton = button.GetComponent<CustomButton>();
-            if (customButton != null)
-            {
-                customButton.onDelayedClick = new UnityEvent();
-            }
-        }
-    }
-
-    private static TMP_Text FindButtonText(Button button)
-    {
-        if (button == null)
-        {
-            return null;
-        }
-
-        Transform labelTransform = button.transform.Find("Text (TMP)");
-        if (labelTransform != null)
-        {
-            TMP_Text directMatch = labelTransform.GetComponent<TMP_Text>();
-            if (directMatch != null)
-            {
-                return directMatch;
-            }
-        }
-
-        TMP_Text[] texts = button.GetComponentsInChildren<TMP_Text>(true);
-        foreach (TMP_Text text in texts)
-        {
-            if (text == null)
-            {
-                continue;
-            }
-
-            if (string.Equals(text.gameObject.name, "AttackCountText", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            return text;
-        }
-
-        return null;
-    }
-
-    private static TMP_Text FindAttackCountText(Button button)
-    {
-        if (button == null)
-        {
-            return null;
-        }
-
-        Transform countTransform = button.transform.Find("AttackCountText");
-        return countTransform != null ? countTransform.GetComponent<TMP_Text>() : null;
-    }
-
     private static void SetAttackNameText(TMP_Text textComponent, string value)
     {
         if (textComponent != null)
@@ -1456,11 +1370,6 @@ public class CampaignOnlineShellController : MonoBehaviour
     private static bool IsAlive(SelectedCardData card)
     {
         return card != null && card.health > 0;
-    }
-
-    private static IEnumerable<Player> FindPlayers(bool wantEnemy)
-    {
-        return FindObjectsByType<Player>(FindObjectsSortMode.None).Where(player => player != null && player.isEnemy == wantEnemy);
     }
 
     private static string DescribePendingAction(PendingOngoingActionTurnData pendingAction)

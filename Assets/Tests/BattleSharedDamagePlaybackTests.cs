@@ -416,16 +416,62 @@ public class BattleSharedDamagePlaybackTests
     }
 
     [Test]
-    public void CampaignOnlineShell_RebindsVisibleDialogAndClearsLegacyDelayedClicks()
+    public void CampaignOnlineShell_UsesExplicitSceneReferencesWithoutRuntimeListenerReplacement()
     {
         string source = ReadProjectFile("Assets", "Scripts", "Campaign", "Online", "CampaignOnlineShellController.cs");
-        string rebindMethod = ExtractMethodBlock(source, "public void ReplaceSceneButtonListenersForOnlineCampaign()");
 
-        StringAssert.Contains("confirmButton = FindButtonByName(\"DialogButton\")", rebindMethod);
-        StringAssert.Contains("dialogText = FindButtonText(confirmButton)", rebindMethod);
-        StringAssert.Contains("PrepareAttackSelectionFlow();", rebindMethod);
-        StringAssert.Contains("attackSelectionFlow = new SharedAttackSelectionFlow(", source);
-        StringAssert.Contains("customButton.onDelayedClick = new UnityEvent();", source);
+        StringAssert.Contains("public bool HasRequiredSceneReferences(out string error)", source);
+        StringAssert.Contains("public void ConfigureForMission(string configuredCampaignId, int configuredMissionId)", source);
+        Assert.IsFalse(source.Contains("ReplaceSceneButtonListenersForOnlineCampaign"));
+        Assert.IsFalse(source.Contains("FindButtonByName("));
+        Assert.IsFalse(source.Contains("FindPlayers("));
+        Assert.IsFalse(source.Contains("GameObject.Find("));
+        Assert.IsFalse(source.Contains("gameObject.AddComponent<CampaignOnlineService>()"));
+        Assert.IsFalse(source.Contains("gameObject.AddComponent<CampaignOnlineBattlePlayback>()"));
+    }
+
+    [Test]
+    public void SingleplayerBattleSceneRouter_OwnsModeSelectionAndSharedInput()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Game", "SingleplayerBattleSceneRouter.cs");
+
+        StringAssert.Contains("GameParameters.MissionID > 0", source);
+        StringAssert.Contains("campaignShell.ConfigureForMission(", source);
+        StringAssert.Contains("public void AttackButton(int attackSlot)", source);
+        StringAssert.Contains("public void ConfirmAttackButton()", source);
+        StringAssert.Contains("campaignShell?.AttackButton(attackSlot)", source);
+        StringAssert.Contains("royalRumbleShell?.AttackButton(attackSlot)", source);
+    }
+
+    [Test]
+    public void GameScene_RoutesAllSharedBattleInputThroughSingleplayerRouter()
+    {
+        string source = ReadProjectFile("Assets", "Scenes", "Game.unity");
+
+        StringAssert.Contains("m_Name: SingleplayerBattleSceneRouter", source);
+        StringAssert.Contains("m_Name: CampaignOnline", source);
+        Assert.AreEqual(
+            5,
+            CountOccurrences(source, "m_TargetAssemblyTypeName: SingleplayerBattleSceneRouter, Assembly-CSharp"),
+            "Four attack events and one confirm event must target the scene router."
+        );
+        Assert.IsFalse(source.Contains("m_TargetAssemblyTypeName: RoyalRumbleShellController, Assembly-CSharp"));
+        Assert.IsFalse(source.Contains("m_TargetAssemblyTypeName: RoyalRumbleBattleCoordinator, Assembly-CSharp"));
+    }
+
+    [Test]
+    public void LocalCampaignBattleAndProgressAuthority_IsRemoved()
+    {
+        string campaignDirectory = Path.Combine(Application.dataPath, "Scripts", "Campaign");
+        string onlineDirectory = Path.Combine(campaignDirectory, "Online");
+        string fightSystem = ReadProjectFile("Assets", "Scripts", "FightSystem.cs");
+
+        Assert.IsFalse(File.Exists(Path.Combine(onlineDirectory, "CampaignOnlineGameBootstrap.cs")));
+        Assert.IsFalse(File.Exists(Path.Combine(campaignDirectory, "FightSystemCampaign.cs")));
+        Assert.IsFalse(File.Exists(Path.Combine(campaignDirectory, "CampaignManager.cs")));
+        Assert.IsFalse(fightSystem.Contains("GameParameters.MissionID"));
+        Assert.IsFalse(fightSystem.Contains("CampaignManager"));
+        Assert.IsFalse(fightSystem.Contains("VytvorKartyAIMission"));
     }
 
     [Test]
@@ -546,5 +592,18 @@ public class BattleSharedDamagePlaybackTests
 
         Assert.Fail($"Unterminated method body for: {signature}");
         return string.Empty;
+    }
+
+    private static int CountOccurrences(string source, string value)
+    {
+        int count = 0;
+        int index = 0;
+        while ((index = source.IndexOf(value, index, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            index += value.Length;
+        }
+
+        return count;
     }
 }

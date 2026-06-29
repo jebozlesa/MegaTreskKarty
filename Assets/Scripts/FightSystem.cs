@@ -1,17 +1,26 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
-using UnityEngine.SceneManagement;
 using System.Data;
-using Mono.Data.Sqlite;
 using System.IO;
+using System.Linq;
+using Mono.Data.Sqlite;
 using PlayFab;
 using PlayFab.ClientModels;
-using System.Linq;
+using TMPro;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
-public enum FightState { START, TURN, ENDTURN, PLAYERDEATH, ENEMYDEATH, WON, LOST }
+public enum FightState
+{
+    START,
+    TURN,
+    ENDTURN,
+    PLAYERDEATH,
+    ENEMYDEATH,
+    WON,
+    LOST,
+}
 
 public class FightSystem : MonoBehaviour
 {
@@ -67,8 +76,6 @@ public class FightSystem : MonoBehaviour
     private string connectionString;
 
     public static bool IsLoggedIn = false;
-    private int plyerCardsUsage = 0;
-    int missionID = 0;
 
     void Start()
     {
@@ -79,7 +86,7 @@ public class FightSystem : MonoBehaviour
         player.isEnemy = false;
         enemy.isEnemy = true;
 
-        StartCoroutine(SetupBattle(GameParameters.MissionID));
+        StartCoroutine(SetupBattle());
     }
 
     void LoginPlayFab()
@@ -90,11 +97,7 @@ public class FightSystem : MonoBehaviour
         string email = PlayerPrefs.GetString("email");
         string password = PlayerPrefs.GetString("password");
 
-        var request = new LoginWithEmailAddressRequest
-        {
-            Email = email,
-            Password = password
-        };
+        var request = new LoginWithEmailAddressRequest { Email = email, Password = password };
         PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
     }
 
@@ -122,21 +125,14 @@ public class FightSystem : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
-    IEnumerator SetupBattle(int missionIDinput = 0)
+    IEnumerator SetupBattle()
     {
-        missionID = missionIDinput;
         dialogText.text = "lets get ready for rumble!";
 
         yield return StartCoroutine(VytvorKartyZBalicka(hrac, player));
         yield return new WaitForSeconds(0.5f);
 
-        if (missionID > 0)
-        {
-            plyerCardsUsage = 2;
-            yield return StartCoroutine(VytvorKartyAIMission(nepriatel, enemy, missionID));
-        }
-        else
-            yield return StartCoroutine(VytvorKartyAI(nepriatel, enemy));
+        yield return StartCoroutine(VytvorKartyAI(nepriatel, enemy));
 
         yield return new WaitForSeconds(1);
 
@@ -161,16 +157,19 @@ public class FightSystem : MonoBehaviour
         float timeout = Time.time + 5f; // nastavĂ­me timeout na 5 sekund od zaÄŤĂˇtku cyklu
         do
         {
-            enemyAttack = Random.Range(1, 5);//vyberie nahodny utok pre nepriatela
+            enemyAttack = Random.Range(1, 5); //vyberie nahodny utok pre nepriatela
             if (Time.time > timeout)
             {
-                Debug.Log("Timeout - nepodaĹ™ilo se generovat nĂˇhodnou hodnotu, pouĹľije se vĂ˝chozĂ­ hodnota");
+                Debug.Log(
+                    "Timeout - nepodaĹ™ilo se generovat nĂˇhodnou hodnotu, pouĹľije se vĂ˝chozĂ­ hodnota"
+                );
                 dialogText.text = "Daco sa dojebalo";
                 break;
             }
         } while (enemy.cardInGame.attackCount[enemyAttack] == 0);
 
-        if (enemy.cardInGame.state == CardState.STAY) enemyAttack = 0;//ak enemy stoji tak nech stoji
+        if (enemy.cardInGame.state == CardState.STAY)
+            enemyAttack = 0; //ak enemy stoji tak nech stoji
 
         if (player.cardInGame.state != CardState.STAY)
         {
@@ -199,7 +198,11 @@ public class FightSystem : MonoBehaviour
 
     public void ConfirmAttackButton()
     {
-        if (state != FightState.TURN || (playerAttack == 0 && player.cardInGame.state == CardState.ATTACK) || player.cardInGame.attackCount[playerAttack] == 0)
+        if (
+            state != FightState.TURN
+            || (playerAttack == 0 && player.cardInGame.state == CardState.ATTACK)
+            || player.cardInGame.attackCount[playerAttack] == 0
+        )
             return;
 
         state = FightState.ENDTURN;
@@ -240,11 +243,8 @@ public class FightSystem : MonoBehaviour
         }
     }
 
-
-
     IEnumerator Fight()
     {
-
         int playerAttackNumber = attack.GetAttackNumber(player.cardInGame, playerAttack);
         int enemyAttackNumber = attack.GetAttackNumber(enemy.cardInGame, enemyAttack);
 
@@ -255,20 +255,47 @@ public class FightSystem : MonoBehaviour
 
         Debug.Log("PLAYER " + playerPriority + " ENEMY " + enemyPriority);
 
-        bool playerGoesFirst = (playerPriority && !enemyPriority) ||
-                            (!enemyPriority && player.cardInGame.speed > enemy.cardInGame.speed) ||
-                            (player.cardInGame.speed == enemy.cardInGame.speed && UnityEngine.Random.Range(0, 2) == 0);
+        bool playerGoesFirst =
+            (playerPriority && !enemyPriority)
+            || (!enemyPriority && player.cardInGame.speed > enemy.cardInGame.speed)
+            || (
+                player.cardInGame.speed == enemy.cardInGame.speed
+                && UnityEngine.Random.Range(0, 2) == 0
+            );
 
         if (playerGoesFirst)
         {
             dialogText.color = Color.blue;
-            yield return StartCoroutine(effects.ExecuteEffects(player.cardInGame, dialogText, playerAttack, enemy.cardInGame));
+            yield return StartCoroutine(
+                effects.ExecuteEffects(
+                    player.cardInGame,
+                    dialogText,
+                    playerAttack,
+                    enemy.cardInGame
+                )
+            );
             playerLifeBar.SetHP(player.cardInGame.health);
 
-            if ((player.cardInGame.state == CardState.ATTACK || (player.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(playerAttack)))
-                && player.cardInGame.health > 0 && enemy.cardInGame.health > 0)
+            if (
+                (
+                    player.cardInGame.state == CardState.ATTACK
+                    || (
+                        player.cardInGame.state == CardState.MAYBE
+                        && attack.exceptionAttacks.Contains(playerAttack)
+                    )
+                )
+                && player.cardInGame.health > 0
+                && enemy.cardInGame.health > 0
+            )
             {
-                yield return StartCoroutine(attack.ExecuteAttack(player.cardInGame, enemy.cardInGame, playerAttack, dialogText));
+                yield return StartCoroutine(
+                    attack.ExecuteAttack(
+                        player.cardInGame,
+                        enemy.cardInGame,
+                        playerAttack,
+                        dialogText
+                    )
+                );
                 playerLifeBar.SetHP(player.cardInGame.health);
                 enemyLifeBar.SetHP(enemy.cardInGame.health);
             }
@@ -276,29 +303,69 @@ public class FightSystem : MonoBehaviour
             if (player.cardInGame.health > 0 && enemy.cardInGame.health > 0)
             {
                 dialogText.color = Color.red;
-                yield return StartCoroutine(effects.ExecuteEffects(enemy.cardInGame, dialogText, enemyAttack, player.cardInGame));
+                yield return StartCoroutine(
+                    effects.ExecuteEffects(
+                        enemy.cardInGame,
+                        dialogText,
+                        enemyAttack,
+                        player.cardInGame
+                    )
+                );
                 enemyLifeBar.SetHP(enemy.cardInGame.health);
 
-                if ((enemy.cardInGame.state == CardState.ATTACK || (enemy.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(enemyAttack)))
-                    && player.cardInGame.health > 0 && enemy.cardInGame.health > 0)
+                if (
+                    (
+                        enemy.cardInGame.state == CardState.ATTACK
+                        || (
+                            enemy.cardInGame.state == CardState.MAYBE
+                            && attack.exceptionAttacks.Contains(enemyAttack)
+                        )
+                    )
+                    && player.cardInGame.health > 0
+                    && enemy.cardInGame.health > 0
+                )
                 {
-                    yield return StartCoroutine(attack.ExecuteAttack(enemy.cardInGame, player.cardInGame, enemyAttack, dialogText));
+                    yield return StartCoroutine(
+                        attack.ExecuteAttack(
+                            enemy.cardInGame,
+                            player.cardInGame,
+                            enemyAttack,
+                            dialogText
+                        )
+                    );
                     playerLifeBar.SetHP(player.cardInGame.health);
                     enemyLifeBar.SetHP(enemy.cardInGame.health);
                 }
             }
-
         }
         else
         {
             dialogText.color = Color.red;
-            yield return StartCoroutine(effects.ExecuteEffects(enemy.cardInGame, dialogText, enemyAttack, player.cardInGame));
+            yield return StartCoroutine(
+                effects.ExecuteEffects(enemy.cardInGame, dialogText, enemyAttack, player.cardInGame)
+            );
             enemyLifeBar.SetHP(enemy.cardInGame.health);
 
-            if ((enemy.cardInGame.state == CardState.ATTACK || (enemy.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(enemyAttack)))
-                && player.cardInGame.health > 0 && enemy.cardInGame.health > 0)
+            if (
+                (
+                    enemy.cardInGame.state == CardState.ATTACK
+                    || (
+                        enemy.cardInGame.state == CardState.MAYBE
+                        && attack.exceptionAttacks.Contains(enemyAttack)
+                    )
+                )
+                && player.cardInGame.health > 0
+                && enemy.cardInGame.health > 0
+            )
             {
-                yield return StartCoroutine(attack.ExecuteAttack(enemy.cardInGame, player.cardInGame, enemyAttack, dialogText));
+                yield return StartCoroutine(
+                    attack.ExecuteAttack(
+                        enemy.cardInGame,
+                        player.cardInGame,
+                        enemyAttack,
+                        dialogText
+                    )
+                );
                 playerLifeBar.SetHP(player.cardInGame.health);
                 enemyLifeBar.SetHP(enemy.cardInGame.health);
             }
@@ -306,30 +373,49 @@ public class FightSystem : MonoBehaviour
             if (player.cardInGame.health > 0 && enemy.cardInGame.health > 0)
             {
                 dialogText.color = Color.blue;
-                yield return StartCoroutine(effects.ExecuteEffects(player.cardInGame, dialogText, playerAttack, enemy.cardInGame));
+                yield return StartCoroutine(
+                    effects.ExecuteEffects(
+                        player.cardInGame,
+                        dialogText,
+                        playerAttack,
+                        enemy.cardInGame
+                    )
+                );
                 playerLifeBar.SetHP(player.cardInGame.health);
 
-                if ((player.cardInGame.state == CardState.ATTACK || (player.cardInGame.state == CardState.MAYBE && attack.exceptionAttacks.Contains(playerAttack)))
-                    && player.cardInGame.health > 0 && enemy.cardInGame.health > 0)
+                if (
+                    (
+                        player.cardInGame.state == CardState.ATTACK
+                        || (
+                            player.cardInGame.state == CardState.MAYBE
+                            && attack.exceptionAttacks.Contains(playerAttack)
+                        )
+                    )
+                    && player.cardInGame.health > 0
+                    && enemy.cardInGame.health > 0
+                )
                 {
-                    yield return StartCoroutine(attack.ExecuteAttack(player.cardInGame, enemy.cardInGame, playerAttack, dialogText));
+                    yield return StartCoroutine(
+                        attack.ExecuteAttack(
+                            player.cardInGame,
+                            enemy.cardInGame,
+                            playerAttack,
+                            dialogText
+                        )
+                    );
                     playerLifeBar.SetHP(player.cardInGame.health);
                     enemyLifeBar.SetHP(enemy.cardInGame.health);
                 }
             }
-
         }
 
         dialogText.color = Color.black;
 
         if (enemy.cardInGame.health <= 0 || !enemy.cardInGame.HasAvailableAttacks())
         {
-            yield return StartCoroutine(player.cardInGame.AddExperience(enemy.cardInGame.level));//exp
-            if (missionID == 0)
-            {
-                enemyLevel += 1;
-                yield return StartCoroutine(recordHandler.UpdateRecord(enemyLevel));
-            }
+            yield return StartCoroutine(player.cardInGame.AddExperience(enemy.cardInGame.level)); //exp
+            enemyLevel += 1;
+            yield return StartCoroutine(recordHandler.UpdateRecord(enemyLevel));
 
             enemy.RemoveCardFromBoard(enemy.cardInGame);
             state = FightState.ENEMYDEATH;
@@ -339,13 +425,7 @@ public class FightSystem : MonoBehaviour
             {
                 state = FightState.WON;
                 dialogText.text = "You won the game!";
-                if (missionID > 0)
-                {
-                    CampaignManager.Instance.IncreaseMission("bushido");
-                }
                 yield return new WaitForSeconds(3f);
-                GameParameters.CampaignID = 1;
-                SceneManager.LoadScene("Campaign");
                 yield break;
             }
             enemy.PlayCard(enemy.hand[0], enemyBoard);
@@ -357,10 +437,13 @@ public class FightSystem : MonoBehaviour
             player.RemoveCardFromBoard(player.cardInGame);
             state = FightState.PLAYERDEATH;
             yield return new WaitForSeconds(0.5f);
-            if (player.hand.Count == plyerCardsUsage)
+            if (player.hand.Count == 0)
             {
                 state = FightState.LOST;
-                AudioSource.PlayClipAtPoint(Resources.Load<AudioClip>("Sounds/Game/gameover"), Camera.main.transform.position);
+                AudioSource.PlayClipAtPoint(
+                    Resources.Load<AudioClip>("Sounds/Game/gameover"),
+                    Camera.main.transform.position
+                );
                 dialogText.text = "Loser you are!";
                 recordHandler.SendNewRecordToPlayFab(enemyLevel);
                 yield return new WaitForSeconds(3f);
@@ -375,26 +458,40 @@ public class FightSystem : MonoBehaviour
         }
 
         Turn();
-
     }
-
 
     public IEnumerator ResetCardPositions()
     {
         if (player != null && player.cardInGame != null)
         {
-            yield return StartCoroutine(ResetCardPosition(player.cardInGame.transform, playerBoard.transform.position, Quaternion.identity));
+            yield return StartCoroutine(
+                ResetCardPosition(
+                    player.cardInGame.transform,
+                    playerBoard.transform.position,
+                    Quaternion.identity
+                )
+            );
         }
 
         if (enemy != null && enemy.cardInGame != null)
         {
-            yield return StartCoroutine(ResetCardPosition(enemy.cardInGame.transform, enemyBoard.transform.position, Quaternion.identity));
+            yield return StartCoroutine(
+                ResetCardPosition(
+                    enemy.cardInGame.transform,
+                    enemyBoard.transform.position,
+                    Quaternion.identity
+                )
+            );
         }
     }
 
-    private IEnumerator ResetCardPosition(Transform cardTransform, Vector3 targetPosition, Quaternion targetRotation)
+    private IEnumerator ResetCardPosition(
+        Transform cardTransform,
+        Vector3 targetPosition,
+        Quaternion targetRotation
+    )
     {
-        float resetDuration = 0.5f;  // DÄşĹľka trvania resetovania v sekundĂˇch
+        float resetDuration = 0.5f; // DÄşĹľka trvania resetovania v sekundĂˇch
 
         float elapsedTime = 0f;
         Vector3 startingPosition = cardTransform.position;
@@ -430,7 +527,6 @@ public class FightSystem : MonoBehaviour
             player.cardInGame.isDragable = false;
             state = FightState.TURN;
             playerLifeBar.SetBar(player.cardInGame);
-
         }
         else
         {
@@ -440,50 +536,63 @@ public class FightSystem : MonoBehaviour
         }
     }
 
-    private IEnumerator VytvorKartyZBalicka(GameObject playerGO, Player player, string deckName = "First Deck")
+    private IEnumerator VytvorKartyZBalicka(
+        GameObject playerGO,
+        Player player,
+        string deckName = "First Deck"
+    )
     {
         bool isCompleted = false;
 
-        PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
-        {
-            if (result.Data.ContainsKey("PlayerDecks") && result.Data.ContainsKey("PlayerCards"))
+        PlayFabClientAPI.GetUserData(
+            new GetUserDataRequest(),
+            result =>
             {
-                string deckDataJson = result.Data["PlayerDecks"].Value;
-                string cardsDataJson = result.Data["PlayerCards"].Value;
-
-                DeckListWrapper deckList = JsonUtility.FromJson<DeckListWrapper>(deckDataJson);
-                CardListWrapper cardList = JsonUtility.FromJson<CardListWrapper>(cardsDataJson);
-
-                Deck deckToLoad = deckList.Decks.FirstOrDefault(deck => deck.DeckName == deckName);
-                if (deckToLoad != null)
+                if (
+                    result.Data.ContainsKey("PlayerDecks") && result.Data.ContainsKey("PlayerCards")
+                )
                 {
-                    // NaÄŤĂ­tanie kariet z vybranĂ©ho balĂ­ÄŤka
-                    foreach (var cardID in deckToLoad.GetCardIDs())
+                    string deckDataJson = result.Data["PlayerDecks"].Value;
+                    string cardsDataJson = result.Data["PlayerCards"].Value;
+
+                    DeckListWrapper deckList = JsonUtility.FromJson<DeckListWrapper>(deckDataJson);
+                    CardListWrapper cardList = JsonUtility.FromJson<CardListWrapper>(cardsDataJson);
+
+                    Deck deckToLoad = deckList.Decks.FirstOrDefault(deck =>
+                        deck.DeckName == deckName
+                    );
+                    if (deckToLoad != null)
                     {
-                        var cardData = cardList.cards.FirstOrDefault(card => card.CardID == cardID);
-                        if (cardData != null)
+                        // NaÄŤĂ­tanie kariet z vybranĂ©ho balĂ­ÄŤka
+                        foreach (var cardID in deckToLoad.GetCardIDs())
                         {
-                            // Tu vytvorĂ­te kartu na zĂˇklade cardData
-                            CreateCardInGame(cardData, playerGO, player);
+                            var cardData = cardList.cards.FirstOrDefault(card =>
+                                card.CardID == cardID
+                            );
+                            if (cardData != null)
+                            {
+                                // Tu vytvorĂ­te kartu na zĂˇklade cardData
+                                CreateCardInGame(cardData, playerGO, player);
+                            }
                         }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("Deck with the specified name not found.");
                     }
                 }
                 else
                 {
-                    Debug.LogWarning("Deck with the specified name not found.");
+                    Debug.LogWarning("No decks or cards found in the player's data.");
                 }
-            }
-            else
+                isCompleted = true;
+            },
+            error =>
             {
-                Debug.LogWarning("No decks or cards found in the player's data.");
+                Debug.LogError(error.GenerateErrorReport());
+                isCompleted = true;
             }
-            isCompleted = true;
-
-        }, error =>
-        {
-            Debug.LogError(error.GenerateErrorReport());
-            isCompleted = true;
-        });
+        );
 
         // ÄŚakajte, kĂ˝m sa nevykonĂˇ callback
         yield return new WaitUntil(() => isCompleted);
@@ -504,7 +613,12 @@ public class FightSystem : MonoBehaviour
         novaKarta.GetComponent<Kard>().defense = cardData.Defense;
         novaKarta.GetComponent<Kard>().knowledge = cardData.Knowledge;
         novaKarta.GetComponent<Kard>().charisma = cardData.Charisma;
-        Color32 cardColor = new Color32((byte)cardData.Color[0], (byte)cardData.Color[1], (byte)cardData.Color[2], 255);
+        Color32 cardColor = new Color32(
+            (byte)cardData.Color[0],
+            (byte)cardData.Color[1],
+            (byte)cardData.Color[2],
+            255
+        );
         novaKarta.GetComponent<Kard>().color = cardColor;
         novaKarta.GetComponent<Kard>().level = cardData.Level;
         novaKarta.GetComponent<Kard>().experience = cardData.Experience;
@@ -516,146 +630,105 @@ public class FightSystem : MonoBehaviour
 
         // Additional properties from the original function
         novaKarta.GetComponent<Kard>().battleArea = playerBoard;
-        novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), cardData.Attack1);
-        novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), cardData.Attack2);
-        novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), cardData.Attack3);
-        novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), cardData.Attack4);
+        novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(
+            novaKarta.GetComponent<Kard>(),
+            cardData.Attack1
+        );
+        novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(
+            novaKarta.GetComponent<Kard>(),
+            cardData.Attack2
+        );
+        novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(
+            novaKarta.GetComponent<Kard>(),
+            cardData.Attack3
+        );
+        novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(
+            novaKarta.GetComponent<Kard>(),
+            cardData.Attack4
+        );
 
         player.AddCardToHand(novaKarta.GetComponent<Kard>());
     }
 
     private void LoadCardFromPlayFab(string cardID, GameObject playerGO, Player player)
     {
-        PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
-        {
-            string existingDataJson = "{}";
-            if (result.Data.ContainsKey("PlayerCards"))
+        PlayFabClientAPI.GetUserData(
+            new GetUserDataRequest(),
+            result =>
             {
-                existingDataJson = result.Data["PlayerCards"].Value;
-            }
-
-            if (!string.IsNullOrEmpty(existingDataJson))
-            {
-                CardListWrapper existingCards = JsonUtility.FromJson<CardListWrapper>(existingDataJson);
-                foreach (GeneratedCard existingCard in existingCards.cards)
+                string existingDataJson = "{}";
+                if (result.Data.ContainsKey("PlayerCards"))
                 {
-                    if (existingCard.CardID == cardID)
+                    existingDataJson = result.Data["PlayerCards"].Value;
+                }
+
+                if (!string.IsNullOrEmpty(existingDataJson))
+                {
+                    CardListWrapper existingCards = JsonUtility.FromJson<CardListWrapper>(
+                        existingDataJson
+                    );
+                    foreach (GeneratedCard existingCard in existingCards.cards)
                     {
-                        GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
+                        if (existingCard.CardID == cardID)
+                        {
+                            GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
 
-                        // Assigning the card properties from the PlayFab data
-                        novaKarta.GetComponent<Kard>().cardId = existingCard.CardID;
-                        novaKarta.GetComponent<Kard>().styleId = existingCard.StyleID;
-                        novaKarta.GetComponent<Kard>().cardName = existingCard.PersonName;
-                        novaKarta.GetComponent<Kard>().health = existingCard.Health;
-                        novaKarta.GetComponent<Kard>().strength = existingCard.Strength;
-                        novaKarta.GetComponent<Kard>().speed = existingCard.Speed;
-                        novaKarta.GetComponent<Kard>().attack = existingCard.Attack;
-                        novaKarta.GetComponent<Kard>().defense = existingCard.Defense;
-                        novaKarta.GetComponent<Kard>().knowledge = existingCard.Knowledge;
-                        novaKarta.GetComponent<Kard>().charisma = existingCard.Charisma;
-                        Color32 cardColor = new Color32((byte)existingCard.Color[0], (byte)existingCard.Color[1], (byte)existingCard.Color[2], 255);
-                        novaKarta.GetComponent<Kard>().color = cardColor;
-                        novaKarta.GetComponent<Kard>().level = existingCard.Level;
-                        novaKarta.GetComponent<Kard>().experience = existingCard.Experience;
-                        novaKarta.GetComponent<Kard>().attack1 = existingCard.Attack1;
-                        novaKarta.GetComponent<Kard>().attack2 = existingCard.Attack2;
-                        novaKarta.GetComponent<Kard>().attack3 = existingCard.Attack3;
-                        novaKarta.GetComponent<Kard>().attack4 = existingCard.Attack4;
-                        novaKarta.GetComponent<Kard>().image = existingCard.CardPicture;
+                            // Assigning the card properties from the PlayFab data
+                            novaKarta.GetComponent<Kard>().cardId = existingCard.CardID;
+                            novaKarta.GetComponent<Kard>().styleId = existingCard.StyleID;
+                            novaKarta.GetComponent<Kard>().cardName = existingCard.PersonName;
+                            novaKarta.GetComponent<Kard>().health = existingCard.Health;
+                            novaKarta.GetComponent<Kard>().strength = existingCard.Strength;
+                            novaKarta.GetComponent<Kard>().speed = existingCard.Speed;
+                            novaKarta.GetComponent<Kard>().attack = existingCard.Attack;
+                            novaKarta.GetComponent<Kard>().defense = existingCard.Defense;
+                            novaKarta.GetComponent<Kard>().knowledge = existingCard.Knowledge;
+                            novaKarta.GetComponent<Kard>().charisma = existingCard.Charisma;
+                            Color32 cardColor = new Color32(
+                                (byte)existingCard.Color[0],
+                                (byte)existingCard.Color[1],
+                                (byte)existingCard.Color[2],
+                                255
+                            );
+                            novaKarta.GetComponent<Kard>().color = cardColor;
+                            novaKarta.GetComponent<Kard>().level = existingCard.Level;
+                            novaKarta.GetComponent<Kard>().experience = existingCard.Experience;
+                            novaKarta.GetComponent<Kard>().attack1 = existingCard.Attack1;
+                            novaKarta.GetComponent<Kard>().attack2 = existingCard.Attack2;
+                            novaKarta.GetComponent<Kard>().attack3 = existingCard.Attack3;
+                            novaKarta.GetComponent<Kard>().attack4 = existingCard.Attack4;
+                            novaKarta.GetComponent<Kard>().image = existingCard.CardPicture;
 
-                        // Additional properties from the original function
-                        novaKarta.GetComponent<Kard>().battleArea = playerBoard;
-                        novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), existingCard.Attack1);
-                        novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), existingCard.Attack2);
-                        novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), existingCard.Attack3);
-                        novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), existingCard.Attack4);
+                            // Additional properties from the original function
+                            novaKarta.GetComponent<Kard>().battleArea = playerBoard;
+                            novaKarta.GetComponent<Kard>().countAttack1 =
+                                attackDescriptions.LoadAttackCount(
+                                    novaKarta.GetComponent<Kard>(),
+                                    existingCard.Attack1
+                                );
+                            novaKarta.GetComponent<Kard>().countAttack2 =
+                                attackDescriptions.LoadAttackCount(
+                                    novaKarta.GetComponent<Kard>(),
+                                    existingCard.Attack2
+                                );
+                            novaKarta.GetComponent<Kard>().countAttack3 =
+                                attackDescriptions.LoadAttackCount(
+                                    novaKarta.GetComponent<Kard>(),
+                                    existingCard.Attack3
+                                );
+                            novaKarta.GetComponent<Kard>().countAttack4 =
+                                attackDescriptions.LoadAttackCount(
+                                    novaKarta.GetComponent<Kard>(),
+                                    existingCard.Attack4
+                                );
 
-                        player.AddCardToHand(novaKarta.GetComponent<Kard>());
+                            player.AddCardToHand(novaKarta.GetComponent<Kard>());
+                        }
                     }
                 }
-            }
-        }, error => Debug.LogError(error.GenerateErrorReport()));
-    }
-
-
-    private IEnumerator VytvorKartyAIMission(GameObject playerGO, Player player, int missionID)
-    {
-        int[] boost = new int[6];
-        int iter = missionID - 1;
-
-        IDbConnection dbConnection = new SqliteConnection(connectionString);
-        dbConnection.Open();
-
-        IDbCommand dbCommand = dbConnection.CreateCommand();
-        dbCommand.CommandText = $"SELECT Card1ID, Card2ID, Card3ID, Card4ID, Card5ID FROM Missions WHERE MissionID = {missionID}";
-        IDataReader reader = dbCommand.ExecuteReader();
-
-        List<int> cardIDs = new List<int>();
-        while (reader.Read())
-        {
-            for (int i = 0; i < 5; i++)
-            {
-                cardIDs.Add(reader.GetInt32(i));
-            }
-        }
-        reader.Close();
-        dbCommand.Dispose();
-
-        // NaÄŤĂ­tanie kariet podÄľa ich ID
-        foreach (int cardID in cardIDs)
-        {
-            dbCommand = dbConnection.CreateCommand();
-            dbCommand.CommandText = $"SELECT * FROM CardDatabase WHERE StyleID = {cardID}";
-            reader = dbCommand.ExecuteReader();
-
-            while (reader.Read())
-            {
-                boost = DistributeRandomly(iter);
-                string[] kartaHodnoty = new string[reader.FieldCount];
-
-                for (int i = 0; i < reader.FieldCount; i++)
-                {
-                    kartaHodnoty[i] = reader[i].ToString();
-                }
-
-                string[] farbaKarty = kartaHodnoty[10].Split(';');
-                Color32 cardColor = new Color32(byte.Parse(farbaKarty[0]), byte.Parse(farbaKarty[1]), byte.Parse(farbaKarty[2]), 255);
-
-                GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
-                novaKarta.GetComponent<Kard>().cardName = kartaHodnoty[1];
-                novaKarta.GetComponent<Kard>().health = int.Parse(kartaHodnoty[2]) + iter;
-                novaKarta.GetComponent<Kard>().strength = int.Parse(kartaHodnoty[3]) + boost[0];
-                novaKarta.GetComponent<Kard>().speed = int.Parse(kartaHodnoty[4]) + boost[1];
-                novaKarta.GetComponent<Kard>().attack = int.Parse(kartaHodnoty[5]) + boost[2];
-                novaKarta.GetComponent<Kard>().defense = int.Parse(kartaHodnoty[6]) + boost[3];
-                novaKarta.GetComponent<Kard>().knowledge = int.Parse(kartaHodnoty[7]) + boost[4];
-                novaKarta.GetComponent<Kard>().charisma = int.Parse(kartaHodnoty[8]) + boost[5];
-                novaKarta.GetComponent<Kard>().image = kartaHodnoty[15];
-                novaKarta.GetComponent<Kard>().color = cardColor;
-                novaKarta.GetComponent<Kard>().level = 1 + iter;
-                novaKarta.GetComponent<Kard>().attack1 = int.Parse(kartaHodnoty[11]);
-                novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[11]));
-                novaKarta.GetComponent<Kard>().attack2 = int.Parse(kartaHodnoty[12]);
-                novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[12]));
-                novaKarta.GetComponent<Kard>().attack3 = int.Parse(kartaHodnoty[13]);
-                novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[13]));
-                novaKarta.GetComponent<Kard>().attack4 = int.Parse(kartaHodnoty[14]);
-                novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[14]));
-
-                novaKarta.GetComponent<Kard>().isDragable = false;
-                novaKarta.GetComponent<Kard>().battleArea = enemyBoard;
-
-                player.AddCardToHand(novaKarta.GetComponent<Kard>());
-            }
-
-            reader.Close();
-            dbCommand.Dispose();
-        }
-
-        dbConnection.Close();
-
-        yield return new WaitForSeconds(0.1f);
+            },
+            error => Debug.LogError(error.GenerateErrorReport())
+        );
     }
 
     private IEnumerator VytvorKartyAI(GameObject playerGO, Player player)
@@ -683,7 +756,12 @@ public class FightSystem : MonoBehaviour
             string[] kartaHodnoty = kartaString.Split(',');
 
             string[] farbaKarty = kartaHodnoty[10].Split(';');
-            Color32 cardColor = new Color32(byte.Parse(farbaKarty[0]), byte.Parse(farbaKarty[1]), byte.Parse(farbaKarty[2]), 255);
+            Color32 cardColor = new Color32(
+                byte.Parse(farbaKarty[0]),
+                byte.Parse(farbaKarty[1]),
+                byte.Parse(farbaKarty[2]),
+                255
+            );
 
             GameObject novaKarta = Instantiate(kartaPrefab, playerGO.transform);
             novaKarta.GetComponent<Kard>().styleId = int.Parse(kartaHodnoty[0]);
@@ -699,13 +777,25 @@ public class FightSystem : MonoBehaviour
             novaKarta.GetComponent<Kard>().color = cardColor;
             novaKarta.GetComponent<Kard>().level = 1 + iter;
             novaKarta.GetComponent<Kard>().attack1 = int.Parse(kartaHodnoty[11]);
-            novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[11]));
+            novaKarta.GetComponent<Kard>().countAttack1 = attackDescriptions.LoadAttackCount(
+                novaKarta.GetComponent<Kard>(),
+                int.Parse(kartaHodnoty[11])
+            );
             novaKarta.GetComponent<Kard>().attack2 = int.Parse(kartaHodnoty[12]);
-            novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[12]));
+            novaKarta.GetComponent<Kard>().countAttack2 = attackDescriptions.LoadAttackCount(
+                novaKarta.GetComponent<Kard>(),
+                int.Parse(kartaHodnoty[12])
+            );
             novaKarta.GetComponent<Kard>().attack3 = int.Parse(kartaHodnoty[13]);
-            novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[13]));
+            novaKarta.GetComponent<Kard>().countAttack3 = attackDescriptions.LoadAttackCount(
+                novaKarta.GetComponent<Kard>(),
+                int.Parse(kartaHodnoty[13])
+            );
             novaKarta.GetComponent<Kard>().attack4 = int.Parse(kartaHodnoty[14]);
-            novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(novaKarta.GetComponent<Kard>(), int.Parse(kartaHodnoty[14]));
+            novaKarta.GetComponent<Kard>().countAttack4 = attackDescriptions.LoadAttackCount(
+                novaKarta.GetComponent<Kard>(),
+                int.Parse(kartaHodnoty[14])
+            );
 
             novaKarta.GetComponent<Kard>().isDragable = false;
             novaKarta.GetComponent<Kard>().battleArea = enemyBoard;
@@ -734,7 +824,8 @@ public class FightSystem : MonoBehaviour
             for (int i = 0; i < reader.FieldCount; i++)
             {
                 cardDataString += reader.GetValue(i).ToString();
-                if (i < reader.FieldCount - 1) cardDataString += ",";
+                if (i < reader.FieldCount - 1)
+                    cardDataString += ",";
             }
             kartyData.Add(cardDataString);
         }
@@ -774,5 +865,3 @@ public class FightSystem : MonoBehaviour
         return result;
     }
 }
-
-
