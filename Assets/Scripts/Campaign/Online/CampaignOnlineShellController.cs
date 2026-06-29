@@ -76,32 +76,56 @@ public class CampaignOnlineShellController : MonoBehaviour
     {
         var missing = new List<string>();
 
-        if (campaignService == null) missing.Add(nameof(campaignService));
+        if (campaignService == null)
+            missing.Add(nameof(campaignService));
         if (campaignService != null && campaignService.serverFunctionsManager == null)
             missing.Add("campaignService.serverFunctionsManager");
-        if (battlePlayback == null) missing.Add(nameof(battlePlayback));
-        if (player == null) missing.Add(nameof(player));
-        if (enemy == null) missing.Add(nameof(enemy));
-        if (playerLifeBar == null) missing.Add(nameof(playerLifeBar));
-        if (enemyLifeBar == null) missing.Add(nameof(enemyLifeBar));
-        if (dialogText == null) missing.Add(nameof(dialogText));
-        if (attackDescriptions == null) missing.Add(nameof(attackDescriptions));
-        if (cardPrefab == null) missing.Add(nameof(cardPrefab));
-        if (playerBoard == null) missing.Add(nameof(playerBoard));
-        if (enemyBoard == null) missing.Add(nameof(enemyBoard));
-        if (attackButton1 == null) missing.Add(nameof(attackButton1));
-        if (attackButton2 == null) missing.Add(nameof(attackButton2));
-        if (attackButton3 == null) missing.Add(nameof(attackButton3));
-        if (attackButton4 == null) missing.Add(nameof(attackButton4));
-        if (confirmButton == null) missing.Add(nameof(confirmButton));
-        if (attackButton1Text == null) missing.Add(nameof(attackButton1Text));
-        if (attackButton2Text == null) missing.Add(nameof(attackButton2Text));
-        if (attackButton3Text == null) missing.Add(nameof(attackButton3Text));
-        if (attackButton4Text == null) missing.Add(nameof(attackButton4Text));
-        if (attackButton1CountText == null) missing.Add(nameof(attackButton1CountText));
-        if (attackButton2CountText == null) missing.Add(nameof(attackButton2CountText));
-        if (attackButton3CountText == null) missing.Add(nameof(attackButton3CountText));
-        if (attackButton4CountText == null) missing.Add(nameof(attackButton4CountText));
+        if (battlePlayback == null)
+            missing.Add(nameof(battlePlayback));
+        if (player == null)
+            missing.Add(nameof(player));
+        if (enemy == null)
+            missing.Add(nameof(enemy));
+        if (playerLifeBar == null)
+            missing.Add(nameof(playerLifeBar));
+        if (enemyLifeBar == null)
+            missing.Add(nameof(enemyLifeBar));
+        if (dialogText == null)
+            missing.Add(nameof(dialogText));
+        if (attackDescriptions == null)
+            missing.Add(nameof(attackDescriptions));
+        if (cardPrefab == null)
+            missing.Add(nameof(cardPrefab));
+        if (playerBoard == null)
+            missing.Add(nameof(playerBoard));
+        if (enemyBoard == null)
+            missing.Add(nameof(enemyBoard));
+        if (attackButton1 == null)
+            missing.Add(nameof(attackButton1));
+        if (attackButton2 == null)
+            missing.Add(nameof(attackButton2));
+        if (attackButton3 == null)
+            missing.Add(nameof(attackButton3));
+        if (attackButton4 == null)
+            missing.Add(nameof(attackButton4));
+        if (confirmButton == null)
+            missing.Add(nameof(confirmButton));
+        if (attackButton1Text == null)
+            missing.Add(nameof(attackButton1Text));
+        if (attackButton2Text == null)
+            missing.Add(nameof(attackButton2Text));
+        if (attackButton3Text == null)
+            missing.Add(nameof(attackButton3Text));
+        if (attackButton4Text == null)
+            missing.Add(nameof(attackButton4Text));
+        if (attackButton1CountText == null)
+            missing.Add(nameof(attackButton1CountText));
+        if (attackButton2CountText == null)
+            missing.Add(nameof(attackButton2CountText));
+        if (attackButton3CountText == null)
+            missing.Add(nameof(attackButton3CountText));
+        if (attackButton4CountText == null)
+            missing.Add(nameof(attackButton4CountText));
         if (battlePlayback != null && battlePlayback.attackComponent == null)
             missing.Add("battlePlayback.attackComponent");
         if (battlePlayback != null && battlePlayback.cardAnimator == null)
@@ -115,7 +139,9 @@ public class CampaignOnlineShellController : MonoBehaviour
     {
         if (!HasRequiredSceneReferences(out string error))
         {
-            Debug.LogError($"[CampaignOnlineShellController] Missing required scene references: {error}");
+            Debug.LogError(
+                $"[CampaignOnlineShellController] Missing required scene references: {error}"
+            );
             enabled = false;
             return;
         }
@@ -155,67 +181,83 @@ public class CampaignOnlineShellController : MonoBehaviour
 
         try
         {
-        playerId = PlayFabManagerLogin.Instance != null
-            ? PlayFabManagerLogin.Instance.LoggedInPlayerId
-            : PlayerPrefs.GetString("LoggedInPlayerId", string.Empty);
+            playerId =
+                PlayFabManagerLogin.Instance != null
+                    ? PlayFabManagerLogin.Instance.LoggedInPlayerId
+                    : PlayerPrefs.GetString("LoggedInPlayerId", string.Empty);
 
-        if (string.IsNullOrWhiteSpace(playerId))
-        {
-            SetStatus("Missing player ID.");
-            Debug.LogWarning("[CampaignOnlineShellController] Cannot start Campaign without player ID.");
+            if (string.IsNullOrWhiteSpace(playerId))
+            {
+                SetStatus("Missing player ID.");
+                Debug.LogWarning(
+                    "[CampaignOnlineShellController] Cannot start Campaign without player ID."
+                );
+                isBusy = false;
+                hasStartedRun = false;
+                return;
+            }
+
+            SetStatus("Preparing Campaign...");
+            LogVerboseWarning(
+                $"[CampaignOnlineShellController] Campaign opening started for player={playerId}, campaign={campaignId}, mission={missionId}."
+            );
+
+            CampaignOnlineSessionEnvelopeDto sessionEnvelope =
+                await campaignService.CreateSessionAsync(playerId, campaignId, missionId);
+            if (this == null || isShuttingDown)
+            {
+                return;
+            }
+
+            if (sessionEnvelope?.session == null)
+            {
+                SetStatus("Failed to create Campaign session.");
+                Debug.LogWarning(
+                    "[CampaignOnlineShellController] Failed to create Campaign session."
+                );
+                isBusy = false;
+                hasStartedRun = false;
+                return;
+            }
+
+            currentSession = sessionEnvelope.session;
+            LogVerboseWarning(
+                $"[CampaignOnlineShellController] Campaign session created: {currentSession.sessionId}, status={currentSession.status}."
+            );
+
+            await EnsureDecksLoadedAsync();
+            if (this == null || isShuttingDown)
+            {
+                return;
+            }
+
             isBusy = false;
-            hasStartedRun = false;
-            return;
-        }
 
-        SetStatus("Preparing Campaign...");
-        LogVerboseWarning($"[CampaignOnlineShellController] Campaign opening started for player={playerId}, campaign={campaignId}, mission={missionId}.");
+            if (
+                currentSession?.playerDeck?.cards == null
+                || currentSession.playerDeck.cards.Count == 0
+            )
+            {
+                SetStatus("Failed to load player deck.");
+                UpdateAttackButtons();
+                hasStartedRun = false;
+                return;
+            }
 
-        CampaignOnlineSessionEnvelopeDto sessionEnvelope = await campaignService.CreateSessionAsync(playerId, campaignId, missionId);
-        if (this == null || isShuttingDown)
-        {
-            return;
-        }
+            if (
+                currentSession.enemyDeck?.cards == null
+                || currentSession.enemyDeck.cards.Count == 0
+            )
+            {
+                SetStatus("Failed to load enemy deck.");
+                UpdateAttackButtons();
+                hasStartedRun = false;
+                return;
+            }
 
-        if (sessionEnvelope?.session == null)
-        {
-            SetStatus("Failed to create Campaign session.");
-            Debug.LogWarning("[CampaignOnlineShellController] Failed to create Campaign session.");
-            isBusy = false;
-            hasStartedRun = false;
-            return;
-        }
-
-        currentSession = sessionEnvelope.session;
-        LogVerboseWarning($"[CampaignOnlineShellController] Campaign session created: {currentSession.sessionId}, status={currentSession.status}.");
-
-        await EnsureDecksLoadedAsync();
-        if (this == null || isShuttingDown)
-        {
-            return;
-        }
-
-        isBusy = false;
-
-        if (currentSession?.playerDeck?.cards == null || currentSession.playerDeck.cards.Count == 0)
-        {
-            SetStatus("Failed to load player deck.");
-            UpdateAttackButtons();
-            hasStartedRun = false;
-            return;
-        }
-
-        if (currentSession.enemyDeck?.cards == null || currentSession.enemyDeck.cards.Count == 0)
-        {
-            SetStatus("Failed to load enemy deck.");
-            UpdateAttackButtons();
-            hasStartedRun = false;
-            return;
-        }
-
-        RenderCampaignView();
-        ApplyCurrentSessionStatus();
-        SetStartupUiVisible(true);
+            RenderCampaignView();
+            ApplyCurrentSessionStatus();
+            SetStartupUiVisible(true);
         }
         finally
         {
@@ -256,7 +298,9 @@ public class CampaignOnlineShellController : MonoBehaviour
         PendingOngoingActionTurnData pendingAction = GetPendingOngoingAction();
         if (pendingAction != null)
         {
-            LogVerboseWarning($"[CampaignOnlineShellController] Ignored manual attack click because ongoing action is pending: {DescribePendingAction(pendingAction)}");
+            LogVerboseWarning(
+                $"[CampaignOnlineShellController] Ignored manual attack click because ongoing action is pending: {DescribePendingAction(pendingAction)}"
+            );
             return;
         }
 
@@ -268,7 +312,9 @@ public class CampaignOnlineShellController : MonoBehaviour
         PendingOngoingActionTurnData pendingAction = GetPendingOngoingAction();
         if (pendingAction != null)
         {
-            LogVerboseWarning($"[CampaignOnlineShellController] Ignored manual confirm because ongoing action is pending: {DescribePendingAction(pendingAction)}");
+            LogVerboseWarning(
+                $"[CampaignOnlineShellController] Ignored manual confirm because ongoing action is pending: {DescribePendingAction(pendingAction)}"
+            );
             return;
         }
 
@@ -279,14 +325,18 @@ public class CampaignOnlineShellController : MonoBehaviour
     {
         if (card == null)
         {
-            Debug.LogWarning("[CampaignOnlineShellController] OnCardDropped called with null card.");
+            Debug.LogWarning(
+                "[CampaignOnlineShellController] OnCardDropped called with null card."
+            );
             dragHandler?.ResetToOriginalPosition();
             return;
         }
 
         if (!CanDragCard(card))
         {
-            Debug.LogWarning($"[CampaignOnlineShellController] Ignored dropped card {card.cardName}. isBusy={isBusy}, status={currentSession?.status}");
+            Debug.LogWarning(
+                $"[CampaignOnlineShellController] Ignored dropped card {card.cardName}. isBusy={isBusy}, status={currentSession?.status}"
+            );
             dragHandler?.ResetToOriginalPosition();
             return;
         }
@@ -302,7 +352,11 @@ public class CampaignOnlineShellController : MonoBehaviour
             renderedPlayerActiveCard = player.cardInGame;
             playerLifeBar?.SetBar(player.cardInGame);
 
-            CampaignOnlineSessionEnvelopeDto envelope = await campaignService.SelectCardAsync(currentSession.sessionId, playerId, card.cardId);
+            CampaignOnlineSessionEnvelopeDto envelope = await campaignService.SelectCardAsync(
+                currentSession.sessionId,
+                playerId,
+                card.cardId
+            );
             if (this == null || isShuttingDown)
             {
                 return;
@@ -310,8 +364,11 @@ public class CampaignOnlineShellController : MonoBehaviour
 
             if (envelope?.session == null)
             {
-                Debug.LogWarning($"[CampaignOnlineShellController] Failed to select fighter {card.cardId} after drop.");
-                Vector3 returnPosition = dragHandler != null ? dragHandler.GetOriginalLocalPosition() : Vector3.zero;
+                Debug.LogWarning(
+                    $"[CampaignOnlineShellController] Failed to select fighter {card.cardId} after drop."
+                );
+                Vector3 returnPosition =
+                    dragHandler != null ? dragHandler.GetOriginalLocalPosition() : Vector3.zero;
                 player.ReturnCardToHand(card, returnPosition);
                 card.isDragable = true;
                 SetStatus("Failed to select fighter.");
@@ -320,7 +377,9 @@ public class CampaignOnlineShellController : MonoBehaviour
 
             currentSession = envelope.session;
             lastAutoSubmittedPendingKey = null;
-            LogVerboseWarning($"[CampaignOnlineShellController] Fighter selected: cardId={card.cardId}, name={card.cardName}.");
+            LogVerboseWarning(
+                $"[CampaignOnlineShellController] Fighter selected: cardId={card.cardId}, name={card.cardName}."
+            );
             RenderCampaignView();
             SetStatus("Choose attack!");
         }
@@ -333,7 +392,9 @@ public class CampaignOnlineShellController : MonoBehaviour
 
     public void ShowDragSelectionHint(Kard card = null)
     {
-        SetStatus(IsFighterSelectionStatus() ? "Drag a fighter to the battle area." : "Choose attack!");
+        SetStatus(
+            IsFighterSelectionStatus() ? "Drag a fighter to the battle area." : "Choose attack!"
+        );
     }
 
     private void PropagateDialogTextReferences()
@@ -361,31 +422,49 @@ public class CampaignOnlineShellController : MonoBehaviour
             return;
         }
 
-        if (currentSession.playerDeck == null || currentSession.playerDeck.cards == null || currentSession.playerDeck.cards.Count == 0)
+        if (
+            currentSession.playerDeck == null
+            || currentSession.playerDeck.cards == null
+            || currentSession.playerDeck.cards.Count == 0
+        )
         {
-            CampaignOnlineSessionEnvelopeDto playerDeckEnvelope = await campaignService.LoadPlayerDeckAsync(currentSession.sessionId, playerId);
+            CampaignOnlineSessionEnvelopeDto playerDeckEnvelope =
+                await campaignService.LoadPlayerDeckAsync(currentSession.sessionId, playerId);
             if (playerDeckEnvelope?.session != null)
             {
                 currentSession = playerDeckEnvelope.session;
-                LogVerboseWarning($"[CampaignOnlineShellController] Player deck loaded: cards={currentSession.playerDeck?.cards?.Count ?? 0}, selected={ActivePlayerCardId}");
+                LogVerboseWarning(
+                    $"[CampaignOnlineShellController] Player deck loaded: cards={currentSession.playerDeck?.cards?.Count ?? 0}, selected={ActivePlayerCardId}"
+                );
             }
             else
             {
-                Debug.LogWarning("[CampaignOnlineShellController] Failed to load Campaign player deck.");
+                Debug.LogWarning(
+                    "[CampaignOnlineShellController] Failed to load Campaign player deck."
+                );
             }
         }
 
-        if (currentSession.enemyDeck == null || currentSession.enemyDeck.cards == null || currentSession.enemyDeck.cards.Count == 0)
+        if (
+            currentSession.enemyDeck == null
+            || currentSession.enemyDeck.cards == null
+            || currentSession.enemyDeck.cards.Count == 0
+        )
         {
-            CampaignOnlineSessionEnvelopeDto enemyDeckEnvelope = await campaignService.LoadEnemyDeckAsync(currentSession.sessionId, playerId);
+            CampaignOnlineSessionEnvelopeDto enemyDeckEnvelope =
+                await campaignService.LoadEnemyDeckAsync(currentSession.sessionId, playerId);
             if (enemyDeckEnvelope?.session != null)
             {
                 currentSession = enemyDeckEnvelope.session;
-                LogVerboseWarning($"[CampaignOnlineShellController] Enemy deck loaded: cards={currentSession.enemyDeck?.cards?.Count ?? 0}, selected={ActiveEnemyCardId}");
+                LogVerboseWarning(
+                    $"[CampaignOnlineShellController] Enemy deck loaded: cards={currentSession.enemyDeck?.cards?.Count ?? 0}, selected={ActiveEnemyCardId}"
+                );
             }
             else
             {
-                Debug.LogWarning("[CampaignOnlineShellController] Failed to load Campaign enemy deck.");
+                Debug.LogWarning(
+                    "[CampaignOnlineShellController] Failed to load Campaign enemy deck."
+                );
             }
         }
     }
@@ -398,7 +477,10 @@ public class CampaignOnlineShellController : MonoBehaviour
         RenderEnemyHand(selectedEnemy?.cardId);
         PromoteEnemyCardToBoard(selectedEnemy);
 
-        SelectedCardData selectedPlayer = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
+        SelectedCardData selectedPlayer = FindCard(
+            currentSession?.playerDeck?.cards,
+            ActivePlayerCardId
+        );
         if (selectedPlayer != null)
         {
             PromotePlayerCardToBoard(selectedPlayer);
@@ -421,8 +503,10 @@ public class CampaignOnlineShellController : MonoBehaviour
 
         foreach (SelectedCardData cardData in currentSession.enemyDeck.cards.Where(IsAlive))
         {
-            if (!string.IsNullOrWhiteSpace(excludeCardId)
-                && string.Equals(cardData.cardId, excludeCardId, StringComparison.Ordinal))
+            if (
+                !string.IsNullOrWhiteSpace(excludeCardId)
+                && string.Equals(cardData.cardId, excludeCardId, StringComparison.Ordinal)
+            )
             {
                 continue;
             }
@@ -454,7 +538,10 @@ public class CampaignOnlineShellController : MonoBehaviour
 
         foreach (SelectedCardData cardData in currentSession.playerDeck.cards.Where(IsAlive))
         {
-            if (!string.IsNullOrWhiteSpace(excludeCardId) && string.Equals(cardData.cardId, excludeCardId, StringComparison.Ordinal))
+            if (
+                !string.IsNullOrWhiteSpace(excludeCardId)
+                && string.Equals(cardData.cardId, excludeCardId, StringComparison.Ordinal)
+            )
             {
                 continue;
             }
@@ -472,11 +559,13 @@ public class CampaignOnlineShellController : MonoBehaviour
                 continue;
             }
 
-            CampaignOnlineSelectableCard selectable = createdCard.gameObject.GetComponent<CampaignOnlineSelectableCard>()
+            CampaignOnlineSelectableCard selectable =
+                createdCard.gameObject.GetComponent<CampaignOnlineSelectableCard>()
                 ?? createdCard.gameObject.AddComponent<CampaignOnlineSelectableCard>();
             selectable.Initialize(this, createdCard);
 
-            CampaignOnlineCardDrag dragHandler = createdCard.gameObject.GetComponent<CampaignOnlineCardDrag>()
+            CampaignOnlineCardDrag dragHandler =
+                createdCard.gameObject.GetComponent<CampaignOnlineCardDrag>()
                 ?? createdCard.gameObject.AddComponent<CampaignOnlineCardDrag>();
             dragHandler.Initialize(this, createdCard);
 
@@ -523,7 +612,9 @@ public class CampaignOnlineShellController : MonoBehaviour
 
         if (currentSession?.enemyDeck?.cards != null && currentSession.enemyDeck.cards.Any(IsAlive))
         {
-            Debug.LogWarning("[CampaignOnlineShellController] Server active enemy card is missing; Campaign cannot choose one locally.");
+            Debug.LogWarning(
+                "[CampaignOnlineShellController] Server active enemy card is missing; Campaign cannot choose one locally."
+            );
         }
 
         return null;
@@ -612,7 +703,8 @@ public class CampaignOnlineShellController : MonoBehaviour
         GameObject parentOverride,
         Player owner,
         bool addToHand,
-        GameObject battleAreaOverride)
+        GameObject battleAreaOverride
+    )
     {
         if (cardData == null || cardPrefab == null || owner == null)
         {
@@ -716,9 +808,10 @@ public class CampaignOnlineShellController : MonoBehaviour
     private PendingOngoingActionTurnData GetPendingOngoingAction()
     {
         SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
-        SelectedCardData.OngoingActionData action = selected?.ongoingActions != null && selected.ongoingActions.Length > 0
-            ? selected.ongoingActions[0]
-            : null;
+        SelectedCardData.OngoingActionData action =
+            selected?.ongoingActions != null && selected.ongoingActions.Length > 0
+                ? selected.ongoingActions[0]
+                : null;
 
         if (action == null || action.sourceAttackId <= 0)
         {
@@ -730,7 +823,7 @@ public class CampaignOnlineShellController : MonoBehaviour
             actionType = action.type,
             sourceAttackId = action.sourceAttackId,
             targetCardId = action.targetCardId,
-            turnsRemaining = action.turnsRemaining
+            turnsRemaining = action.turnsRemaining,
         };
     }
 
@@ -745,14 +838,21 @@ public class CampaignOnlineShellController : MonoBehaviour
         string pendingKey = BuildPendingActionKey(ActivePlayerCardId, pendingAction);
         if (pendingAction != null)
         {
-            if (!string.IsNullOrWhiteSpace(pendingKey) && string.Equals(lastAutoSubmittedPendingKey, pendingKey, StringComparison.Ordinal))
+            if (
+                !string.IsNullOrWhiteSpace(pendingKey)
+                && string.Equals(lastAutoSubmittedPendingKey, pendingKey, StringComparison.Ordinal)
+            )
             {
-                LogVerboseWarning($"[CampaignOnlineShellController] Ignored duplicate ongoing auto-submit for key={pendingKey}");
+                LogVerboseWarning(
+                    $"[CampaignOnlineShellController] Ignored duplicate ongoing auto-submit for key={pendingKey}"
+                );
                 return;
             }
 
             lastAutoSubmittedPendingKey = pendingKey;
-            LogVerboseWarning($"[CampaignOnlineShellController] Auto-submitting ongoing action: {DescribePendingAction(pendingAction)}, key={pendingKey}");
+            LogVerboseWarning(
+                $"[CampaignOnlineShellController] Auto-submitting ongoing action: {DescribePendingAction(pendingAction)}, key={pendingKey}"
+            );
         }
         else
         {
@@ -771,7 +871,11 @@ public class CampaignOnlineShellController : MonoBehaviour
         string previousPlayerSelectedCardId = ActivePlayerCardId;
         string previousEnemySelectedCardId = ActiveEnemyCardId;
 
-        Task<CampaignOnlineBattleEnvelopeDto> submitTask = campaignService.SubmitAttackAsync(currentSession.sessionId, playerId, attackSlot);
+        Task<CampaignOnlineBattleEnvelopeDto> submitTask = campaignService.SubmitAttackAsync(
+            currentSession.sessionId,
+            playerId,
+            attackSlot
+        );
         yield return new WaitUntil(() => submitTask.IsCompleted);
 
         if (this == null || isShuttingDown)
@@ -779,9 +883,8 @@ public class CampaignOnlineShellController : MonoBehaviour
             yield break;
         }
 
-        CampaignOnlineBattleEnvelopeDto envelope = submitTask.Status == TaskStatus.RanToCompletion
-            ? submitTask.Result
-            : null;
+        CampaignOnlineBattleEnvelopeDto envelope =
+            submitTask.Status == TaskStatus.RanToCompletion ? submitTask.Result : null;
 
         if (envelope?.battleResult == null)
         {
@@ -791,7 +894,11 @@ public class CampaignOnlineShellController : MonoBehaviour
             yield break;
         }
 
-        if (battlePlayback != null && renderedPlayerActiveCard != null && renderedEnemyActiveCard != null)
+        if (
+            battlePlayback != null
+            && renderedPlayerActiveCard != null
+            && renderedEnemyActiveCard != null
+        )
         {
             yield return StartCoroutine(
                 battlePlayback.PlayBattleAsync(
@@ -821,9 +928,13 @@ public class CampaignOnlineShellController : MonoBehaviour
         {
             lastAutoSubmittedPendingKey = null;
         }
-        else if (!string.Equals(nextPendingKey, lastAutoSubmittedPendingKey, StringComparison.Ordinal))
+        else if (
+            !string.Equals(nextPendingKey, lastAutoSubmittedPendingKey, StringComparison.Ordinal)
+        )
         {
-            LogVerboseWarning($"[CampaignOnlineShellController] Ongoing action state advanced. previousKey={lastAutoSubmittedPendingKey ?? "none"}, nextKey={nextPendingKey}");
+            LogVerboseWarning(
+                $"[CampaignOnlineShellController] Ongoing action state advanced. previousKey={lastAutoSubmittedPendingKey ?? "none"}, nextKey={nextPendingKey}"
+            );
         }
 
         RefreshPostBattleView(envelope, previousPlayerSelectedCardId, previousEnemySelectedCardId);
@@ -876,14 +987,21 @@ public class CampaignOnlineShellController : MonoBehaviour
     private void RefreshPostBattleView(
         CampaignOnlineBattleEnvelopeDto envelope,
         string previousPlayerSelectedCardId,
-        string previousEnemySelectedCardId)
+        string previousEnemySelectedCardId
+    )
     {
         if (envelope?.runEnded == true || envelope?.playerNeedsReplacement == true)
         {
             ClearPendingOngoingState();
         }
 
-        if (ShouldRebuildViewAfterBattle(envelope, previousPlayerSelectedCardId, previousEnemySelectedCardId))
+        if (
+            ShouldRebuildViewAfterBattle(
+                envelope,
+                previousPlayerSelectedCardId,
+                previousEnemySelectedCardId
+            )
+        )
         {
             RenderCampaignView();
         }
@@ -898,23 +1016,30 @@ public class CampaignOnlineShellController : MonoBehaviour
     private bool ShouldRebuildViewAfterBattle(
         CampaignOnlineBattleEnvelopeDto envelope,
         string previousPlayerSelectedCardId,
-        string previousEnemySelectedCardId)
+        string previousEnemySelectedCardId
+    )
     {
         if (currentSession == null)
         {
             return true;
         }
 
-        if (envelope?.runEnded == true || envelope.playerNeedsReplacement || envelope.enemyNeedsReplacement)
+        if (
+            envelope?.runEnded == true
+            || envelope.playerNeedsReplacement
+            || envelope.enemyNeedsReplacement
+        )
         {
             return true;
         }
 
-        if (currentSession.status == "awaiting_player_card"
+        if (
+            currentSession.status == "awaiting_player_card"
             || currentSession.status == "awaiting_replacement"
             || currentSession.status == "won"
             || currentSession.status == "lost"
-            || currentSession.status == "abandoned")
+            || currentSession.status == "abandoned"
+        )
         {
             return true;
         }
@@ -924,8 +1049,16 @@ public class CampaignOnlineShellController : MonoBehaviour
             return true;
         }
 
-        return !string.Equals(ActivePlayerCardId, previousPlayerSelectedCardId, StringComparison.Ordinal)
-            || !string.Equals(ActiveEnemyCardId, previousEnemySelectedCardId, StringComparison.Ordinal);
+        return !string.Equals(
+                ActivePlayerCardId,
+                previousPlayerSelectedCardId,
+                StringComparison.Ordinal
+            )
+            || !string.Equals(
+                ActiveEnemyCardId,
+                previousEnemySelectedCardId,
+                StringComparison.Ordinal
+            );
     }
 
     private void SyncActiveCardsFromSession()
@@ -943,7 +1076,11 @@ public class CampaignOnlineShellController : MonoBehaviour
         );
     }
 
-    private void ApplyCardSnapshotToRenderedCard(SelectedCardData snapshot, Kard card, HealthBar lifeBar)
+    private void ApplyCardSnapshotToRenderedCard(
+        SelectedCardData snapshot,
+        Kard card,
+        HealthBar lifeBar
+    )
     {
         if (snapshot == null || card == null)
         {
@@ -1031,7 +1168,10 @@ public class CampaignOnlineShellController : MonoBehaviour
             bool hasIcon = false;
             foreach (Transform child in card.effectIconContainer)
             {
-                if (child != null && child.name.StartsWith(effectName + "Icon", StringComparison.Ordinal))
+                if (
+                    child != null
+                    && child.name.StartsWith(effectName + "Icon", StringComparison.Ordinal)
+                )
                 {
                     hasIcon = true;
                     break;
@@ -1078,7 +1218,11 @@ public class CampaignOnlineShellController : MonoBehaviour
                 SetStatus("Choose your next fighter!");
                 break;
             case "awaiting_attack":
-                SetStatus(string.IsNullOrWhiteSpace(ActivePlayerCardId) ? "Choose fighter." : "Choose attack!");
+                SetStatus(
+                    string.IsNullOrWhiteSpace(ActivePlayerCardId)
+                        ? "Choose fighter."
+                        : "Choose attack!"
+                );
                 break;
             case "won":
                 SetStatus("Campaign mission won!");
@@ -1102,11 +1246,11 @@ public class CampaignOnlineShellController : MonoBehaviour
         if (envelope.runEnded)
         {
             ClearPendingOngoingState();
-            SetStatus(envelope.runStatus == "won"
-                ? "Campaign mission won!"
-                : envelope.runStatus == "lost"
-                    ? "Campaign mission lost."
-                    : "Campaign mission ended.");
+            SetStatus(
+                envelope.runStatus == "won" ? "Campaign mission won!"
+                : envelope.runStatus == "lost" ? "Campaign mission lost."
+                : "Campaign mission ended."
+            );
             return;
         }
 
@@ -1130,7 +1274,8 @@ public class CampaignOnlineShellController : MonoBehaviour
     {
         RefreshPlayerHandDraggability();
 
-        bool attackPhaseActive = currentSession != null
+        bool attackPhaseActive =
+            currentSession != null
             && currentSession.status == "awaiting_attack"
             && !string.IsNullOrWhiteSpace(ActivePlayerCardId)
             && !isBusy
@@ -1161,7 +1306,12 @@ public class CampaignOnlineShellController : MonoBehaviour
         }
     }
 
-    private void UpdateAttackButtonDisplay(Button button, TMP_Text nameText, TMP_Text countText, int attackSlot)
+    private void UpdateAttackButtonDisplay(
+        Button button,
+        TMP_Text nameText,
+        TMP_Text countText,
+        int attackSlot
+    )
     {
         if (button == null)
         {
@@ -1202,16 +1352,21 @@ public class CampaignOnlineShellController : MonoBehaviour
             count1 = Mathf.Max(0, GetRemainingCountForSlot(selected.cardId, 1)),
             count2 = Mathf.Max(0, GetRemainingCountForSlot(selected.cardId, 2)),
             count3 = Mathf.Max(0, GetRemainingCountForSlot(selected.cardId, 3)),
-            count4 = Mathf.Max(0, GetRemainingCountForSlot(selected.cardId, 4))
+            count4 = Mathf.Max(0, GetRemainingCountForSlot(selected.cardId, 4)),
         };
     }
 
     private int GetRemainingCountForSlot(string cardId, int attackSlot)
     {
-        if (string.IsNullOrWhiteSpace(cardId)
+        if (
+            string.IsNullOrWhiteSpace(cardId)
             || currentSession?.attackCounts?.player == null
-            || !currentSession.attackCounts.player.TryGetValue(cardId, out CampaignOnlineAttackCountEntryDto counts)
-            || counts == null)
+            || !currentSession.attackCounts.player.TryGetValue(
+                cardId,
+                out CampaignOnlineAttackCountEntryDto counts
+            )
+            || counts == null
+        )
         {
             return -1;
         }
@@ -1222,7 +1377,7 @@ public class CampaignOnlineShellController : MonoBehaviour
             2 => counts.count2,
             3 => counts.count3,
             4 => counts.count4,
-            _ => -1
+            _ => -1,
         };
     }
 
@@ -1239,24 +1394,37 @@ public class CampaignOnlineShellController : MonoBehaviour
             2 => selected.attack2,
             3 => selected.attack3,
             4 => selected.attack4,
-            _ => 0
+            _ => 0,
         };
     }
 
     private void SetAttackButtonsInteractable(bool enabled)
     {
-        if (attackButton1 != null) attackButton1.interactable = enabled;
-        if (attackButton2 != null) attackButton2.interactable = enabled;
-        if (attackButton3 != null) attackButton3.interactable = enabled;
-        if (attackButton4 != null) attackButton4.interactable = enabled;
+        if (attackButton1 != null)
+            attackButton1.interactable = enabled;
+        if (attackButton2 != null)
+            attackButton2.interactable = enabled;
+        if (attackButton3 != null)
+            attackButton3.interactable = enabled;
+        if (attackButton4 != null)
+            attackButton4.interactable = enabled;
     }
 
-    private void SetAttackButtonsInteractable(bool button1Enabled, bool button2Enabled, bool button3Enabled, bool button4Enabled)
+    private void SetAttackButtonsInteractable(
+        bool button1Enabled,
+        bool button2Enabled,
+        bool button3Enabled,
+        bool button4Enabled
+    )
     {
-        if (attackButton1 != null) attackButton1.interactable = button1Enabled;
-        if (attackButton2 != null) attackButton2.interactable = button2Enabled;
-        if (attackButton3 != null) attackButton3.interactable = button3Enabled;
-        if (attackButton4 != null) attackButton4.interactable = button4Enabled;
+        if (attackButton1 != null)
+            attackButton1.interactable = button1Enabled;
+        if (attackButton2 != null)
+            attackButton2.interactable = button2Enabled;
+        if (attackButton3 != null)
+            attackButton3.interactable = button3Enabled;
+        if (attackButton4 != null)
+            attackButton4.interactable = button4Enabled;
     }
 
     private void SetConfirmButtonState(bool enabled)
@@ -1269,17 +1437,30 @@ public class CampaignOnlineShellController : MonoBehaviour
 
     private void CacheDefaultAttackButtonTexts()
     {
-        defaultAttackButton1Name ??= attackButton1Text != null ? attackButton1Text.text : string.Empty;
-        defaultAttackButton2Name ??= attackButton2Text != null ? attackButton2Text.text : string.Empty;
-        defaultAttackButton3Name ??= attackButton3Text != null ? attackButton3Text.text : string.Empty;
-        defaultAttackButton4Name ??= attackButton4Text != null ? attackButton4Text.text : string.Empty;
-        defaultAttackButton1Count ??= attackButton1CountText != null ? attackButton1CountText.text : string.Empty;
-        defaultAttackButton2Count ??= attackButton2CountText != null ? attackButton2CountText.text : string.Empty;
-        defaultAttackButton3Count ??= attackButton3CountText != null ? attackButton3CountText.text : string.Empty;
-        defaultAttackButton4Count ??= attackButton4CountText != null ? attackButton4CountText.text : string.Empty;
+        defaultAttackButton1Name ??=
+            attackButton1Text != null ? attackButton1Text.text : string.Empty;
+        defaultAttackButton2Name ??=
+            attackButton2Text != null ? attackButton2Text.text : string.Empty;
+        defaultAttackButton3Name ??=
+            attackButton3Text != null ? attackButton3Text.text : string.Empty;
+        defaultAttackButton4Name ??=
+            attackButton4Text != null ? attackButton4Text.text : string.Empty;
+        defaultAttackButton1Count ??=
+            attackButton1CountText != null ? attackButton1CountText.text : string.Empty;
+        defaultAttackButton2Count ??=
+            attackButton2CountText != null ? attackButton2CountText.text : string.Empty;
+        defaultAttackButton3Count ??=
+            attackButton3CountText != null ? attackButton3CountText.text : string.Empty;
+        defaultAttackButton4Count ??=
+            attackButton4CountText != null ? attackButton4CountText.text : string.Empty;
     }
 
-    private void RestoreAttackButtonDefaults(int attackSlot, Button button, TMP_Text nameText, TMP_Text countText)
+    private void RestoreAttackButtonDefaults(
+        int attackSlot,
+        Button button,
+        TMP_Text nameText,
+        TMP_Text countText
+    )
     {
         string defaultName = attackSlot switch
         {
@@ -1287,7 +1468,7 @@ public class CampaignOnlineShellController : MonoBehaviour
             2 => defaultAttackButton2Name,
             3 => defaultAttackButton3Name,
             4 => defaultAttackButton4Name,
-            _ => string.Empty
+            _ => string.Empty,
         };
 
         string defaultCount = attackSlot switch
@@ -1296,7 +1477,7 @@ public class CampaignOnlineShellController : MonoBehaviour
             2 => defaultAttackButton2Count,
             3 => defaultAttackButton3Count,
             4 => defaultAttackButton4Count,
-            _ => string.Empty
+            _ => string.Empty,
         };
 
         SetAttackNameText(nameText, defaultName);
@@ -1316,13 +1497,17 @@ public class CampaignOnlineShellController : MonoBehaviour
     private bool IsFighterSelectionStatus()
     {
         return currentSession != null
-            && (currentSession.status == "awaiting_player_card"
-                || currentSession.status == "awaiting_replacement");
+            && (
+                currentSession.status == "awaiting_player_card"
+                || currentSession.status == "awaiting_replacement"
+            );
     }
 
     private string GetAttackName(int attackId)
     {
-        return attackDescriptions != null ? attackDescriptions.GetAttackName(attackId) : $"Attack {attackId}";
+        return attackDescriptions != null
+            ? attackDescriptions.GetAttackName(attackId)
+            : $"Attack {attackId}";
     }
 
     private void SetStatus(string message)
@@ -1382,7 +1567,10 @@ public class CampaignOnlineShellController : MonoBehaviour
         return $"{pendingAction.actionType}/attackId={pendingAction.sourceAttackId}/turns={pendingAction.turnsRemaining}/target={pendingAction.targetCardId}";
     }
 
-    private static string BuildPendingActionKey(string playerCardId, PendingOngoingActionTurnData pendingAction)
+    private static string BuildPendingActionKey(
+        string playerCardId,
+        PendingOngoingActionTurnData pendingAction
+    )
     {
         if (pendingAction == null)
         {

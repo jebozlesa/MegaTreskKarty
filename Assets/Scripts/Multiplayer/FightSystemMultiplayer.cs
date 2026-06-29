@@ -1,19 +1,28 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Threading;
-using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
-using UnityEngine.SceneManagement;
 using System.Data;
-using Mono.Data.Sqlite;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Mono.Data.Sqlite;
 using PlayFab;
 using PlayFab.ClientModels;
-using System.Linq;
-using System.Threading.Tasks;
+using TMPro;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
-public enum FightStateMultiplayer { START, TURN, ENDTURN, PLAYERDEATH, ENEMYDEATH, WON, LOST }
+public enum FightStateMultiplayer
+{
+    START,
+    TURN,
+    ENDTURN,
+    PLAYERDEATH,
+    ENEMYDEATH,
+    WON,
+    LOST,
+}
 
 public class FightSystemMultiplayer : MonoBehaviour
 {
@@ -98,13 +107,12 @@ public class FightSystemMultiplayer : MonoBehaviour
     public MultiplayerUI multiplayerUI;
     public MultiplayerHandManager multiplayerHandManager;
     public MultiplayerBoardManager multiplayerBoardManager;
-    
+
     // Battle system komponenty
     public BattleSubmitter battleSubmitter;
     public BattleResultProcessor battleResultProcessor;
 
     private PendingOngoingActionTurn pendingOngoingActionTurn;
-
 
     void Start()
     {
@@ -112,7 +120,9 @@ public class FightSystemMultiplayer : MonoBehaviour
 
         if (multiplayerUI == null)
         {
-            Debug.LogError("[FightSystemMultiplayer] MultiplayerUI is not assigned in the Inspector.");
+            Debug.LogError(
+                "[FightSystemMultiplayer] MultiplayerUI is not assigned in the Inspector."
+            );
         }
 
         if (multiplayerUI != null)
@@ -120,10 +130,12 @@ public class FightSystemMultiplayer : MonoBehaviour
             Debug.LogWarning("[FightSystemMultiplayer] Setting status to 'Loading...'");
             multiplayerUI.ShowStatus(MultiplayerUI.MSG_LOADING);
         }
-        
+
         if (multiplayerBoardManager == null)
         {
-            multiplayerBoardManager = GetComponent<MultiplayerBoardManager>() ?? GetComponentInChildren<MultiplayerBoardManager>();
+            multiplayerBoardManager =
+                GetComponent<MultiplayerBoardManager>()
+                ?? GetComponentInChildren<MultiplayerBoardManager>();
         }
         if (multiplayerBoardManager != null)
         {
@@ -131,7 +143,9 @@ public class FightSystemMultiplayer : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[FightSystemMultiplayer] MultiplayerBoardManager not assigned; turn flow will not function.");
+            Debug.LogWarning(
+                "[FightSystemMultiplayer] MultiplayerBoardManager not assigned; turn flow will not function."
+            );
         }
 
         state = FightStateMultiplayer.START;
@@ -150,7 +164,9 @@ public class FightSystemMultiplayer : MonoBehaviour
             myPlayerId = PlayFabManagerLogin.Instance.LoggedInPlayerId;
             roomCode = PlayerPrefs.GetString("RoomCode", "");
 
-            Debug.LogWarning($"[FightSystemMultiplayer] Initializing game for player {myPlayerId} in room {roomCode}");
+            Debug.LogWarning(
+                $"[FightSystemMultiplayer] Initializing game for player {myPlayerId} in room {roomCode}"
+            );
             await multiplayerService.InitGame();
 
             bool decksReady = await WaitForDecksReadyAsync();
@@ -161,7 +177,9 @@ public class FightSystemMultiplayer : MonoBehaviour
                 return;
             }
 
-            Debug.LogWarning("[FightSystemMultiplayer] InitGame completed and decks are ready, loading cards...");
+            Debug.LogWarning(
+                "[FightSystemMultiplayer] InitGame completed and decks are ready, loading cards..."
+            );
 
             // Use retry logic for card loading
             bool cardsLoaded = await LoadPlayerCardsWithRetry(myPlayerId, roomCode);
@@ -173,7 +191,9 @@ public class FightSystemMultiplayer : MonoBehaviour
             }
 
             HideStartupConnectionError();
-            Debug.LogWarning("[FightSystemMultiplayer] Cards loaded successfully! Setting status to 'Choose fighter!'");
+            Debug.LogWarning(
+                "[FightSystemMultiplayer] Cards loaded successfully! Setting status to 'Choose fighter!'"
+            );
             multiplayerUI?.ShowStatus(MultiplayerUI.MSG_CHOOSE_FIGHTER);
         }
         catch (System.Exception ex)
@@ -208,14 +228,18 @@ public class FightSystemMultiplayer : MonoBehaviour
 
     private void ShowStartupConnectionError(string reason)
     {
-        Debug.LogError($"[FightSystemMultiplayer] Showing startup network error indicator. Reason: {reason}");
+        Debug.LogError(
+            $"[FightSystemMultiplayer] Showing startup network error indicator. Reason: {reason}"
+        );
         if (serverFunctionsManager != null)
         {
             serverFunctionsManager.ShowNetworkErrorIndicator(reason);
         }
         else
         {
-            Debug.LogError("[FightSystemMultiplayer] ServerFunctionsManager missing; cannot show network error indicator.");
+            Debug.LogError(
+                "[FightSystemMultiplayer] ServerFunctionsManager missing; cannot show network error indicator."
+            );
         }
     }
 
@@ -233,26 +257,41 @@ public class FightSystemMultiplayer : MonoBehaviour
         {
             multiplayerUI?.ShowStatus("Syncing decks...");
 
-            MatchStateDto matchState = await multiplayerService.GetMatchStateAsync(roomCode, myPlayerId);
+            MatchStateDto matchState = await multiplayerService.GetMatchStateAsync(
+                roomCode,
+                myPlayerId
+            );
             if (matchState != null)
             {
                 bool allDecksLoaded = matchState.decks != null && matchState.decks.allLoaded;
-                Debug.Log($"[FightSystemMultiplayer] MatchState poll {attempt}/{MatchReadyMaxAttempts}: phase={matchState.phase}, loaded={matchState.decks?.loadedCount ?? 0}, allLoaded={allDecksLoaded}");
+                Debug.Log(
+                    $"[FightSystemMultiplayer] MatchState poll {attempt}/{MatchReadyMaxAttempts}: phase={matchState.phase}, loaded={matchState.decks?.loadedCount ?? 0}, allLoaded={allDecksLoaded}"
+                );
 
                 if (allDecksLoaded)
                 {
                     return true;
                 }
 
-                if (string.Equals(matchState.phase, MatchPhaseCompleted, System.StringComparison.OrdinalIgnoreCase))
+                if (
+                    string.Equals(
+                        matchState.phase,
+                        MatchPhaseCompleted,
+                        System.StringComparison.OrdinalIgnoreCase
+                    )
+                )
                 {
-                    Debug.LogWarning("[FightSystemMultiplayer] Room completed while waiting for decks");
+                    Debug.LogWarning(
+                        "[FightSystemMultiplayer] Room completed while waiting for decks"
+                    );
                     return false;
                 }
             }
             else
             {
-                Debug.LogWarning($"[FightSystemMultiplayer] MatchState poll {attempt}/{MatchReadyMaxAttempts} returned null");
+                Debug.LogWarning(
+                    $"[FightSystemMultiplayer] MatchState poll {attempt}/{MatchReadyMaxAttempts} returned null"
+                );
             }
 
             if (attempt < MatchReadyMaxAttempts)
@@ -264,41 +303,48 @@ public class FightSystemMultiplayer : MonoBehaviour
         return false;
     }
 
-    private async System.Threading.Tasks.Task<bool> LoadPlayerCardsWithRetry(string myPlayerId, string roomCode)
+    private async System.Threading.Tasks.Task<bool> LoadPlayerCardsWithRetry(
+        string myPlayerId,
+        string roomCode
+    )
     {
         const int MAX_RETRIES = 3;
         const int RETRY_DELAY_MS = 3000;
-        
+
         for (int attempt = 1; attempt <= MAX_RETRIES; attempt++)
         {
             Debug.Log($"[FightSystemMultiplayer] Loading cards attempt {attempt}/{MAX_RETRIES}");
-            
+
             // Reset cards state before each attempt to prevent conflicts
             multiplayerHandManager.ResetCardsState();
-            
+
             // Start card loading
             multiplayerHandManager.CreateCardsFromDecks(myPlayerId, roomCode);
-            
+
             // Wait up to 10 seconds for cards to load
             for (int wait = 0; wait < 100; wait++) // 100 * 100ms = 10 seconds
             {
                 await System.Threading.Tasks.Task.Delay(100);
-                
+
                 if (player != null && player.hand != null && player.hand.Count > 0)
                 {
-                    Debug.Log($"[FightSystemMultiplayer] Cards loaded successfully! Player has {player.hand.Count} cards");
+                    Debug.Log(
+                        $"[FightSystemMultiplayer] Cards loaded successfully! Player has {player.hand.Count} cards"
+                    );
                     return true;
                 }
             }
-            
-            Debug.LogWarning($"[FightSystemMultiplayer] Cards loading attempt {attempt} failed, retrying...");
-            
+
+            Debug.LogWarning(
+                $"[FightSystemMultiplayer] Cards loading attempt {attempt} failed, retrying..."
+            );
+
             if (attempt < MAX_RETRIES)
             {
                 await System.Threading.Tasks.Task.Delay(RETRY_DELAY_MS);
             }
         }
-        
+
         return false;
     }
 
@@ -324,10 +370,12 @@ public class FightSystemMultiplayer : MonoBehaviour
         }
         else
         {
-            Debug.LogError("[FightSystemMultiplayer] MultiplayerBoardManager missing when card dropped.");
+            Debug.LogError(
+                "[FightSystemMultiplayer] MultiplayerBoardManager missing when card dropped."
+            );
             dragHandler?.ResetToOriginalPosition();
         }
-        
+
         // Nacitaj nazvy utokov hned, count-y az po serverom potvrdenom setSelectedCard.
         LoadAttackNames(card);
     }
@@ -356,23 +404,26 @@ public class FightSystemMultiplayer : MonoBehaviour
     {
         if (attackCountLoader != null)
         {
-            attackCountLoader.LoadAttackCounts(card, result =>
-            {
-                if (result != null)
+            attackCountLoader.LoadAttackCounts(
+                card,
+                result =>
                 {
-                    Debug.Log($"[FightSystemMultiplayer] Attack counts loaded successfully");
-                    
-                    // Po nacitani attack counts priprav UI pre vyber utoku
-                    if (attackSelectionManager != null)
+                    if (result != null)
                     {
-                        attackSelectionManager.PrepareAttackSelection(card, result);
+                        Debug.Log($"[FightSystemMultiplayer] Attack counts loaded successfully");
+
+                        // Po nacitani attack counts priprav UI pre vyber utoku
+                        if (attackSelectionManager != null)
+                        {
+                            attackSelectionManager.PrepareAttackSelection(card, result);
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[FightSystemMultiplayer] Failed to load attack counts");
                     }
                 }
-                else
-                {
-                    Debug.LogWarning($"[FightSystemMultiplayer] Failed to load attack counts");
-                }
-            });
+            );
         }
         else
         {
@@ -386,14 +437,16 @@ public class FightSystemMultiplayer : MonoBehaviour
     /// <param name="attackData">Data o vybratom utoku</param>
     public void OnAttackConfirmed(SelectedAttackData attackData)
     {
-        Debug.Log($"[FightSystemMultiplayer] Attack confirmed: Type={attackData.attackType}, ID={attackData.attackId}");
-        
+        Debug.Log(
+            $"[FightSystemMultiplayer] Attack confirmed: Type={attackData.attackType}, ID={attackData.attackId}"
+        );
+
         if (battleSubmitter == null)
         {
             Debug.LogError("[FightSystemMultiplayer] BattleSubmitter not assigned!");
             return;
         }
-        
+
         // Ziskaj cardId aktualnej karty
         Kard myCard = player?.cardInGame;
         if (myCard == null)
@@ -401,10 +454,16 @@ public class FightSystemMultiplayer : MonoBehaviour
             Debug.LogError("[FightSystemMultiplayer] No card in game!");
             return;
         }
-        
+
         // Deleguj na BattleSubmitter - posli IDs + slot pre attack count decrement
-        battleSubmitter.SubmitAttack(roomCode, myPlayerId, myCard.cardId, attackData.attackId, attackData.attackType);
-        
+        battleSubmitter.SubmitAttack(
+            roomCode,
+            myPlayerId,
+            myCard.cardId,
+            attackData.attackId,
+            attackData.attackType
+        );
+
         // Zobraz status
         multiplayerUI?.ShowStatus(MultiplayerUI.MSG_WAITING_OPPONENT);
     }
@@ -423,7 +482,7 @@ public class FightSystemMultiplayer : MonoBehaviour
             actionType = action.type,
             sourceAttackId = action.sourceAttackId,
             targetCardId = action.targetCardId,
-            turnsRemaining = action.turnsRemaining
+            turnsRemaining = action.turnsRemaining,
         };
     }
 
@@ -467,7 +526,4 @@ public class FightSystemMultiplayer : MonoBehaviour
 
         return false;
     }
-
-
 }
-

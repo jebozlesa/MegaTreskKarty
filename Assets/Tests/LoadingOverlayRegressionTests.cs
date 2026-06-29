@@ -69,7 +69,10 @@ public class LoadingOverlayRegressionTests
         createdObjects.Add(overlay);
 
         Type overlayViewType = FindAssemblyType("LoadingOverlayView");
-        Assert.IsNotNull(overlayViewType, "Type LoadingOverlayView was not found in Assembly-CSharp.");
+        Assert.IsNotNull(
+            overlayViewType,
+            "Type LoadingOverlayView was not found in Assembly-CSharp."
+        );
         Component view = overlay.AddComponent(overlayViewType);
 
         GameObject labelObject = new GameObject("Text (TMP)");
@@ -96,7 +99,10 @@ public class LoadingOverlayRegressionTests
         Type overlayType = FindAssemblyType("SceneLoadingOverlay");
         Assert.IsNotNull(overlayType, "Type SceneLoadingOverlay was not found in Assembly-CSharp.");
 
-        MethodInfo method = overlayType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
+        MethodInfo method = overlayType.GetMethod(
+            methodName,
+            BindingFlags.Public | BindingFlags.Static
+        );
         Assert.IsNotNull(method, $"Method {methodName} was not found on SceneLoadingOverlay.");
         method.Invoke(null, args);
     }
@@ -108,14 +114,18 @@ public class LoadingOverlayRegressionTests
 
     private static string ReadTextProperty(Component component)
     {
-        PropertyInfo property = component.GetType().GetProperty("text", BindingFlags.Instance | BindingFlags.Public);
+        PropertyInfo property = component
+            .GetType()
+            .GetProperty("text", BindingFlags.Instance | BindingFlags.Public);
         Assert.IsNotNull(property, $"Property text was not found on {component.GetType().Name}.");
         return property.GetValue(component) as string;
     }
 
     private static void WriteTextProperty(Component component, string value)
     {
-        PropertyInfo property = component.GetType().GetProperty("text", BindingFlags.Instance | BindingFlags.Public);
+        PropertyInfo property = component
+            .GetType()
+            .GetProperty("text", BindingFlags.Instance | BindingFlags.Public);
         Assert.IsNotNull(property, $"Property text was not found on {component.GetType().Name}.");
         property.SetValue(component, value);
     }

@@ -8,16 +8,22 @@ using UnityEngine.UI;
 public class LoadingCharacterRandomDance : MonoBehaviour
 {
     [Header("Target")]
-    [SerializeField] private Image targetImage;
+    [SerializeField]
+    private Image targetImage;
 
     [Header("Resources")]
-    [SerializeField] private string resourcesPath = "Loading/Characters";
+    [SerializeField]
+    private string resourcesPath = "Loading/Characters";
 
     [Header("Playback")]
-    [SerializeField] private float frameDurationSeconds = 0.14f;
-    [SerializeField] private bool playOnEnable = true;
+    [SerializeField]
+    private float frameDurationSeconds = 0.14f;
 
-    private readonly Dictionary<string, List<FrameEntry>> characterSets = new Dictionary<string, List<FrameEntry>>();
+    [SerializeField]
+    private bool playOnEnable = true;
+
+    private readonly Dictionary<string, List<FrameEntry>> characterSets =
+        new Dictionary<string, List<FrameEntry>>();
     private readonly List<string> orderedSetKeys = new List<string>();
 
     private Coroutine danceRoutine;
@@ -63,7 +69,11 @@ public class LoadingCharacterRandomDance : MonoBehaviour
 
         if (orderedSetKeys.Count == 0)
         {
-            Debug.LogError("[LoadingCharacterRandomDance] No valid character sprite sets found in Resources/" + resourcesPath + ". Expected naming like einsteindance1..N or tesladance1..N.");
+            Debug.LogError(
+                "[LoadingCharacterRandomDance] No valid character sprite sets found in Resources/"
+                    + resourcesPath
+                    + ". Expected naming like einsteindance1..N or tesladance1..N."
+            );
             return;
         }
 
@@ -126,7 +136,8 @@ public class LoadingCharacterRandomDance : MonoBehaviour
                 texture,
                 new Rect(0f, 0f, texture.width, texture.height),
                 new Vector2(0.5f, 0.5f),
-                100f);
+                100f
+            );
 
             AddFrame(key, frameIndex, runtimeSprite);
             processedNames.Add(texture.name);
@@ -155,11 +166,7 @@ public class LoadingCharacterRandomDance : MonoBehaviour
             orderedSetKeys.Add(key);
         }
 
-        frames.Add(new FrameEntry
-        {
-            index = frameIndex,
-            sprite = sprite
-        });
+        frames.Add(new FrameEntry { index = frameIndex, sprite = sprite });
     }
 
     private IEnumerator DanceLoop()

@@ -63,24 +63,27 @@ public class MultiplayerLobbyUiRegressionTests
 
     private static void InvokeSetJoinButtonText(object lobby, string text)
     {
-        MethodInfo method = lobby.GetType().GetMethod(
-            "SetJoinButtonText",
-            BindingFlags.Instance | BindingFlags.NonPublic
-        );
+        MethodInfo method = lobby
+            .GetType()
+            .GetMethod("SetJoinButtonText", BindingFlags.Instance | BindingFlags.NonPublic);
         Assert.IsNotNull(method, "Method SetJoinButtonText was not found.");
         method.Invoke(lobby, new object[] { text });
     }
 
     private static void SetPrivateField(object instance, string fieldName, object value)
     {
-        FieldInfo field = instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+        FieldInfo field = instance
+            .GetType()
+            .GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
         Assert.IsNotNull(field, $"Field {fieldName} was not found.");
         field.SetValue(instance, value);
     }
 
     private static string ReadTextProperty(Component component)
     {
-        PropertyInfo property = component.GetType().GetProperty("text", BindingFlags.Instance | BindingFlags.Public);
+        PropertyInfo property = component
+            .GetType()
+            .GetProperty("text", BindingFlags.Instance | BindingFlags.Public);
         Assert.IsNotNull(property, $"Property text was not found on {component.GetType().Name}.");
         return property.GetValue(component) as string;
     }

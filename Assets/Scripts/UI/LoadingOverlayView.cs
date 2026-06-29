@@ -5,7 +5,8 @@ public sealed class LoadingOverlayView : MonoBehaviour
 {
     public static LoadingOverlayView Current { get; private set; }
 
-    [SerializeField] private TMP_Text messageText;
+    [SerializeField]
+    private TMP_Text messageText;
 
     private void Awake()
     {

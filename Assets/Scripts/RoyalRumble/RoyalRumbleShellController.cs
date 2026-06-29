@@ -1,8 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -86,22 +86,25 @@ public class RoyalRumbleShellController : MonoBehaviour
             return false;
         }
 
-        return IsFighterSelectionStatus()
-            && renderedPlayerHandCards.Contains(card);
+        return IsFighterSelectionStatus() && renderedPlayerHandCards.Contains(card);
     }
 
     private bool IsFighterSelectionStatus()
     {
         return currentSession != null
-            && (currentSession.status == "awaiting_player_card"
-                || currentSession.status == "awaiting_replacement");
+            && (
+                currentSession.status == "awaiting_player_card"
+                || currentSession.status == "awaiting_replacement"
+            );
     }
 
     private void Awake()
     {
         if (activeInstance != null && activeInstance != this)
         {
-            Debug.LogWarning("[RoyalRumbleShellController] Duplicate shell detected. Disabling the extra instance.");
+            Debug.LogWarning(
+                "[RoyalRumbleShellController] Duplicate shell detected. Disabling the extra instance."
+            );
             enabled = false;
             return;
         }
@@ -137,68 +140,82 @@ public class RoyalRumbleShellController : MonoBehaviour
 
         try
         {
-        playerId = PlayFabManagerLogin.Instance != null
-            ? PlayFabManagerLogin.Instance.LoggedInPlayerId
-            : PlayerPrefs.GetString("LoggedInPlayerId", string.Empty);
+            playerId =
+                PlayFabManagerLogin.Instance != null
+                    ? PlayFabManagerLogin.Instance.LoggedInPlayerId
+                    : PlayerPrefs.GetString("LoggedInPlayerId", string.Empty);
 
-        if (string.IsNullOrWhiteSpace(playerId))
-        {
-            SetStatus("Missing player ID.");
-            Debug.LogWarning("[RoyalRumbleShellController] Cannot start RR shell without player ID.");
+            if (string.IsNullOrWhiteSpace(playerId))
+            {
+                SetStatus("Missing player ID.");
+                Debug.LogWarning(
+                    "[RoyalRumbleShellController] Cannot start RR shell without player ID."
+                );
+                isBusy = false;
+                hasStartedRun = false;
+                return;
+            }
+
+            SetStatus("Preparing Royal Rumble...");
+            LogVerboseWarning(
+                $"[RoyalRumbleShellController] RR shell opening started for player={playerId}."
+            );
+
+            RoyalRumbleSessionEnvelopeDto sessionEnvelope =
+                await royalRumbleService.CreateSessionAsync(playerId);
+            if (this == null || isShuttingDown)
+            {
+                return;
+            }
+
+            if (sessionEnvelope?.session == null)
+            {
+                SetStatus("Failed to create Royal Rumble session.");
+                Debug.LogWarning(
+                    "[RoyalRumbleShellController] RR shell failed to create a session."
+                );
+                isBusy = false;
+                hasStartedRun = false;
+                return;
+            }
+
+            currentSession = sessionEnvelope.session;
+            SyncRoyalRumbleRecordDisplay(null, "create_session");
+            LogVerboseWarning(
+                $"[RoyalRumbleShellController] RR shell created session {currentSession.sessionId} with status {currentSession.status}."
+            );
+
+            await EnsureDecksLoadedAsync();
+            if (this == null || isShuttingDown)
+            {
+                return;
+            }
+
             isBusy = false;
-            hasStartedRun = false;
-            return;
-        }
 
-        SetStatus("Preparing Royal Rumble...");
-        LogVerboseWarning($"[RoyalRumbleShellController] RR shell opening started for player={playerId}.");
+            if (
+                currentSession?.playerDeck?.cards == null
+                || currentSession.playerDeck.cards.Count == 0
+            )
+            {
+                SetStatus("Failed to load player deck.");
+                UpdateAttackButtons();
+                return;
+            }
 
-        RoyalRumbleSessionEnvelopeDto sessionEnvelope = await royalRumbleService.CreateSessionAsync(playerId);
-        if (this == null || isShuttingDown)
-        {
-            return;
-        }
+            if (
+                currentSession?.enemyDeck?.cards == null
+                || currentSession.enemyDeck.cards.Count == 0
+            )
+            {
+                SetStatus("Failed to load enemy deck.");
+                UpdateAttackButtons();
+                hasStartedRun = false;
+                return;
+            }
 
-        if (sessionEnvelope?.session == null)
-        {
-            SetStatus("Failed to create Royal Rumble session.");
-            Debug.LogWarning("[RoyalRumbleShellController] RR shell failed to create a session.");
-            isBusy = false;
-            hasStartedRun = false;
-            return;
-        }
-
-        currentSession = sessionEnvelope.session;
-        SyncRoyalRumbleRecordDisplay(null, "create_session");
-        LogVerboseWarning(
-            $"[RoyalRumbleShellController] RR shell created session {currentSession.sessionId} with status {currentSession.status}."
-        );
-
-        await EnsureDecksLoadedAsync();
-        if (this == null || isShuttingDown)
-        {
-            return;
-        }
-
-        isBusy = false;
-
-        if (currentSession?.playerDeck?.cards == null || currentSession.playerDeck.cards.Count == 0)
-        {
-            SetStatus("Failed to load player deck.");
-            UpdateAttackButtons();
-            return;
-        }
-
-        if (currentSession?.enemyDeck?.cards == null || currentSession.enemyDeck.cards.Count == 0)
-        {
-            SetStatus("Failed to load enemy deck.");
-            UpdateAttackButtons();
-            hasStartedRun = false;
-            return;
-        }
-
-        SetStartupUiVisible(true);
-        StartCoroutine(PlayInitialOpeningSequence());
+            SetStartupUiVisible(true);
+            StartCoroutine(PlayInitialOpeningSequence());
         }
         finally
         {
@@ -242,10 +259,11 @@ public class RoyalRumbleShellController : MonoBehaviour
 
         SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
         int attackId = GetAttackIdForSlot(selected, attackType);
-        int remainingCount = selected != null ? GetRemainingCountForSlot(selected.cardId, attackType) : -1;
+        int remainingCount =
+            selected != null ? GetRemainingCountForSlot(selected.cardId, attackType) : -1;
         LogVerboseWarning(
-            $"[RoyalRumbleShellController] Attack button clicked. slot={attackType}, attackId={attackId}, attackName={GetAttackName(attackId)}, " +
-            $"remainingCount={remainingCount}, status={currentSession?.status}, isBusy={isBusy}, selectedCard={ActivePlayerCardId}"
+            $"[RoyalRumbleShellController] Attack button clicked. slot={attackType}, attackId={attackId}, attackName={GetAttackName(attackId)}, "
+                + $"remainingCount={remainingCount}, status={currentSession?.status}, isBusy={isBusy}, selectedCard={ActivePlayerCardId}"
         );
         attackSelectionFlow?.OnAttackButtonClicked(attackType);
     }
@@ -264,10 +282,11 @@ public class RoyalRumbleShellController : MonoBehaviour
         SelectedCardData selected = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
         int selectedSlot = attackSelectionFlow?.SelectedAttackType ?? 0;
         int attackId = GetAttackIdForSlot(selected, selectedSlot);
-        int remainingCount = selected != null ? GetRemainingCountForSlot(selected.cardId, selectedSlot) : -1;
+        int remainingCount =
+            selected != null ? GetRemainingCountForSlot(selected.cardId, selectedSlot) : -1;
         LogVerboseWarning(
-            $"[RoyalRumbleShellController] Confirm attack clicked. selectedSlot={selectedSlot}, attackId={attackId}, attackName={GetAttackName(attackId)}, " +
-            $"remainingCount={remainingCount}, status={currentSession?.status}, isBusy={isBusy}, selectedCard={ActivePlayerCardId}"
+            $"[RoyalRumbleShellController] Confirm attack clicked. selectedSlot={selectedSlot}, attackId={attackId}, attackName={GetAttackName(attackId)}, "
+                + $"remainingCount={remainingCount}, status={currentSession?.status}, isBusy={isBusy}, selectedCard={ActivePlayerCardId}"
         );
         attackSelectionFlow?.OnConfirmAttackClicked();
     }
@@ -301,7 +320,11 @@ public class RoyalRumbleShellController : MonoBehaviour
             renderedPlayerActiveCard = player.cardInGame;
             playerLifeBar?.SetBar(player.cardInGame);
 
-            RoyalRumbleSessionEnvelopeDto envelope = await royalRumbleService.SelectCardAsync(currentSession.sessionId, playerId, card.cardId);
+            RoyalRumbleSessionEnvelopeDto envelope = await royalRumbleService.SelectCardAsync(
+                currentSession.sessionId,
+                playerId,
+                card.cardId
+            );
             if (this == null || isShuttingDown)
             {
                 return;
@@ -309,8 +332,11 @@ public class RoyalRumbleShellController : MonoBehaviour
 
             if (envelope?.session == null)
             {
-                Debug.LogWarning($"[RoyalRumbleShellController] Failed to select fighter {card.cardId} after drop.");
-                Vector3 returnPosition = dragHandler != null ? dragHandler.GetOriginalLocalPosition() : Vector3.zero;
+                Debug.LogWarning(
+                    $"[RoyalRumbleShellController] Failed to select fighter {card.cardId} after drop."
+                );
+                Vector3 returnPosition =
+                    dragHandler != null ? dragHandler.GetOriginalLocalPosition() : Vector3.zero;
                 player.ReturnCardToHand(card, returnPosition);
                 card.isDragable = true;
                 SetStatus("Failed to select fighter.");
@@ -322,8 +348,8 @@ public class RoyalRumbleShellController : MonoBehaviour
             renderedPlayerHandCards.Remove(card);
             lastAutoSubmittedPendingKey = null;
             LogVerboseWarning(
-                $"[RoyalRumbleShellController] Fighter selected via drag: cardId={card.cardId}, name={card.cardName}, hp={card.health}/{card.maxHealth}, " +
-                $"attacks=[{card.attack1},{card.attack2},{card.attack3},{card.attack4}]"
+                $"[RoyalRumbleShellController] Fighter selected via drag: cardId={card.cardId}, name={card.cardName}, hp={card.health}/{card.maxHealth}, "
+                    + $"attacks=[{card.attack1},{card.attack2},{card.attack3},{card.attack4}]"
             );
             SetStatus("Choose attack!");
         }
@@ -349,7 +375,9 @@ public class RoyalRumbleShellController : MonoBehaviour
 
         if (royalRumbleService == null)
         {
-            Debug.LogWarning("[RoyalRumbleShellController] RoyalRumbleService reference is missing.");
+            Debug.LogWarning(
+                "[RoyalRumbleShellController] RoyalRumbleService reference is missing."
+            );
         }
 
         if (player != null)
@@ -372,9 +400,14 @@ public class RoyalRumbleShellController : MonoBehaviour
             return;
         }
 
-        if (currentSession.playerDeck == null || currentSession.playerDeck.cards == null || currentSession.playerDeck.cards.Count == 0)
+        if (
+            currentSession.playerDeck == null
+            || currentSession.playerDeck.cards == null
+            || currentSession.playerDeck.cards.Count == 0
+        )
         {
-            RoyalRumbleSessionEnvelopeDto playerDeckEnvelope = await royalRumbleService.LoadPlayerDeckAsync(currentSession.sessionId, playerId);
+            RoyalRumbleSessionEnvelopeDto playerDeckEnvelope =
+                await royalRumbleService.LoadPlayerDeckAsync(currentSession.sessionId, playerId);
             if (playerDeckEnvelope?.session != null)
             {
                 currentSession = playerDeckEnvelope.session;
@@ -389,9 +422,14 @@ public class RoyalRumbleShellController : MonoBehaviour
             }
         }
 
-        if (currentSession.enemyDeck == null || currentSession.enemyDeck.cards == null || currentSession.enemyDeck.cards.Count == 0)
+        if (
+            currentSession.enemyDeck == null
+            || currentSession.enemyDeck.cards == null
+            || currentSession.enemyDeck.cards.Count == 0
+        )
         {
-            RoyalRumbleSessionEnvelopeDto enemyDeckEnvelope = await royalRumbleService.LoadEnemyDeckAsync(currentSession.sessionId, playerId);
+            RoyalRumbleSessionEnvelopeDto enemyDeckEnvelope =
+                await royalRumbleService.LoadEnemyDeckAsync(currentSession.sessionId, playerId);
             if (enemyDeckEnvelope?.session != null)
             {
                 currentSession = enemyDeckEnvelope.session;
@@ -414,14 +452,20 @@ public class RoyalRumbleShellController : MonoBehaviour
 
         if (currentSession?.enemyDeck?.cards == null || currentSession.enemyDeck.cards.Count == 0)
         {
-            Debug.LogWarning("[RoyalRumbleShellController] Opening sequence started without an enemy deck.");
+            Debug.LogWarning(
+                "[RoyalRumbleShellController] Opening sequence started without an enemy deck."
+            );
             yield break;
         }
 
         SelectedCardData selectedEnemy = ResolveSelectedEnemyCard();
-        List<SelectedCardData> aliveEnemyCards = currentSession.enemyDeck.cards.Where(IsAlive).ToList();
+        List<SelectedCardData> aliveEnemyCards = currentSession
+            .enemyDeck.cards.Where(IsAlive)
+            .ToList();
 
-        LogVerboseWarning($"[RoyalRumbleShellController] Starting RR shell enemy reveal with {aliveEnemyCards.Count} cards.");
+        LogVerboseWarning(
+            $"[RoyalRumbleShellController] Starting RR shell enemy reveal with {aliveEnemyCards.Count} cards."
+        );
         SetStatus("Preparing enemy fighters...");
 
         foreach (SelectedCardData cardData in aliveEnemyCards)
@@ -475,14 +519,16 @@ public class RoyalRumbleShellController : MonoBehaviour
 
             if (createdCard != null)
             {
-                RoyalRumbleSelectableCard selectable = createdCard.gameObject.GetComponent<RoyalRumbleSelectableCard>();
+                RoyalRumbleSelectableCard selectable =
+                    createdCard.gameObject.GetComponent<RoyalRumbleSelectableCard>();
                 if (selectable == null)
                 {
                     selectable = createdCard.gameObject.AddComponent<RoyalRumbleSelectableCard>();
                 }
 
                 selectable.Initialize(this, createdCard);
-                RoyalRumbleCardDrag dragHandler = createdCard.gameObject.GetComponent<RoyalRumbleCardDrag>();
+                RoyalRumbleCardDrag dragHandler =
+                    createdCard.gameObject.GetComponent<RoyalRumbleCardDrag>();
                 if (dragHandler == null)
                 {
                     dragHandler = createdCard.gameObject.AddComponent<RoyalRumbleCardDrag>();
@@ -505,7 +551,9 @@ public class RoyalRumbleShellController : MonoBehaviour
 
         if (currentSession?.enemyDeck?.cards != null && currentSession.enemyDeck.cards.Any(IsAlive))
         {
-            Debug.LogWarning("[RoyalRumbleShellController] Server active enemy card is missing; RR cannot choose one locally.");
+            Debug.LogWarning(
+                "[RoyalRumbleShellController] Server active enemy card is missing; RR cannot choose one locally."
+            );
         }
 
         return null;
@@ -518,7 +566,9 @@ public class RoyalRumbleShellController : MonoBehaviour
             return;
         }
 
-        Kard cardInHand = renderedEnemyHandCards.FirstOrDefault(card => card != null && card.cardId == selectedEnemy.cardId);
+        Kard cardInHand = renderedEnemyHandCards.FirstOrDefault(card =>
+            card != null && card.cardId == selectedEnemy.cardId
+        );
         if (cardInHand == null)
         {
             cardInHand = CreateCardInGame(
@@ -573,7 +623,7 @@ public class RoyalRumbleShellController : MonoBehaviour
         renderedEnemyHandCards.Clear();
         renderedPlayerActiveCard = null;
         renderedEnemyActiveCard = null;
-        
+
         if (player != null)
         {
             player.hand.Clear();
@@ -596,7 +646,8 @@ public class RoyalRumbleShellController : MonoBehaviour
         GameObject parentOverride,
         Player owner,
         bool addToHand,
-        GameObject battleAreaOverride)
+        GameObject battleAreaOverride
+    )
     {
         if (cardData == null || cardPrefab == null || owner == null)
         {
@@ -714,7 +765,10 @@ public class RoyalRumbleShellController : MonoBehaviour
         string pendingKey = BuildPendingActionKey(ActivePlayerCardId, pendingAction);
         if (pendingAction != null)
         {
-            if (!string.IsNullOrWhiteSpace(pendingKey) && string.Equals(lastAutoSubmittedPendingKey, pendingKey, StringComparison.Ordinal))
+            if (
+                !string.IsNullOrWhiteSpace(pendingKey)
+                && string.Equals(lastAutoSubmittedPendingKey, pendingKey, StringComparison.Ordinal)
+            )
             {
                 LogVerboseWarning(
                     $"[RoyalRumbleShellController] Ignored duplicate ongoing auto-submit for key={pendingKey}"
@@ -733,8 +787,8 @@ public class RoyalRumbleShellController : MonoBehaviour
         }
 
         LogVerboseWarning(
-            $"[RoyalRumbleShellController] SubmitSelectedAttack accepted: slot={attackData.attackType}, attackId={attackData.attackId}, " +
-            $"attackName={GetAttackName(attackData.attackId)}, displayedCount={attackData.attackCount}, cardId={attackData.cardId}"
+            $"[RoyalRumbleShellController] SubmitSelectedAttack accepted: slot={attackData.attackType}, attackId={attackData.attackId}, "
+                + $"attackName={GetAttackName(attackData.attackId)}, displayedCount={attackData.attackCount}, cardId={attackData.cardId}"
         );
         StartCoroutine(SubmitAttackRoutine(attackData.attackType));
     }
@@ -744,20 +798,34 @@ public class RoyalRumbleShellController : MonoBehaviour
         isBusy = true;
         UpdateAttackButtons();
         SetStatus("Resolving battle...");
-        SelectedCardData playerSnapshotBefore = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
-        SelectedCardData enemySnapshotBefore = FindCard(currentSession?.enemyDeck?.cards, ActiveEnemyCardId);
+        SelectedCardData playerSnapshotBefore = FindCard(
+            currentSession?.playerDeck?.cards,
+            ActivePlayerCardId
+        );
+        SelectedCardData enemySnapshotBefore = FindCard(
+            currentSession?.enemyDeck?.cards,
+            ActiveEnemyCardId
+        );
         int attackId = GetAttackIdForSlot(playerSnapshotBefore, attackSlot);
-        int countBefore = playerSnapshotBefore != null ? GetRemainingCountForSlot(playerSnapshotBefore.cardId, attackSlot) : -1;
+        int countBefore =
+            playerSnapshotBefore != null
+                ? GetRemainingCountForSlot(playerSnapshotBefore.cardId, attackSlot)
+                : -1;
         PendingOngoingActionTurnData pendingBefore = GetPendingOngoingAction();
         LogVerboseWarning(
-            $"[RoyalRumbleShellController] SubmitAttackRoutine -> server: session={currentSession?.sessionId}, slot={attackSlot}, attackId={attackId}, " +
-            $"attackName={GetAttackName(attackId)}, countBefore={countBefore}, playerCard={DescribeCard(playerSnapshotBefore)}, " +
-            $"enemyCard={DescribeCard(enemySnapshotBefore)}, pendingBefore={DescribePendingAction(pendingBefore)}"
+            $"[RoyalRumbleShellController] SubmitAttackRoutine -> server: session={currentSession?.sessionId}, slot={attackSlot}, attackId={attackId}, "
+                + $"attackName={GetAttackName(attackId)}, countBefore={countBefore}, playerCard={DescribeCard(playerSnapshotBefore)}, "
+                + $"enemyCard={DescribeCard(enemySnapshotBefore)}, pendingBefore={DescribePendingAction(pendingBefore)}"
         );
 
-        Task<RoyalRumbleBattleEnvelopeDto> submitTask = turnAdapter != null
-            ? turnAdapter.SubmitAttackAsync(currentSession.sessionId, playerId, attackSlot)
-            : royalRumbleService.SubmitAttackAsync(currentSession.sessionId, playerId, attackSlot);
+        Task<RoyalRumbleBattleEnvelopeDto> submitTask =
+            turnAdapter != null
+                ? turnAdapter.SubmitAttackAsync(currentSession.sessionId, playerId, attackSlot)
+                : royalRumbleService.SubmitAttackAsync(
+                    currentSession.sessionId,
+                    playerId,
+                    attackSlot
+                );
         yield return new WaitUntil(() => submitTask.IsCompleted);
 
         if (this == null || isShuttingDown)
@@ -765,9 +833,8 @@ public class RoyalRumbleShellController : MonoBehaviour
             yield break;
         }
 
-        RoyalRumbleBattleEnvelopeDto envelope = submitTask.Status == TaskStatus.RanToCompletion
-            ? submitTask.Result
-            : null;
+        RoyalRumbleBattleEnvelopeDto envelope =
+            submitTask.Status == TaskStatus.RanToCompletion ? submitTask.Result : null;
 
         if (envelope?.battleResult == null)
         {
@@ -780,7 +847,11 @@ public class RoyalRumbleShellController : MonoBehaviour
         string previousPlayerSelectedCardId = ActivePlayerCardId;
         string previousEnemySelectedCardId = ActiveEnemyCardId;
 
-        if (battlePlayback != null && renderedPlayerActiveCard != null && renderedEnemyActiveCard != null)
+        if (
+            battlePlayback != null
+            && renderedPlayerActiveCard != null
+            && renderedEnemyActiveCard != null
+        )
         {
             yield return StartCoroutine(
                 battlePlayback.PlayBattleAsync(
@@ -800,12 +871,14 @@ public class RoyalRumbleShellController : MonoBehaviour
         }
         else
         {
-            Task<RoyalRumbleSessionEnvelopeDto> refreshTask = royalRumbleService.GetSessionAsync(currentSession.sessionId, playerId);
+            Task<RoyalRumbleSessionEnvelopeDto> refreshTask = royalRumbleService.GetSessionAsync(
+                currentSession.sessionId,
+                playerId
+            );
             yield return new WaitUntil(() => refreshTask.IsCompleted);
 
-            RoyalRumbleSessionEnvelopeDto refreshEnvelope = refreshTask.Status == TaskStatus.RanToCompletion
-                ? refreshTask.Result
-                : null;
+            RoyalRumbleSessionEnvelopeDto refreshEnvelope =
+                refreshTask.Status == TaskStatus.RanToCompletion ? refreshTask.Result : null;
             if (refreshEnvelope?.session != null)
             {
                 currentSession = refreshEnvelope.session;
@@ -819,15 +892,24 @@ public class RoyalRumbleShellController : MonoBehaviour
             yield break;
         }
 
-        SelectedCardData playerSnapshotAfter = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
-        SelectedCardData enemySnapshotAfter = FindCard(currentSession?.enemyDeck?.cards, ActiveEnemyCardId);
-        int countAfter = playerSnapshotAfter != null ? GetRemainingCountForSlot(playerSnapshotAfter.cardId, attackSlot) : -1;
+        SelectedCardData playerSnapshotAfter = FindCard(
+            currentSession?.playerDeck?.cards,
+            ActivePlayerCardId
+        );
+        SelectedCardData enemySnapshotAfter = FindCard(
+            currentSession?.enemyDeck?.cards,
+            ActiveEnemyCardId
+        );
+        int countAfter =
+            playerSnapshotAfter != null
+                ? GetRemainingCountForSlot(playerSnapshotAfter.cardId, attackSlot)
+                : -1;
         PendingOngoingActionTurnData pendingAfter = GetPendingOngoingAction();
         LogVerboseWarning(
-            $"[RoyalRumbleShellController] Server response applied: runStatus={envelope.runStatus}, runEnded={envelope.runEnded}, " +
-            $"playerNeedsReplacement={envelope.playerNeedsReplacement}, enemyNeedsReplacement={envelope.enemyNeedsReplacement}, " +
-            $"botAttack={envelope.botAttack?.attackSlot}/{envelope.botAttack?.attackId}, countAfter={countAfter}, " +
-            $"playerAfter={DescribeCard(playerSnapshotAfter)}, enemyAfter={DescribeCard(enemySnapshotAfter)}, pendingAfter={DescribePendingAction(pendingAfter)}"
+            $"[RoyalRumbleShellController] Server response applied: runStatus={envelope.runStatus}, runEnded={envelope.runEnded}, "
+                + $"playerNeedsReplacement={envelope.playerNeedsReplacement}, enemyNeedsReplacement={envelope.enemyNeedsReplacement}, "
+                + $"botAttack={envelope.botAttack?.attackSlot}/{envelope.botAttack?.attackId}, countAfter={countAfter}, "
+                + $"playerAfter={DescribeCard(playerSnapshotAfter)}, enemyAfter={DescribeCard(enemySnapshotAfter)}, pendingAfter={DescribePendingAction(pendingAfter)}"
         );
         LogVerboseWarning(
             $"[RoyalRumbleShellController] Battle summary: {DescribeBattleSummary(envelope.battleResult, previousPlayerSelectedCardId)}"
@@ -838,7 +920,9 @@ public class RoyalRumbleShellController : MonoBehaviour
         {
             lastAutoSubmittedPendingKey = null;
         }
-        else if (!string.Equals(nextPendingKey, lastAutoSubmittedPendingKey, StringComparison.Ordinal))
+        else if (
+            !string.Equals(nextPendingKey, lastAutoSubmittedPendingKey, StringComparison.Ordinal)
+        )
         {
             LogVerboseWarning(
                 $"[RoyalRumbleShellController] Ongoing action state advanced. previousKey={lastAutoSubmittedPendingKey ?? "none"}, nextKey={nextPendingKey}"
@@ -852,7 +936,8 @@ public class RoyalRumbleShellController : MonoBehaviour
 
     private void UpdateAttackButtons()
     {
-        bool attackPhaseActive = currentSession != null
+        bool attackPhaseActive =
+            currentSession != null
             && currentSession.status == "awaiting_attack"
             && !string.IsNullOrWhiteSpace(ActivePlayerCardId)
             && !isBusy
@@ -917,17 +1002,22 @@ public class RoyalRumbleShellController : MonoBehaviour
     private void RefreshPostBattleView(
         RoyalRumbleBattleEnvelopeDto envelope,
         string previousPlayerSelectedCardId,
-        string previousEnemySelectedCardId)
+        string previousEnemySelectedCardId
+    )
     {
         if (envelope?.runEnded == true || envelope?.playerNeedsReplacement == true)
         {
             ClearPendingOngoingState();
         }
 
-        bool needsRebuild = ShouldRebuildViewAfterBattle(envelope, previousPlayerSelectedCardId, previousEnemySelectedCardId);
+        bool needsRebuild = ShouldRebuildViewAfterBattle(
+            envelope,
+            previousPlayerSelectedCardId,
+            previousEnemySelectedCardId
+        );
         LogVerboseWarning(
-            $"[RoyalRumbleShellController] RefreshPostBattleView: rebuild={needsRebuild}, status={currentSession?.status}, previousPlayer={previousPlayerSelectedCardId}, " +
-            $"currentPlayer={ActivePlayerCardId}, previousEnemy={previousEnemySelectedCardId}, currentEnemy={ActiveEnemyCardId}"
+            $"[RoyalRumbleShellController] RefreshPostBattleView: rebuild={needsRebuild}, status={currentSession?.status}, previousPlayer={previousPlayerSelectedCardId}, "
+                + $"currentPlayer={ActivePlayerCardId}, previousEnemy={previousEnemySelectedCardId}, currentEnemy={ActiveEnemyCardId}"
         );
         if (needsRebuild)
         {
@@ -955,9 +1045,9 @@ public class RoyalRumbleShellController : MonoBehaviour
         if (before != after || recordSync != null)
         {
             LogVerboseWarning(
-                $"[RoyalRumbleShellController] RR record display sync: source={source}, before={before}, after={after}, " +
-                $"defeated={currentSession?.progress?.defeatedEnemyCount ?? 0}, bestSubmitted={currentSession?.progress?.bestSubmittedScore ?? 0}, " +
-                $"pending={currentSession?.progress?.pendingRecordScore ?? 0}, recordSync={recordSync?.score ?? 0}/pending={recordSync?.pending ?? false}"
+                $"[RoyalRumbleShellController] RR record display sync: source={source}, before={before}, after={after}, "
+                    + $"defeated={currentSession?.progress?.defeatedEnemyCount ?? 0}, bestSubmitted={currentSession?.progress?.bestSubmittedScore ?? 0}, "
+                    + $"pending={currentSession?.progress?.pendingRecordScore ?? 0}, recordSync={recordSync?.score ?? 0}/pending={recordSync?.pending ?? false}"
             );
         }
     }
@@ -965,23 +1055,30 @@ public class RoyalRumbleShellController : MonoBehaviour
     private bool ShouldRebuildViewAfterBattle(
         RoyalRumbleBattleEnvelopeDto envelope,
         string previousPlayerSelectedCardId,
-        string previousEnemySelectedCardId)
+        string previousEnemySelectedCardId
+    )
     {
         if (currentSession == null)
         {
             return true;
         }
 
-        if (envelope?.runEnded == true || envelope.playerNeedsReplacement || envelope.enemyNeedsReplacement)
+        if (
+            envelope?.runEnded == true
+            || envelope.playerNeedsReplacement
+            || envelope.enemyNeedsReplacement
+        )
         {
             return true;
         }
 
-        if (currentSession.status == "awaiting_player_card"
+        if (
+            currentSession.status == "awaiting_player_card"
             || currentSession.status == "awaiting_replacement"
             || currentSession.status == "won"
             || currentSession.status == "lost"
-            || currentSession.status == "abandoned")
+            || currentSession.status == "abandoned"
+        )
         {
             return true;
         }
@@ -991,8 +1088,16 @@ public class RoyalRumbleShellController : MonoBehaviour
             return true;
         }
 
-        return !string.Equals(ActivePlayerCardId, previousPlayerSelectedCardId, StringComparison.Ordinal)
-            || !string.Equals(ActiveEnemyCardId, previousEnemySelectedCardId, StringComparison.Ordinal);
+        return !string.Equals(
+                ActivePlayerCardId,
+                previousPlayerSelectedCardId,
+                StringComparison.Ordinal
+            )
+            || !string.Equals(
+                ActiveEnemyCardId,
+                previousEnemySelectedCardId,
+                StringComparison.Ordinal
+            );
     }
 
     private void RebuildShellView()
@@ -1002,10 +1107,14 @@ public class RoyalRumbleShellController : MonoBehaviour
         ClearRenderedCards();
 
         SelectedCardData currentEnemy = ResolveSelectedEnemyCard();
-        List<SelectedCardData> enemyHandCards = currentSession?.enemyDeck?.cards?
-            .Where(IsAlive)
-            .Where(card => !string.Equals(card.cardId, currentEnemy?.cardId, StringComparison.Ordinal))
-            .ToList() ?? new List<SelectedCardData>();
+        List<SelectedCardData> enemyHandCards =
+            currentSession
+                ?.enemyDeck?.cards?.Where(IsAlive)
+                .Where(card =>
+                    !string.Equals(card.cardId, currentEnemy?.cardId, StringComparison.Ordinal)
+                )
+                .ToList()
+            ?? new List<SelectedCardData>();
 
         foreach (SelectedCardData cardData in enemyHandCards)
         {
@@ -1029,7 +1138,10 @@ public class RoyalRumbleShellController : MonoBehaviour
 
     private void RestorePlayerActiveOrHand()
     {
-        SelectedCardData selectedPlayer = FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId);
+        SelectedCardData selectedPlayer = FindCard(
+            currentSession?.playerDeck?.cards,
+            ActivePlayerCardId
+        );
         if (selectedPlayer == null)
         {
             RenderPlayerHand();
@@ -1076,9 +1188,13 @@ public class RoyalRumbleShellController : MonoBehaviour
                 continue;
             }
 
-            RoyalRumbleSelectableCard selectable = handCard.gameObject.GetComponent<RoyalRumbleSelectableCard>() ?? handCard.gameObject.AddComponent<RoyalRumbleSelectableCard>();
+            RoyalRumbleSelectableCard selectable =
+                handCard.gameObject.GetComponent<RoyalRumbleSelectableCard>()
+                ?? handCard.gameObject.AddComponent<RoyalRumbleSelectableCard>();
             selectable.Initialize(this, handCard);
-            RoyalRumbleCardDrag dragHandler = handCard.gameObject.GetComponent<RoyalRumbleCardDrag>() ?? handCard.gameObject.AddComponent<RoyalRumbleCardDrag>();
+            RoyalRumbleCardDrag dragHandler =
+                handCard.gameObject.GetComponent<RoyalRumbleCardDrag>()
+                ?? handCard.gameObject.AddComponent<RoyalRumbleCardDrag>();
             dragHandler.Initialize(this);
             handCard.isDragable = CanDragCard(handCard);
             renderedPlayerHandCards.Add(handCard);
@@ -1088,8 +1204,8 @@ public class RoyalRumbleShellController : MonoBehaviour
     private void SyncActiveCardsFromSession()
     {
         LogVerboseWarning(
-            $"[RoyalRumbleShellController] Applying lightweight RR sync: player={DescribeCard(FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId))}, " +
-            $"enemy={DescribeCard(FindCard(currentSession?.enemyDeck?.cards, ActiveEnemyCardId))}"
+            $"[RoyalRumbleShellController] Applying lightweight RR sync: player={DescribeCard(FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId))}, "
+                + $"enemy={DescribeCard(FindCard(currentSession?.enemyDeck?.cards, ActiveEnemyCardId))}"
         );
         ApplyCardSnapshotToRenderedCard(
             FindCard(currentSession?.playerDeck?.cards, ActivePlayerCardId),
@@ -1104,7 +1220,11 @@ public class RoyalRumbleShellController : MonoBehaviour
         );
     }
 
-    private void ApplyCardSnapshotToRenderedCard(SelectedCardData snapshot, Kard card, HealthBar lifeBar)
+    private void ApplyCardSnapshotToRenderedCard(
+        SelectedCardData snapshot,
+        Kard card,
+        HealthBar lifeBar
+    )
     {
         if (snapshot == null || card == null)
         {
@@ -1196,7 +1316,10 @@ public class RoyalRumbleShellController : MonoBehaviour
             bool hasIcon = false;
             foreach (Transform child in card.effectIconContainer)
             {
-                if (child != null && child.name.StartsWith(effectName + "Icon", StringComparison.Ordinal))
+                if (
+                    child != null
+                    && child.name.StartsWith(effectName + "Icon", StringComparison.Ordinal)
+                )
                 {
                     hasIcon = true;
                     break;
@@ -1237,11 +1360,11 @@ public class RoyalRumbleShellController : MonoBehaviour
         if (envelope.runEnded)
         {
             ClearPendingOngoingState();
-            SetStatus(envelope.runStatus == "won"
-                ? "You won the Royal Rumble!"
-                : envelope.runStatus == "lost"
-                    ? "You lost the Royal Rumble!"
-                    : "Royal Rumble ended.");
+            SetStatus(
+                envelope.runStatus == "won" ? "You won the Royal Rumble!"
+                : envelope.runStatus == "lost" ? "You lost the Royal Rumble!"
+                : "Royal Rumble ended."
+            );
             return;
         }
 
@@ -1261,7 +1384,12 @@ public class RoyalRumbleShellController : MonoBehaviour
         SetStatus("Choose attack!");
     }
 
-    private void UpdateAttackButtonDisplay(Button button, TMP_Text nameText, TMP_Text countText, int attackSlot)
+    private void UpdateAttackButtonDisplay(
+        Button button,
+        TMP_Text nameText,
+        TMP_Text countText,
+        int attackSlot
+    )
     {
         if (button == null)
         {
@@ -1281,7 +1409,7 @@ public class RoyalRumbleShellController : MonoBehaviour
             2 => selected.attack2,
             3 => selected.attack3,
             4 => selected.attack4,
-            _ => 0
+            _ => 0,
         };
 
         if (attackId <= 0)
@@ -1310,16 +1438,21 @@ public class RoyalRumbleShellController : MonoBehaviour
             count1 = Mathf.Max(0, GetRemainingCountForSlot(selected.cardId, 1)),
             count2 = Mathf.Max(0, GetRemainingCountForSlot(selected.cardId, 2)),
             count3 = Mathf.Max(0, GetRemainingCountForSlot(selected.cardId, 3)),
-            count4 = Mathf.Max(0, GetRemainingCountForSlot(selected.cardId, 4))
+            count4 = Mathf.Max(0, GetRemainingCountForSlot(selected.cardId, 4)),
         };
     }
 
     private int GetRemainingCountForSlot(string cardId, int attackSlot)
     {
-        if (string.IsNullOrWhiteSpace(cardId)
+        if (
+            string.IsNullOrWhiteSpace(cardId)
             || currentSession?.attackCounts?.player == null
-            || !currentSession.attackCounts.player.TryGetValue(cardId, out RoyalRumbleAttackCountEntryDto counts)
-            || counts == null)
+            || !currentSession.attackCounts.player.TryGetValue(
+                cardId,
+                out RoyalRumbleAttackCountEntryDto counts
+            )
+            || counts == null
+        )
         {
             return -1;
         }
@@ -1330,24 +1463,37 @@ public class RoyalRumbleShellController : MonoBehaviour
             2 => counts.count2,
             3 => counts.count3,
             4 => counts.count4,
-            _ => -1
+            _ => -1,
         };
     }
 
     private void SetAttackButtonsInteractable(bool enabled)
     {
-        if (attackButton1 != null) attackButton1.interactable = enabled;
-        if (attackButton2 != null) attackButton2.interactable = enabled;
-        if (attackButton3 != null) attackButton3.interactable = enabled;
-        if (attackButton4 != null) attackButton4.interactable = enabled;
+        if (attackButton1 != null)
+            attackButton1.interactable = enabled;
+        if (attackButton2 != null)
+            attackButton2.interactable = enabled;
+        if (attackButton3 != null)
+            attackButton3.interactable = enabled;
+        if (attackButton4 != null)
+            attackButton4.interactable = enabled;
     }
 
-    private void SetAttackButtonsInteractable(bool button1Enabled, bool button2Enabled, bool button3Enabled, bool button4Enabled)
+    private void SetAttackButtonsInteractable(
+        bool button1Enabled,
+        bool button2Enabled,
+        bool button3Enabled,
+        bool button4Enabled
+    )
     {
-        if (attackButton1 != null) attackButton1.interactable = button1Enabled;
-        if (attackButton2 != null) attackButton2.interactable = button2Enabled;
-        if (attackButton3 != null) attackButton3.interactable = button3Enabled;
-        if (attackButton4 != null) attackButton4.interactable = button4Enabled;
+        if (attackButton1 != null)
+            attackButton1.interactable = button1Enabled;
+        if (attackButton2 != null)
+            attackButton2.interactable = button2Enabled;
+        if (attackButton3 != null)
+            attackButton3.interactable = button3Enabled;
+        if (attackButton4 != null)
+            attackButton4.interactable = button4Enabled;
     }
 
     private void SetConfirmButtonState(bool enabled)
@@ -1375,9 +1521,16 @@ public class RoyalRumbleShellController : MonoBehaviour
         attackButton3CountText ??= FindAttackCountText(attackButton3);
         attackButton4CountText ??= FindAttackCountText(attackButton4);
 
-        if (attackButton1Text == null || attackButton2Text == null || attackButton3Text == null || attackButton4Text == null)
+        if (
+            attackButton1Text == null
+            || attackButton2Text == null
+            || attackButton3Text == null
+            || attackButton4Text == null
+        )
         {
-            Debug.LogWarning("[RoyalRumbleShellController] Some RR attack name text references were not resolved automatically.");
+            Debug.LogWarning(
+                "[RoyalRumbleShellController] Some RR attack name text references were not resolved automatically."
+            );
         }
 
         CacheDefaultAttackButtonTexts();
@@ -1385,17 +1538,30 @@ public class RoyalRumbleShellController : MonoBehaviour
 
     private void CacheDefaultAttackButtonTexts()
     {
-        defaultAttackButton1Name ??= attackButton1Text != null ? attackButton1Text.text : string.Empty;
-        defaultAttackButton2Name ??= attackButton2Text != null ? attackButton2Text.text : string.Empty;
-        defaultAttackButton3Name ??= attackButton3Text != null ? attackButton3Text.text : string.Empty;
-        defaultAttackButton4Name ??= attackButton4Text != null ? attackButton4Text.text : string.Empty;
-        defaultAttackButton1Count ??= attackButton1CountText != null ? attackButton1CountText.text : string.Empty;
-        defaultAttackButton2Count ??= attackButton2CountText != null ? attackButton2CountText.text : string.Empty;
-        defaultAttackButton3Count ??= attackButton3CountText != null ? attackButton3CountText.text : string.Empty;
-        defaultAttackButton4Count ??= attackButton4CountText != null ? attackButton4CountText.text : string.Empty;
+        defaultAttackButton1Name ??=
+            attackButton1Text != null ? attackButton1Text.text : string.Empty;
+        defaultAttackButton2Name ??=
+            attackButton2Text != null ? attackButton2Text.text : string.Empty;
+        defaultAttackButton3Name ??=
+            attackButton3Text != null ? attackButton3Text.text : string.Empty;
+        defaultAttackButton4Name ??=
+            attackButton4Text != null ? attackButton4Text.text : string.Empty;
+        defaultAttackButton1Count ??=
+            attackButton1CountText != null ? attackButton1CountText.text : string.Empty;
+        defaultAttackButton2Count ??=
+            attackButton2CountText != null ? attackButton2CountText.text : string.Empty;
+        defaultAttackButton3Count ??=
+            attackButton3CountText != null ? attackButton3CountText.text : string.Empty;
+        defaultAttackButton4Count ??=
+            attackButton4CountText != null ? attackButton4CountText.text : string.Empty;
     }
 
-    private void RestoreAttackButtonDefaults(int attackSlot, Button button, TMP_Text nameText, TMP_Text countText)
+    private void RestoreAttackButtonDefaults(
+        int attackSlot,
+        Button button,
+        TMP_Text nameText,
+        TMP_Text countText
+    )
     {
         string defaultName = attackSlot switch
         {
@@ -1403,7 +1569,7 @@ public class RoyalRumbleShellController : MonoBehaviour
             2 => defaultAttackButton2Name,
             3 => defaultAttackButton3Name,
             4 => defaultAttackButton4Name,
-            _ => string.Empty
+            _ => string.Empty,
         };
 
         string defaultCount = attackSlot switch
@@ -1412,7 +1578,7 @@ public class RoyalRumbleShellController : MonoBehaviour
             2 => defaultAttackButton2Count,
             3 => defaultAttackButton3Count,
             4 => defaultAttackButton4Count,
-            _ => string.Empty
+            _ => string.Empty,
         };
 
         SetAttackNameText(nameText, defaultName);
@@ -1437,7 +1603,9 @@ public class RoyalRumbleShellController : MonoBehaviour
 
     private string GetAttackName(int attackId)
     {
-        return attackDescriptions != null ? attackDescriptions.GetAttackName(attackId) : $"Attack {attackId}";
+        return attackDescriptions != null
+            ? attackDescriptions.GetAttackName(attackId)
+            : $"Attack {attackId}";
     }
 
     private static Button FindButtonByName(string objectName)
@@ -1471,7 +1639,13 @@ public class RoyalRumbleShellController : MonoBehaviour
                 continue;
             }
 
-            if (string.Equals(text.gameObject.name, "AttackCountText", System.StringComparison.Ordinal))
+            if (
+                string.Equals(
+                    text.gameObject.name,
+                    "AttackCountText",
+                    System.StringComparison.Ordinal
+                )
+            )
             {
                 continue;
             }
@@ -1526,7 +1700,8 @@ public class RoyalRumbleShellController : MonoBehaviour
 
     private static IEnumerable<Player> FindPlayers(bool wantEnemy)
     {
-        return FindObjectsByType<Player>(FindObjectsSortMode.None).Where(player => player != null && player.isEnemy == wantEnemy);
+        return FindObjectsByType<Player>(FindObjectsSortMode.None)
+            .Where(player => player != null && player.isEnemy == wantEnemy);
     }
 
     private void SetStatus(string message)
@@ -1547,7 +1722,10 @@ public class RoyalRumbleShellController : MonoBehaviour
         return $"{pendingAction.actionType}/attackId={pendingAction.sourceAttackId}/turns={pendingAction.turnsRemaining}/target={pendingAction.targetCardId}";
     }
 
-    private static string BuildPendingActionKey(string playerCardId, PendingOngoingActionTurnData pendingAction)
+    private static string BuildPendingActionKey(
+        string playerCardId,
+        PendingOngoingActionTurnData pendingAction
+    )
     {
         if (pendingAction == null)
         {
@@ -1564,8 +1742,8 @@ public class RoyalRumbleShellController : MonoBehaviour
             return "none";
         }
 
-        return $"{card.name}({card.cardId}) HP={card.health}/{card.maxHealth} ATK_IDS=[{card.attack1},{card.attack2},{card.attack3},{card.attack4}] " +
-               $"EFFECTS={DescribeEffects(card.effects)} ONGOING={DescribeOngoingActions(card.ongoingActions)}";
+        return $"{card.name}({card.cardId}) HP={card.health}/{card.maxHealth} ATK_IDS=[{card.attack1},{card.attack2},{card.attack3},{card.attack4}] "
+            + $"EFFECTS={DescribeEffects(card.effects)} ONGOING={DescribeOngoingActions(card.ongoingActions)}";
     }
 
     private static string DescribeEffects(SelectedCardData.EffectData[] effects)
@@ -1575,9 +1753,16 @@ public class RoyalRumbleShellController : MonoBehaviour
             return "[]";
         }
 
-        return "[" + string.Join(", ", effects
-            .Where(effect => effect != null)
-            .Select(effect => $"{effect.type}(dur={effect.duration},turn={effect.appliedTurn},value={effect.value})")) + "]";
+        return "["
+            + string.Join(
+                ", ",
+                effects
+                    .Where(effect => effect != null)
+                    .Select(effect =>
+                        $"{effect.type}(dur={effect.duration},turn={effect.appliedTurn},value={effect.value})"
+                    )
+            )
+            + "]";
     }
 
     private static string DescribeOngoingActions(SelectedCardData.OngoingActionData[] actions)
@@ -1587,10 +1772,16 @@ public class RoyalRumbleShellController : MonoBehaviour
             return "[]";
         }
 
-        return "[" + string.Join(", ", actions
-            .Where(action => action != null)
-            .Select(action =>
-                $"{action.type}(attackId={action.sourceAttackId},phase={action.phase},turns={action.turnsRemaining},target={action.targetCardId ?? "none"})")) + "]";
+        return "["
+            + string.Join(
+                ", ",
+                actions
+                    .Where(action => action != null)
+                    .Select(action =>
+                        $"{action.type}(attackId={action.sourceAttackId},phase={action.phase},turns={action.turnsRemaining},target={action.targetCardId ?? "none"})"
+                    )
+            )
+            + "]";
     }
 
     private static int GetAttackIdForSlot(SelectedCardData selected, int attackSlot)
@@ -1606,7 +1797,7 @@ public class RoyalRumbleShellController : MonoBehaviour
             2 => selected.attack2,
             3 => selected.attack3,
             4 => selected.attack4,
-            _ => 0
+            _ => 0,
         };
     }
 
@@ -1629,7 +1820,11 @@ public class RoyalRumbleShellController : MonoBehaviour
                 return;
             }
 
-            bool isPlayerAttack = string.Equals(attacker.cardId, playerCardId, StringComparison.Ordinal);
+            bool isPlayerAttack = string.Equals(
+                attacker.cardId,
+                playerCardId,
+                StringComparison.Ordinal
+            );
             if (isPlayerAttack)
             {
                 playerDamageDealt += attacker.damageDealt;

@@ -33,7 +33,9 @@ public static class SceneLoadingOverlay
         {
             if (isVisible && !warnedMissingOverlay)
             {
-                Debug.LogWarning("[SceneLoadingOverlay] Missing LoadingOverlayView in the active scene.");
+                Debug.LogWarning(
+                    "[SceneLoadingOverlay] Missing LoadingOverlayView in the active scene."
+                );
                 warnedMissingOverlay = true;
             }
 
@@ -65,7 +67,11 @@ public static class SceneLoadingOverlay
         for (int i = 0; i < views.Length; i++)
         {
             LoadingOverlayView candidate = views[i];
-            if (candidate != null && candidate.gameObject != null && candidate.gameObject.scene == activeScene)
+            if (
+                candidate != null
+                && candidate.gameObject != null
+                && candidate.gameObject.scene == activeScene
+            )
             {
                 return candidate;
             }
