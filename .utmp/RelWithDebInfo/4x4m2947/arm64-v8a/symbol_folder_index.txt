@@ -1,1 +1,0 @@
-D:\Megatresk\MegaTreskKarty\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\build\intermediates\cxx\RelWithDebInfo\4x4m2947\obj\arm64-v8a

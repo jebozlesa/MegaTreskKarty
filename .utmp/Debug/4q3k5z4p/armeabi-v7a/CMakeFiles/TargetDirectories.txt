@@ -1,5 +1,0 @@
-D:/Megatresk/MegaTreskKarty/.utmp/Debug/4q3k5z4p/armeabi-v7a/CMakeFiles/edit_cache.dir
-D:/Megatresk/MegaTreskKarty/.utmp/Debug/4q3k5z4p/armeabi-v7a/CMakeFiles/rebuild_cache.dir
-D:/Megatresk/MegaTreskKarty/.utmp/Debug/4q3k5z4p/armeabi-v7a/FramePacing/CMakeFiles/swappywrapper.dir
-D:/Megatresk/MegaTreskKarty/.utmp/Debug/4q3k5z4p/armeabi-v7a/FramePacing/CMakeFiles/edit_cache.dir
-D:/Megatresk/MegaTreskKarty/.utmp/Debug/4q3k5z4p/armeabi-v7a/FramePacing/CMakeFiles/rebuild_cache.dir
