@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
@@ -86,5 +87,54 @@ public class MultiplayerLobbyUiRegressionTests
             .GetProperty("text", BindingFlags.Instance | BindingFlags.Public);
         Assert.IsNotNull(property, $"Property text was not found on {component.GetType().Name}.");
         return property.GetValue(component) as string;
+    }
+}
+
+public class LeaderboardSceneRegressionTests
+{
+    [Test]
+    public void PlayFabManagerLeaderboard_IsSceneLocal()
+    {
+        string source = ReadSource("Leaderboard", "PlayFabManagerLeaderboard.cs");
+
+        StringAssert.DoesNotContain(
+            "DontDestroyOnLoad",
+            source,
+            "Leaderboard scene manager must stay scene-local; DontDestroyOnLoad only works on root objects."
+        );
+        StringAssert.DoesNotContain(
+            "static PlayFabManagerLeaderboard Instance",
+            source,
+            "Leaderboard scene manager should not own a persistent singleton instance."
+        );
+    }
+
+    [Test]
+    public void RecordsLoaderOwnsLeaderboardRequestAfterSubscribing()
+    {
+        string source = ReadSource("Leaderboard", "RecordsLoader.cs");
+
+        StringAssert.Contains(
+            "OnLeaderboardLoaded +=",
+            source,
+            "RecordsLoader should subscribe before requesting leaderboard data."
+        );
+        StringAssert.Contains(
+            "GetLeaderboard()",
+            source,
+            "RecordsLoader should request leaderboard data after it is ready to receive the event."
+        );
+        StringAssert.Contains(
+            "OnLeaderboardLoaded -=",
+            source,
+            "RecordsLoader should unsubscribe when destroyed."
+        );
+    }
+
+    private static string ReadSource(params string[] relativeParts)
+    {
+        string path = Path.Combine(Application.dataPath, "Scripts", Path.Combine(relativeParts));
+        Assert.IsTrue(File.Exists(path), $"{Path.GetFileName(path)} source was not found.");
+        return File.ReadAllText(path);
     }
 }

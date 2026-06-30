@@ -6,36 +6,12 @@ using PlayFab.ClientModels;
 
 public class PlayFabManagerLeaderboard : MonoBehaviour
 {
-    public static PlayFabManagerLeaderboard Instance { get; private set; }
-
     public event Action<List<PlayerLeaderboardEntry>> OnLeaderboardLoaded;
     public string loggedInPlayerId;
 
-    private void Awake()
-    {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-
-        if (PlayFabManagerLogin.Instance != null)
-        {
-            Debug.Log("PlayFabManagerLeaderboard: Logged in player ID: " + PlayFabManagerLogin.Instance.LoggedInPlayerId);
-            GetLeaderboard();
-        }
-        else
-        {
-            Debug.LogError("PlayFabManagerLeaderboard: PlayFabManagerLogin instance is null.");
-        }
-    }
-
     public void SendLeaderboard(int score)
     {
+        loggedInPlayerId = ResolveLoggedInPlayerId();
         if (string.IsNullOrEmpty(loggedInPlayerId))
         {
             Debug.LogError("Player is not logged in.");
@@ -63,6 +39,7 @@ public class PlayFabManagerLeaderboard : MonoBehaviour
 
     public void GetLeaderboard()
     {
+        Debug.Log("[PlayFabManagerLeaderboard] Requesting RoyalRumble leaderboard.");
         var request = new GetLeaderboardRequest
         {
             StatisticName = "RoyalRumble",
@@ -78,11 +55,23 @@ public class PlayFabManagerLeaderboard : MonoBehaviour
 
     void OnLeaderboardGet(GetLeaderboardResult result)
     {
-        OnLeaderboardLoaded?.Invoke(result.Leaderboard);
+        List<PlayerLeaderboardEntry> leaderboard =
+            result?.Leaderboard ?? new List<PlayerLeaderboardEntry>();
+        Debug.Log(
+            $"[PlayFabManagerLeaderboard] RoyalRumble leaderboard loaded: records={leaderboard.Count}."
+        );
+        OnLeaderboardLoaded?.Invoke(leaderboard);
     }
 
     void OnError(PlayFabError error)
     {
         Debug.LogError("Error with PlayFab leaderboard: " + error.GenerateErrorReport());
+    }
+
+    private static string ResolveLoggedInPlayerId()
+    {
+        return PlayFabManagerLogin.Instance != null
+            ? PlayFabManagerLogin.Instance.LoggedInPlayerId
+            : string.Empty;
     }
 }
