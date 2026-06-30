@@ -180,7 +180,12 @@ public class SiegeOngoingActionTests
         Type listType = typeof(List<>).MakeGenericType(battleStepType);
         object[] args = { battleResult, null, null };
 
-        MethodInfo tryBuildMethod = builderType.GetMethod("TryBuild", BindingFlags.Public | BindingFlags.Static);
+        MethodInfo tryBuildMethod = builderType.GetMethod(
+            "TryBuild",
+            BindingFlags.Public | BindingFlags.Static,
+            null,
+            new[] { typeof(Dictionary<string, object>), listType.MakeByRefType(), typeof(string).MakeByRefType() },
+            null);
         Assert.IsNotNull(tryBuildMethod, "Method BattleTimelineBuilder.TryBuild was not found.");
 
         bool ok = (bool)tryBuildMethod.Invoke(null, args);

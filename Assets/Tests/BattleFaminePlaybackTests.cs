@@ -16,12 +16,12 @@ public class BattleFaminePlaybackTests
     [Test]
     public void BattleResultProcessor_HandlesFamineHealStepsBeforeAttacks()
     {
-        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs");
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
         StringAssert.Contains("case BattleStepType.Heal:", source);
         StringAssert.Contains("string.Equals(step.Source, \"famine\", StringComparison.OrdinalIgnoreCase)", source);
         StringAssert.Contains("animations.PlayFamineContinueAnimation(target.transform)", source);
         StringAssert.Contains("BattleValuePlayback.PlayHeal(", source);
-        StringAssert.Contains("ShowDialog(step.Note)", source);
+        StringAssert.Contains("ShowDialog(context, step.Note)", source);
     }
     [Test]
     public void BattleEffectPlayback_PlaysFamineEndAnimationOnEffectRemoval()

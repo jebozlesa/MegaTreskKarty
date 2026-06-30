@@ -7,11 +7,11 @@ using UnityEngine;
 public class BattleSharedDamagePlaybackTests
 {
     [Test]
-    public void BattleResultProcessor_DoesNotContainSharedDamageFallbackAfterHandlerExecution()
+    public void BattleTimelinePlayback_DoesNotContainSharedDamageFallbackAfterHandlerExecution()
     {
-        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs");
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
 
-        StringAssert.Contains("yield return AttackRegistry.ExecuteOrFallback(attackId, context);", source);
+        StringAssert.Contains("yield return AttackRegistry.ExecuteOrFallback(attackId, attackContext);", source);
         Assert.IsFalse(source.Contains("defender.health == defenderHealthBeforeAttack"));
         Assert.IsFalse(source.Contains("[AttackPlayback] Applying shared damage fallback"));
         Assert.IsFalse(source.Contains("private IEnumerator PlayTimelineDamageAnimation("));
@@ -97,25 +97,29 @@ public class BattleSharedDamagePlaybackTests
     }
 
     [Test]
-    public void BattleResultProcessor_UsesSharedStatPlaybackService()
+    public void BattleTimelinePlayback_UsesSharedStatPlaybackService()
     {
-        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs");
-        StringAssert.Contains("BattleStatPlayback.PlayTimelineStatChange(", source);
-        StringAssert.Contains("BattleStatPlayback.PlayCardStatChanges(", source);
-        Assert.IsFalse(source.Contains("GetStatApplier("));
-        Assert.IsFalse(source.Contains("BattleStatApplier"));
+        string timelineSource = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
+        string statSource = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleStatPlayback.cs");
+
+        StringAssert.Contains("BattleStatPlayback.PlayTimelineStatChange(", timelineSource);
+        StringAssert.Contains("public static IEnumerator PlayCardStatChanges(", statSource);
+        Assert.IsFalse(timelineSource.Contains("GetStatApplier("));
+        Assert.IsFalse(timelineSource.Contains("BattleStatApplier"));
     }
 
     [Test]
-    public void BattleResultProcessor_UsesSharedEffectPlaybackService()
+    public void BattleTimelinePlayback_UsesSharedEffectPlaybackService()
     {
-        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs");
-        StringAssert.Contains("BattleEffectPlayback.AddEffectIconOnly(", source);
-        StringAssert.Contains("BattleEffectPlayback.RemoveEffectIconOnly(", source);
-        StringAssert.Contains("BattleEffectPlayback.DisplayMultipleEffects(", source);
-        StringAssert.Contains("BattleEffectPlayback.GetEffectName(", source);
-        Assert.IsFalse(source.Contains("GetEffectVisuals("));
-        Assert.IsFalse(source.Contains("BattleEffectVisuals"));
+        string timelineSource = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
+        string effectSource = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleEffectPlayback.cs");
+
+        StringAssert.Contains("BattleEffectPlayback.AddEffectIconOnly(", timelineSource);
+        StringAssert.Contains("BattleEffectPlayback.RemoveEffectIconOnly(", timelineSource);
+        StringAssert.Contains("public static IEnumerator DisplayMultipleEffects(", effectSource);
+        StringAssert.Contains("public static string GetEffectName(", effectSource);
+        Assert.IsFalse(timelineSource.Contains("GetEffectVisuals("));
+        Assert.IsFalse(timelineSource.Contains("BattleEffectVisuals"));
     }
 
     [Test]

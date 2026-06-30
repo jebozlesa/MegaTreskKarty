@@ -25,7 +25,8 @@ public class LoadingOverlayRegressionTests
     public void Show_MakesOverlayVisibleWithoutNeedingSceneObjectActivation()
     {
         GameObject overlay = CreateOverlay("WAIT!!!", isActive: true, out _);
-        CanvasGroup canvasGroup = overlay.AddComponent<CanvasGroup>();
+        CanvasGroup canvasGroup = overlay.GetComponent<CanvasGroup>();
+        Assert.IsNotNull(canvasGroup, "LoadingOverlayView should require a CanvasGroup.");
         canvasGroup.alpha = 0f;
         canvasGroup.blocksRaycasts = false;
 
@@ -40,7 +41,8 @@ public class LoadingOverlayRegressionTests
     public void Hide_MakesOverlayTransparentWithoutDeactivatingGameObject()
     {
         GameObject overlay = CreateOverlay("WAIT!!!", isActive: true, out _);
-        CanvasGroup canvasGroup = overlay.AddComponent<CanvasGroup>();
+        CanvasGroup canvasGroup = overlay.GetComponent<CanvasGroup>();
+        Assert.IsNotNull(canvasGroup, "LoadingOverlayView should require a CanvasGroup.");
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
 
