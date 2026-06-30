@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -21,23 +22,33 @@ public class LoadingOverlayRegressionTests
     }
 
     [Test]
-    public void Show_ActivatesInactiveOverlayInActiveScene()
+    public void Show_MakesOverlayVisibleWithoutNeedingSceneObjectActivation()
     {
-        GameObject overlay = CreateOverlay("WAIT!!!", isActive: false, out _);
+        GameObject overlay = CreateOverlay("WAIT!!!", isActive: true, out _);
+        CanvasGroup canvasGroup = overlay.AddComponent<CanvasGroup>();
+        canvasGroup.alpha = 0f;
+        canvasGroup.blocksRaycasts = false;
 
         InvokeOverlayMethod("Show");
 
         Assert.IsTrue(overlay.activeSelf);
+        Assert.AreEqual(1f, canvasGroup.alpha);
+        Assert.IsTrue(canvasGroup.blocksRaycasts);
     }
 
     [Test]
-    public void Hide_DeactivatesActiveOverlayInActiveScene()
+    public void Hide_MakesOverlayTransparentWithoutDeactivatingGameObject()
     {
         GameObject overlay = CreateOverlay("WAIT!!!", isActive: true, out _);
+        CanvasGroup canvasGroup = overlay.AddComponent<CanvasGroup>();
+        canvasGroup.alpha = 1f;
+        canvasGroup.blocksRaycasts = true;
 
         InvokeOverlayMethod("Hide");
 
-        Assert.IsFalse(overlay.activeSelf);
+        Assert.IsTrue(overlay.activeSelf);
+        Assert.AreEqual(0f, canvasGroup.alpha);
+        Assert.IsFalse(canvasGroup.blocksRaycasts);
     }
 
     [Test]
@@ -51,16 +62,39 @@ public class LoadingOverlayRegressionTests
     }
 
     [Test]
-    public void LoadingPrefabYaml_UsesExplicitMessageReference_AndDisablesRaycastTargets()
+    public void LoadingPrefabYaml_StartsActiveButHidden_UsesExplicitMessageReference_AndDisablesRaycastTargets()
     {
         string prefabPath = Path.Combine(Application.dataPath, "Prefabs", "Loading.prefab");
         Assert.IsTrue(File.Exists(prefabPath), "Loading prefab file was not found.");
 
         string yaml = File.ReadAllText(prefabPath);
 
+        StringAssert.Contains("m_IsActive: 1", ReadRootGameObjectYaml(yaml));
+        StringAssert.Contains("--- !u!225", yaml);
+        StringAssert.Contains("m_Alpha: 0", yaml);
+        StringAssert.Contains("m_BlocksRaycasts: 0", yaml);
+        StringAssert.Contains("playOnEnable: 0", yaml);
         StringAssert.Contains("guid: 2c4f4e91d41b4f7d9b0d5b9c3a5df321", yaml);
         StringAssert.Contains("messageText: {fileID: 3679588370953756678}", yaml);
         StringAssert.DoesNotContain("m_RaycastTarget: 1", yaml);
+    }
+
+    [Test]
+    public void SceneYaml_DoesNotOverrideLoadingPrefabRootInactive()
+    {
+        string scenesPath = Path.Combine(Application.dataPath, "Scenes");
+        Assert.IsTrue(Directory.Exists(scenesPath), "Scenes directory was not found.");
+
+        string inactiveOverridePattern =
+            @"target: \{fileID: 561146073754149366, guid: 545bec8b424f92f4aba22e383ec6f895, type: 3\}\s+propertyPath: m_IsActive\s+value: 0";
+        foreach (string scenePath in Directory.GetFiles(scenesPath, "*.unity"))
+        {
+            string yaml = File.ReadAllText(scenePath);
+            Assert.IsFalse(
+                Regex.IsMatch(yaml, inactiveOverridePattern),
+                $"{Path.GetFileName(scenePath)} overrides the Loading prefab root inactive."
+            );
+        }
     }
 
     private GameObject CreateOverlay(string initialMessage, bool isActive, out Component label)
@@ -110,6 +144,13 @@ public class LoadingOverlayRegressionTests
     private static Type FindAssemblyType(string typeName)
     {
         return System.Type.GetType($"{typeName}, Assembly-CSharp");
+    }
+
+    private static string ReadRootGameObjectYaml(string yaml)
+    {
+        Match match = Regex.Match(yaml, @"--- !u!1 &561146073754149366(?<body>.*?)(?=--- !u!)", RegexOptions.Singleline);
+        Assert.IsTrue(match.Success, "Loading prefab root GameObject YAML block was not found.");
+        return match.Groups["body"].Value;
     }
 
     private static string ReadTextProperty(Component component)

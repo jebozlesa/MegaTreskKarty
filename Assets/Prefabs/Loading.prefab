@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5861415626099299008}
   - component: {fileID: 4155522201787846846}
   - component: {fileID: 1988942038404997407}
+  - component: {fileID: 6149012741411528120}
   - component: {fileID: 7481290845612039471}
   m_Layer: 0
   m_Name: Loading
@@ -18,7 +19,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &5861415626099299008
 RectTransform:
   m_ObjectHideFlags: 0
@@ -49,6 +50,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 561146073754149366}
   m_CullTransparentMesh: 1
+--- !u!225 &6149012741411528120
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 561146073754149366}
+  m_Enabled: 1
+  m_Alpha: 0
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!114 &1988942038404997407
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -260,7 +273,7 @@ MonoBehaviour:
   targetImage: {fileID: 0}
   resourcesPath: Loading/Characters
   frameDurationSeconds: 0.14
-  playOnEnable: 1
+  playOnEnable: 0
 --- !u!1 &3255937430888321575
 GameObject:
   m_ObjectHideFlags: 0

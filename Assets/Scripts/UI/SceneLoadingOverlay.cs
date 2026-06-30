@@ -43,7 +43,7 @@ public static class SceneLoadingOverlay
         }
 
         warnedMissingOverlay = false;
-        overlay.gameObject.SetActive(isVisible);
+        overlay.SetVisible(isVisible);
     }
 
     private static LoadingOverlayView FindOverlayViewInActiveScene()

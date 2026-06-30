@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 
+[RequireComponent(typeof(CanvasGroup))]
 public sealed class LoadingOverlayView : MonoBehaviour
 {
     public static LoadingOverlayView Current { get; private set; }
@@ -8,9 +9,14 @@ public sealed class LoadingOverlayView : MonoBehaviour
     [SerializeField]
     private TMP_Text messageText;
 
+    private CanvasGroup canvasGroup;
+    private LoadingCharacterRandomDance[] characterDances;
+
     private void Awake()
     {
         Current = this;
+        EnsureCachedReferences();
+        ApplyVisibility(false);
     }
 
     private void OnDestroy()
@@ -26,6 +32,72 @@ public sealed class LoadingOverlayView : MonoBehaviour
         if (messageText != null)
         {
             messageText.text = message;
+        }
+    }
+
+    public void SetVisible(bool isVisible)
+    {
+        if (isVisible && !gameObject.activeSelf)
+        {
+            gameObject.SetActive(true);
+        }
+
+        EnsureCachedReferences();
+        ApplyVisibility(isVisible);
+
+        if (isVisible)
+        {
+            StartCharacterDances();
+        }
+        else
+        {
+            StopCharacterDances();
+        }
+    }
+
+    private void EnsureCachedReferences()
+    {
+        if (canvasGroup == null)
+        {
+            canvasGroup = GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+            {
+                canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            }
+        }
+
+        if (characterDances == null)
+        {
+            characterDances = GetComponentsInChildren<LoadingCharacterRandomDance>(true);
+        }
+    }
+
+    private void ApplyVisibility(bool isVisible)
+    {
+        canvasGroup.alpha = isVisible ? 1f : 0f;
+        canvasGroup.blocksRaycasts = isVisible;
+        canvasGroup.interactable = false;
+    }
+
+    private void StartCharacterDances()
+    {
+        for (int i = 0; i < characterDances.Length; i++)
+        {
+            if (characterDances[i] != null)
+            {
+                characterDances[i].StartDance();
+            }
+        }
+    }
+
+    private void StopCharacterDances()
+    {
+        for (int i = 0; i < characterDances.Length; i++)
+        {
+            if (characterDances[i] != null)
+            {
+                characterDances[i].StopDance();
+            }
         }
     }
 }

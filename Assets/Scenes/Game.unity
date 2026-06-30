@@ -725,19 +725,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 137474777}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1262796439}
-        m_TargetAssemblyTypeName: RoyalRumbleBattleCoordinator, Assembly-CSharp
-        m_MethodName: ConfirmAttackButton
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &137474777
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5415,7 +5403,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 561146073754149366, guid: 545bec8b424f92f4aba22e383ec6f895, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5861415626099299008, guid: 545bec8b424f92f4aba22e383ec6f895, type: 3}
       propertyPath: m_Pivot.x
@@ -5976,8 +5964,8 @@ MonoBehaviour:
   onDelayedClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1135657040}
-        m_TargetAssemblyTypeName: RoyalRumbleShellController, Assembly-CSharp
+      - m_Target: {fileID: 1355645800}
+        m_TargetAssemblyTypeName: SingleplayerBattleSceneRouter, Assembly-CSharp
         m_MethodName: ConfirmAttackButton
         m_Mode: 1
         m_Arguments:
