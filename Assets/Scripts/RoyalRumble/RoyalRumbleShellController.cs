@@ -111,7 +111,7 @@ public class RoyalRumbleShellController : MonoBehaviour
 
         activeInstance = this;
         ResolveDependencies();
-        ResolveAttackTextReferences();
+        ValidateAttackUiReferences();
         PrepareAttackSelectionFlow();
         UpdateAttackButtons();
     }
@@ -1504,36 +1504,44 @@ public class RoyalRumbleShellController : MonoBehaviour
         }
     }
 
-    private void ResolveAttackTextReferences()
+    private void ValidateAttackUiReferences()
     {
-        attackButton1 ??= FindButtonByName("AttackButton (1)");
-        attackButton2 ??= FindButtonByName("AttackButton (2)");
-        attackButton3 ??= FindButtonByName("AttackButton (3)");
-        attackButton4 ??= FindButtonByName("AttackButton (4)");
-        confirmButton ??= FindButtonByName("DialogButton2");
+        var missingReferences = new List<string>();
+        AddMissingReference(missingReferences, attackButton1, nameof(attackButton1));
+        AddMissingReference(missingReferences, attackButton2, nameof(attackButton2));
+        AddMissingReference(missingReferences, attackButton3, nameof(attackButton3));
+        AddMissingReference(missingReferences, attackButton4, nameof(attackButton4));
+        AddMissingReference(missingReferences, confirmButton, nameof(confirmButton));
+        AddMissingReference(missingReferences, attackButton1Text, nameof(attackButton1Text));
+        AddMissingReference(missingReferences, attackButton2Text, nameof(attackButton2Text));
+        AddMissingReference(missingReferences, attackButton3Text, nameof(attackButton3Text));
+        AddMissingReference(missingReferences, attackButton4Text, nameof(attackButton4Text));
+        AddMissingReference(missingReferences, attackButton1CountText, nameof(attackButton1CountText));
+        AddMissingReference(missingReferences, attackButton2CountText, nameof(attackButton2CountText));
+        AddMissingReference(missingReferences, attackButton3CountText, nameof(attackButton3CountText));
+        AddMissingReference(missingReferences, attackButton4CountText, nameof(attackButton4CountText));
 
-        attackButton1Text ??= FindButtonText(attackButton1);
-        attackButton2Text ??= FindButtonText(attackButton2);
-        attackButton3Text ??= FindButtonText(attackButton3);
-        attackButton4Text ??= FindButtonText(attackButton4);
-        attackButton1CountText ??= FindAttackCountText(attackButton1);
-        attackButton2CountText ??= FindAttackCountText(attackButton2);
-        attackButton3CountText ??= FindAttackCountText(attackButton3);
-        attackButton4CountText ??= FindAttackCountText(attackButton4);
-
-        if (
-            attackButton1Text == null
-            || attackButton2Text == null
-            || attackButton3Text == null
-            || attackButton4Text == null
-        )
+        if (missingReferences.Count > 0)
         {
-            Debug.LogWarning(
-                "[RoyalRumbleShellController] Some RR attack name text references were not resolved automatically."
+            Debug.LogError(
+                "[RoyalRumbleShellController] RR scene is missing required attack UI references: "
+                    + string.Join(", ", missingReferences)
             );
         }
 
         CacheDefaultAttackButtonTexts();
+    }
+
+    private static void AddMissingReference(
+        List<string> missingReferences,
+        UnityEngine.Object reference,
+        string fieldName
+    )
+    {
+        if (reference == null)
+        {
+            missingReferences.Add(fieldName);
+        }
     }
 
     private void CacheDefaultAttackButtonTexts()
@@ -1606,65 +1614,6 @@ public class RoyalRumbleShellController : MonoBehaviour
         return attackDescriptions != null
             ? attackDescriptions.GetAttackName(attackId)
             : $"Attack {attackId}";
-    }
-
-    private static Button FindButtonByName(string objectName)
-    {
-        GameObject buttonObject = GameObject.Find(objectName);
-        return buttonObject != null ? buttonObject.GetComponent<Button>() : null;
-    }
-
-    private static TMP_Text FindButtonText(Button button)
-    {
-        if (button == null)
-        {
-            return null;
-        }
-
-        Transform labelTransform = button.transform.Find("Text (TMP)");
-        if (labelTransform != null)
-        {
-            TMP_Text directMatch = labelTransform.GetComponent<TMP_Text>();
-            if (directMatch != null)
-            {
-                return directMatch;
-            }
-        }
-
-        TMP_Text[] texts = button.GetComponentsInChildren<TMP_Text>(true);
-        foreach (TMP_Text text in texts)
-        {
-            if (text == null)
-            {
-                continue;
-            }
-
-            if (
-                string.Equals(
-                    text.gameObject.name,
-                    "AttackCountText",
-                    System.StringComparison.Ordinal
-                )
-            )
-            {
-                continue;
-            }
-
-            return text;
-        }
-
-        return null;
-    }
-
-    private static TMP_Text FindAttackCountText(Button button)
-    {
-        if (button == null)
-        {
-            return null;
-        }
-
-        Transform countTransform = button.transform.Find("AttackCountText");
-        return countTransform != null ? countTransform.GetComponent<TMP_Text>() : null;
     }
 
     private static void SetAttackNameText(TMP_Text textComponent, string value)

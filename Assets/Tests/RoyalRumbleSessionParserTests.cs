@@ -1,8 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
+using UnityEngine;
 
 public class RoyalRumbleSessionParserTests
 {
@@ -448,5 +451,71 @@ public class RoyalRumbleSessionParserTests
         }
 
         return (T)value;
+    }
+}
+
+public class RoyalRumbleSceneConfigurationTests
+{
+    [Test]
+    public void RoyalRumbleShellController_DoesNotUseRuntimeAttackUiLookup()
+    {
+        string sourcePath = Path.Combine(
+            Application.dataPath,
+            "Scripts",
+            "RoyalRumble",
+            "RoyalRumbleShellController.cs"
+        );
+        Assert.IsTrue(File.Exists(sourcePath), "RoyalRumbleShellController source was not found.");
+
+        string source = File.ReadAllText(sourcePath);
+
+        StringAssert.DoesNotContain(
+            "GameObject.Find(",
+            source,
+            "Royal Rumble attack UI must be wired through serialized scene references, not runtime object lookup."
+        );
+        StringAssert.DoesNotContain(
+            "FindButtonByName(",
+            source,
+            "Royal Rumble attack UI must not rely on name-based button lookup."
+        );
+    }
+
+    [Test]
+    public void GameScene_RoyalRumbleShell_HasExplicitAttackUiReferences()
+    {
+        string scenePath = Path.Combine(Application.dataPath, "Scenes", "Game.unity");
+        Assert.IsTrue(File.Exists(scenePath), "Game scene was not found.");
+
+        string sceneYaml = File.ReadAllText(scenePath);
+        Match shellMatch = Regex.Match(
+            sceneYaml,
+            @"m_Script: \{fileID: 11500000, guid: 2768d90b923514c4c8a7ddb78e951ee2, type: 3\}(?<body>.*?)(?=--- !u!)",
+            RegexOptions.Singleline
+        );
+        Assert.IsTrue(shellMatch.Success, "RoyalRumbleShellController block was not found in Game scene.");
+
+        string shellYaml = shellMatch.Groups["body"].Value;
+        AssertReferenceIsAssigned(shellYaml, "attackButton1");
+        AssertReferenceIsAssigned(shellYaml, "attackButton2");
+        AssertReferenceIsAssigned(shellYaml, "attackButton3");
+        AssertReferenceIsAssigned(shellYaml, "attackButton4");
+        AssertReferenceIsAssigned(shellYaml, "confirmButton");
+        AssertReferenceIsAssigned(shellYaml, "attackButton1Text");
+        AssertReferenceIsAssigned(shellYaml, "attackButton2Text");
+        AssertReferenceIsAssigned(shellYaml, "attackButton3Text");
+        AssertReferenceIsAssigned(shellYaml, "attackButton4Text");
+        AssertReferenceIsAssigned(shellYaml, "attackButton1CountText");
+        AssertReferenceIsAssigned(shellYaml, "attackButton2CountText");
+        AssertReferenceIsAssigned(shellYaml, "attackButton3CountText");
+        AssertReferenceIsAssigned(shellYaml, "attackButton4CountText");
+    }
+
+    private static void AssertReferenceIsAssigned(string yaml, string fieldName)
+    {
+        Assert.IsTrue(
+            Regex.IsMatch(yaml, $@"\b{Regex.Escape(fieldName)}: \{{fileID: (?!0\}})\d+\}}"),
+            $"{fieldName} must be assigned in RoyalRumbleShellController."
+        );
     }
 }
