@@ -25,6 +25,36 @@ public class CardProgressionPlaybackTests
     }
 
     [Test]
+    public void Kard_DoesNotOwnPermanentXpOrStatProgression()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Kard.cs");
+
+        Assert.IsFalse(source.Contains("AddExperience("));
+        Assert.IsFalse(source.Contains("UpdateRandomStat("));
+        Assert.IsFalse(source.Contains("CalculateExpForLevel("));
+        Assert.IsFalse(source.Contains("UpdateCardData("));
+        Assert.IsFalse(source.Contains("PlayFabCardManager"));
+    }
+
+    [Test]
+    public void FightSystem_DoesNotAwardLocalCardExperience()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "FightSystem.cs");
+
+        Assert.IsFalse(source.Contains("AddExperience("));
+    }
+
+    [Test]
+    public void PlayFabCardManager_DoesNotWritePlayerCardsFromClientProgression()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Game", "PlayFabCardManager.cs");
+
+        Assert.IsFalse(source.Contains("public IEnumerator UpdateCardData"));
+        Assert.IsFalse(source.Contains("UpdateUserDataRequest"));
+        Assert.IsFalse(source.Contains("PlayFabClientAPI.UpdateUserData"));
+    }
+
+    [Test]
     public void OnlineCardExperienceCurve_UsesApprovedCumulativeXpAnchors()
     {
         var curveType = System.Type.GetType("OnlineCardExperienceCurve, Assembly-CSharp");

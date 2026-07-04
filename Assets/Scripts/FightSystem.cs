@@ -413,7 +413,6 @@ public class FightSystem : MonoBehaviour
 
         if (enemy.cardInGame.health <= 0 || !enemy.cardInGame.HasAvailableAttacks())
         {
-            yield return StartCoroutine(player.cardInGame.AddExperience(enemy.cardInGame.level)); //exp
             enemyLevel += 1;
             yield return StartCoroutine(recordHandler.UpdateRecord(enemyLevel));
 

@@ -23,7 +23,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
     public int level;
 
     public int health { get; set; }
-    public int maxHealth { get; set; }  // ✅ Public property pre max HP
+    public int maxHealth { get; set; }  // Public property pre max HP
     public int strength { get; set; }
     public int speed { get; set; }
     public int attack { get; set; }
@@ -79,8 +79,6 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
     public bool priorityAttack;
 
-    private PlayFabCardManager playFabManager;
-
     public Transform effectIconContainer;
     public List<GameObject> effectIcons = new List<GameObject>();
 
@@ -94,7 +92,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
         nameText.text = cardName;
         levelText.text = "lvl " + level;
-        maxHealth = health;  // ✅ Initialize maxHealth
+        maxHealth = health;  // Initialize maxHealth
         cardImage.sprite = Resources.Load<Sprite>("Cards/" + image);
         background.GetComponent<Image>().color = color;
         nameText.color = color;
@@ -112,127 +110,6 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         levelText.text = "lvl " + level;
     }
 
-    public IEnumerator AddExperience(int increase)
-    {
-        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.AddExperience => START " + increase);
-
-        Dictionary<string, object> cardDataDictionary = null;
-        bool updateSuccess = false;
-
-        // Lazy initialization of PlayFabCardManager
-        if (playFabManager == null)
-        {
-            playFabManager = FindFirstObjectByType<PlayFabCardManager>();
-            if (playFabManager == null)
-            {
-                Debug.LogError("[Kard] PlayFabCardManager not found in scene!");
-                yield break;
-            }
-        }
-
-        // Získanie údajov o karte
-        yield return StartCoroutine(playFabManager.GetCardData(cardId, data =>
-        {
-            cardDataDictionary = data;
-        }));
-
-        if (cardDataDictionary != null)
-        {
-            // Konvertujte slovník na objekt CardData
-            PlayFabCardManager.CardData cardData = ConvertDictionaryToCardData(cardDataDictionary);
-
-            int currentExperience = cardData.Experience;
-            int currentLevel = cardData.Level;
-            int newExperience = currentExperience + increase;
-
-            Dictionary<string, string> updates = new Dictionary<string, string>
-            {
-                { "Experience", newExperience.ToString() }
-            };
-
-            bool leveledUp = false;
-            // Check if player leveled up
-            while (newExperience >= CalculateExpForLevel(currentLevel + 1))
-            {
-                currentLevel += 1;
-                updates["Level"] = currentLevel.ToString();
-                leveledUp = true;
-            }
-
-            // Lazy initialization of PlayFabCardManager
-            if (playFabManager == null)
-            {
-                playFabManager = FindFirstObjectByType<PlayFabCardManager>();
-                if (playFabManager == null)
-                {
-                    Debug.LogError("[Kard] PlayFabCardManager not found in scene!");
-                    yield break;
-                }
-            }
-
-            // Aktualizujte údaje o karte
-            yield return StartCoroutine(playFabManager.UpdateCardData(cardId, updates, success =>
-            {
-                updateSuccess = success;
-            }));
-
-            if (updateSuccess)
-            {
-                StartCoroutine(EffectAnimations(increase, "XP", color_purple));
-                experience = newExperience;
-
-                if (leveledUp)
-                {
-                    UpdateRandomStat();
-                    StartCoroutine(EffectAnimations(level, "LVL", color_yellow));
-                    level += 1;
-                    LoadCardData();
-                }
-            }
-        }
-        else
-        {
-            Debug.LogError("ERROR: cardDataDictionary == null");
-        }
-    }
-
-    private int CalculateExpForLevel(int level)
-    {
-        // Použite optimalizovaný vzorec pre výpočet EXP pre daný level
-        double a = 0.2636521817872269;
-        double b = 5.356569536042434;
-        return (int)Math.Round(a * Math.Pow(level, b));
-    }
-
-
-    private PlayFabCardManager.CardData ConvertDictionaryToCardData(Dictionary<string, object> cardDataDictionary)
-    {
-        //Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.PlayFabCardManager.CardData => START ");
-
-        PlayFabCardManager.CardData cardData = new PlayFabCardManager.CardData();
-        cardData.CardID = cardDataDictionary["StyleID"].ToString();
-        cardData.Experience = Convert.ToInt32(cardDataDictionary["Experience"]);
-        cardData.Level = Convert.ToInt32(cardDataDictionary["Level"]);
-        cardData.StyleID = Convert.ToInt32(cardDataDictionary["StyleID"]);
-        cardData.PersonName = cardDataDictionary["PersonName"].ToString();
-        cardData.Health = Convert.ToInt32(cardDataDictionary["Health"]);
-        cardData.Strength = Convert.ToInt32(cardDataDictionary["Strength"]);
-        cardData.Speed = Convert.ToInt32(cardDataDictionary["Speed"]);
-        cardData.Attack = Convert.ToInt32(cardDataDictionary["Attack"]);
-        cardData.Defense = Convert.ToInt32(cardDataDictionary["Defense"]);
-        cardData.Knowledge = Convert.ToInt32(cardDataDictionary["Knowledge"]);
-        cardData.Charisma = Convert.ToInt32(cardDataDictionary["Charisma"]);
-        cardData.Color = (List<int>)cardDataDictionary["Color"];
-        cardData.Attack1 = Convert.ToInt32(cardDataDictionary["Attack1"]);
-        cardData.Attack2 = Convert.ToInt32(cardDataDictionary["Attack2"]);
-        cardData.Attack3 = Convert.ToInt32(cardDataDictionary["Attack3"]);
-        cardData.Attack4 = Convert.ToInt32(cardDataDictionary["Attack4"]);
-        cardData.CardPicture = cardDataDictionary["CardPicture"].ToString();
-
-        Debug.Log(cardData.PersonName);
-
-        return cardData;
-    }
 
     public bool HasAvailableAttacks()
     {
@@ -241,103 +118,6 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         return result;
     }
 
-    public void UpdateRandomStat()
-    {
-        Debug.Log("MegaTresk: " + DateTime.Now.ToString("HH:mm:ss.fff") + " Kard.UpdateRandomStat => START ");
-
-        // Lazy initialization of PlayFabCardManager
-        if (playFabManager == null)
-        {
-            playFabManager = FindFirstObjectByType<PlayFabCardManager>();
-            if (playFabManager == null)
-            {
-                Debug.LogError("[Kard] PlayFabCardManager not found in scene!");
-                return;
-            }
-        }
-
-        playFabManager.GetCardData(cardId, cardDataDictionary =>
-        {
-            if (cardDataDictionary != null)
-            {
-                // Konvertujte slovník na objekt CardData
-                PlayFabCardManager.CardData cardData = ConvertDictionaryToCardData(cardDataDictionary);
-
-                string statName = "";
-                int increaseValue = 0;
-
-                switch ((int)UnityEngine.Random.Range(2, 9))
-                {
-                    case 2:
-                        cardData.Health += 2;
-                        statName = "Health";
-                        increaseValue = cardData.Health; // Aktualizujte na novú celkovú hodnotu
-                        StartCoroutine(EffectAnimations(2, "HP", color_blue));
-                        break;
-                    case 3:
-                        cardData.Strength += 1;
-                        statName = "Strength";
-                        increaseValue = cardData.Strength;
-                        StartCoroutine(EffectAnimations(1, "STR", color_blue));
-                        break;
-                    case 4:
-                        cardData.Speed += 1;
-                        statName = "Speed";
-                        increaseValue = cardData.Speed;
-                        StartCoroutine(EffectAnimations(1, "SPE", color_blue));
-                        break;
-                    case 5:
-                        cardData.Attack += 1;
-                        statName = "Attack";
-                        increaseValue = cardData.Attack;
-                        StartCoroutine(EffectAnimations(1, "ATT", color_blue));
-                        break;
-                    case 6:
-                        cardData.Defense += 1;
-                        statName = "Defense";
-                        increaseValue = cardData.Defense;
-                        StartCoroutine(EffectAnimations(1, "DEF", color_blue));
-                        break;
-                    case 7:
-                        cardData.Knowledge += 1;
-                        statName = "Knowledge";
-                        increaseValue = cardData.Knowledge;
-                        StartCoroutine(EffectAnimations(1, "KNO", color_blue));
-                        break;
-                    case 8:
-                        cardData.Charisma += 1;
-                        statName = "Charisma";
-                        increaseValue = cardData.Charisma;
-                        StartCoroutine(EffectAnimations(1, "CHA", color_blue));
-                        break;
-                    default:
-                        Debug.LogError("Invalid value in UpdateRandomStat");
-                        break;
-                }
-
-                if (!string.IsNullOrEmpty(statName))
-                {
-                    Dictionary<string, string> updates = new Dictionary<string, string>
-                    {
-                        { statName, increaseValue.ToString() }
-                    };
-
-                    // playFabManager už je inicializovaný vyššie v metóde
-                    playFabManager.UpdateCardData(cardId, updates, success =>
-                    {
-                        if (!success)
-                        {
-                            Debug.LogError("Failed to update stat in PlayFab");
-                        }
-                    });
-                }
-            }
-            else
-            {
-                Debug.Log("ERROR: cardDataDictionary == null");
-            }
-        });
-    }
 
     private void InitializeAttackCount()
     {
@@ -364,13 +144,13 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         notsureText.text = animationText;
         notsureText.color = color;
         GameObject notsure = Instantiate(notsureGO, transform);
-        float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f); // náhodný úhel v radiánech
-        float radius = 50f; // poloměr kruhu
-        Vector2 randomPosition = new Vector2(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius); // výpočet náhodné pozice
-        notsure.transform.position = (Vector2)transform.position + randomPosition; // nastavení pozice objektu
-        Vector2 direction = (notsure.transform.position - transform.position).normalized; // směr pohybu objektu
-        float distance = 50f; // vzdálenost, o kterou se objekt posune
-        float elapsedTime = 0f; // uplynulý čas
+        float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f); // nĂˇhodnĂ˝ Ăşhel v radiĂˇnech
+        float radius = 50f; // polomÄ›r kruhu
+        Vector2 randomPosition = new Vector2(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius); // vĂ˝poÄŤet nĂˇhodnĂ© pozice
+        notsure.transform.position = (Vector2)transform.position + randomPosition; // nastavenĂ­ pozice objektu
+        Vector2 direction = (notsure.transform.position - transform.position).normalized; // smÄ›r pohybu objektu
+        float distance = 50f; // vzdĂˇlenost, o kterou se objekt posune
+        float elapsedTime = 0f; // uplynulĂ˝ ÄŤas
         while (elapsedTime < 3f)
         {
             notsure.transform.position += (Vector3)(direction * distance * Time.deltaTime);
@@ -405,7 +185,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
             yield return new WaitForSeconds(increment);
         }
 
-        // Pridajte tieto riadky na koniec metódy ShakeCard
+        // Pridajte tieto riadky na koniec metĂłdy ShakeCard
         float resetTime = 0.5f;
         float resetElapsed = 0f;
         while (resetElapsed < resetTime)
@@ -416,7 +196,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
             yield return null;
         }
 
-        // Nastavte polohu a rotáciu karty na pôvodné hodnoty pre istotu
+        // Nastavte polohu a rotĂˇciu karty na pĂ´vodnĂ© hodnoty pre istotu
         transform.position = originalPosition;
         transform.rotation = originalRotation;
     }
@@ -431,7 +211,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
             if (effectId == id)
             {
                 idExists = true;
-                Debug.Log(Time.time + "  " + cardName + " má efekt s ID " + id + ".");
+                Debug.Log(Time.time + "  " + cardName + " mĂˇ efekt s ID " + id + ".");
                 break;
             }
         }
@@ -442,38 +222,38 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
     public IEnumerator AddEffect(int id, int param)
     {
-        Debug.Log(Time.time + "  " + cardName + " pridáva efekt " + id + ", " + param);
+        Debug.Log(Time.time + "  " + cardName + " pridĂˇva efekt " + id + ", " + param);
 
-        // Pre efekty, ktoré môžu byť na karte viackrát (ID 1 a 4)
+        // Pre efekty, ktorĂ© mĂ´Ĺľu byĹĄ na karte viackrĂˇt (ID 1 a 4)
         if (id == 1 || id == 4)
         {
-            // Vždy pridáme efekt bez kontroly duplicity
+            // VĹľdy pridĂˇme efekt bez kontroly duplicity
             effects.Add(new List<int> { id, param });
             AddEffectIcon(GetEffectNameById(id));
             RepositionEffectIcons();
         }
         else
         {
-            // Skontrolujeme, či efekt už existuje
+            // Skontrolujeme, ÄŤi efekt uĹľ existuje
             bool idExists = effects.Any(e => e[0] == id);
 
             if (!idExists)
             {
-                // Pridáme efekt a ikonku
+                // PridĂˇme efekt a ikonku
                 effects.Add(new List<int> { id, param });
                 AddEffectIcon(GetEffectNameById(id));
                 RepositionEffectIcons();
             }
             else
             {
-                Debug.Log(Time.time + "  " + cardName + " už má efekt s ID " + id + ".");
+                Debug.Log(Time.time + "  " + cardName + " uĹľ mĂˇ efekt s ID " + id + ".");
             }
         }
 
         yield return new WaitForSeconds(0.1f);
     }
 
-    // Pomocná metóda na kontrolu, či bola ikonka efektu už pridaná
+    // PomocnĂˇ metĂłda na kontrolu, ÄŤi bola ikonka efektu uĹľ pridanĂˇ
     private bool IsEffectIconAdded(int effectId)
     {
         string effectName = GetEffectNameById(effectId);
@@ -491,20 +271,20 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
         StartCoroutine(RemoveEffectIcon(effectName));
 
-        // Pre efekty, ktoré môžu byť na karte viackrát (ID 1 a 4)
+        // Pre efekty, ktorĂ© mĂ´Ĺľu byĹĄ na karte viackrĂˇt (ID 1 a 4)
         if (effectId == 1 || effectId == 4)
         {
-            // Skontrolujeme, či ešte existujú ďalšie inštancie efektu
+            // Skontrolujeme, ÄŤi eĹˇte existujĂş ÄŹalĹˇie inĹˇtancie efektu
             bool effectStillExists = effects.Any(e => e[0] == effectId);
             if (!effectStillExists)
             {
-                // Odstránime ikonku, ak už neexistujú ďalšie inštancie
+                // OdstrĂˇnime ikonku, ak uĹľ neexistujĂş ÄŹalĹˇie inĹˇtancie
                 RemoveEffectIcon(GetEffectNameById(effectId));
             }
         }
         else
         {
-            // Pre ostatné efekty odstránime ikonku okamžite
+            // Pre ostatnĂ© efekty odstrĂˇnime ikonku okamĹľite
             RemoveEffectIcon(GetEffectNameById(effectId));
         }
     }
@@ -512,23 +292,23 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
     public void RemoveEffectById(int id)
     {
-        // Odstránime všetky efekty s daným ID
+        // OdstrĂˇnime vĹˇetky efekty s danĂ˝m ID
         effects.RemoveAll(e => e[0] == id);
 
-        // Pre efekty, ktoré môžu byť na karte viackrát (ID 1 a 4)
+        // Pre efekty, ktorĂ© mĂ´Ĺľu byĹĄ na karte viackrĂˇt (ID 1 a 4)
         if (id == 1 || id == 4)
         {
-            // Skontrolujeme, či ešte existujú ďalšie inštancie efektu
+            // Skontrolujeme, ÄŤi eĹˇte existujĂş ÄŹalĹˇie inĹˇtancie efektu
             bool effectStillExists = effects.Any(e => e[0] == id);
             if (!effectStillExists)
             {
-                // Odstránime ikonku, ak už neexistujú ďalšie inštancie
+                // OdstrĂˇnime ikonku, ak uĹľ neexistujĂş ÄŹalĹˇie inĹˇtancie
                 StartCoroutine(RemoveEffectIcon(GetEffectNameById(id)));
             }
         }
         else
         {
-            // Pre ostatné efekty odstránime ikonku okamžite
+            // Pre ostatnĂ© efekty odstrĂˇnime ikonku okamĹľite
             StartCoroutine(RemoveEffectIcon(GetEffectNameById(id)));
         }
     }
@@ -545,7 +325,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
     public void AddEffectIcon(string effectName)
 {
-    // Načítanie ikonky z Resources
+    // NaÄŤĂ­tanie ikonky z Resources
     Sprite iconSprite = Resources.Load<Sprite>("Game/EffectIcons/" + effectName);
     if (iconSprite == null)
     {
@@ -560,18 +340,18 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
             iconSprite = Resources.Load<Sprite>(placeholderPath);
             if (iconSprite != null)
             {
-                Debug.LogWarning($"Ikonka efektu nebola nájdená: {effectName}. Používam placeholder sprite z {placeholderPath}.");
+                Debug.LogWarning($"Ikonka efektu nebola nĂˇjdenĂˇ: {effectName}. PouĹľĂ­vam placeholder sprite z {placeholderPath}.");
             }
         }
 
         if (iconSprite == null)
         {
-            Debug.LogError("Ikonka efektu nebola nájdená: " + effectName);
+            Debug.LogError("Ikonka efektu nebola nĂˇjdenĂˇ: " + effectName);
             return;
         }
     }
 
-    // Vytvorenie unikátneho názvu pre ikonku
+    // Vytvorenie unikĂˇtneho nĂˇzvu pre ikonku
     string uniqueIconName = effectName + "Icon_" + Guid.NewGuid().ToString();
     GameObject iconGO = new GameObject(uniqueIconName);
 
@@ -579,17 +359,17 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
     Image iconImage = iconGO.AddComponent<Image>();
     iconImage.sprite = iconSprite;
 
-    // Nastavenie rodiča na effectIconContainer
+    // Nastavenie rodiÄŤa na effectIconContainer
     iconGO.transform.SetParent(effectIconContainer, false);
 
-    // Nastavenie veľkosti ikonky
+    // Nastavenie veÄľkosti ikonky
     RectTransform rectTransform = iconGO.GetComponent<RectTransform>();
-    rectTransform.sizeDelta = new Vector2(80, 80); // Nastavte veľkosť podľa vašich ikon
+    rectTransform.sizeDelta = new Vector2(80, 80); // Nastavte veÄľkosĹĄ podÄľa vaĹˇich ikon
 
     // Nastavenie pivotu a anchoru ikonky
-    rectTransform.anchorMin = new Vector2(1, 1); // Ukotvené k pravému hornému rohu
+    rectTransform.anchorMin = new Vector2(1, 1); // UkotvenĂ© k pravĂ©mu hornĂ©mu rohu
     rectTransform.anchorMax = new Vector2(1, 1);
-    rectTransform.pivot = new Vector2(0.5f, 1); // Pivot v strede horizontálne, hore vertikálne
+    rectTransform.pivot = new Vector2(0.5f, 1); // Pivot v strede horizontĂˇlne, hore vertikĂˇlne
 }
 
 
@@ -601,32 +381,32 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         {
             if (child.name == effectName + "Icon")
             {
-                // Nájdeme existujúcu ikonku a vrátime jej index
+                // NĂˇjdeme existujĂşcu ikonku a vrĂˇtime jej index
                 return index;
             }
             index++;
         }
-        // Ak ikonka neexistuje, vrátime počet detí ako nový index
+        // Ak ikonka neexistuje, vrĂˇtime poÄŤet detĂ­ ako novĂ˝ index
         return effectIconContainer.childCount - 1;
     }
 
 
     public IEnumerator RemoveEffectIcon(string effectName)
 {
-    // Nájdeme prvú ikonku, ktorá zodpovedá danému efektu
+    // NĂˇjdeme prvĂş ikonku, ktorĂˇ zodpovedĂˇ danĂ©mu efektu
     foreach (Transform child in effectIconContainer)
     {
         if (child.name.StartsWith(effectName + "Icon"))
         {
             Destroy(child.gameObject);
-            break; // Odstránime iba jednu ikonku
+            break; // OdstrĂˇnime iba jednu ikonku
         }
     }
 
-    // Počkáme do konca frame-u, aby sa ikonka skutočne odstránila
+    // PoÄŤkĂˇme do konca frame-u, aby sa ikonka skutoÄŤne odstrĂˇnila
     yield return null;
 
-    // Po odstránení ikonky preusporiadame zvyšné ikonky
+    // Po odstrĂˇnenĂ­ ikonky preusporiadame zvyĹˇnĂ© ikonky
     RepositionEffectIcons();
 }
 
@@ -635,10 +415,10 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
     public void RepositionEffectIcons()
 {
     int index = 0;
-    //float iconWidth = 80f; // Šírka ikonky
-    float iconHeight = 80f; // Výška ikonky
+    //float iconWidth = 80f; // Ĺ Ă­rka ikonky
+    float iconHeight = 80f; // VĂ˝Ĺˇka ikonky
     float verticalSpacing = 10f; // Medzera medzi ikonkami
-    float xOffset = 0f; // Horizontálny posun ikoniek
+    float xOffset = 0f; // HorizontĂˇlny posun ikoniek
 
     foreach (Transform child in effectIconContainer)
     {
@@ -675,7 +455,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
             case 7:
                 return "famine";
             case 8:
-                return "electricity"; // Opravený preklep
+                return "electricity"; // OpravenĂ˝ preklep
             case 9:
                 return "tether";
             case 10:
@@ -687,7 +467,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
             case 13:
                 return "depression";
             case 14:
-                return "art_inspiration"; // Pre lepšiu čitateľnosť ikonky
+                return "art_inspiration"; // Pre lepĹˇiu ÄŤitateÄľnosĹĄ ikonky
             case 15:
                 return "autoportrait";
             case 16:
@@ -712,9 +492,9 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
                 return "curse";
             case 27:
                 return "knockout";  // Boredom sleep from attack 11
-            // Pridajte ďalšie efekty podľa potreby
+            // Pridajte ÄŹalĹˇie efekty podÄľa potreby
             default:
-                Debug.LogError("Neznámy efekt s ID: " + id);
+                Debug.LogError("NeznĂˇmy efekt s ID: " + id);
                 return "unknown";
         }
     }
@@ -735,7 +515,7 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
             amount = 1;
         health += amount;
         StartCoroutine(EffectAnimations(amount, "HP", color_green));
-        if (health > maxHealth)  // ✅ Use maxHealth
+        if (health > maxHealth)  // âś… Use maxHealth
             health = maxHealth;
         Debug.Log(Time.time + "  " + cardName + " sa healuje za " + amount);
     }
@@ -838,13 +618,13 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
     // public void OnPointerClick(PointerEventData eventData)
     // {
-    //     // Ak na hracej ploche nie je žiadna karta, pridaj novú
+    //     // Ak na hracej ploche nie je Ĺľiadna karta, pridaj novĂş
     //     if (board.childCount < 2)
     //     {
-    //         // Vytvorte novú inštanciu karty z prefabrikátu
+    //         // Vytvorte novĂş inĹˇtanciu karty z prefabrikĂˇtu
     //         GameObject newCard = Instantiate(cardPrefab);
 
-    //         // Nastavte pozíciu karty
+    //         // Nastavte pozĂ­ciu karty
     //         newCard.transform.position = board.position;
 
     //         // Priradte kartu k hracej ploche
