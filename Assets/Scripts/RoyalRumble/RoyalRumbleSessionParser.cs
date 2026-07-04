@@ -50,6 +50,7 @@ public static class RoyalRumbleSessionParser
         dto.botAttack = token["botAttack"]?.ToObject<RoyalRumbleBotAttackDto>() ?? new RoyalRumbleBotAttackDto();
         dto.botAttack.validSlots ??= new List<int>();
         dto.recordSync = ParseRecordSyncToken(token["recordSync"]);
+        dto.cardProgression = ParseCardProgressionToken(token["cardProgression"]);
         return dto;
     }
 
@@ -178,6 +179,44 @@ public static class RoyalRumbleSessionParser
             skipped = token?.Value<bool?>("skipped") ?? false,
             score = token?.Value<int?>("score") ?? 0,
             error = token?.Value<string>("error") ?? string.Empty,
+        };
+    }
+
+    private static CardProgressionDto ParseCardProgressionToken(JToken token)
+    {
+        if (token == null || token.Type == JTokenType.Null)
+        {
+            return new CardProgressionDto
+            {
+                applied = false,
+                reason = "missing",
+                pending = false,
+            };
+        }
+
+        return new CardProgressionDto
+        {
+            applied = token.Value<bool?>("applied") ?? false,
+            reason = token.Value<string>("reason") ?? string.Empty,
+            pending = token.Value<bool?>("pending") ?? false,
+            duplicate = token.Value<bool?>("duplicate") ?? false,
+            eventId = token.Value<string>("eventId") ?? string.Empty,
+            playerCardId = token.Value<string>("playerCardId") ?? string.Empty,
+            enemyCardId = token.Value<string>("enemyCardId") ?? string.Empty,
+            enemyLevel = token.Value<int?>("enemyLevel") ?? 0,
+            xpGained = token.Value<int?>("xpGained") ?? 0,
+            experienceBefore = token.Value<int?>("experienceBefore") ?? 0,
+            experienceAfter = token.Value<int?>("experienceAfter") ?? 0,
+            levelBefore = token.Value<int?>("levelBefore") ?? 0,
+            levelAfter = token.Value<int?>("levelAfter") ?? 0,
+            leveledUp = token.Value<bool?>("leveledUp") ?? false,
+            levelUps = token.Value<int?>("levelUps") ?? 0,
+            writeVerified = token.Value<bool?>("writeVerified") ?? false,
+            persistedCardFound = token.Value<bool?>("persistedCardFound") ?? false,
+            persistedExperienceAfter = token.Value<int?>("persistedExperienceAfter") ?? 0,
+            persistedLevelAfter = token.Value<int?>("persistedLevelAfter") ?? 0,
+            writeVerificationReason = token.Value<string>("writeVerificationReason") ?? string.Empty,
+            writeVerificationError = token.Value<string>("writeVerificationError") ?? string.Empty,
         };
     }
 

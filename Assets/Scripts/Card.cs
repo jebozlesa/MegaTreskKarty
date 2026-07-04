@@ -201,16 +201,16 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     private int CalculateExpForLevel(int level)
     {
         // Použite optimalizovaný vzorec pre výpočet EXP pre daný level
-        double a = 0.2636521817872269;
-        double b = 5.356569536042434;
-        return (int)Math.Round(a * Math.Pow(level, b));
+        return OnlineCardExperienceCurve.RequiredXpForLevel(level);
     }
 
 
     public void LoadDetails()
     {
         nameTextAttr.text = cardName;
-        expText.text = "Experience: " + experience + " / " + CalculateExpForLevel(level + 1);    //LEVEL
+        int nextLevelExperience = OnlineCardExperienceCurve.RequiredXpForLevel(level + 1);
+        expText.text = "Experience: " + experience + " / " + nextLevelExperience;
+        Debug.LogWarning($"[CardDetail] LoadDetails: {BuildDetailLogContext()}, nextLevelExperience={nextLevelExperience}");
         hpText.text = "Health: " + health;
         strText.text = "Strength: " + strength;
         speText.text = "Speed: " + speed;
@@ -262,6 +262,12 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         changeButtonImg.color = ChangeAlpha(color, 80);
         changeButtonText.color = color;
 
+    }
+
+    private string BuildDetailLogContext()
+    {
+        string visibleExpText = expText != null ? expText.text : "<null>";
+        return $"id={cardId}, name={cardName}, styleId={styleId}, level={level}, experience={experience}, expText={visibleExpText}, deckCard={deckCard}, isZoomed={isZoomed}, attacks=[{attack1},{attack2},{attack3},{attack4}], counts=[{countAttack1},{countAttack2},{countAttack3},{countAttack4}]";
     }
 
     // Metóda na odstránenie karty
@@ -854,10 +860,9 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     public void ZoomIn()
     {
-        Debug.Log("Card.ZoomIn() ===> START");
+        Debug.LogWarning($"[CardDetail] OpenDetail requested: {BuildDetailLogContext()}");
         if (!isZoomed)
         {
-            Debug.Log("Card.ZoomIn() ===> 1");
             originalParent = transform.parent.gameObject;
             originalSiblingIndex = transform.GetSiblingIndex();
             transform.SetParent(zoomedCardHolder.transform);
@@ -866,26 +871,23 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             transform.SetSiblingIndex(transform.parent.childCount - 1);
             currentZoomedCard = this;
             isZoomed = true;
-            Debug.Log("Card.ZoomIn() ===> 2");
+            Debug.LogWarning($"[CardDetail] OpenDetail: {BuildDetailLogContext()}, originalParent={originalParent.name}, siblingIndex={originalSiblingIndex}");
 
             // Show the deck panel
             deckPanel.SetActive(true);
 
-            Debug.Log("Card.ZoomIn() ===> 3");
             if (PlayerPrefs.GetInt("HasCompletedTutorialCard", 0) == 0)
             {
-                Debug.Log("Card.ZoomIn() ===> 4");
                 CardTutorial.instance.gameObject.SetActive(true);
             }
-            Debug.Log("Card.ZoomIn() ===> 5");
         }
-        Debug.Log("Card.ZoomIn() ===> KONEC");
     }
 
     public void ZoomOut()
     {
         if (isZoomed)
         {
+            Debug.LogWarning($"[CardDetail] CloseDetail: {BuildDetailLogContext()}");
             transform.SetParent(originalParent.transform);
             transform.localScale = new Vector3(1f, 1f, 1f);
             transform.SetSiblingIndex(originalSiblingIndex);

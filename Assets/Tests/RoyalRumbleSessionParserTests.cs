@@ -269,6 +269,24 @@ public class RoyalRumbleSessionParserTests
             ["runStatus"] = "awaiting_attack",
             ["playerNeedsReplacement"] = false,
             ["enemyNeedsReplacement"] = true,
+            ["cardProgression"] = new Dictionary<string, object>
+            {
+                ["applied"] = true,
+                ["reason"] = "enemy_defeated",
+                ["pending"] = false,
+                ["duplicate"] = false,
+                ["eventId"] = "RR002:battle:1:enemy:enemy_card",
+                ["playerCardId"] = "player_card",
+                ["enemyCardId"] = "enemy_card",
+                ["enemyLevel"] = 12,
+                ["xpGained"] = 2,
+                ["experienceBefore"] = 4,
+                ["experienceAfter"] = 6,
+                ["levelBefore"] = 1,
+                ["levelAfter"] = 2,
+                ["leveledUp"] = true,
+                ["levelUps"] = 1
+            },
             ["sessionSummary"] = new Dictionary<string, object>
             {
                 ["sessionId"] = "RR002",
@@ -280,6 +298,7 @@ public class RoyalRumbleSessionParserTests
         object botAttack = ReadField<object>(envelope, "botAttack");
         IList validSlots = ReadField<IList>(botAttack, "validSlots");
         object sessionSummary = ReadField<object>(envelope, "sessionSummary");
+        object cardProgression = ReadField<object>(envelope, "cardProgression");
 
         Assert.IsNotNull(envelope);
         Assert.IsNotNull(ReadField<object>(envelope, "battleResult"));
@@ -292,6 +311,40 @@ public class RoyalRumbleSessionParserTests
         Assert.IsFalse(ReadField<bool>(envelope, "playerNeedsReplacement"));
         Assert.IsTrue(ReadField<bool>(envelope, "enemyNeedsReplacement"));
         Assert.AreEqual("RR002", ReadField<string>(sessionSummary, "sessionId"));
+        Assert.IsTrue(ReadField<bool>(cardProgression, "applied"));
+        Assert.AreEqual("enemy_defeated", ReadField<string>(cardProgression, "reason"));
+        Assert.IsFalse(ReadField<bool>(cardProgression, "pending"));
+        Assert.IsFalse(ReadField<bool>(cardProgression, "duplicate"));
+        Assert.AreEqual("RR002:battle:1:enemy:enemy_card", ReadField<string>(cardProgression, "eventId"));
+        Assert.AreEqual("player_card", ReadField<string>(cardProgression, "playerCardId"));
+        Assert.AreEqual("enemy_card", ReadField<string>(cardProgression, "enemyCardId"));
+        Assert.AreEqual(12, ReadField<int>(cardProgression, "enemyLevel"));
+        Assert.AreEqual(2, ReadField<int>(cardProgression, "xpGained"));
+        Assert.AreEqual(4, ReadField<int>(cardProgression, "experienceBefore"));
+        Assert.AreEqual(6, ReadField<int>(cardProgression, "experienceAfter"));
+        Assert.AreEqual(1, ReadField<int>(cardProgression, "levelBefore"));
+        Assert.AreEqual(2, ReadField<int>(cardProgression, "levelAfter"));
+        Assert.IsTrue(ReadField<bool>(cardProgression, "leveledUp"));
+        Assert.AreEqual(1, ReadField<int>(cardProgression, "levelUps"));
+    }
+
+    [Test]
+    public void ParseBattleEnvelope_DefaultsMissingCardProgression()
+    {
+        var raw = new Dictionary<string, object>
+        {
+            ["success"] = true,
+            ["runStatus"] = "awaiting_attack"
+        };
+
+        object envelope = InvokeParseBattleEnvelope(raw);
+        object cardProgression = ReadField<object>(envelope, "cardProgression");
+
+        Assert.IsNotNull(envelope);
+        Assert.IsNotNull(cardProgression);
+        Assert.IsFalse(ReadField<bool>(cardProgression, "applied"));
+        Assert.AreEqual("missing", ReadField<string>(cardProgression, "reason"));
+        Assert.IsFalse(ReadField<bool>(cardProgression, "pending"));
     }
 
     [Test]

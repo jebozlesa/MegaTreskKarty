@@ -62,6 +62,7 @@ public class RoyalRumbleShellController : MonoBehaviour
     private bool isShuttingDown;
     private string lastAutoSubmittedPendingKey;
     private SharedAttackSelectionFlow attackSelectionFlow;
+    private readonly CardProgressionPlayback cardProgressionPlayback = new CardProgressionPlayback();
     private readonly List<Kard> renderedPlayerHandCards = new List<Kard>();
     private readonly List<Kard> renderedEnemyHandCards = new List<Kard>();
     private Kard renderedPlayerActiveCard;
@@ -930,8 +931,106 @@ public class RoyalRumbleShellController : MonoBehaviour
         }
 
         RefreshPostBattleView(envelope, previousPlayerSelectedCardId, previousEnemySelectedCardId);
+        yield return StartCoroutine(
+            PlayCardProgressionFeedback(envelope.cardProgression, previousPlayerSelectedCardId)
+        );
+
         isBusy = false;
         UpdateAttackButtons();
+    }
+
+    private IEnumerator PlayCardProgressionFeedback(
+        CardProgressionDto progression,
+        string previousPlayerSelectedCardId
+    )
+    {
+        LogVerboseWarning(
+            $"[RoyalRumbleShellController] Card XP feedback: applied={progression?.applied == true}, pending={progression?.pending == true}, "
+                + $"card={progression?.playerCardId ?? string.Empty}, xp={progression?.xpGained ?? 0}, "
+                + $"experience={progression?.experienceBefore ?? 0}->{progression?.experienceAfter ?? 0}, "
+                + $"level={progression?.levelBefore ?? 0}->{progression?.levelAfter ?? 0}, "
+                + $"verified={progression?.writeVerified == true}, "
+                + $"persisted={progression?.persistedExperienceAfter ?? 0}/{progression?.persistedLevelAfter ?? 0}, "
+                + $"verifyReason={progression?.writeVerificationReason ?? string.Empty}, reason={progression?.reason ?? string.Empty}"
+        );
+
+        string skipReason = GetCardProgressionFeedbackSkipReason(
+            progression,
+            previousPlayerSelectedCardId
+        );
+        if (!string.IsNullOrEmpty(skipReason))
+        {
+            LogVerboseWarning(
+                $"[RoyalRumbleShellController] Card XP feedback skipped: reason={skipReason}, "
+                    + $"progressionCard={progression?.playerCardId ?? string.Empty}, renderedCard={renderedPlayerActiveCard?.cardId ?? string.Empty}"
+            );
+            yield break;
+        }
+
+        LogVerboseWarning(
+            $"[RoyalRumbleShellController] Card XP feedback played: card={progression.playerCardId}, xp={progression.xpGained}, "
+                + $"experience={progression.experienceBefore}->{progression.experienceAfter}, level={progression.levelBefore}->{progression.levelAfter}, "
+                + $"verified={progression.writeVerified}, persisted={progression.persistedExperienceAfter}/{progression.persistedLevelAfter}, "
+                + $"verifyReason={progression.writeVerificationReason}"
+        );
+        yield return StartCoroutine(
+            cardProgressionPlayback.Play(progression, renderedPlayerActiveCard)
+        );
+    }
+
+    private string GetCardProgressionFeedbackSkipReason(
+        CardProgressionDto progression,
+        string previousPlayerSelectedCardId
+    )
+    {
+        if (progression == null)
+        {
+            return "missing_progression";
+        }
+
+        if (progression.applied == false)
+        {
+            return "not_applied";
+        }
+
+        if (progression.xpGained <= 0)
+        {
+            return "no_xp";
+        }
+
+        if (string.IsNullOrWhiteSpace(progression.playerCardId))
+        {
+            return "missing_progression_card";
+        }
+
+        if (
+            !string.Equals(
+                progression.playerCardId,
+                previousPlayerSelectedCardId,
+                StringComparison.Ordinal
+            )
+        )
+        {
+            return "progression_card_not_previous_active";
+        }
+
+        if (renderedPlayerActiveCard == null)
+        {
+            return "missing_rendered_card";
+        }
+
+        if (
+            !string.Equals(
+                renderedPlayerActiveCard.cardId,
+                progression.playerCardId,
+                StringComparison.Ordinal
+            )
+        )
+        {
+            return "rendered_card_mismatch";
+        }
+
+        return null;
     }
 
     private void UpdateAttackButtons()

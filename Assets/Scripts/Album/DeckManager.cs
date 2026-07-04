@@ -105,6 +105,7 @@ public class DeckManager : MonoBehaviour
                 Color32 cardColor = new Color32((byte)existingCard.Color[0], (byte)existingCard.Color[1], (byte)existingCard.Color[2], 255);
                 novaKarta.GetComponent<Card>().color = cardColor;
                 novaKarta.GetComponent<Card>().level = existingCard.Level;
+                novaKarta.GetComponent<Card>().experience = existingCard.Experience;
                 novaKarta.GetComponent<Card>().attack1 = existingCard.Attack1;
                 novaKarta.GetComponent<Card>().attack2 = existingCard.Attack2;
                 novaKarta.GetComponent<Card>().attack3 = existingCard.Attack3;
@@ -153,6 +154,7 @@ public class DeckManager : MonoBehaviour
                         Color32 cardColor = new Color32((byte)existingCard.Color[0], (byte)existingCard.Color[1], (byte)existingCard.Color[2], 255);
                         novaKarta.GetComponent<Card>().color = cardColor;
                         novaKarta.GetComponent<Card>().level = existingCard.Level;
+                        novaKarta.GetComponent<Card>().experience = existingCard.Experience;
                         novaKarta.GetComponent<Card>().attack1 = existingCard.Attack1;
                         novaKarta.GetComponent<Card>().attack2 = existingCard.Attack2;
                         novaKarta.GetComponent<Card>().attack3 = existingCard.Attack3;

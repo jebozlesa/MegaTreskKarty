@@ -128,17 +128,42 @@ public class Album : MonoBehaviour
 
     private IEnumerator VytvorKartyPlayFab()
     {
+        string playerId = PlayFabManagerLogin.Instance != null
+            ? PlayFabManagerLogin.Instance.LoggedInPlayerId
+            : string.Empty;
+        Debug.LogWarning($"[Album] PlayerCards load requested: isLoggedIn={PlayFabManagerLogin.IsLoggedIn}, playerId={playerId}");
+
         PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
         {
-            if (result.Data.ContainsKey("PlayerCards"))
+            if (result.Data == null)
             {
-                PlayerCardsData data = JsonUtility.FromJson<PlayerCardsData>(result.Data["PlayerCards"].Value);
-                StartCoroutine(SpracujKarty(data.cards));
+                Debug.LogWarning($"[Album] PlayerCards missing: result.Data is null, playerId={playerId}");
+                return;
             }
+
+            if (!result.Data.ContainsKey("PlayerCards"))
+            {
+                Debug.LogWarning($"[Album] PlayerCards missing: key not found, keys={string.Join(",", result.Data.Keys)}, playerId={playerId}");
+                return;
+            }
+
+            string playerCardsJson = result.Data["PlayerCards"].Value;
+            Debug.LogWarning($"[Album] PlayerCards raw loaded: playerId={playerId}, rawLength={playerCardsJson?.Length ?? 0}");
+            PlayerCardsData data = JsonUtility.FromJson<PlayerCardsData>(playerCardsJson);
+            int cardCount = data?.cards?.Count ?? 0;
+            Debug.LogWarning($"[Album] PlayerCards parsed: playerId={playerId}, cards={cardCount}");
+
+            if (data?.cards == null)
+            {
+                Debug.LogWarning($"[Album] PlayerCards parsed without cards array: playerId={playerId}");
+                return;
+            }
+
+            StartCoroutine(SpracujKarty(data.cards));
         },
         error =>
         {
-            Debug.LogError(error.GenerateErrorReport());
+            Debug.LogError($"[Album] PlayerCards load failed: playerId={playerId}, error={error.GenerateErrorReport()}");
         });
 
         yield return null;
@@ -153,7 +178,7 @@ public class Album : MonoBehaviour
         foreach (GeneratedCard cardData in data)
         {
 
-            Debug.Log("Hero : " + cardData.PersonName);
+            Debug.LogWarning($"[Album] Card loaded: id={cardData.CardID}, name={cardData.PersonName}, level={cardData.Level}, experience={cardData.Experience}");
 
             GameObject novaKarta = Instantiate(kartaPrefab, transform);
             novaKarta.GetComponent<Card>().cardId = cardData.CardID;

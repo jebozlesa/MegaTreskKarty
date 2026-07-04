@@ -26,6 +26,7 @@ public class RoyalRumbleBattleEnvelopeDto
     public bool runEnded;
     public string runStatus;
     public RoyalRumbleRecordSyncDto recordSync;
+    public CardProgressionDto cardProgression;
 }
 
 [Serializable]

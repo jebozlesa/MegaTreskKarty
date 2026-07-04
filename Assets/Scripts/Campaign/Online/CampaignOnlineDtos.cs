@@ -26,6 +26,7 @@ public class CampaignOnlineBattleEnvelopeDto
     public bool runEnded;
     public string runStatus;
     public CampaignOnlineUnlockProgressDto campaignProgress;
+    public CardProgressionDto cardProgression;
 }
 
 [Serializable]
