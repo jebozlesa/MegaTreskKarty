@@ -468,14 +468,38 @@ public class BattleSharedDamagePlaybackTests
     {
         string campaignDirectory = Path.Combine(Application.dataPath, "Scripts", "Campaign");
         string onlineDirectory = Path.Combine(campaignDirectory, "Online");
-        string fightSystem = ReadProjectFile("Assets", "Scripts", "FightSystem.cs");
 
         Assert.IsFalse(File.Exists(Path.Combine(onlineDirectory, "CampaignOnlineGameBootstrap.cs")));
         Assert.IsFalse(File.Exists(Path.Combine(campaignDirectory, "FightSystemCampaign.cs")));
         Assert.IsFalse(File.Exists(Path.Combine(campaignDirectory, "CampaignManager.cs")));
-        Assert.IsFalse(fightSystem.Contains("GameParameters.MissionID"));
-        Assert.IsFalse(fightSystem.Contains("CampaignManager"));
-        Assert.IsFalse(fightSystem.Contains("VytvorKartyAIMission"));
+        Assert.IsFalse(File.Exists(Path.Combine(Application.dataPath, "Scripts", "FightSystem.cs")));
+    }
+
+    [Test]
+    public void LegacyFightSystemAndDragKardRuntime_IsRemoved()
+    {
+        string scriptsDirectory = Path.Combine(Application.dataPath, "Scripts");
+        string multiplayerScene = ReadProjectFile("Assets", "Scenes", "Multiplayer.unity");
+        string cardPrefab = ReadProjectFile("Assets", "Prefabs", "Kard.prefab");
+        string attackDescriptions = ReadProjectFile("Assets", "Scripts", "AttackDescriptions.cs");
+        string rrShell = ReadProjectFile("Assets", "Scripts", "RoyalRumble", "RoyalRumbleShellController.cs");
+        string rrCoordinator = ReadProjectFile("Assets", "Scripts", "RoyalRumble", "RoyalRumbleBattleCoordinator.cs");
+        string campaignShell = ReadProjectFile("Assets", "Scripts", "Campaign", "Online", "CampaignOnlineShellController.cs");
+        string multiplayerHand = ReadProjectFile("Assets", "Scripts", "Multiplayer", "MultiplayerHandManager.cs");
+
+        Assert.IsFalse(File.Exists(Path.Combine(scriptsDirectory, "FightSystem.cs")));
+        Assert.IsFalse(File.Exists(Path.Combine(scriptsDirectory, "FightSystem.cs.meta")));
+        Assert.IsFalse(File.Exists(Path.Combine(scriptsDirectory, "DragKard.cs")));
+        Assert.IsFalse(File.Exists(Path.Combine(scriptsDirectory, "DragKard.cs.meta")));
+
+        Assert.IsFalse(multiplayerScene.Contains("FightSystem, Assembly-CSharp"));
+        Assert.IsFalse(multiplayerScene.Contains("5e54471e2c9ac384396981d6824289d5"));
+        Assert.IsFalse(cardPrefab.Contains("4892ce4360c797f419cc643828d8ec67"));
+        Assert.IsFalse(attackDescriptions.Contains("FightSystem"));
+        Assert.IsFalse(rrShell.Contains("DragKard"));
+        Assert.IsFalse(rrCoordinator.Contains("DragKard"));
+        Assert.IsFalse(campaignShell.Contains("DragKard"));
+        Assert.IsFalse(multiplayerHand.Contains("DragKard"));
     }
 
     [Test]

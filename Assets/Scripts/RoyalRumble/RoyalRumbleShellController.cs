@@ -711,12 +711,6 @@ public class RoyalRumbleShellController : MonoBehaviour
             return;
         }
 
-        DragKard legacyDragKard = cardObject.GetComponent<DragKard>();
-        if (legacyDragKard != null)
-        {
-            legacyDragKard.enabled = false;
-        }
-
         Drag legacyDrag = cardObject.GetComponent<Drag>();
         if (legacyDrag != null)
         {

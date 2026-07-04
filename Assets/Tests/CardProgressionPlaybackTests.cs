@@ -37,11 +37,11 @@ public class CardProgressionPlaybackTests
     }
 
     [Test]
-    public void FightSystem_DoesNotAwardLocalCardExperience()
+    public void LegacyFightSystem_DoesNotExistForLocalCardExperience()
     {
-        string source = ReadProjectFile("Assets", "Scripts", "FightSystem.cs");
+        string fullPath = Path.Combine(Application.dataPath, "Scripts", "FightSystem.cs");
 
-        Assert.IsFalse(source.Contains("AddExperience("));
+        Assert.IsFalse(File.Exists(fullPath), "Legacy FightSystem must not own local card experience flow.");
     }
 
     [Test]

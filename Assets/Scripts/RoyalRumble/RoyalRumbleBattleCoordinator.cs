@@ -1540,12 +1540,6 @@ public class RoyalRumbleBattleCoordinator : MonoBehaviour
             );
         }
 
-        DragKard legacyDrag = cardObject.GetComponent<DragKard>();
-        if (legacyDrag != null)
-        {
-            legacyDrag.enabled = false;
-        }
-
         MultiplayerCardDrag multiplayerDrag = cardObject.GetComponent<MultiplayerCardDrag>();
         if (multiplayerDrag != null)
         {

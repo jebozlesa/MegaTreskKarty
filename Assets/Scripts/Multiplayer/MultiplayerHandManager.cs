@@ -166,12 +166,6 @@ public class MultiplayerHandManager : MonoBehaviour
             player.AddCardToHand(kardComponent);
         }
 
-        var legacyDrag = novaKarta.GetComponent<DragKard>();
-        if (legacyDrag != null)
-        {
-            legacyDrag.enabled = false;
-        }
-
         if (enableMultiplayerDrag)
         {
             var multiplayerDrag = novaKarta.GetComponent<MultiplayerCardDrag>();

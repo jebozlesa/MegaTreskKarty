@@ -17,8 +17,6 @@ public class AttackDescriptions : MonoBehaviour
     public Button button3;
     public Button button4;
 
-    public FightSystem fightSystem;
-
     private UnityEngine.Events.UnityAction buttonCallback;
 
     int attack;

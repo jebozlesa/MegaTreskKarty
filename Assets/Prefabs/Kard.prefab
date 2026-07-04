@@ -527,7 +527,6 @@ GameObject:
   - component: {fileID: 7734858602410694476}
   - component: {fileID: 4218709241677201226}
   - component: {fileID: 7415031891872822787}
-  - component: {fileID: 3382621573433264716}
   - component: {fileID: 3782368778966312100}
   m_Layer: 5
   m_Name: Kard
@@ -655,21 +654,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &3382621573433264716
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7734858602410694466}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4892ce4360c797f419cc643828d8ec67, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  originalPosition: {x: 0, y: 0, z: 0}
-  originalHandPosition: {x: 0, y: 0, z: 0}
-  kard: {fileID: 4218709241677201226}
 --- !u!61 &3782368778966312100
 BoxCollider2D:
   m_ObjectHideFlags: 0
