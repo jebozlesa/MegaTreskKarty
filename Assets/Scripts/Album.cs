@@ -178,8 +178,6 @@ public class Album : MonoBehaviour
         foreach (GeneratedCard cardData in data)
         {
 
-            Debug.LogWarning($"[Album] Card loaded: id={cardData.CardID}, name={cardData.PersonName}, level={cardData.Level}, experience={cardData.Experience}");
-
             GameObject novaKarta = Instantiate(kartaPrefab, transform);
             novaKarta.GetComponent<Card>().cardId = cardData.CardID;
             novaKarta.GetComponent<Card>().styleId = cardData.StyleID;
