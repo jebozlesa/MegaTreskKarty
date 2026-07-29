@@ -22,6 +22,10 @@ public class Album : MonoBehaviour
     private string connectionString;
     public GameObject deckPanel;
     public TMP_Text loveValue;
+    public LibraryDeckController libraryDeckController;
+    public DeckManager deckManager;
+    private Coroutine libraryCardsRenderCoroutine;
+    private int libraryCardsRenderVersion;
 
     void Start()
     {
@@ -131,52 +135,79 @@ public class Album : MonoBehaviour
         string playerId = PlayFabManagerLogin.Instance != null
             ? PlayFabManagerLogin.Instance.LoggedInPlayerId
             : string.Empty;
-        Debug.LogWarning($"[Album] PlayerCards load requested: isLoggedIn={PlayFabManagerLogin.IsLoggedIn}, playerId={playerId}");
+        Debug.LogWarning($"[Album] Library state load requested: isLoggedIn={PlayFabManagerLogin.IsLoggedIn}, playerId={playerId}");
 
-        PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
+        if (libraryDeckController == null)
         {
-            if (result.Data == null)
-            {
-                Debug.LogWarning($"[Album] PlayerCards missing: result.Data is null, playerId={playerId}");
-                return;
-            }
+            Debug.LogError("[Album] libraryDeckController is not assigned");
+            yield break;
+        }
 
-            if (!result.Data.ContainsKey("PlayerCards"))
-            {
-                Debug.LogWarning($"[Album] PlayerCards missing: key not found, keys={string.Join(",", result.Data.Keys)}, playerId={playerId}");
-                return;
-            }
-
-            string playerCardsJson = result.Data["PlayerCards"].Value;
-            Debug.LogWarning($"[Album] PlayerCards raw loaded: playerId={playerId}, rawLength={playerCardsJson?.Length ?? 0}");
-            PlayerCardsData data = JsonUtility.FromJson<PlayerCardsData>(playerCardsJson);
-            int cardCount = data?.cards?.Count ?? 0;
-            Debug.LogWarning($"[Album] PlayerCards parsed: playerId={playerId}, cards={cardCount}");
-
-            if (data?.cards == null)
-            {
-                Debug.LogWarning($"[Album] PlayerCards parsed without cards array: playerId={playerId}");
-                return;
-            }
-
-            StartCoroutine(SpracujKarty(data.cards));
-        },
-        error =>
-        {
-            Debug.LogError($"[Album] PlayerCards load failed: playerId={playerId}, error={error.GenerateErrorReport()}");
-        });
-
-        yield return null;
+        yield return StartCoroutine(libraryDeckController.LoadForCurrentPlayer());
     }
 
-    private IEnumerator SpracujKarty(List<GeneratedCard> data)
+    public void RenderLibraryCards(
+        List<GeneratedCard> data,
+        HashSet<string> eligibleCardIds,
+        bool useCardRenderDelay = false,
+        bool showTransitionFrame = false
+    )
     {
-        Debug.Log("Album.SpracujKarty  -- Start");
+        if (libraryCardsRenderCoroutine != null)
+        {
+            StopCoroutine(libraryCardsRenderCoroutine);
+            Debug.LogWarning($"[Album] Previous library cards render cancelled: nextRender={libraryCardsRenderVersion + 1}");
+        }
 
-        Debug.Log("Number of cards: " + data.Count); // Pridaný výpis
+        int renderVersion = ++libraryCardsRenderVersion;
+        libraryCardsRenderCoroutine = StartCoroutine(SpracujKarty(
+            data ?? new List<GeneratedCard>(),
+            eligibleCardIds,
+            useCardRenderDelay,
+            showTransitionFrame,
+            renderVersion
+        ));
+    }
+
+    private IEnumerator SpracujKarty(
+        List<GeneratedCard> data,
+        HashSet<string> eligibleCardIds,
+        bool useCardRenderDelay,
+        bool showTransitionFrame,
+        int renderVersion
+    )
+    {
+        Debug.LogWarning($"[Album] Library cards render requested: render={renderVersion}, cards={data.Count}, eligibleCards={eligibleCardIds?.Count ?? 0}, delay={useCardRenderDelay}, transition={showTransitionFrame}");
+
+        if (showTransitionFrame)
+        {
+            content.SetActive(false);
+        }
+
+        foreach (Transform child in content.transform)
+        {
+            Destroy(child.gameObject);
+        }
+
+        if (showTransitionFrame)
+        {
+            Debug.LogWarning($"[Album] Library cards transition frame: render={renderVersion}, oldCardsHidden=True");
+            yield return null;
+        }
+
+        if (renderVersion != libraryCardsRenderVersion)
+        {
+            yield break;
+        }
+
+        content.SetActive(true);
 
         foreach (GeneratedCard cardData in data)
         {
+            if (renderVersion != libraryCardsRenderVersion)
+            {
+                yield break;
+            }
 
             GameObject novaKarta = Instantiate(kartaPrefab, transform);
             novaKarta.GetComponent<Card>().cardId = cardData.CardID;
@@ -208,8 +239,18 @@ public class Album : MonoBehaviour
             novaKarta.GetComponent<Card>().transform.SetParent(content.transform);
             novaKarta.GetComponent<Card>().transform.localScale = Vector3.one;
             novaKarta.GetComponent<Card>().Initialize(deckPanel);
+            novaKarta.GetComponent<Card>().deckManager = deckManager;
 
-            yield return new WaitForSeconds(0.05f);
+            if (useCardRenderDelay)
+            {
+                yield return new WaitForSeconds(0.05f);
+            }
+        }
+
+        if (renderVersion == libraryCardsRenderVersion)
+        {
+            libraryCardsRenderCoroutine = null;
+            Debug.LogWarning($"[Album] Library cards rendered: render={renderVersion}, cards={data.Count}, delay={useCardRenderDelay}, transition={showTransitionFrame}");
         }
     }
 

@@ -72,6 +72,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     private GameObject originalParent;
 
     private static Card currentZoomedCard = null;
+    public static bool IsAnyCardDetailOpen => currentZoomedCard != null;
 
     private int originalSiblingIndex;
 
@@ -80,6 +81,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     private float swipeDistanceThreshold = 50f;
 
     private ScrollRect parentScrollRect;
+    private LibrarySwipeInput parentLibrarySwipeInput;
     private bool isDragging;
     private bool dragInProgress;
     private Vector2 pointerDragStartPosition;
@@ -168,6 +170,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         backSideDescription.SetActive(false);
 
         parentScrollRect = GetComponentInParent<ScrollRect>();
+        parentLibrarySwipeInput = GetComponentInParent<LibrarySwipeInput>();
 
         nameText.text = cardName;
         levelText.text = "lvl " + level;
@@ -210,7 +213,6 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         nameTextAttr.text = cardName;
         int nextLevelExperience = OnlineCardExperienceCurve.RequiredXpForLevel(level + 1);
         expText.text = "Experience: " + experience + " / " + nextLevelExperience;
-        Debug.LogWarning($"[CardDetail] LoadDetails: {BuildDetailLogContext()}, nextLevelExperience={nextLevelExperience}");
         hpText.text = "Health: " + health;
         strText.text = "Strength: " + strength;
         speText.text = "Speed: " + speed;
@@ -270,50 +272,35 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         return $"id={cardId}, name={cardName}, styleId={styleId}, level={level}, experience={experience}, expText={visibleExpText}, deckCard={deckCard}, isZoomed={isZoomed}, attacks=[{attack1},{attack2},{attack3},{attack4}], counts=[{countAttack1},{countAttack2},{countAttack3},{countAttack4}]";
     }
 
-    // Metóda na odstránenie karty
+    // Metoda na odstranenie karty
     public void RemoveCard()
     {
-        // Najskôr získame údaje o balíčkoch
-        PlayFabClientAPI.GetUserData(new GetUserDataRequest(), deckResult =>
+        if (deckManager == null)
         {
-            var decksDataJson = GetExistingDeckDataJson(deckResult);
-            var decks = ConvertJsonToDeckData(decksDataJson);
+            Debug.LogWarning("[Card] Cannot recycle card because deckManager is not assigned.");
+            CardTutorial.instance.ShowBlockSellDeckCard();
+            return;
+        }
 
-            // Kontrola, či je karta v niektorom z balíčkov
-            bool isCardInDeck = decks.Any(deck => IsCardInDeck(deck.Value, cardId));
+        if (deckManager.IsCardUsedInAnyKnownDeck(cardId))
+        {
+            Debug.LogWarning("[Card] Cannot recycle card because it is used in a deck.");
+            CardTutorial.instance.ShowBlockSellDeckCard();
+            return;
+        }
 
-            if (!isCardInDeck)
+        GetPlayerCards(cardsData =>
+        {
+            if (cardsData != null)
             {
-                // Karta nie je v balíčku, môžeme ju odstrániť
-                GetPlayerCards(cardsData =>
-                {
-                    if (cardsData != null)
-                    {
-                        cardsData.cards.RemoveAll(card => card.CardID == cardId);
-                        SavePlayerCards(cardsData);
-                    }
-                });
-                StartCoroutine(AddCurrency(1));
-                StartCoroutine(AlbumLoveValue.Instance.GetPlayerCurrencyBalance());
-                Destroy(gameObject);
+                cardsData.cards.RemoveAll(card => card.CardID == cardId);
+                SavePlayerCards(cardsData);
             }
-            else
-            {
-                Debug.Log("Kartu nie je možné odstrániť, pretože je súčasťou balíčka.");
-                CardTutorial.instance.ShowBlockSellDeckCard();
-                // Tu by ste mali zvážiť ďalšie kroky, ako napríklad informovať hráča
-            }
-        }, error => Debug.LogError(error.GenerateErrorReport()));
+        });
+        StartCoroutine(AddCurrency(1));
+        StartCoroutine(AlbumLoveValue.Instance.GetPlayerCurrencyBalance());
+        Destroy(gameObject);
     }
-
-    private bool IsCardInDeck(Deck deck, string cardId)
-    {
-        return deck.Card1 == cardId || deck.Card2 == cardId || deck.Card3 == cardId ||
-            deck.Card4 == cardId || deck.Card5 == cardId;
-    }
-
-
-    // Načítanie dát hráča
     private void GetPlayerCards(System.Action<PlayerCardsData> callback)
     {
         PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
@@ -540,33 +527,19 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     }
 
 
-    public void OnClick()
+    private async void OnClick()
     {
         if (deckCard)
         {
             if (!isZoomed && currentZoomedCard != null)
             {
-                if (cardId == currentZoomedCard.cardId)
+                if (deckManager == null)
                 {
-                    Debug.LogWarning("Card with the same name already exists in the deck.");
+                    Debug.LogError("[Card] Cannot swap deck card because deckManager is not assigned.");
                     return;
                 }
-                if (deckManager.IsCardNameInDeck(currentZoomedCard.cardName) && cardName != currentZoomedCard.cardName)
-                {
-                    Debug.LogWarning("Card with the same name already exists in the deck.");
-                    return;
-                }
-                SwapCardsInPlayFab(currentZoomedCard.cardId, cardId);
-                deckManager.AddCardToHand(currentZoomedCard.cardId);
-                if (!currentZoomedCard.deckCard)
-                {
-                    currentZoomedCard.ZoomOut();
-                }
-                else
-                {
-                    Destroy(currentZoomedCard.gameObject);
-                }
-                ZoomIn();
+
+                await deckManager.SwapWithSelectedCardAsync(this, currentZoomedCard);
             }
             else if (isZoomed)
             {
@@ -575,123 +548,16 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             }
         }
     }
-
-
-    private void SwapCardsInPlayFab(string newCardId, string oldCardId)
-    {
-        // Získame existujúce údaje o balíčkoch z PlayFab
-        PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
-        {
-            string existingDataJson = GetExistingDeckDataJson(result);
-            Dictionary<string, Deck> existingDecks = ConvertJsonToDeckData(existingDataJson);
-
-            // Prejdeme všetky balíčky a zmeníme starú kartu za novú
-            foreach (Deck deck in existingDecks.Values)
-            {
-                if (deck.Card1 == oldCardId) deck.Card1 = newCardId;
-                else if (deck.Card2 == oldCardId) deck.Card2 = newCardId;
-                else if (deck.Card3 == oldCardId) deck.Card3 = newCardId;
-                else if (deck.Card4 == oldCardId) deck.Card4 = newCardId;
-                else if (deck.Card5 == oldCardId) deck.Card5 = newCardId;
-            }
-
-            // Konvertujeme upravené balíčky späť na JSON a aktualizujeme údaje v PlayFab
-            string updatedJson = ConvertDeckDataToJson(existingDecks);
-            UpdateDeckDataInPlayFab(updatedJson);
-        }, error => Debug.LogError(error.GenerateErrorReport()));
-    }
-
-    private string GetExistingDeckDataJson(GetUserDataResult result)
-    {
-        if (result.Data.ContainsKey("PlayerDecks"))
-        {
-            return result.Data["PlayerDecks"].Value;
-        }
-        return "{}";
-    }
-
-    private Dictionary<string, Deck> ConvertJsonToDeckData(string existingDataJson)
-    {
-        Dictionary<string, Deck> data = new Dictionary<string, Deck>();
-        if (!string.IsNullOrEmpty(existingDataJson))
-        {
-            DeckListWrapper existingDecks = JsonUtility.FromJson<DeckListWrapper>(existingDataJson);
-            foreach (Deck existingDeck in existingDecks.Decks)
-            {
-                data.Add(existingDeck.DeckID, existingDeck);
-            }
-        }
-        return data;
-    }
-
-    private string ConvertDeckDataToJson(Dictionary<string, Deck> data)
-    {
-        DeckListWrapper updatedDecks = new DeckListWrapper
-        {
-            Decks = new List<Deck>(data.Values)
-        };
-        return JsonUtility.ToJson(updatedDecks);
-    }
-
-    private void UpdateDeckDataInPlayFab(string updatedJson)
-    {
-        Debug.Log("UpdateDeckDataInPlayFab ==> Start");
-
-        var updateRequest = new UpdateUserDataRequest
-        {
-            Data = new Dictionary<string, string>
-            {
-                { "PlayerDecks", updatedJson }
-            }
-        };
-        Debug.Log("Updated JSON deck: " + updatedJson);
-        PlayFabClientAPI.UpdateUserData(updateRequest, updateResult => Debug.Log("User deck data updated successfully"), error => Debug.LogError(error.GenerateErrorReport()));
-    }
-
-
-
-    void OnDataUpdated(UpdateUserDataResult result)
-    {
-        Debug.Log("User data updated successfully");
-    }
-
-    void OnUpdateError(PlayFabError error)
-    {
-        Debug.LogError("Error updating user data: " + error.GenerateErrorReport());
-    }
-
-
-
-
-    private void SwapCardsInDatabase(int newCardId, int oldCardId)  //POTOM VYMAZAT
-    {
-        IDbConnection dbConnection = new SqliteConnection(connectionString);
-        dbConnection.Open();
-
-        IDbCommand dbCommand = dbConnection.CreateCommand();
-        dbCommand.CommandText = $"UPDATE PlayerDecks SET Card1 = (CASE WHEN Card1 = {oldCardId} THEN {newCardId} ELSE Card1 END), " +
-                                            $"Card2 = (CASE WHEN Card2 = {oldCardId} THEN {newCardId} ELSE Card2 END), " +
-                                            $"Card3 = (CASE WHEN Card3 = {oldCardId} THEN {newCardId} ELSE Card3 END), " +
-                                            $"Card4 = (CASE WHEN Card4 = {oldCardId} THEN {newCardId} ELSE Card4 END), " +
-                                            $"Card5 = (CASE WHEN Card5 = {oldCardId} THEN {newCardId} ELSE Card5 END) " +
-                                $"WHERE DeckID = 1";
-        dbCommand.ExecuteNonQuery();
-
-        int rowsAffected = dbCommand.ExecuteNonQuery();
-        Debug.Log("Rows affected: " + rowsAffected);
-
-        dbCommand.Dispose();
-        dbConnection.Close();
-    }
-
-
     public void OnBeginDrag(PointerEventData eventData)
     {
         if (!isZoomed && !deckCard)
         {
             pointerDragStartPosition = eventData.position;
             isDragging = true;
-            parentScrollRect.OnBeginDrag(eventData);
+            if (parentScrollRect != null)
+            {
+                parentScrollRect.OnBeginDrag(eventData);
+            }
         }
     }
 
@@ -700,7 +566,10 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         if (!isZoomed && isDragging && !deckCard)
         {
             dragInProgress = true;
-            parentScrollRect.OnDrag(eventData);
+            if (parentScrollRect != null)
+            {
+                parentScrollRect.OnDrag(eventData);
+            }
         }
     }
 
@@ -709,7 +578,10 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         if (!isZoomed && !deckCard)
         {
             isDragging = false;
-            parentScrollRect.OnEndDrag(eventData);
+            if (parentScrollRect != null)
+            {
+                parentScrollRect.OnEndDrag(eventData);
+            }
 
             float dragDistance = Vector2.Distance(pointerDragStartPosition, eventData.position);
         }
@@ -811,12 +683,22 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     public void OnPointerDown(PointerEventData eventData)
     {
         pointerDownPosition = eventData.position;
+        if (!isZoomed && parentLibrarySwipeInput != null)
+        {
+            parentLibrarySwipeInput.CapturePointerDown(eventData);
+        }
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
         pointerUpPosition = eventData.position;
         float distance = Vector2.Distance(pointerDownPosition, pointerUpPosition);
+
+        if (!isZoomed && parentLibrarySwipeInput != null && parentLibrarySwipeInput.TryHandlePointerUp(eventData))
+        {
+            dragInProgress = false;
+            return;
+        }
 
         if (distance > swipeDistanceThreshold && isZoomed)
         {

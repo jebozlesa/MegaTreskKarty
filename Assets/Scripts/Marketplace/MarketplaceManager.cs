@@ -168,7 +168,7 @@ public class MarketplaceManager : MonoBehaviour
         yield return StartCoroutine(SaveCardsToPlayFab(generatedCards));
         
         // ✅ First deck creation (if needed)
-        yield return StartCoroutine(cardGenerator.CreateFirstDeck(generatedCards));
+        UnityEngine.SceneManagement.SceneManager.LoadScene("Cards");
         
         Debug.LogWarning("[MarketplaceManager] Pack opening complete!");
     }

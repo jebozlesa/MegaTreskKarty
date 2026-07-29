@@ -377,6 +377,7 @@ GameObject:
   - component: {fileID: 87397810}
   - component: {fileID: 87397813}
   - component: {fileID: 87397811}
+  - component: {fileID: 87397814}
   - component: {fileID: 87397812}
   m_Layer: 0
   m_Name: Scroll
@@ -473,6 +474,21 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &87397814
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 87397809}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: edd7fb120a91e8e43a8e35e8dbc40869, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  libraryDeckController: {fileID: 1340503293}
+  target: 0
+  swipeThreshold: 80
 --- !u!1 &110546653
 GameObject:
   m_ObjectHideFlags: 0
@@ -611,7 +627,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -6635216682420457456, guid: d52fde19e339681479433be572cf5d35, type: 3}
+  m_Sprite: {fileID: -3169739845866563656, guid: df69a7220dfc0964ca41540f3288765e, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1397,6 +1413,8 @@ MonoBehaviour:
   cardTutorial: {fileID: 0}
   deckPanel: {fileID: 964759638}
   loveValue: {fileID: 751983039}
+  libraryDeckController: {fileID: 1340503293}
+  deckManager: {fileID: 0}
 --- !u!1 &469561675
 GameObject:
   m_ObjectHideFlags: 0
@@ -3057,6 +3075,7 @@ GameObject:
   - component: {fileID: 964759640}
   - component: {fileID: 964759642}
   - component: {fileID: 964759643}
+  - component: {fileID: 964759644}
   m_Layer: 5
   m_Name: DeckPanel
   m_TagString: Untagged
@@ -3161,8 +3180,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardPrefab: {fileID: 8019556691665993109, guid: 84a595f12eb3c4443a86890161eb6533, type: 3}
   deckPanel: {fileID: 964759638}
+  createDeckPrompt: {fileID: 0}
   zoomedCardHolder: {fileID: 866114709}
+  libraryDeckController: {fileID: 1340503293}
   connectionString: 
+--- !u!114 &964759644
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 964759638}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: edd7fb120a91e8e43a8e35e8dbc40869, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  libraryDeckController: {fileID: 1340503293}
+  target: 1
+  swipeThreshold: 80
 --- !u!1001 &997900219
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3916,6 +3952,91 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1326395689}
   m_CullTransparentMesh: 1
+--- !u!1 &1340503291
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1340503295}
+  - component: {fileID: 1340503294}
+  - component: {fileID: 1340503293}
+  - component: {fileID: 1340503292}
+  m_Layer: 0
+  m_Name: LibraryDeckSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1340503292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1340503291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed25fe0a5a462db408eda59fa87ac5b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  networkErrorIndicator: {fileID: 0}
+  maxRetries: 3
+  retryDelay: 1
+--- !u!114 &1340503293
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1340503291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d0107efe62bac24bab095c9dedd9c03, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  libraryDeckService: {fileID: 1340503294}
+  album: {fileID: 454831879}
+  deckManager: {fileID: 964759643}
+  libraryBackgroundImage: {fileID: 138446599}
+  contextBackgrounds:
+  - contextId: rr
+    backgroundSprite: {fileID: -3169739845866563656, guid: df69a7220dfc0964ca41540f3288765e, type: 3}
+  - contextId: mp
+    backgroundSprite: {fileID: 6975616415285851117, guid: 39700e9bfa7d3cb42adf14e74046a21e, type: 3}
+  - contextId: campaign:bushido
+    backgroundSprite: {fileID: -3830338963656951320, guid: 0e60d8de28686aa49aa462fc0518f9ce, type: 3}
+--- !u!114 &1340503294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1340503291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d92f9ede787baf742864a742b99142f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  serverFunctionsManager: {fileID: 1340503292}
+--- !u!4 &1340503295
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1340503291}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 476.94775, y: 1181.8456, z: -3.3262942}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1407379529
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11746,3 +11867,4 @@ SceneRoots:
   - {fileID: 1575105349}
   - {fileID: 997900219}
   - {fileID: 1074998132}
+  - {fileID: 1340503295}

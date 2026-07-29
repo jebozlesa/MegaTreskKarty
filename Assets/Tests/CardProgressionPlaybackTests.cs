@@ -85,12 +85,15 @@ public class CardProgressionPlaybackTests
     {
         string source = ReadProjectFile("Assets", "Scripts", "Album", "DeckManager.cs");
 
-        int experienceAssignments = CountOccurrences(source, ".experience = existingCard.Experience;");
-
-        Assert.GreaterOrEqual(
-            experienceAssignments,
-            2,
-            "Deck panel cards must preserve XP both when the deck loads and when a card is added to the hand."
+        StringAssert.Contains(
+            "private void CreateCardInDeck(GeneratedCard card)",
+            source,
+            "Deck panel cards must be rendered from the canonical player card DTO."
+        );
+        StringAssert.Contains(
+            "deckCard.experience = card.Experience;",
+            source,
+            "Deck panel cards must preserve XP whenever the active deck is rendered or rerendered."
         );
     }
 

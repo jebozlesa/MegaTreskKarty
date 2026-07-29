@@ -674,6 +674,66 @@ public class ServerFunctionsManager : MonoBehaviour
         CallFunctionWithRetry("abandonRoyalRumbleSession", parameters, callback);
     }
 
+    public void GetLibraryDeckState(string playerId, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        var parameters = new { playerId = playerId };
+        CallFunctionWithRetry("getLibraryDeckState", parameters, callback);
+    }
+
+    public void CreateLibraryDeck(
+        string playerId,
+        string contextId,
+        Action<ExecuteFunctionResult> callback
+    )
+    {
+        callback ??= NoOpCallback;
+
+        var parameters = new { playerId = playerId, contextId = contextId };
+        CallFunctionWithRetry("createLibraryDeck", parameters, callback);
+    }
+
+    public void SetActiveLibraryDeck(
+        string playerId,
+        string contextId,
+        string deckId,
+        Action<ExecuteFunctionResult> callback
+    )
+    {
+        callback ??= NoOpCallback;
+
+        var parameters = new
+        {
+            playerId = playerId,
+            contextId = contextId,
+            deckId = deckId,
+        };
+        CallFunctionWithRetry("setActiveLibraryDeck", parameters, callback);
+    }
+
+    public void SwapLibraryDeckCard(
+        string playerId,
+        string contextId,
+        string deckId,
+        string oldCardId,
+        string newCardId,
+        Action<ExecuteFunctionResult> callback
+    )
+    {
+        callback ??= NoOpCallback;
+
+        var parameters = new
+        {
+            playerId = playerId,
+            contextId = contextId,
+            deckId = deckId,
+            oldCardId = oldCardId,
+            newCardId = newCardId,
+        };
+        CallFunctionWithRetry("swapLibraryDeckCard", parameters, callback);
+    }
+
     private void ShowNetworkError(string errorMessage = "Network error")
     {
         if (networkErrorIndicator != null)
