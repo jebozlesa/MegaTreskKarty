@@ -39,6 +39,11 @@ public class DeckManager : MonoBehaviour
 
         foreach (Transform child in deckPanel.transform)
         {
+            if (createDeckPrompt != null && child.gameObject == createDeckPrompt)
+            {
+                continue;
+            }
+
             Destroy(child.gameObject);
         }
 
@@ -49,7 +54,9 @@ public class DeckManager : MonoBehaviour
 
         if (deck?.cardIds == null || allCards == null)
         {
-            Debug.LogWarning($"[DeckManager] No active deck to render: context={context?.contextId}");
+            Debug.LogWarning(
+                $"[DeckManager] No active deck to render: context={context?.contextId}, createPromptAssigned={createDeckPrompt != null}, createPromptActive={createDeckPrompt != null && createDeckPrompt.activeSelf}"
+            );
             return;
         }
 

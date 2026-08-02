@@ -63,6 +63,8 @@ sysinfo.txt
 *.aab
 *.unitypackage
 *.app
+/*_mapping.txt
+/MegaBang_BurstDebugInformation_DoNotShip/
 
 # Crashlytics generated file
 crashlytics-build.properties
