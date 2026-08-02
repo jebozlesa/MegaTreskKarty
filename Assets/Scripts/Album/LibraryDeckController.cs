@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -18,6 +19,9 @@ public class LibraryDeckController : MonoBehaviour
     public Image libraryBackgroundImage;
     public List<LibraryContextBackgroundBinding> contextBackgrounds = new List<LibraryContextBackgroundBinding>();
 
+    [Header("Sorting")]
+    public TMP_Text sortCriterionLabel;
+
     public LibraryDeckStateResponse CurrentState { get; private set; }
     public LibraryContextDto CurrentContext { get; private set; }
     public LibraryDeckDto CurrentDeck { get; private set; }
@@ -26,6 +30,15 @@ public class LibraryDeckController : MonoBehaviour
     private int currentContextIndex;
     private int currentDeckIndex;
     private string playerId;
+    private LibrarySortCriterion selectedSortCriterion = LibrarySortCriterion.Level;
+    private LibrarySortCriterion lastAppliedSortCriterion = LibrarySortCriterion.Level;
+    private bool sortApplied;
+    private bool sortAscending;
+
+    private void Awake()
+    {
+        UpdateSortCriterionLabel();
+    }
 
     public IEnumerator LoadForCurrentPlayer()
     {
@@ -137,6 +150,42 @@ public class LibraryDeckController : MonoBehaviour
     public async void SelectPreviousDeck()
     {
         await MoveDeckAsync(-1);
+    }
+
+    public void CycleSortCriterion()
+    {
+        LibrarySortCriterion previous = selectedSortCriterion;
+        selectedSortCriterion = LibraryCardSorter.NextCriterion(selectedSortCriterion);
+        UpdateSortCriterionLabel();
+
+        Debug.LogWarning(
+            $"[LibraryDeckController] Sort criterion changed: {LibraryCardSorter.LabelFor(previous)}->{LibraryCardSorter.LabelFor(selectedSortCriterion)}, appliedSort={FormatSortState()}"
+        );
+    }
+
+    public void ApplySort()
+    {
+        if (CurrentState == null)
+        {
+            Debug.LogWarning("[LibraryDeckController] Sort ignored: library state is not loaded");
+            return;
+        }
+
+        if (sortApplied && lastAppliedSortCriterion == selectedSortCriterion)
+        {
+            sortAscending = !sortAscending;
+        }
+        else
+        {
+            sortAscending = LibraryCardSorter.DefaultAscending(selectedSortCriterion);
+            lastAppliedSortCriterion = selectedSortCriterion;
+            sortApplied = true;
+        }
+
+        Debug.LogWarning(
+            $"[LibraryDeckController] Sort applied: {FormatSortState()}, context={FormatContext(CurrentContext)}"
+        );
+        RenderCurrentContext(showTransitionFrame: true);
     }
 
     public bool IsCardUsedInAnyKnownDeck(string cardId)
@@ -299,9 +348,10 @@ public class LibraryDeckController : MonoBehaviour
         List<GeneratedCard> visibleCards = (CurrentState.cards ?? new List<GeneratedCard>())
             .Where(card => eligibleIds.Contains(card.CardID))
             .ToList();
+        visibleCards = ApplyCurrentSort(visibleCards);
 
         Debug.LogWarning(
-            $"[LibraryDeckController] Render context: index={currentContextIndex}/{VisibleContextCount()}, context={FormatContext(CurrentContext)}, cards={visibleCards.Count}, deckSlot={currentDeckIndex}/{GetDeckSlotCount(CurrentContext)}, activeDeck={FormatDeck(CurrentDeck)}, createDeckSlot={CurrentDeck == null}"
+            $"[LibraryDeckController] Render context: index={currentContextIndex}/{VisibleContextCount()}, context={FormatContext(CurrentContext)}, cards={visibleCards.Count}, deckSlot={currentDeckIndex}/{GetDeckSlotCount(CurrentContext)}, activeDeck={FormatDeck(CurrentDeck)}, createDeckSlot={CurrentDeck == null}, sort={FormatSortState()}"
         );
 
         ApplyCurrentContextVisuals();
@@ -349,6 +399,30 @@ public class LibraryDeckController : MonoBehaviour
         );
 
         deckManager.RenderDeck(CurrentDeck, CurrentState?.cards ?? new List<GeneratedCard>(), CurrentContext);
+    }
+
+    private List<GeneratedCard> ApplyCurrentSort(List<GeneratedCard> visibleCards)
+    {
+        if (!sortApplied)
+        {
+            return visibleCards;
+        }
+
+        return LibraryCardSorter.SortCards(
+            visibleCards,
+            lastAppliedSortCriterion,
+            sortAscending
+        );
+    }
+
+    private void UpdateSortCriterionLabel()
+    {
+        if (sortCriterionLabel == null)
+        {
+            return;
+        }
+
+        sortCriterionLabel.text = LibraryCardSorter.LabelFor(selectedSortCriterion);
     }
 
     private LibraryContextDto GetVisibleContext(int index)
@@ -444,6 +518,16 @@ public class LibraryDeckController : MonoBehaviour
         return $"{deck.deckId}(cards={deck.cardIds?.Count ?? 0})";
     }
 
+    private string FormatSortState()
+    {
+        if (!sortApplied)
+        {
+            return $"not_applied/selected={LibraryCardSorter.LabelFor(selectedSortCriterion)}";
+        }
+
+        return $"{LibraryCardSorter.LabelFor(lastAppliedSortCriterion)}/{(sortAscending ? "asc" : "desc")}/selected={LibraryCardSorter.LabelFor(selectedSortCriterion)}";
+    }
+
     private bool CanMutateCurrentContext()
     {
         if (!ValidateReferences())
@@ -497,4 +581,146 @@ public class LibraryContextBackgroundBinding
 {
     public string contextId;
     public Sprite backgroundSprite;
+}
+
+public enum LibrarySortCriterion
+{
+    Level,
+    Name,
+    Experience,
+    Health,
+    Strength,
+    Speed,
+    Attack,
+    Defense,
+    Knowledge,
+    Charisma
+}
+
+public static class LibraryCardSorter
+{
+    private static readonly LibrarySortCriterion[] CriterionCycle =
+    {
+        LibrarySortCriterion.Level,
+        LibrarySortCriterion.Name,
+        LibrarySortCriterion.Experience,
+        LibrarySortCriterion.Health,
+        LibrarySortCriterion.Strength,
+        LibrarySortCriterion.Speed,
+        LibrarySortCriterion.Attack,
+        LibrarySortCriterion.Defense,
+        LibrarySortCriterion.Knowledge,
+        LibrarySortCriterion.Charisma
+    };
+
+    public static LibrarySortCriterion NextCriterion(LibrarySortCriterion current)
+    {
+        int index = System.Array.IndexOf(CriterionCycle, current);
+        if (index < 0)
+        {
+            return CriterionCycle[0];
+        }
+
+        return CriterionCycle[(index + 1) % CriterionCycle.Length];
+    }
+
+    public static string LabelFor(LibrarySortCriterion criterion)
+    {
+        switch (criterion)
+        {
+            case LibrarySortCriterion.Level:
+                return "LVL";
+            case LibrarySortCriterion.Name:
+                return "ABC";
+            case LibrarySortCriterion.Experience:
+                return "XP";
+            case LibrarySortCriterion.Health:
+                return "HP";
+            case LibrarySortCriterion.Strength:
+                return "STR";
+            case LibrarySortCriterion.Speed:
+                return "SPD";
+            case LibrarySortCriterion.Attack:
+                return "ATT";
+            case LibrarySortCriterion.Defense:
+                return "DEF";
+            case LibrarySortCriterion.Knowledge:
+                return "KNO";
+            case LibrarySortCriterion.Charisma:
+                return "CHA";
+            default:
+                return "LVL";
+        }
+    }
+
+    public static bool DefaultAscending(LibrarySortCriterion criterion)
+    {
+        return criterion == LibrarySortCriterion.Name;
+    }
+
+    public static List<GeneratedCard> SortCards(
+        IEnumerable<GeneratedCard> cards,
+        LibrarySortCriterion criterion,
+        bool ascending
+    )
+    {
+        IEnumerable<GeneratedCard> source = (cards ?? Enumerable.Empty<GeneratedCard>())
+            .Where(card => card != null);
+
+        IOrderedEnumerable<GeneratedCard> orderedCards;
+        if (criterion == LibrarySortCriterion.Name)
+        {
+            orderedCards = ascending
+                ? source.OrderBy(NameKey, System.StringComparer.OrdinalIgnoreCase)
+                : source.OrderByDescending(NameKey, System.StringComparer.OrdinalIgnoreCase);
+        }
+        else
+        {
+            orderedCards = ascending
+                ? source.OrderBy(card => NumericKey(card, criterion))
+                : source.OrderByDescending(card => NumericKey(card, criterion));
+        }
+
+        return orderedCards
+            .ThenBy(NameKey, System.StringComparer.OrdinalIgnoreCase)
+            .ThenBy(card => card.CardID ?? string.Empty, System.StringComparer.Ordinal)
+            .ToList();
+    }
+
+    private static string NameKey(GeneratedCard card)
+    {
+        return card?.PersonName ?? string.Empty;
+    }
+
+    private static int NumericKey(GeneratedCard card, LibrarySortCriterion criterion)
+    {
+        if (card == null)
+        {
+            return 0;
+        }
+
+        switch (criterion)
+        {
+            case LibrarySortCriterion.Level:
+                return card.Level;
+            case LibrarySortCriterion.Experience:
+                return card.Experience;
+            case LibrarySortCriterion.Health:
+                return card.MaxHealth > 0 ? card.MaxHealth : card.Health;
+            case LibrarySortCriterion.Strength:
+                return card.Strength;
+            case LibrarySortCriterion.Speed:
+                return card.Speed;
+            case LibrarySortCriterion.Attack:
+                return card.Attack;
+            case LibrarySortCriterion.Defense:
+                return card.Defense;
+            case LibrarySortCriterion.Knowledge:
+                return card.Knowledge;
+            case LibrarySortCriterion.Charisma:
+                return card.Charisma;
+            default:
+                return card.Level;
+        }
+    }
 }

@@ -66,4 +66,65 @@ public class AlbumDiagnosticsTests
             StringAssert.DoesNotContain("UpdateDeckDataInPlayFab", source, runtimeFile);
         }
     }
+
+    [Test]
+    public void LibrarySortingRuntime_UsesApprovedLocalSortContract()
+    {
+        string controllerPath = Path.Combine(Application.dataPath, "Scripts", "Album", "LibraryDeckController.cs");
+        Assert.IsTrue(File.Exists(controllerPath), "LibraryDeckController.cs was not found.");
+
+        string source = File.ReadAllText(controllerPath);
+
+        StringAssert.Contains("public void CycleSortCriterion()", source);
+        StringAssert.Contains("public void ApplySort()", source);
+        StringAssert.Contains("visibleCards = ApplyCurrentSort(visibleCards);", source);
+        StringAssert.Contains("RenderCurrentContext(showTransitionFrame: true);", source);
+        StringAssert.Contains("public static class LibraryCardSorter", source);
+        StringAssert.Contains("public static List<GeneratedCard> SortCards(", source);
+        StringAssert.Contains("CurrentState.cards", source);
+
+        StringAssert.Contains("LibrarySortCriterion.Level", source);
+        StringAssert.Contains("LibrarySortCriterion.Name", source);
+        StringAssert.Contains("LibrarySortCriterion.Experience", source);
+        StringAssert.Contains("LibrarySortCriterion.Health", source);
+        StringAssert.Contains("LibrarySortCriterion.Strength", source);
+        StringAssert.Contains("LibrarySortCriterion.Speed", source);
+        StringAssert.Contains("LibrarySortCriterion.Attack", source);
+        StringAssert.Contains("LibrarySortCriterion.Defense", source);
+        StringAssert.Contains("LibrarySortCriterion.Knowledge", source);
+        StringAssert.Contains("LibrarySortCriterion.Charisma", source);
+
+        StringAssert.Contains("return \"LVL\";", source);
+        StringAssert.Contains("return \"ABC\";", source);
+        StringAssert.Contains("return \"XP\";", source);
+        StringAssert.Contains("return \"HP\";", source);
+        StringAssert.Contains("return \"STR\";", source);
+        StringAssert.Contains("return \"SPD\";", source);
+        StringAssert.Contains("return \"ATT\";", source);
+        StringAssert.Contains("return \"DEF\";", source);
+        StringAssert.Contains("return \"KNO\";", source);
+        StringAssert.Contains("return \"CHA\";", source);
+        StringAssert.Contains("return criterion == LibrarySortCriterion.Name;", source);
+
+        string applySortBody = ExtractMethodBody(
+            source,
+            "public void ApplySort()",
+            "public bool IsCardUsedInAnyKnownDeck"
+        );
+
+        StringAssert.DoesNotContain("libraryDeckService", applySortBody);
+        StringAssert.DoesNotContain("GetLibraryDeckStateAsync", applySortBody);
+        StringAssert.DoesNotContain("await", applySortBody);
+    }
+
+    private static string ExtractMethodBody(string source, string startMarker, string endMarker)
+    {
+        int start = source.IndexOf(startMarker, System.StringComparison.Ordinal);
+        Assert.GreaterOrEqual(start, 0, $"Start marker was not found: {startMarker}");
+
+        int end = source.IndexOf(endMarker, start, System.StringComparison.Ordinal);
+        Assert.Greater(end, start, $"End marker was not found after: {startMarker}");
+
+        return source.Substring(start, end - start);
+    }
 }
