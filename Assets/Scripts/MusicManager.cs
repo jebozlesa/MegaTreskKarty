@@ -15,7 +15,10 @@ public class MusicManager : MonoBehaviour
             SceneManager.sceneLoaded += OnSceneLoaded;
 
             audioSource = GetComponent<AudioSource>();
-            audioSource.loop = true;
+            if (audioSource != null)
+            {
+                audioSource.loop = true;
+            }
 
             UpdateMusicStateBasedOnScene(SceneManager.GetActiveScene().name);
         }
@@ -27,23 +30,21 @@ public class MusicManager : MonoBehaviour
 
     private void UpdateMusicStateBasedOnScene(string sceneName)
     {
-        bool isMusicMuted = PlayerPrefs.GetInt("isMusicMuted", 0) == 1;
-        audioSource.mute = isMusicMuted;
-
-        if (isMusicMuted)
+        if (audioSource == null)
         {
-            StopMusic();
+            return;
+        }
+
+        GameAudioSettings.ApplyMasterAudioState();
+        audioSource.mute = !GameAudioSettings.IsMusicEnabled;
+
+        if (GameAudioSettings.ShouldPlayMusicInScene(sceneName))
+        {
+            PlayMusic();
         }
         else
         {
-            if (sceneName == "Login" || sceneName == "Game")
-            {
-                StopMusic();
-            }
-            else if (sceneName == "Main" || sceneName == "Marketplace")
-            {
-                PlayMusic();
-            }
+            StopMusic();
         }
     }
 
@@ -59,7 +60,7 @@ public class MusicManager : MonoBehaviour
 
     public void PlayMusic()
     {
-        if (!audioSource.isPlaying)
+        if (audioSource != null && !audioSource.isPlaying)
         {
             audioSource.Play();
         }
@@ -67,7 +68,7 @@ public class MusicManager : MonoBehaviour
 
     public void StopMusic()
     {
-        if (audioSource.isPlaying)
+        if (audioSource != null && audioSource.isPlaying)
         {
             audioSource.Stop();
         }
@@ -82,18 +83,18 @@ public class MusicManager : MonoBehaviour
     {
         if (!pauseStatus)
         {
-            // Aplikácia sa obnovuje z pauzy
             AudioSettings.Reset(AudioSettings.GetConfiguration());
             RefreshMusicState();
 
-            // Ak sme na scéne "Main" a hudba nie je stlmená, spustiť hudbu
             string currentSceneName = SceneManager.GetActiveScene().name;
-            bool isMusicMuted = PlayerPrefs.GetInt("isMusicMuted", 0) == 1;
-            if (currentSceneName == "Main" && !isMusicMuted && !audioSource.isPlaying)
+            if (
+                audioSource != null
+                && GameAudioSettings.ShouldPlayMusicInScene(currentSceneName)
+                && !audioSource.isPlaying
+            )
             {
                 PlayMusic();
             }
         }
     }
-
 }

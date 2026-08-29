@@ -20,6 +20,7 @@ public class AudioManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             audioSource = GetComponent<AudioSource>();
+            GameAudioSettings.ApplyMasterAudioState();
         }
         else if (Instance != this)
         {
@@ -29,13 +30,12 @@ public class AudioManager : MonoBehaviour
 
     public void PlaySound(AudioClip clip)
     {
-        if (clip != null && audioSource != null)
+        if (clip != null && audioSource != null && GameAudioSettings.ShouldPlaySoundEffect())
         {
             audioSource.PlayOneShot(clip);
         }
     }
 
-    // Pomocné metódy pre špecifické zvuky
     public void PlayButtonClickSound()
     {
         PlaySound(buttonClickSound);
@@ -60,6 +60,7 @@ public class AudioManager : MonoBehaviour
     {
         PlaySound(cardZoomInSound);
     }
+
     public void PlayCardZoomOutSound()
     {
         PlaySound(cardZoomOutSound);

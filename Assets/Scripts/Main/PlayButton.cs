@@ -30,16 +30,6 @@ public class PlayButton : MonoBehaviour
 
     public void LogoutAndLoadSceneLogin()
     {
-        PlayerPrefs.DeleteKey("username");
-        PlayerPrefs.DeleteKey("email");
-        PlayerPrefs.DeleteKey("password");
-        PlayerPrefs.Save();
-
-        if (PlayFabManagerLogin.Instance != null)
-        {
-            Destroy(PlayFabManagerLogin.Instance.gameObject);
-        }
-
-        SceneManager.LoadScene("Login");
+        PlayerSessionLogout.LogoutAndLoadLogin();
     }
 }

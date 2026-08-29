@@ -4,81 +4,68 @@ using UnityEngine.UI;
 
 public class EnvironmentRandomizer : MonoBehaviour
 {
-    public Image backgroundImage; // Referencia na komponent Image pre pozadie
-    private AudioSource audioSource; // Referencia na komponent AudioSource pre zvuk pozadia
+    public Image backgroundImage;
+    private AudioSource audioSource;
 
-    void Start()
+    private void Start()
     {
-        // Zabezpečíme, že existuje komponent AudioSource
         audioSource = gameObject.AddComponent<AudioSource>();
-
         audioSource.volume = 0.5f;
 
-        // Načítame a aplikujeme náhodné prostredie
         ApplyRandomEnvironment();
-
-        // Aktualizujeme stav zvuku
         UpdateAudioState();
     }
 
-    void ApplyRandomEnvironment()
+    private void ApplyRandomEnvironment()
     {
-        // Načítame všetky obrázky pozadia
         Sprite[] backgrounds = Resources.LoadAll<Sprite>("Backgrounds");
         Dictionary<string, AudioClip> backgroundSounds = new Dictionary<string, AudioClip>();
 
-        // Načítame všetky zvuky pozadia do slovníka
-        foreach (var sound in Resources.LoadAll<AudioClip>("BackgroundSound"))
+        foreach (AudioClip sound in Resources.LoadAll<AudioClip>("BackgroundSound"))
         {
             backgroundSounds[sound.name] = sound;
         }
 
-        // Uistíme sa, že máme aspoň jedno pozadie na výber
         if (backgrounds.Length > 0)
         {
-            // Náhodne vyberieme index
             int randomIndex = Random.Range(0, backgrounds.Length);
-
-            // Nastavíme obrázok pozadia
             backgroundImage.sprite = backgrounds[randomIndex];
 
-            // Pokúsime sa nájsť zodpovedajúci zvuk pozadia
             if (backgroundSounds.TryGetValue(backgrounds[randomIndex].name, out AudioClip matchingSound))
             {
-                // Nastavíme zvuk pozadia, ak bol nájdený
                 audioSource.clip = matchingSound;
-                audioSource.loop = true; // Nastavíme audio na opakovanie
+                audioSource.loop = true;
                 audioSource.Play();
             }
             else
             {
-                Debug.LogWarning($"Nebol nájdený zvuk zodpovedajúci obrázku {backgrounds[randomIndex].name}");
+                Debug.LogWarning($"No matching background sound found for {backgrounds[randomIndex].name}");
             }
         }
         else
         {
-            Debug.LogWarning("Neboli nájdené žiadne obrázky pozadia. Uistite sa, že sú umiestnené v priečinku Resources.");
+            Debug.LogWarning("No background sprites were found in Resources/Backgrounds.");
         }
     }
 
-    void UpdateAudioState()
+    private void UpdateAudioState()
     {
-        // Kontrolujeme, či je hudba zapnutá alebo vypnutá
-        bool isMusicMuted = PlayerPrefs.GetInt("isMusicMuted", 0) == 1;
-        audioSource.mute = isMusicMuted;
+        GameAudioSettings.ApplyMasterAudioState();
+        audioSource.mute = !GameAudioSettings.IsMusicEnabled || !GameAudioSettings.IsSoundEnabled;
     }
 
     private void OnApplicationPause(bool pauseStatus)
     {
         if (!pauseStatus)
         {
-            // Aplikácia sa obnovuje z pauzy
             AudioSettings.Reset(AudioSettings.GetConfiguration());
             UpdateAudioState();
 
-            // Ak hudba nie je stlmená a nehrá, spustiť hudbu
-            bool isMusicMuted = PlayerPrefs.GetInt("isMusicMuted", 0) == 1;
-            if (!isMusicMuted && !audioSource.isPlaying)
+            if (
+                GameAudioSettings.IsSoundEnabled
+                && GameAudioSettings.IsMusicEnabled
+                && !audioSource.isPlaying
+            )
             {
                 audioSource.Play();
             }

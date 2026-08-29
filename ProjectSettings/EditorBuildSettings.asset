@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/Scenes/Main.unity
     guid: 3fc8acdd13e6c734bafef6554d6fdbcd
   - enabled: 1
+    path: Assets/Scenes/Settings.unity
+    guid: 35a421267e8074041acd6bb7d7345ecb
+  - enabled: 1
     path: Assets/Scenes/Cards.unity
     guid: dd339ed53974f5e44a680d3a96beeead
   - enabled: 1

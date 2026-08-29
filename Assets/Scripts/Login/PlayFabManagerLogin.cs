@@ -40,6 +40,26 @@ public class PlayFabManagerLogin : MonoBehaviour
         }
     }
 
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+            IsLoggedIn = false;
+            LoggedInPlayerId = string.Empty;
+        }
+    }
+
+    public static void ClearRuntimeLoginState()
+    {
+        IsLoggedIn = false;
+
+        if (Instance != null)
+        {
+            Instance.LoggedInPlayerId = string.Empty;
+        }
+    }
+
     // Start is called before the first frame update
     void Start()
     {

@@ -3,48 +3,24 @@ using UnityEngine.UI;
 
 public class SoundSettings : MonoBehaviour
 {
-    public Sprite soundOnIcon; // Ikona pre zapnutý zvuk
-    public Sprite soundOffIcon; // Ikona pre vypnutý zvuk
-    public Image soundIconImage; // Image komponenta pre ikonu zvuku na tlačidle
+    public Sprite soundOnIcon;
+    public Sprite soundOffIcon;
+    public Image soundIconImage;
 
     private bool isMusicMuted;
 
     private void Awake()
     {
-        // Načíta nastavenie hudby
-        isMusicMuted = PlayerPrefs.GetInt("isMusicMuted", 0) == 1;
-        UpdateMusicState();
+        isMusicMuted = !GameAudioSettings.IsMusicEnabled;
+        GameAudioSettings.ApplyStoredSettings();
         UpdateSoundIcon();
     }
 
     public void ToggleMusic()
     {
-        isMusicMuted = !isMusicMuted;
-        PlayerPrefs.SetInt("isMusicMuted", isMusicMuted ? 1 : 0);
-        PlayerPrefs.Save();
-
+        GameAudioSettings.SetMusicEnabled(!GameAudioSettings.IsMusicEnabled);
+        isMusicMuted = !GameAudioSettings.IsMusicEnabled;
         UpdateSoundIcon();
-
-        if (MusicManager.Instance != null)
-        {
-            MusicManager.Instance.RefreshMusicState();
-        }
-    }
-
-
-    private void UpdateMusicState()
-    {
-        if (MusicManager.Instance != null)
-        {
-            if (isMusicMuted)
-            {
-                MusicManager.Instance.StopMusic();
-            }
-            else
-            {
-                MusicManager.Instance.PlayMusic();
-            }
-        }
     }
 
     private void UpdateSoundIcon()
@@ -55,4 +31,3 @@ public class SoundSettings : MonoBehaviour
         }
     }
 }
-
