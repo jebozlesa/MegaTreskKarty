@@ -5,33 +5,47 @@ public class MissionManager : MonoBehaviour
 {
     public Button[] levelButtons;
     public Image[] levelButtonImages;
+    public GameObject campaignContentRoot;
     public string campaignId = "bushido";
     public CampaignOnlineService campaignService;
 
-    private async void OnEnable()
+    private bool warnedMissingCampaignContentRoot;
+
+    private async void Start()
     {
+        SetCampaignContentVisible(false);
+        SceneLoadingOverlay.SetMessage("LOADING...");
+        SceneLoadingOverlay.Show();
         ApplyLevelAccess(0);
 
-        string playerId = PlayFabManagerLogin.Instance != null
-            ? PlayFabManagerLogin.Instance.LoggedInPlayerId
-            : string.Empty;
-        if (string.IsNullOrWhiteSpace(playerId))
+        try
         {
-            Debug.LogWarning("[MissionManager] Cannot load Campaign progress without player ID.");
-            return;
-        }
+            string playerId = PlayFabManagerLogin.Instance != null
+                ? PlayFabManagerLogin.Instance.LoggedInPlayerId
+                : string.Empty;
+            if (string.IsNullOrWhiteSpace(playerId))
+            {
+                Debug.LogWarning("[MissionManager] Cannot load Campaign progress without player ID.");
+                return;
+            }
 
-        EnsureCampaignService();
-        CampaignOnlineProgressEnvelopeDto envelope = await campaignService.GetProgressAsync(playerId, campaignId);
-        if (envelope == null || !envelope.success || envelope.progress == null)
+            EnsureCampaignService();
+            CampaignOnlineProgressEnvelopeDto envelope = await campaignService.GetProgressAsync(playerId, campaignId);
+            if (envelope == null || !envelope.success || envelope.progress == null)
+            {
+                Debug.LogWarning(
+                    $"[MissionManager] Failed to load Campaign progress. campaign={campaignId}, error={envelope?.error}"
+                );
+                return;
+            }
+
+            ApplyLevelAccess(envelope.progress.highestUnlockedMissionId);
+        }
+        finally
         {
-            Debug.LogWarning(
-                $"[MissionManager] Failed to load Campaign progress. campaign={campaignId}, error={envelope?.error}"
-            );
-            return;
+            SceneLoadingOverlay.Hide();
+            SetCampaignContentVisible(true);
         }
-
-        ApplyLevelAccess(envelope.progress.highestUnlockedMissionId);
     }
 
     private void ApplyLevelAccess(int highestUnlockedMissionId)
@@ -65,5 +79,22 @@ public class MissionManager : MonoBehaviour
         {
             campaignService = gameObject.AddComponent<CampaignOnlineService>();
         }
+    }
+
+    private void SetCampaignContentVisible(bool visible)
+    {
+        if (campaignContentRoot == null)
+        {
+            if (!warnedMissingCampaignContentRoot)
+            {
+                Debug.LogWarning("[MissionManager] campaignContentRoot is not assigned.");
+                warnedMissingCampaignContentRoot = true;
+            }
+
+            return;
+        }
+
+        warnedMissingCampaignContentRoot = false;
+        campaignContentRoot.SetActive(visible);
     }
 }

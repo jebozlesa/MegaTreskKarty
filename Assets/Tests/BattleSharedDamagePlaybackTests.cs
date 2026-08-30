@@ -519,8 +519,16 @@ public class BattleSharedDamagePlaybackTests
     {
         string source = ReadProjectFile("Assets", "Scripts", "Campaign", "MissionManager.cs");
 
+        StringAssert.Contains("private async void Start()", source);
+        Assert.IsFalse(source.Contains("private async void OnEnable()"));
         StringAssert.Contains("campaignService.GetProgressAsync(playerId, campaignId)", source);
         StringAssert.Contains("ApplyLevelAccess(envelope.progress.highestUnlockedMissionId);", source);
+        StringAssert.Contains("campaignContentRoot", source);
+        StringAssert.Contains("SetCampaignContentVisible(false);", source);
+        StringAssert.Contains("SceneLoadingOverlay.SetMessage(\"LOADING...\");", source);
+        StringAssert.Contains("SceneLoadingOverlay.Show();", source);
+        StringAssert.Contains("SceneLoadingOverlay.Hide();", source);
+        StringAssert.Contains("SetCampaignContentVisible(true);", source);
         Assert.IsFalse(source.Contains("CampaignManager.Instance.LoadCampaignData"));
     }
 
