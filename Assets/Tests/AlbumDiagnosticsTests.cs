@@ -153,10 +153,21 @@ public class AlbumDiagnosticsTests
 
         StringAssert.Contains("serverFunctionsManager.PurchaseCardPack", marketplaceSource);
         StringAssert.Contains("Guid.NewGuid().ToString()", marketplaceSource);
+        StringAssert.Contains("purchaseConfirmationPanel", marketplaceSource);
+        StringAssert.Contains("public void ConfirmPendingPackPurchase()", marketplaceSource);
+        StringAssert.Contains("public void CancelPendingPackPurchase()", marketplaceSource);
+        StringAssert.Contains("ShouldOpenLibraryAfterPurchase", marketplaceSource);
+        StringAssert.Contains("SceneLoadingOverlay.Show()", marketplaceSource);
+        StringAssert.Contains("SceneLoadingOverlay.Hide()", marketplaceSource);
+        StringAssert.Contains("currentCurrencyBalance", marketplaceSource);
+        StringAssert.Contains("HasEnoughClientCurrencyForPack", marketplaceSource);
+        StringAssert.Contains("GetClientPackPrice", marketplaceSource);
+        StringAssert.Contains("Pack purchase blocked by client balance check", marketplaceSource);
         StringAssert.DoesNotContain("SubtractUserVirtualCurrency", marketplaceSource);
         StringAssert.DoesNotContain("AddUserVirtualCurrency", marketplaceSource);
         StringAssert.DoesNotContain("UpdateUserData", marketplaceSource);
         StringAssert.DoesNotContain("openCardPack", marketplaceSource);
+        StringAssert.DoesNotContain("SceneManager.LoadScene(\"Cards\")", marketplaceSource);
 
         StringAssert.Contains("public void PurchaseCardPack", serverFunctionsSource);
         StringAssert.Contains("\"purchaseCardPack\"", serverFunctionsSource);

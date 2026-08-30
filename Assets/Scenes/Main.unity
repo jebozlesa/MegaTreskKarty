@@ -3483,12 +3483,12 @@ GameObject:
   - component: {fileID: 7329723207614003837}
   - component: {fileID: 6781960581392240470}
   m_Layer: 5
-  m_Name: BackButton
+  m_Name: LogoutButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!222 &6293586730103423666
 CanvasRenderer:
   m_ObjectHideFlags: 0
