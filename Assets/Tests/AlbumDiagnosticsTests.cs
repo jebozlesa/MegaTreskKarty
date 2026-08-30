@@ -117,6 +117,64 @@ public class AlbumDiagnosticsTests
         StringAssert.DoesNotContain("await", applySortBody);
     }
 
+    [Test]
+    public void MarketplacePackPurchaseRuntime_UsesServerOwnedBoundary()
+    {
+        string scriptsPath = Path.Combine(Application.dataPath, "Scripts");
+        string marketplacePath = Path.Combine(
+            scriptsPath,
+            "Marketplace",
+            "MarketplaceManager.cs"
+        );
+        string serverFunctionsPath = Path.Combine(
+            scriptsPath,
+            "Networking",
+            "ServerFunctionsManager.cs"
+        );
+        string cardGeneratorPath = Path.Combine(scriptsPath, "CardGenerator.cs");
+        string marketplaceScenePath = Path.Combine(Application.dataPath, "Scenes", "Marketplace.unity");
+        string packButtonPrefabPath = Path.Combine(
+            Application.dataPath,
+            "Prefabs",
+            "CreateCardPackButton.prefab"
+        );
+
+        Assert.IsTrue(File.Exists(marketplacePath), "MarketplaceManager.cs was not found.");
+        Assert.IsTrue(File.Exists(serverFunctionsPath), "ServerFunctionsManager.cs was not found.");
+        Assert.IsTrue(File.Exists(cardGeneratorPath), "CardGenerator.cs was not found.");
+        Assert.IsTrue(File.Exists(marketplaceScenePath), "Marketplace.unity was not found.");
+        Assert.IsTrue(File.Exists(packButtonPrefabPath), "CreateCardPackButton.prefab was not found.");
+
+        string marketplaceSource = File.ReadAllText(marketplacePath);
+        string serverFunctionsSource = File.ReadAllText(serverFunctionsPath);
+        string cardGeneratorSource = File.ReadAllText(cardGeneratorPath);
+        string marketplaceSceneSource = File.ReadAllText(marketplaceScenePath);
+        string packButtonPrefabSource = File.ReadAllText(packButtonPrefabPath);
+
+        StringAssert.Contains("serverFunctionsManager.PurchaseCardPack", marketplaceSource);
+        StringAssert.Contains("Guid.NewGuid().ToString()", marketplaceSource);
+        StringAssert.DoesNotContain("SubtractUserVirtualCurrency", marketplaceSource);
+        StringAssert.DoesNotContain("AddUserVirtualCurrency", marketplaceSource);
+        StringAssert.DoesNotContain("UpdateUserData", marketplaceSource);
+        StringAssert.DoesNotContain("openCardPack", marketplaceSource);
+
+        StringAssert.Contains("public void PurchaseCardPack", serverFunctionsSource);
+        StringAssert.Contains("\"purchaseCardPack\"", serverFunctionsSource);
+        StringAssert.DoesNotContain("public void OpenCardPack", serverFunctionsSource);
+        StringAssert.DoesNotContain("\"openCardPack\"", serverFunctionsSource);
+
+        StringAssert.DoesNotContain("themedPacks", cardGeneratorSource);
+        StringAssert.DoesNotContain("GenerateCardPack", cardGeneratorSource);
+        StringAssert.DoesNotContain(
+            "m_TargetAssemblyTypeName: CardGenerator, Assembly-CSharp",
+            marketplaceSceneSource
+        );
+        StringAssert.DoesNotContain(
+            "m_TargetAssemblyTypeName: CardGenerator, Assembly-CSharp",
+            packButtonPrefabSource
+        );
+    }
+
     private static string ExtractMethodBody(string source, string startMarker, string endMarker)
     {
         int start = source.IndexOf(startMarker, System.StringComparison.Ordinal);

@@ -3836,8 +3836,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 761120166}
-        m_TargetAssemblyTypeName: CardGenerator, Assembly-CSharp
+      - m_Target: {fileID: 1619798003}
+        m_TargetAssemblyTypeName: MarketplaceManager, Assembly-CSharp
         m_MethodName: StartGenerateCardPack
         m_Mode: 3
         m_Arguments:

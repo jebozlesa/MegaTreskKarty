@@ -957,31 +957,29 @@ public class ServerFunctionsManager : MonoBehaviour
     }
 
     // ====================================
-    // V11: SERVER-SIDE CARD PACK GENERATION
+    // SERVER-OWNED CARD PACK PURCHASE
     // ====================================
 
-    /// <summary>
-    /// V11: Open a card pack on the server (server-authoritative generation).
-    /// Server vygeneruje 6 kariet z themed packu a vráti ich
-    /// </summary>
-    /// <param name="playFabId">PlayFab ID hráča</param>
-    /// <param name="packIndex">Index themed packu (0, 1, 2)</param>
-    /// <param name="callback">Callback s vygenerovanými kartami</param>
-    public void OpenCardPack(
-        string playFabId,
+    public void PurchaseCardPack(
+        string playerId,
         int packIndex,
+        string requestId,
         Action<ExecuteFunctionResult> callback
     )
     {
         callback ??= NoOpCallback;
 
         Debug.LogWarning(
-            $"[ServerFunctionsManager] OpenCardPack: playFabId={playFabId}, packIndex={packIndex}"
+            $"[ServerFunctionsManager] PurchaseCardPack: playerId={playerId}, packIndex={packIndex}, requestId={requestId}"
         );
 
-        var parameters = new { playFabId = playFabId, packIndex = packIndex };
+        var parameters = new
+        {
+            playerId,
+            packIndex,
+            requestId,
+        };
 
-        // Call with retry (network safety)
-        CallFunctionWithRetry("openCardPack", parameters, callback);
+        CallFunctionWithRetry("purchaseCardPack", parameters, callback);
     }
 }
