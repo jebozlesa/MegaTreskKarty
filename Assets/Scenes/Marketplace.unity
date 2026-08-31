@@ -907,10 +907,6 @@ PrefabInstance:
       propertyPath: canvas
       value:
       objectReference: {fileID: 1015623947}
-    - target: {fileID: 161529065127599152, guid: 38c98389cc38bf04caf7d3a4b81478ce, type: 3}
-      propertyPath: displayBlock
-      value:
-      objectReference: {fileID: 5914178751106246530}
     - target: {fileID: 161529065127599153, guid: 38c98389cc38bf04caf7d3a4b81478ce, type: 3}
       propertyPath: m_RootOrder
       value: 3

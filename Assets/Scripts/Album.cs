@@ -24,6 +24,8 @@ public class Album : MonoBehaviour
     public TMP_Text loveValue;
     public LibraryDeckController libraryDeckController;
     public DeckManager deckManager;
+    public CardRecycleService cardRecycleService;
+    public ConfirmDialogController recycleConfirmationDialog;
     private Coroutine libraryCardsRenderCoroutine;
     private int libraryCardsRenderVersion;
 
@@ -33,6 +35,14 @@ public class Album : MonoBehaviour
 
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
         deckPanel.SetActive(false);
+        if (cardRecycleService == null)
+        {
+            Debug.LogWarning("[Album] cardRecycleService is not assigned; card recycling will be blocked.");
+        }
+        if (recycleConfirmationDialog == null)
+        {
+            Debug.LogWarning("[Album] recycleConfirmationDialog is not assigned; card recycling will be blocked.");
+        }
         if (PlayerPrefs.GetInt("HasCompletedTutorialAlbum", 0) == 0)
         {
             tutorial.SetActive(true);
@@ -240,6 +250,8 @@ public class Album : MonoBehaviour
             novaKarta.GetComponent<Card>().transform.localScale = Vector3.one;
             novaKarta.GetComponent<Card>().Initialize(deckPanel);
             novaKarta.GetComponent<Card>().deckManager = deckManager;
+            novaKarta.GetComponent<Card>().cardRecycleService = cardRecycleService;
+            novaKarta.GetComponent<Card>().recycleConfirmationDialog = recycleConfirmationDialog;
 
             if (useCardRenderDelay)
             {

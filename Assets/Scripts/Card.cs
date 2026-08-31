@@ -6,9 +6,6 @@ using UnityEngine.EventSystems;
 using TMPro;
 using Mono.Data.Sqlite;
 using System.Data;
-using PlayFab;
-using PlayFab.ClientModels;
-using System.Linq;
 using System;
 
 public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
@@ -118,6 +115,9 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     public GameObject deckPanel;
     public bool deckCard;
     public DeckManager deckManager;
+    public CardRecycleService cardRecycleService;
+    public ConfirmDialogController recycleConfirmationDialog;
+    private bool isRecycleInFlight;
 
     public string connectionString;
 
@@ -137,24 +137,8 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     public Image attackIcon;
 
 
-    public Image changeButtonImg;
-    public TMP_Text changeButtonText;
-
     public int currentAttackIndex = 1;
-
-    public GameObject attackPrefab;
-    public Transform attackListContainer;
-    public Button changeButton;
-
-    public AttackListController attackListController;
     private int displayedAttack;
-
-    private int selectedAttackId = -1;
-    private int selectedOriginalAttackId = -1;
-    public PlayFabAlbumCardManager playFabAlbumCardManager;
-
-
-    string PlayFabId;
 
     //public GameObject tutorial;
 
@@ -163,8 +147,6 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     void Start()
     {
-        //LoginPlayFab();
-
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
         backSideAttributes.SetActive(false);
         backSideDescription.SetActive(false);
@@ -190,9 +172,6 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         levelText.color = color;
 
         LoadDetails();
-
-        changeButton.onClick.AddListener(ShowAttackList);
-        //attackListContainer.gameObject.SetActive(false);
 
     }
 
@@ -261,9 +240,6 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         attEnemyAttributesText.color = color;
         attDescriptionText.color = color;
 
-        changeButtonImg.color = ChangeAlpha(color, 80);
-        changeButtonText.color = color;
-
     }
 
     private string BuildDetailLogContext()
@@ -273,178 +249,184 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     }
 
     // Metoda na odstranenie karty
-    public void RemoveCard()
+    public void RequestRecycleCard()
     {
+        if (isRecycleInFlight)
+        {
+            Debug.LogWarning($"[CardRecycle] Recycle ignored while busy: card={cardId}, name={cardName}");
+            return;
+        }
+
+        if (!CanStartRecycle())
+        {
+            return;
+        }
+
+        if (recycleConfirmationDialog == null)
+        {
+            Debug.LogError($"[CardRecycle] Cannot recycle card because confirm dialog is not assigned: card={cardId}, name={cardName}");
+            return;
+        }
+
+        Debug.LogWarning($"[CardRecycle] Confirmation requested: card={cardId}, name={cardName}, level={level}");
+        recycleConfirmationDialog.Show("ARE YOU SURE?", () => StartCoroutine(RecycleCard()));
+    }
+    private bool CanStartRecycle()
+    {
+        if (string.IsNullOrWhiteSpace(cardId))
+        {
+            Debug.LogError($"[CardRecycle] Cannot recycle card without cardId: name={cardName}");
+            return false;
+        }
+
         if (deckManager == null)
         {
-            Debug.LogWarning("[Card] Cannot recycle card because deckManager is not assigned.");
-            CardTutorial.instance.ShowBlockSellDeckCard();
-            return;
+            Debug.LogError($"[CardRecycle] Cannot recycle card because deckManager is not assigned: card={cardId}, name={cardName}");
+            return false;
         }
 
-        if (deckManager.IsCardUsedInAnyKnownDeck(cardId))
+        if (deckManager.TryFindCardDeckUsage(cardId, out LibraryDeckUsageInfo usage))
         {
-            Debug.LogWarning("[Card] Cannot recycle card because it is used in a deck.");
-            CardTutorial.instance.ShowBlockSellDeckCard();
-            return;
+            Debug.LogWarning($"[CardRecycle] Recycle blocked because card is used in a deck: card={cardId}, name={cardName}, deckUsage={FormatDeckUsage(usage)}");
+            ShowRecycleBlocked();
+            return false;
         }
 
-        GetPlayerCards(cardsData =>
+        if (cardRecycleService == null)
         {
-            if (cardsData != null)
+            Debug.LogError($"[CardRecycle] Cannot recycle card because cardRecycleService is not assigned: card={cardId}, name={cardName}");
+            return false;
+        }
+
+        return true;
+    }
+
+    private IEnumerator RecycleCard()
+    {
+        if (!CanStartRecycle())
+        {
+            yield break;
+        }
+
+        string playerId = ResolveLoggedInPlayerId();
+        if (string.IsNullOrWhiteSpace(playerId))
+        {
+            Debug.LogError($"[CardRecycle] Cannot recycle card because logged player id is missing: card={cardId}, name={cardName}");
+            yield break;
+        }
+
+        isRecycleInFlight = true;
+        string requestId = Guid.NewGuid().ToString();
+        Debug.LogWarning($"[CardRecycle] Server recycle requested: player={playerId}, card={cardId}, requestId={requestId}");
+
+        SceneLoadingOverlay.SetMessage("RECYCLING...");
+        SceneLoadingOverlay.Show();
+
+        var recycleTask = cardRecycleService.RecycleCardAsync(playerId, cardId, requestId);
+        yield return new WaitUntil(() => recycleTask.IsCompleted);
+
+        if (recycleTask.IsFaulted || recycleTask.Result == null)
+        {
+            string error = recycleTask.Exception != null ? recycleTask.Exception.GetBaseException().Message : "<no result>";
+            Debug.LogError($"[CardRecycle] Server recycle failed: card={cardId}, requestId={requestId}, error={error}");
+            FinishRecycleRequest();
+            yield break;
+        }
+
+        CardRecycleResponse response = recycleTask.Result;
+        Debug.LogWarning(
+            $"[CardRecycle] Server recycle response: success={response.success}, stage={response.stage}, error={response.error}, card={response.cardId}, requestId={response.requestId}, reward={response.reward} {response.currencyCode}, alreadyProcessed={response.alreadyProcessed}, requiresManualReview={response.requiresManualReview}, deckUsage={FormatDeckUsage(response.deckUsage)}"
+        );
+
+        if (!response.success)
+        {
+            if (response.error == "card_is_in_deck")
             {
-                cardsData.cards.RemoveAll(card => card.CardID == cardId);
-                SavePlayerCards(cardsData);
+                ShowRecycleBlocked();
             }
-        });
-        StartCoroutine(AddCurrency(1));
-        StartCoroutine(AlbumLoveValue.Instance.GetPlayerCurrencyBalance());
+
+            FinishRecycleRequest();
+            yield break;
+        }
+
+        if (response.requiresManualReview)
+        {
+            Debug.LogError($"[CardRecycle] Card was removed but reward requires manual review: card={cardId}, requestId={requestId}, stage={response.stage}, error={response.error}");
+        }
+
+        if (AlbumLoveValue.Instance != null)
+        {
+            yield return StartCoroutine(AlbumLoveValue.Instance.GetPlayerCurrencyBalance());
+        }
+
+        if (deckManager != null && deckManager.libraryDeckController != null)
+        {
+            yield return StartCoroutine(deckManager.libraryDeckController.LoadForCurrentPlayer(useCardRenderDelay: false));
+        }
+
+        CompleteSuccessfulRecycle();
+        FinishRecycleRequest();
+    }
+
+    private void CompleteSuccessfulRecycle()
+    {
+        if (currentZoomedCard == this)
+        {
+            currentZoomedCard = null;
+        }
+
+        isZoomed = false;
+
+        if (deckPanel != null)
+        {
+            deckPanel.SetActive(false);
+        }
+
         Destroy(gameObject);
     }
-    private void GetPlayerCards(System.Action<PlayerCardsData> callback)
+
+    private void FinishRecycleRequest()
     {
-        PlayFabClientAPI.GetUserData(new GetUserDataRequest(), result =>
-        {
-            if (result.Data != null && result.Data.ContainsKey("PlayerCards"))
-            {
-                string jsonData = result.Data["PlayerCards"].Value;
-                PlayerCardsData cardsData = JsonUtility.FromJson<PlayerCardsData>(jsonData);
-                callback(cardsData);
-            }
-        }, error => Debug.LogError(error.GenerateErrorReport()));
+        isRecycleInFlight = false;
+        SceneLoadingOverlay.Hide();
     }
 
-    // Uloženie dát hráča
-    private void SavePlayerCards(PlayerCardsData cardsData)
+    private void ShowRecycleBlocked()
     {
-        string jsonData = JsonUtility.ToJson(cardsData);
-        var updateData = new UpdateUserDataRequest
+        if (CardTutorial.instance != null)
         {
-            Data = new Dictionary<string, string>
-            {
-                {"PlayerCards", jsonData}
-            }
-        };
-        PlayFabClientAPI.UpdateUserData(updateData, result => Debug.Log("Card data updated successfully."), error => Debug.LogError(error.GenerateErrorReport()));
-    }
-
-    private IEnumerator AddCurrency(int amount)
-    {
-        var request = new AddUserVirtualCurrencyRequest
-        {
-            Amount = amount,
-            VirtualCurrency = "SK"
-        };
-        bool isCompleted = false;
-
-        PlayFabClientAPI.AddUserVirtualCurrency(request, result =>
-        {
-            Debug.Log("Úspešne pridaná mena. Nový zostatok: " + result.Balance);
-            isCompleted = true;
-        }, error =>
-        {
-            Debug.LogError("Chyba pri pridávaní meny: " + error.GenerateErrorReport());
-            isCompleted = true;
-        });
-
-
-        yield return new WaitUntil(() => isCompleted);
-
-        yield return StartCoroutine(AlbumLoveValue.Instance.GetPlayerCurrencyBalance());
-    }
-
-    public bool ContainsAttack(int attackId)
-    {
-        return attack1 == attackId || attack2 == attackId || attack3 == attackId || attack4 == attackId;
-    }
-
-    public void DeselectAllAttacks()
-    {
-        foreach (AviableAttack attack in GetComponentsInChildren<AviableAttack>())
-        {
-            attack.SetSelected(false);
+            CardTutorial.instance.ShowBlockSellDeckCard();
         }
     }
 
-    public void OnChangeAttackClick()
+    private static string ResolveLoggedInPlayerId()
     {
-        if (selectedAttackId != -1 && selectedOriginalAttackId != -1)
+        if (PlayFabManagerLogin.Instance != null && !string.IsNullOrWhiteSpace(PlayFabManagerLogin.Instance.LoggedInPlayerId))
         {
-            playFabAlbumCardManager.UpdateCardAttack(cardId, selectedOriginalAttackId, selectedAttackId, (success) =>
-            {
-                if (success)
-                {
-                    Debug.Log("Útok bol zmenený");
-                    UpdateCardUI(selectedOriginalAttackId, selectedAttackId);
-                    selectedAttackId = -1;
-                    selectedOriginalAttackId = -1;
-                }
-                else
-                {
-                    Debug.LogError("Nepodarilo sa zmeniť útok");
-                }
-            });
-            attackListContainer.gameObject.SetActive(false);
+            return PlayFabManagerLogin.Instance.LoggedInPlayerId;
         }
+
+        return PlayerPrefs.GetString("LoggedInPlayerId", string.Empty);
     }
 
-    private void UpdateCardUI(int originalAttackID, int newAttackValue)
+    private static string FormatDeckUsage(LibraryDeckUsageInfo usage)
     {
-        Debug.Log("UpdateCardUI " + originalAttackID + " " + newAttackValue);
-        // Zistite, ktorý útok sa má aktualizovať na základe ID útoku
-        if (attack1 == originalAttackID)
+        if (usage == null)
         {
-            attack1 = newAttackValue;
-            if (currentAttackIndex == 1)
-                LoadAttackData(newAttackValue);
-            Debug.Log("Bingo 1");
-        }
-        else if (attack2 == originalAttackID)
-        {
-            attack2 = newAttackValue;
-            if (currentAttackIndex == 2)
-                LoadAttackData(newAttackValue);
-            Debug.Log("Bingo 2");
-        }
-        else if (attack3 == originalAttackID)
-        {
-            attack3 = newAttackValue;
-            if (currentAttackIndex == 3)
-                LoadAttackData(newAttackValue);
-            Debug.Log("Bingo 3");
-        }
-        else if (attack4 == originalAttackID)
-        {
-            attack4 = newAttackValue;
-            if (currentAttackIndex == 4)
-                LoadAttackData(newAttackValue);
-            Debug.Log("Bingo 4");
-        }
-        else
-        {
-            Debug.LogWarning("Nebolo možné nájsť útok s daným ID na karte pre aktualizáciu");
+            return "none";
         }
 
+        return $"context={usage.contextId}, deck={usage.deckId}, deckIndex={usage.deckIndex}";
     }
 
-    public void SelectAttack(int newAttackId, int originalAttackId)
+    private static string FormatDeckUsage(CardRecycleDeckUsage usage)
     {
-        selectedAttackId = newAttackId;
-        selectedOriginalAttackId = originalAttackId;
-        Debug.Log($"SelectAttack: {newAttackId} -> {originalAttackId}");
-    }
+        if (usage == null)
+        {
+            return "none";
+        }
 
-    public void ShowAttackList()
-    {
-        attackListController.ClearAttackList(); // Vymaže všetky predchádzajúce útoky
-        Debug.Log("CHange kliknuty ");
-        attackListController.ShowAttackList(styleId, displayedAttack);
-        attackListContainer.gameObject.SetActive(true);
-    }
-
-    public void HideAttackList()
-    {
-        attackListContainer.gameObject.SetActive(false);
+        return $"context={usage.contextId}, deck={usage.deckId}";
     }
 
     public void ChangeAttack(int direction)
@@ -717,7 +699,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
                 }
             }
         }
-        else if (!dragInProgress && !attackListContainer.gameObject.activeSelf)
+        else if (!dragInProgress)
         {
             if (deckCard) OnClick();
             else ToggleZoom();
@@ -780,8 +762,6 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             backSideDescription.SetActive(false);
             backSideAttack.SetActive(false);
             backSideInfo.SetActive(false);
-            attackListContainer.gameObject.SetActive(false);
-
             // Hide the deck panel
             deckPanel.SetActive(false);
         }
@@ -791,35 +771,6 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     {
         return new Color32(inputColor.r, inputColor.g, inputColor.b, newAlpha);
     }
-
-    void LoginPlayFab()
-    {
-        //        loadingImage.SetActive(true);
-        string username = PlayerPrefs.GetString("username");
-        string email = PlayerPrefs.GetString("email");
-        string password = PlayerPrefs.GetString("password");
-
-        var request = new LoginWithEmailAddressRequest
-        {
-            Email = email,
-            Password = password
-        };
-        PlayFabClientAPI.LoginWithEmailAddress(request, OnSuccess, OnError);
-        //        loadingImage.SetActive(false);
-    }
-
-    void OnSuccess(LoginResult result)
-    {
-        Debug.Log("Successfully logged in to PlayFab!");
-        // Store the PlayFabId for later use
-        PlayFabId = result.PlayFabId;
-    }
-
-    void OnError(PlayFabError error)
-    {
-        Debug.LogError("Error logging in to PlayFab: " + error.GenerateErrorReport());
-    }
-
 
 
 }

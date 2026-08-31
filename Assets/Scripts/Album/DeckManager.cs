@@ -103,7 +103,18 @@ public class DeckManager : MonoBehaviour
 
     public bool IsCardUsedInAnyKnownDeck(string cardId)
     {
-        return libraryDeckController != null && libraryDeckController.IsCardUsedInAnyKnownDeck(cardId);
+        return TryFindCardDeckUsage(cardId, out _);
+    }
+
+    public bool TryFindCardDeckUsage(string cardId, out LibraryDeckUsageInfo usage)
+    {
+        if (libraryDeckController == null)
+        {
+            usage = null;
+            return false;
+        }
+
+        return libraryDeckController.TryFindCardDeckUsage(cardId, out usage);
     }
 
     public async Task<bool> SwapWithSelectedCardAsync(Card clickedDeckCard, Card selectedCard)

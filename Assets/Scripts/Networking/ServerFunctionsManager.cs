@@ -982,4 +982,27 @@ public class ServerFunctionsManager : MonoBehaviour
 
         CallFunctionWithRetry("purchaseCardPack", parameters, callback);
     }
+
+    public void RecyclePlayerCard(
+        string playerId,
+        string cardId,
+        string requestId,
+        Action<ExecuteFunctionResult> callback
+    )
+    {
+        callback ??= NoOpCallback;
+
+        Debug.LogWarning(
+            $"[ServerFunctionsManager] RecyclePlayerCard: playerId={playerId}, cardId={cardId}, requestId={requestId}"
+        );
+
+        var parameters = new
+        {
+            playerId,
+            cardId,
+            requestId,
+        };
+
+        CallFunctionWithRetry("recyclePlayerCard", parameters, callback);
+    }
 }

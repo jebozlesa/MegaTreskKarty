@@ -43,6 +43,11 @@ public sealed class LoadingOverlayView : MonoBehaviour
         }
 
         EnsureCachedReferences();
+        if (isVisible)
+        {
+            NormalizeOverlayRoot();
+        }
+
         ApplyVisibility(isVisible);
 
         if (isVisible)
@@ -77,6 +82,27 @@ public sealed class LoadingOverlayView : MonoBehaviour
         canvasGroup.alpha = isVisible ? 1f : 0f;
         canvasGroup.blocksRaycasts = isVisible;
         canvasGroup.interactable = false;
+    }
+
+    private void NormalizeOverlayRoot()
+    {
+        Canvas canvas = GetComponentInParent<Canvas>(true);
+        if (canvas != null && transform.parent != canvas.transform)
+        {
+            transform.SetParent(canvas.transform, false);
+        }
+
+        if (transform is RectTransform rectTransform)
+        {
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.anchoredPosition = Vector2.zero;
+            rectTransform.sizeDelta = Vector2.zero;
+            rectTransform.localRotation = Quaternion.identity;
+            rectTransform.localScale = Vector3.one;
+        }
+
+        transform.SetAsLastSibling();
     }
 
     private void StartCharacterDances()

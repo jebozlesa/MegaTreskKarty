@@ -40,14 +40,19 @@ public class LibraryDeckController : MonoBehaviour
         UpdateSortCriterionLabel();
     }
 
-    public IEnumerator LoadForCurrentPlayer()
+    public IEnumerator LoadForCurrentPlayer(bool useCardRenderDelay = true)
     {
         string resolvedPlayerId = ResolvePlayerId();
-        Task<bool> task = LoadAsync(resolvedPlayerId);
+        Task<bool> task = LoadAsync(resolvedPlayerId, useCardRenderDelay);
         yield return new WaitUntil(() => task.IsCompleted);
     }
 
-    public async Task<bool> LoadAsync(string resolvedPlayerId)
+    public void RefreshCurrentPlayer(bool useCardRenderDelay = false)
+    {
+        StartCoroutine(LoadForCurrentPlayer(useCardRenderDelay));
+    }
+
+    public async Task<bool> LoadAsync(string resolvedPlayerId, bool useCardRenderDelay = true)
     {
         playerId = resolvedPlayerId;
         if (string.IsNullOrWhiteSpace(playerId))
@@ -72,7 +77,7 @@ public class LibraryDeckController : MonoBehaviour
         }
 
         ApplyState(state);
-        RenderCurrentContext(useCardRenderDelay: true);
+        RenderCurrentContext(useCardRenderDelay);
         return true;
     }
 
@@ -190,23 +195,37 @@ public class LibraryDeckController : MonoBehaviour
 
     public bool IsCardUsedInAnyKnownDeck(string cardId)
     {
+        return TryFindCardDeckUsage(cardId, out _);
+    }
+
+    public bool TryFindCardDeckUsage(string cardId, out LibraryDeckUsageInfo usage)
+    {
         if (CurrentState?.visibleContexts == null || string.IsNullOrWhiteSpace(cardId))
         {
+            usage = null;
             return false;
         }
 
         foreach (LibraryContextDto context in CurrentState.visibleContexts)
         {
             if (context?.decks == null) continue;
-            foreach (LibraryDeckDto deck in context.decks)
+            for (int deckIndex = 0; deckIndex < context.decks.Count; deckIndex++)
             {
+                LibraryDeckDto deck = context.decks[deckIndex];
                 if (deck?.cardIds != null && deck.cardIds.Contains(cardId))
                 {
+                    usage = new LibraryDeckUsageInfo
+                    {
+                        contextId = context.contextId,
+                        deckId = deck.deckId,
+                        deckIndex = deckIndex
+                    };
                     return true;
                 }
             }
         }
 
+        usage = null;
         return false;
     }
 
@@ -581,6 +600,14 @@ public class LibraryContextBackgroundBinding
 {
     public string contextId;
     public Sprite backgroundSprite;
+}
+
+[System.Serializable]
+public class LibraryDeckUsageInfo
+{
+    public string contextId;
+    public string deckId;
+    public int deckIndex;
 }
 
 public enum LibrarySortCriterion

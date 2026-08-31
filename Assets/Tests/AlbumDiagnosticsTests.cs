@@ -174,6 +174,17 @@ public class AlbumDiagnosticsTests
         StringAssert.DoesNotContain("public void OpenCardPack", serverFunctionsSource);
         StringAssert.DoesNotContain("\"openCardPack\"", serverFunctionsSource);
 
+        StringAssert.Contains("ShowCardOnScreen", cardGeneratorSource);
+        StringAssert.DoesNotContain("PlayFabClientAPI", cardGeneratorSource);
+        StringAssert.DoesNotContain("UpdateUserData", cardGeneratorSource);
+        StringAssert.DoesNotContain("GetUserData", cardGeneratorSource);
+        StringAssert.DoesNotContain("AddRandomCard", cardGeneratorSource);
+        StringAssert.DoesNotContain("AddCardById", cardGeneratorSource);
+        StringAssert.DoesNotContain("AddAllCardsFromDatabase", cardGeneratorSource);
+        StringAssert.DoesNotContain("Mono.Data.Sqlite", cardGeneratorSource);
+        StringAssert.DoesNotContain("SqliteConnection", cardGeneratorSource);
+        StringAssert.DoesNotContain("PlayerCards", cardGeneratorSource);
+        StringAssert.DoesNotContain("displayBlock", cardGeneratorSource);
         StringAssert.DoesNotContain("themedPacks", cardGeneratorSource);
         StringAssert.DoesNotContain("GenerateCardPack", cardGeneratorSource);
         StringAssert.DoesNotContain(
@@ -184,6 +195,145 @@ public class AlbumDiagnosticsTests
             "m_TargetAssemblyTypeName: CardGenerator, Assembly-CSharp",
             packButtonPrefabSource
         );
+    }
+
+    [Test]
+    public void CardRecycleRuntime_UsesServerOwnedBoundary()
+    {
+        string scriptsPath = Path.Combine(Application.dataPath, "Scripts");
+        string cardPath = Path.Combine(scriptsPath, "Card.cs");
+        string albumSourcePath = Path.Combine(scriptsPath, "Album.cs");
+        string serverFunctionsPath = Path.Combine(
+            scriptsPath,
+            "Networking",
+            "ServerFunctionsManager.cs"
+        );
+        string cardRecycleServicePath = Path.Combine(
+            scriptsPath,
+            "Album",
+            "CardRecycleService.cs"
+        );
+        string confirmDialogPath = Path.Combine(
+            scriptsPath,
+            "UI",
+            "ConfirmDialogController.cs"
+        );
+        string loadingOverlayPath = Path.Combine(
+            scriptsPath,
+            "UI",
+            "LoadingOverlayView.cs"
+        );
+        string albumCardPrefabPath = Path.Combine(
+            Application.dataPath,
+            "Prefabs",
+            "AlbumKard.prefab"
+        );
+
+        Assert.IsTrue(File.Exists(cardPath), "Card.cs was not found.");
+        Assert.IsTrue(File.Exists(albumSourcePath), "Album.cs was not found.");
+        Assert.IsTrue(File.Exists(serverFunctionsPath), "ServerFunctionsManager.cs was not found.");
+        Assert.IsTrue(File.Exists(cardRecycleServicePath), "CardRecycleService.cs was not found.");
+        Assert.IsTrue(File.Exists(confirmDialogPath), "ConfirmDialogController.cs was not found.");
+        Assert.IsTrue(File.Exists(loadingOverlayPath), "LoadingOverlayView.cs was not found.");
+        Assert.IsTrue(File.Exists(albumCardPrefabPath), "AlbumKard.prefab was not found.");
+
+        string cardSource = File.ReadAllText(cardPath);
+        string albumSource = File.ReadAllText(albumSourcePath);
+        string serverFunctionsSource = File.ReadAllText(serverFunctionsPath);
+        string cardRecycleServiceSource = File.ReadAllText(cardRecycleServicePath);
+        string confirmDialogSource = File.ReadAllText(confirmDialogPath);
+        string loadingOverlaySource = File.ReadAllText(loadingOverlayPath);
+        string albumCardPrefabSource = File.ReadAllText(albumCardPrefabPath);
+
+        StringAssert.Contains("public void RequestRecycleCard()", cardSource);
+        StringAssert.Contains("recycleConfirmationDialog.Show(\"ARE YOU SURE?\"", cardSource);
+        StringAssert.Contains("Guid.NewGuid().ToString()", cardSource);
+        StringAssert.Contains("cardRecycleService.RecycleCardAsync", cardSource);
+        StringAssert.Contains("SceneLoadingOverlay.Show()", cardSource);
+        StringAssert.Contains("SceneLoadingOverlay.Hide()", cardSource);
+        StringAssert.Contains("LoadForCurrentPlayer(useCardRenderDelay: false)", cardSource);
+        StringAssert.Contains("TryFindCardDeckUsage", cardSource);
+        StringAssert.Contains("deckUsage", cardSource);
+        StringAssert.Contains("AlbumLoveValue.Instance.GetPlayerCurrencyBalance()", cardSource);
+        StringAssert.DoesNotContain("public void RemoveCard()", cardSource);
+        StringAssert.DoesNotContain("UpdateUserDataRequest", cardSource);
+        StringAssert.DoesNotContain("PlayFabClientAPI.UpdateUserData", cardSource);
+        StringAssert.DoesNotContain("AddUserVirtualCurrencyRequest", cardSource);
+        StringAssert.DoesNotContain("PlayFabClientAPI.AddUserVirtualCurrency", cardSource);
+        StringAssert.DoesNotContain("PlayFabAlbumCardManager", cardSource);
+        StringAssert.DoesNotContain("OnChangeAttackClick", cardSource);
+        StringAssert.DoesNotContain("UpdateCardAttack", cardSource);
+        StringAssert.DoesNotContain("ShowAttackList", cardSource);
+        StringAssert.DoesNotContain("HideAttackList", cardSource);
+
+        StringAssert.Contains("public CardRecycleService cardRecycleService;", albumSource);
+        StringAssert.Contains("public ConfirmDialogController recycleConfirmationDialog;", albumSource);
+        StringAssert.Contains("novaKarta.GetComponent<Card>().cardRecycleService = cardRecycleService;", albumSource);
+        StringAssert.Contains("novaKarta.GetComponent<Card>().recycleConfirmationDialog = recycleConfirmationDialog;", albumSource);
+
+        StringAssert.Contains("public void RecyclePlayerCard", serverFunctionsSource);
+        StringAssert.Contains("\"recyclePlayerCard\"", serverFunctionsSource);
+
+        StringAssert.Contains("serverFunctionsManager.RecyclePlayerCard", cardRecycleServiceSource);
+        StringAssert.Contains("public void Show(", confirmDialogSource);
+        StringAssert.Contains("SetAsLastSibling()", confirmDialogSource);
+        StringAssert.Contains("public void Confirm()", confirmDialogSource);
+        StringAssert.Contains("public void Cancel()", confirmDialogSource);
+        StringAssert.Contains("SetAsLastSibling()", loadingOverlaySource);
+        StringAssert.Contains("blocksRaycasts = isVisible", loadingOverlaySource);
+
+        StringAssert.Contains("m_MethodName: RequestRecycleCard", albumCardPrefabSource);
+        StringAssert.DoesNotContain("m_MethodName: RemoveCard", albumCardPrefabSource);
+        StringAssert.DoesNotContain("m_MethodName: OnChangeAttackClick", albumCardPrefabSource);
+        StringAssert.DoesNotContain("m_MethodName: ShowAttackList", albumCardPrefabSource);
+        StringAssert.DoesNotContain("m_MethodName: HideAttackList", albumCardPrefabSource);
+        StringAssert.DoesNotContain("AttackScroll", albumCardPrefabSource);
+    }
+
+    [Test]
+    public void LegacyAlbumAttackChangeRuntime_IsRemoved()
+    {
+        string scriptsPath = Path.Combine(Application.dataPath, "Scripts");
+        string prefabsPath = Path.Combine(Application.dataPath, "Prefabs");
+        string albumCardPrefabPath = Path.Combine(prefabsPath, "AlbumKard.prefab");
+        string gameScenePath = Path.Combine(Application.dataPath, "Scenes", "Game.unity");
+        string marketplaceScenePath = Path.Combine(Application.dataPath, "Scenes", "Marketplace.unity");
+
+        Assert.IsFalse(
+            File.Exists(Path.Combine(scriptsPath, "Album", "PlayFabAlbumCardManager.cs")),
+            "Legacy PlayFabAlbumCardManager runtime must stay removed."
+        );
+        Assert.IsFalse(
+            File.Exists(Path.Combine(scriptsPath, "Album", "AttackListController.cs")),
+            "Legacy AttackListController runtime must stay removed."
+        );
+        Assert.IsFalse(
+            File.Exists(Path.Combine(scriptsPath, "Album", "AviableAttack.cs")),
+            "Legacy AviableAttack runtime must stay removed."
+        );
+        Assert.IsFalse(
+            File.Exists(Path.Combine(prefabsPath, "PlayFabAlbumCardManager.prefab")),
+            "Legacy PlayFabAlbumCardManager prefab must stay removed."
+        );
+        Assert.IsFalse(
+            File.Exists(Path.Combine(prefabsPath, "AviableAttackImg.prefab")),
+            "Legacy attack option prefab must stay removed."
+        );
+
+        string albumCardPrefabSource = File.ReadAllText(albumCardPrefabPath);
+        string gameSceneSource = File.ReadAllText(gameScenePath);
+        string marketplaceSceneSource = File.ReadAllText(marketplaceScenePath);
+
+        StringAssert.DoesNotContain("6e7d932567c580c4db7131c6563ebb5a", albumCardPrefabSource);
+        StringAssert.DoesNotContain("d1ac93ae58a95b743ba7d3515a20fdcb", albumCardPrefabSource);
+        StringAssert.DoesNotContain("cbaa86a481f2bbf4bb6b5dfdc7f13702", albumCardPrefabSource);
+        StringAssert.DoesNotContain("755f21c7121aabf47a25cd81ff286459", albumCardPrefabSource);
+        StringAssert.DoesNotContain("88eaf644aa09f74438d827a5f2207f88", albumCardPrefabSource);
+        StringAssert.DoesNotContain("AttackScroll", albumCardPrefabSource);
+        StringAssert.DoesNotContain("AddRandomCard", gameSceneSource);
+        StringAssert.DoesNotContain("AddAllCardsFromDatabase", gameSceneSource);
+        StringAssert.DoesNotContain("CardGenerator, Assembly-CSharp", gameSceneSource);
+        StringAssert.DoesNotContain("displayBlock", marketplaceSceneSource);
     }
 
     private static string ExtractMethodBody(string source, string startMarker, string endMarker)
