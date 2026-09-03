@@ -117,6 +117,9 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     public DeckManager deckManager;
     public CardRecycleService cardRecycleService;
     public ConfirmDialogController recycleConfirmationDialog;
+    public TutorialService tutorialService;
+    public LibraryFeedbackPanel libraryFeedbackPanel;
+    public GameObject cardTutorial;
     private bool isRecycleInFlight;
 
     public string connectionString;
@@ -393,10 +396,13 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     private void ShowRecycleBlocked()
     {
-        if (CardTutorial.instance != null)
+        if (libraryFeedbackPanel != null)
         {
-            CardTutorial.instance.ShowBlockSellDeckCard();
+            libraryFeedbackPanel.ShowBlockedRecycle();
+            return;
         }
+
+        Debug.LogWarning($"[CardRecycle] Recycle blocked but libraryFeedbackPanel is not assigned: card={cardId}, name={cardName}");
     }
 
     private static string ResolveLoggedInPlayerId()
@@ -740,11 +746,45 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             // Show the deck panel
             deckPanel.SetActive(true);
 
-            if (PlayerPrefs.GetInt("HasCompletedTutorialCard", 0) == 0)
+            if (!deckCard)
             {
-                CardTutorial.instance.gameObject.SetActive(true);
+                CompleteLibraryCardDetailTutorialSteps();
+
+                if (cardTutorial != null && ResolveTutorialService()?.ShouldShowFlow(TutorialConstants.LibraryIntro) == true)
+                {
+                    cardTutorial.SetActive(true);
+                }
             }
         }
+    }
+
+    private async void CompleteLibraryCardDetailTutorialSteps()
+    {
+        TutorialService service = ResolveTutorialService();
+        if (service == null)
+        {
+            return;
+        }
+
+        await service.CompleteCurrentPlayerStepAsync(
+            TutorialConstants.LibraryIntro,
+            TutorialConstants.TapCollectionCard
+        );
+        await service.CompleteCurrentPlayerStepAsync(
+            TutorialConstants.LibraryIntro,
+            TutorialConstants.OpenCardDetail
+        );
+    }
+
+    private TutorialService ResolveTutorialService()
+    {
+        if (tutorialService != null)
+        {
+            return tutorialService;
+        }
+
+        tutorialService = FindFirstObjectByType<TutorialService>(FindObjectsInactive.Include);
+        return tutorialService;
     }
 
     public void ZoomOut()

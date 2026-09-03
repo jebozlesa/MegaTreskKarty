@@ -1005,4 +1005,43 @@ public class ServerFunctionsManager : MonoBehaviour
 
         CallFunctionWithRetry("recyclePlayerCard", parameters, callback);
     }
+
+    public void GetTutorialState(string playerId, Action<ExecuteFunctionResult> callback)
+    {
+        callback ??= NoOpCallback;
+
+        Debug.LogWarning($"[ServerFunctionsManager] GetTutorialState: playerId={playerId}");
+
+        var parameters = new
+        {
+            playerId,
+        };
+
+        CallFunctionWithRetry("getTutorialState", parameters, callback);
+    }
+
+    public void CompleteTutorialStep(
+        string playerId,
+        string tutorialId,
+        string stepId,
+        string requestId,
+        Action<ExecuteFunctionResult> callback
+    )
+    {
+        callback ??= NoOpCallback;
+
+        Debug.LogWarning(
+            $"[ServerFunctionsManager] CompleteTutorialStep: playerId={playerId}, tutorialId={tutorialId}, stepId={stepId}, requestId={requestId}"
+        );
+
+        var parameters = new
+        {
+            playerId,
+            tutorialId,
+            stepId,
+            requestId,
+        };
+
+        CallFunctionWithRetry("completeTutorialStep", parameters, callback);
+    }
 }

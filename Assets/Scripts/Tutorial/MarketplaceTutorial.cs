@@ -9,6 +9,7 @@ public class MarketplaceTutorial : MonoBehaviour
     public GameObject tutorialPanelHint1;
     public GameObject tutorialPanelHint2;
     public GameObject tutorialPanelEmpty;
+    public TutorialService tutorialService;
 
     // Start is called before the first frame update
     void Start()
@@ -23,6 +24,7 @@ public class MarketplaceTutorial : MonoBehaviour
     {
         Debug.Log("MarketplaceTutorial.CloseFirstHint() ===> START");
         tutorialPanelHint1.SetActive(false);
+        CompleteStep(TutorialConstants.OpenMarketplace);
         StartCoroutine(ShowSecondHintAfterDelay());
     }
 
@@ -30,8 +32,6 @@ public class MarketplaceTutorial : MonoBehaviour
     {
         Debug.Log("MarketplaceTutorial.CloseSecondHint() ===> START");
         tutorialPanelHint2.SetActive(false);
-        PlayerPrefs.SetInt("HasCompletedTutorialMarketplace", 1);
-        PlayerPrefs.Save();
     }
 
     public void LoadSceneAlbum()
@@ -47,5 +47,30 @@ public class MarketplaceTutorial : MonoBehaviour
         yield return new WaitForSeconds(1f); // Wait for 1 second
         tutorialPanelEmpty.SetActive(false);
         tutorialPanelHint2.SetActive(true);
+    }
+
+    private async void CompleteStep(string stepId)
+    {
+        TutorialService service = ResolveTutorialService();
+        if (service == null)
+        {
+            return;
+        }
+
+        await service.CompleteCurrentPlayerStepAsync(
+            TutorialConstants.MarketplaceFirstPack,
+            stepId
+        );
+    }
+
+    private TutorialService ResolveTutorialService()
+    {
+        if (tutorialService != null)
+        {
+            return tutorialService;
+        }
+
+        tutorialService = FindFirstObjectByType<TutorialService>(FindObjectsInactive.Include);
+        return tutorialService;
     }
 }

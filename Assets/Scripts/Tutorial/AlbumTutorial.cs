@@ -8,6 +8,7 @@ public class AlbumTutorial : MonoBehaviour
     public GameObject tutorialPanelHint1;
     public GameObject tutorialPanelHint2;
     public GameObject tutorialPanelEmpty;
+    public TutorialService tutorialService;
 
     // Start is called before the first frame update
     void Start()
@@ -21,6 +22,7 @@ public class AlbumTutorial : MonoBehaviour
     {
         Debug.Log("AlbumTutorial.CloseFirstHint() ===> START");
         tutorialPanelHint1.SetActive(false);
+        CompleteStep(TutorialConstants.SeeOwnedCards);
         StartCoroutine(ShowHintAfterDelay(tutorialPanelHint2));
     }
 
@@ -28,8 +30,7 @@ public class AlbumTutorial : MonoBehaviour
     {
         Debug.Log("AlbumTutorial.CloseSecondHint() ===> START");
         tutorialPanelHint2.SetActive(false);
-        PlayerPrefs.SetInt("HasCompletedTutorialAlbum", 1);
-        PlayerPrefs.Save();
+        CompleteStep(TutorialConstants.DeckArea);
     }
 
     public void LoadSceneAlbum()
@@ -45,5 +46,30 @@ public class AlbumTutorial : MonoBehaviour
         yield return new WaitForSeconds(1f); // Wait for 1 second
         tutorialPanelEmpty.SetActive(false);
         hint.SetActive(true);
+    }
+
+    private async void CompleteStep(string stepId)
+    {
+        TutorialService service = ResolveTutorialService();
+        if (service == null)
+        {
+            return;
+        }
+
+        await service.CompleteCurrentPlayerStepAsync(
+            TutorialConstants.LibraryIntro,
+            stepId
+        );
+    }
+
+    private TutorialService ResolveTutorialService()
+    {
+        if (tutorialService != null)
+        {
+            return tutorialService;
+        }
+
+        tutorialService = FindFirstObjectByType<TutorialService>(FindObjectsInactive.Include);
+        return tutorialService;
     }
 }

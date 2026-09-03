@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using PlayFab;
 using PlayFab.ClientModels;
 using TMPro;
@@ -21,6 +22,13 @@ public class PlayFabManagerLogin : MonoBehaviour
     public TMP_InputField usernameInput;
     public TMP_InputField emailInput;
     public TMP_InputField passwordInput;
+
+    [Header("Tutorial / Onboarding")]
+    public TutorialService tutorialService;
+    public ServerFunctionsManager serverFunctionsManager;
+    public string mainSceneName = "Main";
+    public string marketplaceSceneName = "Marketplace";
+    public string librarySceneName = "Cards";
 
     public static PlayFabManagerLogin Instance { get; private set; }
 
@@ -154,10 +162,7 @@ public class PlayFabManagerLogin : MonoBehaviour
         PlayerPrefs.SetString("username", usernameInput.text);
         PlayerPrefs.SetString("email", emailInput.text);
         PlayerPrefs.SetString("password", passwordInput.text);
-        PlayerPrefs.SetInt("HasCompletedTutorialMarketplace", 0);
-        PlayerPrefs.SetInt("HasCompletedTutorialAlbum", 0);
-        PlayerPrefs.SetInt("HasCompletedTutorialCard", 0);
-        PlayerPrefs.SetInt("HasCompletedTutorialRoyal", 0);
+        PlayerPrefs.SetString("LoggedInPlayerId", result.PlayFabId);
         PlayerPrefs.Save();
 
         IsLoggedIn = true;
@@ -167,7 +172,7 @@ public class PlayFabManagerLogin : MonoBehaviour
         // Nastavenie DisplayName na užívateľské meno
         UpdateUserTitleDisplayName(usernameInput.text);
 
-        StartCoroutine(LoadMarketplaceSceneAfterDelay(2));
+        StartCoroutine(LoadTutorialRouteAfterDelay(2));
     }
 
     void UpdateUserTitleDisplayName(string displayName)
@@ -204,12 +209,12 @@ public class PlayFabManagerLogin : MonoBehaviour
         {
             PlayerPrefs.SetString("email", emailInput.text);
             PlayerPrefs.SetString("password", passwordInput.text);
-
-            PlayerPrefs.SetInt("HasCompletedTutorialMarketplace", 1);
-            PlayerPrefs.SetInt("HasCompletedTutorialAlbum", 1);
-            PlayerPrefs.SetInt("HasCompletedTutorialCard", 1);
-            PlayerPrefs.SetInt("HasCompletedTutorialRoyal", 1);
         }
+
+        PlayerPrefs.SetString("LoggedInPlayerId", result.PlayFabId);
+        PlayerPrefs.Save();
+        IsLoggedIn = true;
+        LoggedInPlayerId = result.PlayFabId;
 
         // Get the username
         PlayFabClientAPI.GetAccountInfo(
@@ -223,16 +228,13 @@ public class PlayFabManagerLogin : MonoBehaviour
                 Debug.Log("Sicko dobre");
                 messageEinsteinBubble.SetActive(true);
                 messageEinsteinText.text = "Welcome " + username;
-                IsLoggedIn = true;
-                StartCoroutine(LoadMainSceneAfterDelay(2));
+                StartCoroutine(LoadTutorialRouteAfterDelay(2));
             },
             error =>
             {
                 Debug.LogError(error.GenerateErrorReport());
             }
         );
-
-        LoggedInPlayerId = result.PlayFabId;
     }
 
     private void SaveEmailAndPasswordToPlayerPrefs(string email, string password)
@@ -261,6 +263,85 @@ public class PlayFabManagerLogin : MonoBehaviour
 
         // Potom načítaj hlavnú scénu
         SceneManager.LoadScene("Marketplace");
+    }
+
+    IEnumerator LoadTutorialRouteAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        messageEinsteinBubble.SetActive(false);
+        loadingImage.SetActive(true);
+
+        TutorialService service = EnsureTutorialService();
+        Task<TutorialStateResponse> stateTask = service.GetTutorialStateAsync(LoggedInPlayerId);
+        yield return new WaitUntil(() => stateTask.IsCompleted);
+
+        loadingImage.SetActive(false);
+
+        TutorialStateResponse state = stateTask.Result;
+        if (state == null || !state.success)
+        {
+            messageStalinBubble.SetActive(true);
+            controlPanel.SetActive(true);
+            messageStalinText.text = "Could not load tutorial state.";
+            Debug.LogError(
+                $"[PlayFabManagerLogin] Tutorial route failed: stage={state?.stage}, error={state?.error}"
+            );
+            yield break;
+        }
+
+        string sceneName = ResolveSceneForTutorialRoute(state.recommendedRoute);
+        Debug.LogWarning(
+            $"[PlayFabManagerLogin] Tutorial route resolved: player={LoggedInPlayerId}, route={state.recommendedRoute}, scene={sceneName}, "
+                + $"safe={state.gates?.safeCardDeckState}, needsFirstPack={state.gates?.needsFirstPack}, "
+                + $"needsLibrarySwap={state.gates?.needsLibraryDeckSwap}"
+        );
+        SceneManager.LoadScene(sceneName);
+    }
+
+    private TutorialService EnsureTutorialService()
+    {
+        if (tutorialService == null)
+        {
+            tutorialService = GetComponent<TutorialService>();
+        }
+
+        if (serverFunctionsManager == null)
+        {
+            serverFunctionsManager = GetComponent<ServerFunctionsManager>();
+        }
+
+        if (serverFunctionsManager == null)
+        {
+            serverFunctionsManager = gameObject.AddComponent<ServerFunctionsManager>();
+        }
+
+        if (tutorialService == null)
+        {
+            tutorialService = gameObject.AddComponent<TutorialService>();
+        }
+
+        if (tutorialService.serverFunctionsManager == null)
+        {
+            tutorialService.serverFunctionsManager = serverFunctionsManager;
+        }
+
+        return tutorialService;
+    }
+
+    private string ResolveSceneForTutorialRoute(string route)
+    {
+        if (string.Equals(route, "Marketplace", StringComparison.OrdinalIgnoreCase))
+        {
+            return marketplaceSceneName;
+        }
+
+        if (string.Equals(route, "Cards", StringComparison.OrdinalIgnoreCase))
+        {
+            return librarySceneName;
+        }
+
+        return mainSceneName;
     }
 
     public void ResetPasswordButton()

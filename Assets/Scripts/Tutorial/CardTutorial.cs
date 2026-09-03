@@ -1,12 +1,9 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class CardTutorial : MonoBehaviour
 {
-
-    public static CardTutorial instance;
 
     public GameObject tutorialPanelHint1;
     public GameObject tutorialPanelHint2;
@@ -17,13 +14,13 @@ public class CardTutorial : MonoBehaviour
     public GameObject tutorialPanelEmpty;
 
     public GameObject blockSellDeckCard;
+    public TutorialService tutorialService;
 
     // public static CardTutorial Instance { get; private set; }
 
     private void Awake()
     {
         Debug.Log("CardTutorial.Awake() ===> START");
-        instance = this;
         // if (Instance == null)
         // {
 
@@ -54,14 +51,6 @@ public class CardTutorial : MonoBehaviour
 
     }
 
-    private GameObject InstantiateAndSetup(GameObject prefab)
-    {
-
-        GameObject instance = Instantiate(prefab, transform);
-        //     instance.transform.localPosition = Vector3.zero;
-        return instance;
-    }
-
     public void ShowBlockSellDeckCard()
     {
         blockSellDeckCard.SetActive(true);
@@ -75,6 +64,7 @@ public class CardTutorial : MonoBehaviour
     {
         Debug.Log("CardTutorial.CloseFirstHint() ===> START");
         tutorialPanelHint1.SetActive(false);
+        CompleteStep(TutorialConstants.CardBasics);
         StartCoroutine(ShowHintAfterDelayBlock(tutorialPanelHint2, 0f));
     }
 
@@ -110,8 +100,7 @@ public class CardTutorial : MonoBehaviour
     {
         Debug.Log("CardTutorial.CloseSixthHint() ===> START");
         tutorialPanelHint6.SetActive(false);
-        PlayerPrefs.SetInt("HasCompletedTutorialCard", 1);
-        PlayerPrefs.Save();
+        CompleteStep(TutorialConstants.DeckArea);
     }
 
     // Coroutine to show the second hint after a delay
@@ -129,8 +118,28 @@ public class CardTutorial : MonoBehaviour
         hint.SetActive(true);
     }
 
-    public static implicit operator CardTutorial(AlbumLoveValue v)
+    private async void CompleteStep(string stepId)
     {
-        throw new NotImplementedException();
+        TutorialService service = ResolveTutorialService();
+        if (service == null)
+        {
+            return;
+        }
+
+        await service.CompleteCurrentPlayerStepAsync(
+            TutorialConstants.LibraryIntro,
+            stepId
+        );
+    }
+
+    private TutorialService ResolveTutorialService()
+    {
+        if (tutorialService != null)
+        {
+            return tutorialService;
+        }
+
+        tutorialService = FindFirstObjectByType<TutorialService>(FindObjectsInactive.Include);
+        return tutorialService;
     }
 }

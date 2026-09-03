@@ -29,11 +29,13 @@ public class RoyalRumbleShellController : MonoBehaviour
     public AttackDescriptions attackDescriptions;
     public RecordHandler recordHandler;
     public GameObject cardPrefab;
+    public TutorialService tutorialService;
 
     [Header("Scene References")]
     public GameObject playerBoard;
     public GameObject enemyBoard;
     public GameObject startupControlPanel;
+    public GameObject tutorialRoot;
 
     [Header("Attack UI")]
     public Button attackButton1;
@@ -157,6 +159,12 @@ public class RoyalRumbleShellController : MonoBehaviour
                 return;
             }
 
+            await LoadRoyalRumbleTutorialStateAsync();
+            if (this == null || isShuttingDown)
+            {
+                return;
+            }
+
             SetStatus("Preparing Royal Rumble...");
             LogVerboseWarning(
                 $"[RoyalRumbleShellController] RR shell opening started for player={playerId}."
@@ -242,6 +250,106 @@ public class RoyalRumbleShellController : MonoBehaviour
         }
     }
 
+    private async Task LoadRoyalRumbleTutorialStateAsync()
+    {
+        TutorialService service = ResolveTutorialService();
+        if (service == null)
+        {
+            SetRoyalRumbleTutorialVisible(false);
+            return;
+        }
+
+        TutorialStateResponse state = await service.GetTutorialStateAsync(playerId);
+        bool shouldShow =
+            state != null
+            && state.success
+            && !state.IsFlowCompleted(TutorialConstants.RoyalRumbleFirstBattle);
+        SetRoyalRumbleTutorialVisible(shouldShow);
+        Debug.LogWarning(
+            $"[RoyalRumbleShellController] Tutorial state loaded: showFirstBattle={shouldShow}, route={state?.recommendedRoute}, blockNavigation={state?.blockNavigation}"
+        );
+    }
+
+    private async void CompleteRoyalRumbleTutorialStep(string stepId)
+    {
+        TutorialService service = ResolveTutorialService();
+        if (service == null)
+        {
+            return;
+        }
+
+        TutorialStateResponse state = await service.CompleteStepAsync(
+            playerId,
+            TutorialConstants.RoyalRumbleFirstBattle,
+            stepId
+        );
+        SetRoyalRumbleTutorialVisible(
+            state != null
+                && state.success
+                && !state.IsFlowCompleted(TutorialConstants.RoyalRumbleFirstBattle)
+        );
+    }
+
+    private async void CompleteRoyalRumbleAttackConfirmationTutorial()
+    {
+        TutorialService service = ResolveTutorialService();
+        if (service == null)
+        {
+            return;
+        }
+
+        TutorialStateResponse state = await service.CompleteStepAsync(
+            playerId,
+            TutorialConstants.RoyalRumbleFirstBattle,
+            TutorialConstants.ConfirmAttack
+        );
+        if (state == null || !state.success)
+        {
+            return;
+        }
+
+        state = await service.CompleteStepAsync(
+            playerId,
+            TutorialConstants.RoyalRumbleFirstBattle,
+            TutorialConstants.CompleteControls
+        );
+        SetRoyalRumbleTutorialVisible(
+            state != null
+                && state.success
+                && !state.IsFlowCompleted(TutorialConstants.RoyalRumbleFirstBattle)
+        );
+    }
+
+    private TutorialService ResolveTutorialService()
+    {
+        if (tutorialService != null)
+        {
+            return tutorialService;
+        }
+
+        tutorialService = GetComponent<TutorialService>();
+        if (tutorialService == null)
+        {
+            tutorialService = gameObject.AddComponent<TutorialService>();
+        }
+
+        ServerFunctionsManager serverManager = GetComponent<ServerFunctionsManager>();
+        if (serverManager != null)
+        {
+            tutorialService.serverFunctionsManager = serverManager;
+        }
+
+        return tutorialService;
+    }
+
+    private void SetRoyalRumbleTutorialVisible(bool isVisible)
+    {
+        if (tutorialRoot != null)
+        {
+            tutorialRoot.SetActive(isVisible);
+        }
+    }
+
     public void ShowDragSelectionHint()
     {
         SetStatus("Drag a fighter to the battle area.");
@@ -267,6 +375,11 @@ public class RoyalRumbleShellController : MonoBehaviour
                 + $"remainingCount={remainingCount}, status={currentSession?.status}, isBusy={isBusy}, selectedCard={ActivePlayerCardId}"
         );
         attackSelectionFlow?.OnAttackButtonClicked(attackType);
+
+        if (attackSelectionFlow?.SelectedAttackType == attackType)
+        {
+            CompleteRoyalRumbleTutorialStep(TutorialConstants.SelectAttack);
+        }
     }
 
     public void ConfirmAttackButton()
@@ -352,6 +465,7 @@ public class RoyalRumbleShellController : MonoBehaviour
                 $"[RoyalRumbleShellController] Fighter selected via drag: cardId={card.cardId}, name={card.cardName}, hp={card.health}/{card.maxHealth}, "
                     + $"attacks=[{card.attack1},{card.attack2},{card.attack3},{card.attack4}]"
             );
+            CompleteRoyalRumbleTutorialStep(TutorialConstants.SelectPlayerCard);
             SetStatus("Choose attack!");
         }
         finally
@@ -785,6 +899,7 @@ public class RoyalRumbleShellController : MonoBehaviour
             $"[RoyalRumbleShellController] SubmitSelectedAttack accepted: slot={attackData.attackType}, attackId={attackData.attackId}, "
                 + $"attackName={GetAttackName(attackData.attackId)}, displayedCount={attackData.attackCount}, cardId={attackData.cardId}"
         );
+        CompleteRoyalRumbleAttackConfirmationTutorial();
         StartCoroutine(SubmitAttackRoutine(attackData.attackType));
     }
 

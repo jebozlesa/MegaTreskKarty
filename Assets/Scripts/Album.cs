@@ -26,14 +26,24 @@ public class Album : MonoBehaviour
     public DeckManager deckManager;
     public CardRecycleService cardRecycleService;
     public ConfirmDialogController recycleConfirmationDialog;
+    public TutorialService tutorialService;
+    public LibraryFeedbackPanel libraryFeedbackPanel;
+    public GameObject backButton;
     private Coroutine libraryCardsRenderCoroutine;
     private int libraryCardsRenderVersion;
+    private TutorialStateResponse tutorialState;
 
     void Start()
     {
         Debug.Log("Album.Start -- Start");
 
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
+        SetTutorialVisible(false);
+        if (cardTutorial != null)
+        {
+            cardTutorial.SetActive(false);
+        }
+
         deckPanel.SetActive(false);
         if (cardRecycleService == null)
         {
@@ -42,10 +52,6 @@ public class Album : MonoBehaviour
         if (recycleConfirmationDialog == null)
         {
             Debug.LogWarning("[Album] recycleConfirmationDialog is not assigned; card recycling will be blocked.");
-        }
-        if (PlayerPrefs.GetInt("HasCompletedTutorialAlbum", 0) == 0)
-        {
-            tutorial.SetActive(true);
         }
 
         if (PlayFabManagerLogin.Instance != null && PlayFabManagerLogin.IsLoggedIn)
@@ -153,7 +159,9 @@ public class Album : MonoBehaviour
             yield break;
         }
 
+        EnsureTutorialService();
         yield return StartCoroutine(libraryDeckController.LoadForCurrentPlayer());
+        yield return StartCoroutine(LoadLibraryTutorialState());
     }
 
     public void RenderLibraryCards(
@@ -252,6 +260,9 @@ public class Album : MonoBehaviour
             novaKarta.GetComponent<Card>().deckManager = deckManager;
             novaKarta.GetComponent<Card>().cardRecycleService = cardRecycleService;
             novaKarta.GetComponent<Card>().recycleConfirmationDialog = recycleConfirmationDialog;
+            novaKarta.GetComponent<Card>().tutorialService = tutorialService;
+            novaKarta.GetComponent<Card>().libraryFeedbackPanel = libraryFeedbackPanel;
+            novaKarta.GetComponent<Card>().cardTutorial = cardTutorial;
 
             if (useCardRenderDelay)
             {
@@ -263,6 +274,125 @@ public class Album : MonoBehaviour
         {
             libraryCardsRenderCoroutine = null;
             Debug.LogWarning($"[Album] Library cards rendered: render={renderVersion}, cards={data.Count}, delay={useCardRenderDelay}, transition={showTransitionFrame}");
+        }
+    }
+
+    private IEnumerator LoadLibraryTutorialState()
+    {
+        TutorialService service = EnsureTutorialService();
+        if (service == null)
+        {
+            Debug.LogError("[Album] Cannot load tutorial state: TutorialService is not assigned.");
+            yield break;
+        }
+
+        System.Threading.Tasks.Task<TutorialStateResponse> stateTask = service.RefreshCurrentPlayerStateAsync();
+        yield return new WaitUntil(() => stateTask.IsCompleted);
+
+        tutorialState = stateTask.Result;
+        if (tutorialState == null || !tutorialState.success)
+        {
+            Debug.LogError(
+                $"[Album] Tutorial state load failed: stage={tutorialState?.stage}, error={tutorialState?.error}"
+            );
+            yield break;
+        }
+
+        bool needsLibraryTutorial = tutorialState.gates?.needsLibraryDeckSwap == true;
+        SetTutorialVisible(needsLibraryTutorial);
+        SetBackBlocked(needsLibraryTutorial);
+
+        Debug.LogWarning(
+            $"[Album] Tutorial state applied: needsLibraryTutorial={needsLibraryTutorial}, route={tutorialState.recommendedRoute}, blockNavigation={tutorialState.blockNavigation}"
+        );
+
+        if (needsLibraryTutorial)
+        {
+            yield return StartCoroutine(CompleteTutorialStep(
+                TutorialConstants.LibraryIntro,
+                TutorialConstants.SeeOwnedCards
+            ));
+        }
+    }
+
+    private IEnumerator CompleteTutorialStep(string tutorialId, string stepId)
+    {
+        TutorialService service = EnsureTutorialService();
+        if (service == null)
+        {
+            yield break;
+        }
+
+        System.Threading.Tasks.Task<TutorialStateResponse> stepTask =
+            service.CompleteCurrentPlayerStepAsync(tutorialId, stepId);
+        yield return new WaitUntil(() => stepTask.IsCompleted);
+
+        tutorialState = stepTask.Result;
+        if (tutorialState == null || !tutorialState.success)
+        {
+            Debug.LogError(
+                $"[Album] Tutorial step failed: tutorial={tutorialId}, step={stepId}, stage={tutorialState?.stage}, error={tutorialState?.error}"
+            );
+        }
+    }
+
+    private TutorialService EnsureTutorialService()
+    {
+        if (tutorialService == null)
+        {
+            tutorialService = GetComponent<TutorialService>();
+        }
+
+        if (tutorialService == null)
+        {
+            tutorialService = FindFirstObjectByType<TutorialService>(FindObjectsInactive.Include);
+        }
+
+        if (tutorialService == null)
+        {
+            tutorialService = gameObject.AddComponent<TutorialService>();
+        }
+
+        if (
+            tutorialService.serverFunctionsManager == null
+            && libraryDeckController?.libraryDeckService?.serverFunctionsManager != null
+        )
+        {
+            tutorialService.serverFunctionsManager =
+                libraryDeckController.libraryDeckService.serverFunctionsManager;
+        }
+
+        if (deckManager != null && deckManager.tutorialService == null)
+        {
+            deckManager.tutorialService = tutorialService;
+        }
+
+        if (deckManager != null && deckManager.tutorialRoot == null)
+        {
+            deckManager.tutorialRoot = tutorial;
+        }
+
+        if (deckManager != null && deckManager.backButton == null)
+        {
+            deckManager.backButton = backButton;
+        }
+
+        return tutorialService;
+    }
+
+    private void SetTutorialVisible(bool visible)
+    {
+        if (tutorial != null)
+        {
+            tutorial.SetActive(visible);
+        }
+    }
+
+    private void SetBackBlocked(bool blocked)
+    {
+        if (backButton != null)
+        {
+            backButton.SetActive(!blocked);
         }
     }
 

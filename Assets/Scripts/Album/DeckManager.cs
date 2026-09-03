@@ -12,6 +12,9 @@ public class DeckManager : MonoBehaviour
     public GameObject createDeckPrompt;
     public GameObject zoomedCardHolder;
     public LibraryDeckController libraryDeckController;
+    public TutorialService tutorialService;
+    public GameObject tutorialRoot;
+    public GameObject backButton;
     public string connectionString;
 
     private LibraryContextDto currentContext;
@@ -158,7 +161,50 @@ public class DeckManager : MonoBehaviour
             $"[DeckManager] Swap requested: context={currentContext.contextId}, deck={currentDeck.deckId}, old={clickedDeckCard.cardId}, new={selectedCard.cardId}"
         );
 
-        return await libraryDeckController.SwapActiveDeckCardAsync(clickedDeckCard.cardId, selectedCard.cardId);
+        bool swapped = await libraryDeckController.SwapActiveDeckCardAsync(clickedDeckCard.cardId, selectedCard.cardId);
+        if (swapped)
+        {
+            await CompleteLibrarySwapTutorialSteps();
+        }
+
+        return swapped;
+    }
+
+    private async Task CompleteLibrarySwapTutorialSteps()
+    {
+        TutorialService service = ResolveTutorialService();
+        if (service == null)
+        {
+            return;
+        }
+
+        TutorialStateResponse swapState = await service.CompleteCurrentPlayerStepAsync(
+            TutorialConstants.LibraryIntro,
+            TutorialConstants.SwapDeckCard
+        );
+        TutorialStateResponse completeState = await service.CompleteCurrentPlayerStepAsync(
+            TutorialConstants.LibraryIntro,
+            TutorialConstants.LibraryComplete
+        );
+        ApplyLibraryTutorialGate(completeState ?? swapState);
+    }
+
+    private void ApplyLibraryTutorialGate(TutorialStateResponse state)
+    {
+        if (state?.gates?.criticalOnboardingComplete != true)
+        {
+            return;
+        }
+
+        if (tutorialRoot != null)
+        {
+            tutorialRoot.SetActive(false);
+        }
+
+        if (backButton != null)
+        {
+            backButton.SetActive(true);
+        }
     }
 
     private void CreateCardInDeck(GeneratedCard card)
@@ -190,6 +236,7 @@ public class DeckManager : MonoBehaviour
         deckCard.deckPanel = deckPanel;
         deckCard.deckCard = true;
         deckCard.deckManager = this;
+        deckCard.tutorialService = tutorialService;
     }
 
     private static Color32 BuildColor(int[] color)
@@ -227,5 +274,16 @@ public class DeckManager : MonoBehaviour
         dbConnection.Close();
 
         return cardStory;
+    }
+
+    private TutorialService ResolveTutorialService()
+    {
+        if (tutorialService != null)
+        {
+            return tutorialService;
+        }
+
+        tutorialService = FindFirstObjectByType<TutorialService>(FindObjectsInactive.Include);
+        return tutorialService;
     }
 }
