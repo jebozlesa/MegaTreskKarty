@@ -718,6 +718,7 @@ public class ServerFunctionsManager : MonoBehaviour
         string deckId,
         string oldCardId,
         string newCardId,
+        string tutorialRequestId,
         Action<ExecuteFunctionResult> callback
     )
     {
@@ -730,6 +731,7 @@ public class ServerFunctionsManager : MonoBehaviour
             deckId = deckId,
             oldCardId = oldCardId,
             newCardId = newCardId,
+            tutorialRequestId = tutorialRequestId,
         };
         CallFunctionWithRetry("swapLibraryDeckCard", parameters, callback);
     }

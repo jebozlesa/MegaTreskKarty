@@ -83,6 +83,7 @@ public class LibraryDeckController : MonoBehaviour
 
     public async Task<bool> CreateDeckForCurrentContextAsync()
     {
+        if (!AllowsOrdinaryLibraryAction()) return false;
         if (!CanMutateCurrentContext())
         {
             return false;
@@ -102,6 +103,7 @@ public class LibraryDeckController : MonoBehaviour
 
     public async Task<bool> SetActiveDeckAsync(string deckId)
     {
+        if (!AllowsOrdinaryLibraryAction()) return false;
         if (!CanMutateCurrentContext() || string.IsNullOrWhiteSpace(deckId))
         {
             return false;
@@ -120,8 +122,9 @@ public class LibraryDeckController : MonoBehaviour
         await SetActiveDeckAsync(deckId);
     }
 
-    public async Task<bool> SwapActiveDeckCardAsync(string oldCardId, string newCardId)
+    public async Task<bool> SwapActiveDeckCardAsync(string oldCardId, string newCardId, string tutorialRequestId = null)
     {
+        if (string.IsNullOrWhiteSpace(tutorialRequestId) && !AllowsOrdinaryLibraryAction()) return false;
         if (!CanMutateCurrentContext() || CurrentDeck == null)
         {
             return false;
@@ -132,7 +135,8 @@ public class LibraryDeckController : MonoBehaviour
             CurrentContext.contextId,
             CurrentDeck.deckId,
             oldCardId,
-            newCardId
+            newCardId,
+            tutorialRequestId
         );
         return ApplyMutationResponse(response, renderFullContext: false);
     }
@@ -159,6 +163,7 @@ public class LibraryDeckController : MonoBehaviour
 
     public void CycleSortCriterion()
     {
+        if (!AllowsOrdinaryLibraryAction()) return;
         LibrarySortCriterion previous = selectedSortCriterion;
         selectedSortCriterion = LibraryCardSorter.NextCriterion(selectedSortCriterion);
         UpdateSortCriterionLabel();
@@ -170,6 +175,7 @@ public class LibraryDeckController : MonoBehaviour
 
     public void ApplySort()
     {
+        if (!AllowsOrdinaryLibraryAction()) return;
         if (CurrentState == null)
         {
             Debug.LogWarning("[LibraryDeckController] Sort ignored: library state is not loaded");
@@ -295,6 +301,7 @@ public class LibraryDeckController : MonoBehaviour
 
     private void MoveContext(int direction)
     {
+        if (!AllowsOrdinaryLibraryAction()) return;
         int count = VisibleContextCount();
         if (count <= 1)
         {
@@ -316,6 +323,7 @@ public class LibraryDeckController : MonoBehaviour
 
     private async Task<bool> MoveDeckAsync(int direction)
     {
+        if (!AllowsOrdinaryLibraryAction()) return false;
         if (CurrentContext == null)
         {
             Debug.LogWarning("[LibraryDeckController] Deck swipe ignored: no current context");
@@ -561,6 +569,12 @@ public class LibraryDeckController : MonoBehaviour
         }
 
         return true;
+    }
+
+    private bool AllowsOrdinaryLibraryAction()
+    {
+        return album?.libraryTutorialController == null
+            || album.libraryTutorialController.AllowsOrdinaryLibraryAction();
     }
 
     private bool ValidateReferences()

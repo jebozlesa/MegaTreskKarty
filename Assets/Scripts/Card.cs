@@ -70,6 +70,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     private static Card currentZoomedCard = null;
     public static bool IsAnyCardDetailOpen => currentZoomedCard != null;
+    public bool IsZoomed => isZoomed;
 
     private int originalSiblingIndex;
 
@@ -117,9 +118,8 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     public DeckManager deckManager;
     public CardRecycleService cardRecycleService;
     public ConfirmDialogController recycleConfirmationDialog;
-    public TutorialService tutorialService;
-    public LibraryFeedbackPanel libraryFeedbackPanel;
-    public GameObject cardTutorial;
+    public LibraryTutorialController libraryTutorialController;
+    public GameObject blockedRecycleDeckPrompt;
     private bool isRecycleInFlight;
 
     public string connectionString;
@@ -144,9 +144,6 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     private int displayedAttack;
 
     //public GameObject tutorial;
-
-    GameObject cardTutorialObject;
-
 
     void Start()
     {
@@ -254,6 +251,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     // Metoda na odstranenie karty
     public void RequestRecycleCard()
     {
+        if (libraryTutorialController != null && libraryTutorialController.IsActive) return;
         if (isRecycleInFlight)
         {
             Debug.LogWarning($"[CardRecycle] Recycle ignored while busy: card={cardId}, name={cardName}");
@@ -396,13 +394,13 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     private void ShowRecycleBlocked()
     {
-        if (libraryFeedbackPanel != null)
+        if (blockedRecycleDeckPrompt != null)
         {
-            libraryFeedbackPanel.ShowBlockedRecycle();
+            blockedRecycleDeckPrompt.SetActive(true);
             return;
         }
 
-        Debug.LogWarning($"[CardRecycle] Recycle blocked but libraryFeedbackPanel is not assigned: card={cardId}, name={cardName}");
+        Debug.LogWarning($"[CardRecycle] Recycle blocked but blockedRecycleDeckPrompt is not assigned: card={cardId}, name={cardName}");
     }
 
     private static string ResolveLoggedInPlayerId()
@@ -538,6 +536,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     }
     public void OnBeginDrag(PointerEventData eventData)
     {
+        if (libraryTutorialController != null && libraryTutorialController.IsActive) return;
         if (!isZoomed && !deckCard)
         {
             pointerDragStartPosition = eventData.position;
@@ -551,6 +550,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     public void OnDrag(PointerEventData eventData)
     {
+        if (libraryTutorialController != null && libraryTutorialController.IsActive) return;
         if (!isZoomed && isDragging && !deckCard)
         {
             dragInProgress = true;
@@ -563,6 +563,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        if (libraryTutorialController != null && libraryTutorialController.IsActive) return;
         if (!isZoomed && !deckCard)
         {
             isDragging = false;
@@ -576,6 +577,18 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     }
 
     public void OnSwipeRight()
+    {
+        if (libraryTutorialController != null && libraryTutorialController.IsActive)
+        {
+            if (!libraryTutorialController.TryCardGesture(this, "right")) return;
+            ApplySwipeRight();
+            libraryTutorialController.ConfirmCardGesture(TutorialConstants.BrowseCardAttacks);
+            return;
+        }
+        ApplySwipeRight();
+    }
+
+    private void ApplySwipeRight()
     {
         Debug.Log("Swipe Right");
         if (isZoomed)
@@ -609,6 +622,19 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     }
 
     public void OnSwipeLeft()
+    {
+        if (libraryTutorialController != null && libraryTutorialController.IsActive)
+        {
+            if (!libraryTutorialController.TryCardGesture(this, "left")) return;
+            string step = libraryTutorialController.CurrentStepId;
+            ApplySwipeLeft();
+            libraryTutorialController.ConfirmCardGesture(step);
+            return;
+        }
+        ApplySwipeLeft();
+    }
+
+    private void ApplySwipeLeft()
     {
         Debug.Log("Swipe Left");
         if (isZoomed)
@@ -645,6 +671,18 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     public void OnSwipeUp()
     {
+        if (libraryTutorialController != null && libraryTutorialController.IsActive)
+        {
+            if (!libraryTutorialController.TryCardGesture(this, "up")) return;
+            ApplySwipeUp();
+            libraryTutorialController.ConfirmCardGesture(TutorialConstants.ViewCardAttacks);
+            return;
+        }
+        ApplySwipeUp();
+    }
+
+    private void ApplySwipeUp()
+    {
         if (isZoomed)
         {
             AudioManager.Instance.PlayCardZoomOutSound();
@@ -660,6 +698,18 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     public void OnSwipeDown()
     {
+        if (libraryTutorialController != null && libraryTutorialController.IsActive)
+        {
+            if (!libraryTutorialController.TryCardGesture(this, "down")) return;
+            ApplySwipeDown();
+            libraryTutorialController.ConfirmCardGesture(TutorialConstants.ReturnToCardFront);
+            return;
+        }
+        ApplySwipeDown();
+    }
+
+    private void ApplySwipeDown()
+    {
         if (isZoomed)
         {
             AudioManager.Instance.PlayCardZoomOutSound();
@@ -671,7 +721,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     public void OnPointerDown(PointerEventData eventData)
     {
         pointerDownPosition = eventData.position;
-        if (!isZoomed && parentLibrarySwipeInput != null)
+        if (!isZoomed && parentLibrarySwipeInput != null && (libraryTutorialController == null || !libraryTutorialController.IsActive))
         {
             parentLibrarySwipeInput.CapturePointerDown(eventData);
         }
@@ -681,6 +731,13 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     {
         pointerUpPosition = eventData.position;
         float distance = Vector2.Distance(pointerDownPosition, pointerUpPosition);
+
+        if (libraryTutorialController != null && libraryTutorialController.IsActive && !isZoomed)
+        {
+            if (distance <= swipeDistanceThreshold) ToggleZoom();
+            dragInProgress = false;
+            return;
+        }
 
         if (!isZoomed && parentLibrarySwipeInput != null && parentLibrarySwipeInput.TryHandlePointerUp(eventData))
         {
@@ -716,6 +773,15 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     public void ToggleZoom()
     {
+        if (libraryTutorialController != null && libraryTutorialController.IsActive)
+        {
+            if (isZoomed) return;
+            if (!libraryTutorialController.TryOpenCard(this)) return;
+            ZoomIn();
+            AudioManager.Instance.PlayCardZoomInSound();
+            libraryTutorialController.ConfirmCardOpened(this);
+            return;
+        }
         if (isZoomed)
         {
             ZoomOut();
@@ -746,45 +812,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             // Show the deck panel
             deckPanel.SetActive(true);
 
-            if (!deckCard)
-            {
-                CompleteLibraryCardDetailTutorialSteps();
-
-                if (cardTutorial != null && ResolveTutorialService()?.ShouldShowFlow(TutorialConstants.LibraryIntro) == true)
-                {
-                    cardTutorial.SetActive(true);
-                }
-            }
         }
-    }
-
-    private async void CompleteLibraryCardDetailTutorialSteps()
-    {
-        TutorialService service = ResolveTutorialService();
-        if (service == null)
-        {
-            return;
-        }
-
-        await service.CompleteCurrentPlayerStepAsync(
-            TutorialConstants.LibraryIntro,
-            TutorialConstants.TapCollectionCard
-        );
-        await service.CompleteCurrentPlayerStepAsync(
-            TutorialConstants.LibraryIntro,
-            TutorialConstants.OpenCardDetail
-        );
-    }
-
-    private TutorialService ResolveTutorialService()
-    {
-        if (tutorialService != null)
-        {
-            return tutorialService;
-        }
-
-        tutorialService = FindFirstObjectByType<TutorialService>(FindObjectsInactive.Include);
-        return tutorialService;
     }
 
     public void ZoomOut()
@@ -804,6 +832,25 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             backSideInfo.SetActive(false);
             // Hide the deck panel
             deckPanel.SetActive(false);
+        }
+    }
+
+    public void RestoreTutorialView(string stepId)
+    {
+        if (!isZoomed) return;
+
+        bool attacks = stepId == TutorialConstants.BrowseCardAttacks
+            || stepId == TutorialConstants.ReturnToCardFront;
+        frontSide.SetActive(stepId == TutorialConstants.ViewCardStats || stepId == TutorialConstants.SwapDeckCard);
+        backSideAttributes.SetActive(stepId == TutorialConstants.ViewCardAttacks);
+        backSideDescription.SetActive(false);
+        backSideInfo.SetActive(false);
+        backSideAttack.SetActive(attacks);
+        if (attacks)
+        {
+            currentAttackIndex = 1;
+            displayedAttack = attack1;
+            LoadAttackData(attack1);
         }
     }
 

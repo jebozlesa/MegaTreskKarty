@@ -27,11 +27,13 @@ public class Album : MonoBehaviour
     public CardRecycleService cardRecycleService;
     public ConfirmDialogController recycleConfirmationDialog;
     public TutorialService tutorialService;
-    public LibraryFeedbackPanel libraryFeedbackPanel;
+    public LibraryTutorialController libraryTutorialController;
+    public GameObject blockedRecycleDeckPrompt;
     public GameObject backButton;
     private Coroutine libraryCardsRenderCoroutine;
     private int libraryCardsRenderVersion;
     private TutorialStateResponse tutorialState;
+    private readonly List<Card> renderedCards = new List<Card>();
 
     void Start()
     {
@@ -39,9 +41,19 @@ public class Album : MonoBehaviour
 
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
         SetTutorialVisible(false);
+        if (backButton != null) backButton.SetActive(false);
+        SceneLoadingOverlay.SetMessage("LOADING LIBRARY...");
+        SceneLoadingOverlay.Show();
         if (cardTutorial != null)
         {
             cardTutorial.SetActive(false);
+        }
+        if (blockedRecycleDeckPrompt != null)
+        {
+            blockedRecycleDeckPrompt.SetActive(false);
+            DismissPanelButton dismiss = blockedRecycleDeckPrompt.GetComponent<DismissPanelButton>();
+            if (dismiss == null) dismiss = blockedRecycleDeckPrompt.AddComponent<DismissPanelButton>();
+            dismiss.Configure(blockedRecycleDeckPrompt);
         }
 
         deckPanel.SetActive(false);
@@ -161,7 +173,9 @@ public class Album : MonoBehaviour
 
         EnsureTutorialService();
         yield return StartCoroutine(libraryDeckController.LoadForCurrentPlayer());
+        yield return new WaitUntil(() => libraryCardsRenderCoroutine == null);
         yield return StartCoroutine(LoadLibraryTutorialState());
+        SceneLoadingOverlay.Hide();
     }
 
     public void RenderLibraryCards(
@@ -206,6 +220,7 @@ public class Album : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
+        renderedCards.Clear();
 
         if (showTransitionFrame)
         {
@@ -260,9 +275,9 @@ public class Album : MonoBehaviour
             novaKarta.GetComponent<Card>().deckManager = deckManager;
             novaKarta.GetComponent<Card>().cardRecycleService = cardRecycleService;
             novaKarta.GetComponent<Card>().recycleConfirmationDialog = recycleConfirmationDialog;
-            novaKarta.GetComponent<Card>().tutorialService = tutorialService;
-            novaKarta.GetComponent<Card>().libraryFeedbackPanel = libraryFeedbackPanel;
-            novaKarta.GetComponent<Card>().cardTutorial = cardTutorial;
+            novaKarta.GetComponent<Card>().libraryTutorialController = libraryTutorialController;
+            novaKarta.GetComponent<Card>().blockedRecycleDeckPrompt = blockedRecycleDeckPrompt;
+            renderedCards.Add(novaKarta.GetComponent<Card>());
 
             if (useCardRenderDelay)
             {
@@ -273,6 +288,7 @@ public class Album : MonoBehaviour
         if (renderVersion == libraryCardsRenderVersion)
         {
             libraryCardsRenderCoroutine = null;
+            libraryTutorialController?.SetRenderedCards(renderedCards);
             Debug.LogWarning($"[Album] Library cards rendered: render={renderVersion}, cards={data.Count}, delay={useCardRenderDelay}, transition={showTransitionFrame}");
         }
     }
@@ -298,42 +314,13 @@ public class Album : MonoBehaviour
             yield break;
         }
 
-        bool needsLibraryTutorial = tutorialState.gates?.needsLibraryDeckSwap == true;
-        SetTutorialVisible(needsLibraryTutorial);
-        SetBackBlocked(needsLibraryTutorial);
+        libraryTutorialController.Begin(tutorialState);
+        bool needsLibraryTutorial = libraryTutorialController.IsActive;
 
         Debug.LogWarning(
             $"[Album] Tutorial state applied: needsLibraryTutorial={needsLibraryTutorial}, route={tutorialState.recommendedRoute}, blockNavigation={tutorialState.blockNavigation}"
         );
 
-        if (needsLibraryTutorial)
-        {
-            yield return StartCoroutine(CompleteTutorialStep(
-                TutorialConstants.LibraryIntro,
-                TutorialConstants.SeeOwnedCards
-            ));
-        }
-    }
-
-    private IEnumerator CompleteTutorialStep(string tutorialId, string stepId)
-    {
-        TutorialService service = EnsureTutorialService();
-        if (service == null)
-        {
-            yield break;
-        }
-
-        System.Threading.Tasks.Task<TutorialStateResponse> stepTask =
-            service.CompleteCurrentPlayerStepAsync(tutorialId, stepId);
-        yield return new WaitUntil(() => stepTask.IsCompleted);
-
-        tutorialState = stepTask.Result;
-        if (tutorialState == null || !tutorialState.success)
-        {
-            Debug.LogError(
-                $"[Album] Tutorial step failed: tutorial={tutorialId}, step={stepId}, stage={tutorialState?.stage}, error={tutorialState?.error}"
-            );
-        }
     }
 
     private TutorialService EnsureTutorialService()
@@ -362,19 +349,26 @@ public class Album : MonoBehaviour
                 libraryDeckController.libraryDeckService.serverFunctionsManager;
         }
 
-        if (deckManager != null && deckManager.tutorialService == null)
+        if (libraryTutorialController == null)
         {
-            deckManager.tutorialService = tutorialService;
+            libraryTutorialController = GetComponent<LibraryTutorialController>();
         }
-
-        if (deckManager != null && deckManager.tutorialRoot == null)
+        if (libraryTutorialController == null)
         {
-            deckManager.tutorialRoot = tutorial;
+            libraryTutorialController = gameObject.AddComponent<LibraryTutorialController>();
         }
+        libraryTutorialController.Configure(
+            tutorialService,
+            libraryDeckController,
+            deckManager,
+            tutorial,
+            cardTutorial,
+            backButton
+        );
 
-        if (deckManager != null && deckManager.backButton == null)
+        if (deckManager != null)
         {
-            deckManager.backButton = backButton;
+            deckManager.libraryTutorialController = libraryTutorialController;
         }
 
         return tutorialService;
@@ -387,14 +381,5 @@ public class Album : MonoBehaviour
             tutorial.SetActive(visible);
         }
     }
-
-    private void SetBackBlocked(bool blocked)
-    {
-        if (backButton != null)
-        {
-            backButton.SetActive(!blocked);
-        }
-    }
-
 
 }

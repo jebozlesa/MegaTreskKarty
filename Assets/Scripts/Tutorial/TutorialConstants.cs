@@ -8,12 +8,14 @@ public static class TutorialConstants
     public const string BuyFirstPack = "buy_first_pack";
 
     public const string SeeOwnedCards = "see_owned_cards";
-    public const string TapCollectionCard = "tap_collection_card";
     public const string OpenCardDetail = "open_card_detail";
-    public const string CardBasics = "card_basics";
-    public const string DeckArea = "deck_area";
+    public const string ViewCardStats = "view_card_stats";
+    public const string ViewCardAttacks = "view_card_attacks";
+    public const string BrowseCardAttacks = "browse_card_attacks";
+    public const string ReturnToCardFront = "return_to_card_front";
     public const string SwapDeckCard = "swap_deck_card";
     public const string LibraryComplete = "complete";
+
 
     public const string SelectPlayerCard = "select_player_card";
     public const string SelectAttack = "select_attack";

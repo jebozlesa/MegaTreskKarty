@@ -42,7 +42,8 @@ public class LibraryDeckService : MonoBehaviour
         string contextId,
         string deckId,
         string oldCardId,
-        string newCardId
+        string newCardId,
+        string tutorialRequestId = null
     )
     {
         return ExecuteAsync<LibraryDeckMutationResponse>(
@@ -52,6 +53,7 @@ public class LibraryDeckService : MonoBehaviour
                 deckId,
                 oldCardId,
                 newCardId,
+                tutorialRequestId,
                 callback
             ),
             "SwapDeckCardAsync"

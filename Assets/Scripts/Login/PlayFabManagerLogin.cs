@@ -1,13 +1,11 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using PlayFab;
 using PlayFab.ClientModels;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public class PlayFabManagerLogin : MonoBehaviour
 {
@@ -73,16 +71,9 @@ public class PlayFabManagerLogin : MonoBehaviour
     {
         loadingImage.SetActive(true);
 
-        // Načítanie prihlasovacích údajov
-        string username = PlayerPrefs.GetString("username");
         string email = PlayerPrefs.GetString("email");
         string password = PlayerPrefs.GetString("password");
 
-        Debug.Log("Username: " + username);
-        Debug.Log("Email: " + email);
-        Debug.Log("Password: " + password);
-
-        // Ak sú prihlasovacie údaje uložené, prihlás užívateľa
         if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(password))
         {
             var request = new LoginWithEmailAddressRequest { Email = email, Password = password };
@@ -105,7 +96,6 @@ public class PlayFabManagerLogin : MonoBehaviour
         controlPanel.SetActive(false);
         loadingImage.SetActive(true);
 
-        // Kontrola, či sú všetky polia vyplnené
         if (string.IsNullOrEmpty(emailInput.text))
         {
             messageGandhiText.text = "Email is required!";
@@ -169,7 +159,6 @@ public class PlayFabManagerLogin : MonoBehaviour
 
         LoggedInPlayerId = result.PlayFabId;
 
-        // Nastavenie DisplayName na užívateľské meno
         UpdateUserTitleDisplayName(usernameInput.text);
 
         StartCoroutine(LoadTutorialRouteAfterDelay(2));
@@ -237,33 +226,6 @@ public class PlayFabManagerLogin : MonoBehaviour
         );
     }
 
-    private void SaveEmailAndPasswordToPlayerPrefs(string email, string password)
-    {
-        PlayerPrefs.SetString("email", email);
-        PlayerPrefs.SetString("password", password);
-    }
-
-    IEnumerator LoadMainSceneAfterDelay(float delay)
-    {
-        // Počkaj určitý počet sekúnd
-        yield return new WaitForSeconds(delay);
-
-        messageEinsteinBubble.SetActive(false);
-
-        // Potom načítaj hlavnú scénu
-        SceneManager.LoadScene("Main");
-    }
-
-    IEnumerator LoadMarketplaceSceneAfterDelay(float delay)
-    {
-        // Počkaj určitý počet sekúnd
-        yield return new WaitForSeconds(delay);
-
-        messageEinsteinBubble.SetActive(false);
-
-        // Potom načítaj hlavnú scénu
-        SceneManager.LoadScene("Marketplace");
-    }
 
     IEnumerator LoadTutorialRouteAfterDelay(float delay)
     {
@@ -358,21 +320,6 @@ public class PlayFabManagerLogin : MonoBehaviour
     void OnPasswordReset(SendAccountRecoveryEmailResult result)
     {
         messageGandhiText.text = "toto hovno robi";
-    }
-
-    // void Login()
-    // {
-    //     var request = new LoginWithCustomIDRequest
-    //     {
-    //         CustomId = SystemInfo.deviceUniqueIdentifier,
-    //         CreateAccount = true
-    //     };
-    //     PlayFabClientAPI.LoginWithCustomID(request, OnSuccess, OnError);
-    // }
-
-    void OnSuccess(LoginResult result)
-    {
-        Debug.Log("Sicko dobre");
     }
 
     void OnError(PlayFabError error)

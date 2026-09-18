@@ -362,6 +362,11 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 5892433246293054533, guid: 1ca9b146e665c3c4db9fbe2e6012970f, type: 3}
   m_PrefabInstance: {fileID: 36426983}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &36426985 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6081180683356325395, guid: 1ca9b146e665c3c4db9fbe2e6012970f, type: 3}
+  m_PrefabInstance: {fileID: 36426983}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &71755922
 GameObject:
   m_ObjectHideFlags: 0
@@ -1124,6 +1129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 198878068}
   - component: {fileID: 198878067}
+  - component: {fileID: 198878069}
   m_Layer: 0
   m_Name: Tutorial
   m_TagString: Untagged
@@ -1146,6 +1152,7 @@ MonoBehaviour:
   tutorialPanelHint1: {fileID: 7741742324409582041}
   tutorialPanelHint2: {fileID: 1847026657}
   tutorialPanelEmpty: {fileID: 5914178751106246530}
+  tutorialService: {fileID: 0}
 --- !u!4 &198878068
 Transform:
   m_ObjectHideFlags: 0
@@ -1161,6 +1168,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &198878069
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 198878066}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8e066e965b14e74b3d0e4f2faaeaa84, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  serverFunctionsManager: {fileID: 823298948}
 --- !u!1001 &215069208
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7125,8 +7145,25 @@ MonoBehaviour:
   loveValue: {fileID: 1731123304}
   blockPanel: {fileID: 5914178751106246530}
   serverFunctionsManager: {fileID: 823298948}
+  tutorialService: {fileID: 198878069}
   purchaseConfirmationPanel: {fileID: 1371488571}
+  backButton: {fileID: 36426985}
   librarySceneName: Cards
+  clientPackPrices:
+  - packIndex: 0
+    price: 5
+  - packIndex: 1
+    price: 5
+  - packIndex: 2
+    price: 5
+  - packIndex: 3
+    price: 5
+  - packIndex: 4
+    price: 5
+  - packIndex: 5
+    price: 5
+  - packIndex: 6
+    price: 5
   introScreen: {fileID: 1021554675}
   shopScreen: {fileID: 600251588}
 --- !u!4 &1619798004

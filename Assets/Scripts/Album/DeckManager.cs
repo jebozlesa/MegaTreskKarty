@@ -12,9 +12,7 @@ public class DeckManager : MonoBehaviour
     public GameObject createDeckPrompt;
     public GameObject zoomedCardHolder;
     public LibraryDeckController libraryDeckController;
-    public TutorialService tutorialService;
-    public GameObject tutorialRoot;
-    public GameObject backButton;
+    public LibraryTutorialController libraryTutorialController;
     public string connectionString;
 
     private LibraryContextDto currentContext;
@@ -104,6 +102,15 @@ public class DeckManager : MonoBehaviour
         return false;
     }
 
+    public IEnumerable<string> GetRenderedDeckCardNames()
+    {
+        foreach (Transform cardTransform in deckPanel.transform)
+        {
+            Card card = cardTransform.GetComponent<Card>();
+            if (card != null && !string.IsNullOrWhiteSpace(card.cardName)) yield return card.cardName;
+        }
+    }
+
     public bool IsCardUsedInAnyKnownDeck(string cardId)
     {
         return TryFindCardDeckUsage(cardId, out _);
@@ -152,60 +159,37 @@ public class DeckManager : MonoBehaviour
             return false;
         }
 
-        if (!selectedCard.deckCard)
+        bool tutorialSwap = libraryTutorialController != null && libraryTutorialController.IsActive;
+        if (tutorialSwap && !libraryTutorialController.CanSwap(clickedDeckCard, selectedCard))
         {
-            selectedCard.ZoomOut();
+            return false;
         }
 
         Debug.LogWarning(
             $"[DeckManager] Swap requested: context={currentContext.contextId}, deck={currentDeck.deckId}, old={clickedDeckCard.cardId}, new={selectedCard.cardId}"
         );
 
-        bool swapped = await libraryDeckController.SwapActiveDeckCardAsync(clickedDeckCard.cardId, selectedCard.cardId);
-        if (swapped)
+        if (tutorialSwap)
         {
-            await CompleteLibrarySwapTutorialSteps();
+            SceneLoadingOverlay.SetMessage("SAVING DECK...");
+            SceneLoadingOverlay.Show();
         }
-
-        return swapped;
-    }
-
-    private async Task CompleteLibrarySwapTutorialSteps()
-    {
-        TutorialService service = ResolveTutorialService();
-        if (service == null)
-        {
-            return;
-        }
-
-        TutorialStateResponse swapState = await service.CompleteCurrentPlayerStepAsync(
-            TutorialConstants.LibraryIntro,
-            TutorialConstants.SwapDeckCard
+        bool swapped = await libraryDeckController.SwapActiveDeckCardAsync(
+            clickedDeckCard.cardId,
+            selectedCard.cardId,
+            tutorialSwap ? libraryTutorialController.TutorialSwapRequestId : null
         );
-        TutorialStateResponse completeState = await service.CompleteCurrentPlayerStepAsync(
-            TutorialConstants.LibraryIntro,
-            TutorialConstants.LibraryComplete
-        );
-        ApplyLibraryTutorialGate(completeState ?? swapState);
+        bool tutorialSwapConfirmed = false;
+        if (tutorialSwap)
+        {
+            tutorialSwapConfirmed = await libraryTutorialController.ReconcileSwapAsync();
+            SceneLoadingOverlay.Hide();
+        }
+        if ((swapped || tutorialSwapConfirmed) && !selectedCard.deckCard) selectedCard.ZoomOut();
+
+        return swapped || tutorialSwapConfirmed;
     }
 
-    private void ApplyLibraryTutorialGate(TutorialStateResponse state)
-    {
-        if (state?.gates?.criticalOnboardingComplete != true)
-        {
-            return;
-        }
-
-        if (tutorialRoot != null)
-        {
-            tutorialRoot.SetActive(false);
-        }
-
-        if (backButton != null)
-        {
-            backButton.SetActive(true);
-        }
-    }
 
     private void CreateCardInDeck(GeneratedCard card)
     {
@@ -236,7 +220,7 @@ public class DeckManager : MonoBehaviour
         deckCard.deckPanel = deckPanel;
         deckCard.deckCard = true;
         deckCard.deckManager = this;
-        deckCard.tutorialService = tutorialService;
+        deckCard.libraryTutorialController = libraryTutorialController;
     }
 
     private static Color32 BuildColor(int[] color)
@@ -276,14 +260,4 @@ public class DeckManager : MonoBehaviour
         return cardStory;
     }
 
-    private TutorialService ResolveTutorialService()
-    {
-        if (tutorialService != null)
-        {
-            return tutorialService;
-        }
-
-        tutorialService = FindFirstObjectByType<TutorialService>(FindObjectsInactive.Include);
-        return tutorialService;
-    }
 }

@@ -36,6 +36,7 @@ public class CustomButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
 
     public void OnPointerDown(PointerEventData eventData)
     {
+        if (button == null || !button.IsActive() || !button.IsInteractable()) return;
         if (innerImage != null)
         {
             innerImage.color = pressedColor;
@@ -45,12 +46,14 @@ public class CustomButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
 
     public void OnPointerUp(PointerEventData eventData)
     {
+        if (button == null || !button.IsActive() || !button.IsInteractable()) return;
         StartCoroutine(ExecuteActionAfterDelay());
     }
 
     private IEnumerator ExecuteActionAfterDelay()
     {
         yield return new WaitForSeconds(delay);
+        if (button == null || !button.IsActive() || !button.IsInteractable()) yield break;
         onDelayedClick.Invoke();
 
         if (innerImage != null)
