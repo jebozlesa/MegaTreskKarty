@@ -63,7 +63,7 @@ public sealed class LibraryTutorialController : MonoBehaviour
         TutorialFlowProgressDto progress = null;
         state?.progress?.flows?.TryGetValue(TutorialConstants.LibraryIntro, out progress);
         RestoreProgress(progress?.completedStepIds);
-        initialized = state?.success == true && state.gates?.safeCardDeckState == true;
+        initialized = LibraryTutorialActivationPolicy.ShouldRun(state);
         swapRequestId = flow.StepId == TutorialConstants.SwapDeckCard
             ? Guid.NewGuid().ToString()
             : null;
@@ -169,6 +169,7 @@ public sealed class LibraryTutorialController : MonoBehaviour
         state.progress?.flows?.TryGetValue(TutorialConstants.LibraryIntro, out progress);
         string previousStep = flow.StepId;
         RestoreProgress(progress?.completedStepIds);
+        initialized = LibraryTutorialActivationPolicy.ShouldRun(state);
         if (flow.StepId == TutorialConstants.SwapDeckCard && string.IsNullOrWhiteSpace(swapRequestId))
         {
             swapRequestId = Guid.NewGuid().ToString();

@@ -1,5 +1,7 @@
 public static class TutorialConstants
 {
+    public const int ContractVersion = 2;
+
     public const string MarketplaceFirstPack = "marketplace_first_pack";
     public const string LibraryIntro = "library_intro";
     public const string RoyalRumbleFirstBattle = "royal_rumble_first_battle";
