@@ -160,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      einsteindance1_0: 6005006918154831281
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

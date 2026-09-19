@@ -160,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      cleopatradance1_0: -5902039404782503048
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

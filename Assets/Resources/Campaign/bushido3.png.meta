@@ -160,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      bushido3_0: -8557745638598438776
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
