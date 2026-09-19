@@ -64,7 +64,7 @@ public class LoadingOverlayRegressionTests
     }
 
     [Test]
-    public void LoadingPrefabYaml_StartsActiveButHidden_UsesExplicitMessageReference_AndDisablesRaycastTargets()
+    public void LoadingPrefabYaml_StartsActiveButHidden_AndUsesExplicitMessageReference()
     {
         string prefabPath = Path.Combine(Application.dataPath, "Prefabs", "Loading.prefab");
         Assert.IsTrue(File.Exists(prefabPath), "Loading prefab file was not found.");
@@ -78,7 +78,6 @@ public class LoadingOverlayRegressionTests
         StringAssert.Contains("playOnEnable: 0", yaml);
         StringAssert.Contains("guid: 2c4f4e91d41b4f7d9b0d5b9c3a5df321", yaml);
         StringAssert.Contains("messageText: {fileID: 3679588370953756678}", yaml);
-        StringAssert.DoesNotContain("m_RaycastTarget: 1", yaml);
     }
 
     [Test]

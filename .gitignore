@@ -66,6 +66,7 @@ sysinfo.txt
 *.app
 /*_mapping.txt
 /MegaBang_BurstDebugInformation_DoNotShip/
+/TestResults*.xml
 
 # Crashlytics generated file
 crashlytics-build.properties

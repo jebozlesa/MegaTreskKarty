@@ -67,4 +67,33 @@ public class LibraryTutorialFlowTests
         Assert.True(Get<bool>("IsDone"));
         Assert.False((bool)Call("TryAction", "swap"));
     }
+
+    [TestCase(true, 2, true, true)]
+    [TestCase(true, 2, false, false)]
+    [TestCase(true, 1, true, false)]
+    [TestCase(false, 2, true, false)]
+    public void ActivationUsesExplicitVersionedServerDecision(
+        bool success,
+        int contractVersion,
+        bool serverShouldRun,
+        bool expected
+    )
+    {
+        Type policyType = Type.GetType("LibraryTutorialActivationPolicy, Assembly-CSharp");
+        Type stateType = Type.GetType("TutorialStateResponse, Assembly-CSharp");
+        Type libraryStateType = Type.GetType("LibraryTutorialStateDto, Assembly-CSharp");
+        Assert.NotNull(policyType);
+        Assert.NotNull(stateType);
+        Assert.NotNull(libraryStateType);
+
+        object state = Activator.CreateInstance(stateType);
+        object libraryState = Activator.CreateInstance(libraryStateType);
+        stateType.GetField("success").SetValue(state, success);
+        stateType.GetField("tutorialContractVersion").SetValue(state, contractVersion);
+        libraryStateType.GetField("shouldRun").SetValue(libraryState, serverShouldRun);
+        stateType.GetField("libraryTutorial").SetValue(state, libraryState);
+
+        bool actual = (bool)policyType.GetMethod("ShouldRun").Invoke(null, new[] { state });
+        Assert.AreEqual(expected, actual);
+    }
 }

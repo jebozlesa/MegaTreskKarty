@@ -110,11 +110,21 @@ public class TutorialService : MonoBehaviour
             {
                 string json = JsonConvert.SerializeObject(result.FunctionResult);
                 TutorialStateResponse dto = JsonConvert.DeserializeObject<TutorialStateResponse>(json);
+                if (dto == null || dto.tutorialContractVersion != TutorialConstants.ContractVersion)
+                {
+                    int actualVersion = dto?.tutorialContractVersion ?? 0;
+                    dto ??= new TutorialStateResponse();
+                    dto.success = false;
+                    dto.stage = "contract_version";
+                    dto.error = $"Expected tutorial contract {TutorialConstants.ContractVersion}, received {actualVersion}";
+                    Debug.LogError($"[TutorialService] {operationName}: {dto.error}");
+                }
                 CurrentState = dto;
                 Debug.LogWarning(
-                    $"[TutorialService] {operationName}: success={dto?.success}, route={dto?.recommendedRoute}, "
+                    $"[TutorialService] {operationName}: success={dto?.success}, contract={dto?.tutorialContractVersion}, route={dto?.recommendedRoute}, "
                         + $"safe={dto?.gates?.safeCardDeckState}, needsFirstPack={dto?.gates?.needsFirstPack}, "
                         + $"needsLibrarySwap={dto?.gates?.needsLibraryDeckSwap}, blockNavigation={dto?.blockNavigation}, "
+                        + $"libraryStatus={dto?.libraryTutorial?.status}, libraryShouldRun={dto?.libraryTutorial?.shouldRun}, "
                         + $"stage={dto?.stage}, error={dto?.error}"
                 );
                 tcs.TrySetResult(dto);

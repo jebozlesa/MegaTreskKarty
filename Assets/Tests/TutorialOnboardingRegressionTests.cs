@@ -5,7 +5,7 @@ using UnityEngine;
 public class TutorialOnboardingRegressionTests
 {
     [Test]
-    public void ServerFunctionsManager_ExposesTutorialCloudFunctions()
+    public void ServerFunctionsManager_SourceReferencesTutorialCloudFunctions()
     {
         string source = ReadScript("Networking", "ServerFunctionsManager.cs");
 
@@ -16,7 +16,7 @@ public class TutorialOnboardingRegressionTests
     }
 
     [Test]
-    public void Login_UsesServerTutorialRoute()
+    public void Login_SourceReferencesServerTutorialRoute()
     {
         string source = ReadScript("Login", "PlayFabManagerLogin.cs");
 
@@ -42,7 +42,22 @@ public class TutorialOnboardingRegressionTests
     }
 
     [Test]
-    public void RoyalRumble_CompletesFirstBattleTutorialThroughPlayerActions()
+    public void CardsScene_AlbumTutorialOwnsBothLibraryHintPanels()
+    {
+        string scene = ReadAsset("Scenes", "Cards.unity").Replace("\r\n", "\n");
+        string tutorialRoot = ReadYamlObject(scene, "--- !u!224 &1074998132");
+        string hint1 = ReadYamlObject(scene, "--- !u!224 &7741742324158438542");
+        string hint2 = ReadYamlObject(scene, "--- !u!224 &1272711093");
+
+        StringAssert.Contains("- {fileID: 7741742324158438542}", tutorialRoot);
+        StringAssert.Contains("- {fileID: 1272711093}", tutorialRoot);
+        StringAssert.Contains("m_Father: {fileID: 755544324}", tutorialRoot);
+        StringAssert.Contains("m_Father: {fileID: 1074998132}", hint1);
+        StringAssert.Contains("m_Father: {fileID: 1074998132}", hint2);
+    }
+
+    [Test]
+    public void RoyalRumble_SourceReferencesPlayerActionCheckpoints()
     {
         string shell = ReadScript("RoyalRumble", "RoyalRumbleShellController.cs");
         string coordinator = ReadScript("RoyalRumble", "RoyalRumbleBattleCoordinator.cs");
@@ -59,12 +74,28 @@ public class TutorialOnboardingRegressionTests
 
     private static string ReadScript(params string[] pathParts)
     {
-        string[] fullParts = new string[pathParts.Length + 1];
+        string[] fullParts = new string[pathParts.Length + 2];
         fullParts[0] = Application.dataPath;
-        pathParts.CopyTo(fullParts, 1);
+        fullParts[1] = "Scripts";
+        pathParts.CopyTo(fullParts, 2);
 
         string sourcePath = Path.Combine(fullParts);
         Assert.IsTrue(File.Exists(sourcePath), sourcePath + " was not found.");
         return File.ReadAllText(sourcePath);
+    }
+
+    private static string ReadAsset(params string[] pathParts)
+    {
+        string sourcePath = Path.Combine(Application.dataPath, Path.Combine(pathParts));
+        Assert.IsTrue(File.Exists(sourcePath), sourcePath + " was not found.");
+        return File.ReadAllText(sourcePath);
+    }
+
+    private static string ReadYamlObject(string source, string header)
+    {
+        int start = source.IndexOf(header, System.StringComparison.Ordinal);
+        Assert.GreaterOrEqual(start, 0, header + " was not found.");
+        int end = source.IndexOf("\n--- !u!", start + header.Length, System.StringComparison.Ordinal);
+        return end < 0 ? source.Substring(start) : source.Substring(start, end - start);
     }
 }

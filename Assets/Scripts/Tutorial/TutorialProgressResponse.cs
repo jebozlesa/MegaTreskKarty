@@ -5,12 +5,14 @@ using System.Collections.Generic;
 public class TutorialStateResponse
 {
     public bool success;
+    public int tutorialContractVersion;
     public string playerId;
     public TutorialProgressDto progress;
     public TutorialGatesDto gates;
     public string recommendedRoute;
     public bool blockNavigation;
     public TutorialStarterCurrencyDto starterCurrency;
+    public LibraryTutorialStateDto libraryTutorial;
     public string tutorialId;
     public string stepId;
     public bool alreadyCompleted;
@@ -44,6 +46,13 @@ public class TutorialStateResponse
             && flow?.completedStepIds != null
             && flow.completedStepIds.Contains(stepIdToCheck);
     }
+}
+
+[Serializable]
+public class LibraryTutorialStateDto
+{
+    public string status;
+    public bool shouldRun;
 }
 
 [Serializable]
@@ -88,4 +97,16 @@ public class TutorialStarterCurrencyDto
     public string currencyCode;
     public int amount;
     public int grantedAmount;
+}
+
+public static class LibraryTutorialActivationPolicy
+{
+    public static bool ShouldRun(TutorialStateResponse state)
+    {
+        return state != null
+            && state.success
+            && state.tutorialContractVersion == TutorialConstants.ContractVersion
+            && state.libraryTutorial != null
+            && state.libraryTutorial.shouldRun;
+    }
 }
