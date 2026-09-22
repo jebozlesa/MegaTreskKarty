@@ -8,6 +8,7 @@ using UnityEngine.UI;
 public sealed class LibraryTutorialController : MonoBehaviour
 {
     private readonly LibraryTutorialFlow flow = new LibraryTutorialFlow();
+    private readonly LibraryTutorialTransitionGate transitionGate = new LibraryTutorialTransitionGate();
     private readonly List<GameObject> panels = new List<GameObject>();
     private readonly List<Card> renderedCards = new List<Card>();
     private readonly List<string> persistedSteps = new List<string>();
@@ -18,10 +19,19 @@ public sealed class LibraryTutorialController : MonoBehaviour
     private GameObject albumTutorialRoot;
     private GameObject cardTutorialRoot;
     private GameObject backButton;
+    private GameObject helpButton;
     private LibraryTutorialInputBlocker inputBlocker;
     private Card selectedCard;
     private Outline targetOutline;
+    private RectTransform spotlightTarget;
+    private Canvas spotlightCanvas;
+    private bool spotlightCanvasAdded;
+    private bool spotlightOriginalOverrideSorting;
+    private int spotlightOriginalSortingLayerId;
+    private int spotlightOriginalSortingOrder;
+    private bool helpButtonConfigured;
     private string swapRequestId;
+    private string saveInFlightStepId;
     private bool initialized;
 
     public bool IsActive => initialized && !flow.IsDone;
@@ -35,7 +45,8 @@ public sealed class LibraryTutorialController : MonoBehaviour
         DeckManager manager,
         GameObject libraryRoot,
         GameObject detailRoot,
-        GameObject navigationBackButton)
+        GameObject navigationBackButton,
+        GameObject instructionHelpButton)
     {
         tutorialService = service;
         deckController = libraryDeckController;
@@ -43,8 +54,10 @@ public sealed class LibraryTutorialController : MonoBehaviour
         albumTutorialRoot = libraryRoot;
         cardTutorialRoot = detailRoot;
         backButton = navigationBackButton;
+        helpButton = instructionHelpButton;
         BuildPanelList();
         BindAcknowledgementButtons();
+        BindHelpButton();
         EnsureInputBlocker();
     }
 
@@ -62,6 +75,7 @@ public sealed class LibraryTutorialController : MonoBehaviour
     {
         TutorialFlowProgressDto progress = null;
         state?.progress?.flows?.TryGetValue(TutorialConstants.LibraryIntro, out progress);
+        transitionGate.Reset();
         RestoreProgress(progress?.completedStepIds);
         initialized = LibraryTutorialActivationPolicy.ShouldRun(state);
         swapRequestId = flow.StepId == TutorialConstants.SwapDeckCard
@@ -78,25 +92,42 @@ public sealed class LibraryTutorialController : MonoBehaviour
         if (!IsActive || !flow.IsInstructionVisible) return;
 
         string stepId = flow.StepId;
+        bool wasReplay = flow.IsInstructionReplayVisible;
         bool savesStep = flow.Acknowledge();
-        Debug.LogWarning($"[LibraryTutorial] Instruction acknowledged: step={stepId}, awaitsAction={!savesStep}");
+        Debug.LogWarning($"[LibraryTutorial] Instruction acknowledged: step={stepId}, replay={wasReplay}, awaitsAction={!savesStep}");
         Render();
         if (savesStep) _ = SaveCurrentStepAsync(stepId);
     }
 
+    public void ShowCurrentInstructionAgain()
+    {
+        if (!IsActive || !flow.ShowInstructionAgain()) return;
+
+        Debug.LogWarning($"[LibraryTutorial] Instruction replay requested: step={flow.StepId}");
+        Render();
+    }
+
     public bool TryOpenCard(Card card)
     {
-        return IsActive
-            && card != null
-            && card == selectedCard
-            && flow.StepId == TutorialConstants.OpenCardDetail
-            && flow.TryAction("open");
+        if (!IsActive
+            || card == null
+            || card != selectedCard
+            || flow.StepId != TutorialConstants.OpenCardDetail
+            || !flow.TryAction("open"))
+        {
+            return false;
+        }
+
+        transitionGate.TryBegin(flow.StepId, Time.unscaledTime);
+        BeginActionTransition(keepTargetHighlight: true);
+        return true;
     }
 
     public void ConfirmCardOpened(Card card)
     {
         if (card == selectedCard && flow.StepId == TutorialConstants.OpenCardDetail)
         {
+            RemoveTargetHighlight();
             _ = SaveCurrentStepAsync(TutorialConstants.OpenCardDetail);
         }
     }
@@ -104,7 +135,16 @@ public sealed class LibraryTutorialController : MonoBehaviour
     public bool TryCardGesture(Card card, string action)
     {
         if (!IsActive || card == null || card != selectedCard) return false;
-        return flow.TryAction(action);
+
+        string stepId = flow.StepId;
+        if (flow.TryAction(action))
+        {
+            transitionGate.TryBegin(stepId, Time.unscaledTime);
+            BeginActionTransition(keepTargetHighlight: false);
+            return true;
+        }
+
+        return transitionGate.TryObserve(stepId, action, Time.unscaledTime);
     }
 
     public void ConfirmCardGesture(string completedStepId)
@@ -114,11 +154,17 @@ public sealed class LibraryTutorialController : MonoBehaviour
 
     public bool CanSwap(Card outgoingDeckCard, Card incomingCard)
     {
-        return IsActive
-            && flow.StepId == TutorialConstants.SwapDeckCard
-            && outgoingDeckCard != null
-            && incomingCard == selectedCard
-            && flow.TryAction("swap");
+        if (!IsActive
+            || flow.StepId != TutorialConstants.SwapDeckCard
+            || outgoingDeckCard == null
+            || incomingCard != selectedCard
+            || !flow.TryAction("swap"))
+        {
+            return false;
+        }
+
+        BeginActionTransition(keepTargetHighlight: false);
+        return true;
     }
 
     public async Task<bool> ReconcileSwapAsync()
@@ -136,18 +182,39 @@ public sealed class LibraryTutorialController : MonoBehaviour
 
     private async Task SaveCurrentStepAsync(string stepId)
     {
-        TutorialStateResponse result = await tutorialService.CompleteCurrentPlayerStepAsync(
-            TutorialConstants.LibraryIntro,
-            stepId
-        );
-        if (result == null || !result.success)
-        {
-            Debug.LogError($"[LibraryTutorial] Step save failed: step={stepId}, stage={result?.stage}, error={result?.error}");
-            await RefreshAsync();
-            return;
-        }
+        if (saveInFlightStepId == stepId) return;
+        saveInFlightStepId = stepId;
 
-        ApplyServerState(result);
+        try
+        {
+            TutorialStateResponse result = await tutorialService.CompleteCurrentPlayerStepAsync(
+                TutorialConstants.LibraryIntro,
+                stepId
+            );
+            if (this == null) return;
+            if (result == null || !result.success)
+            {
+                Debug.LogError($"[LibraryTutorial] Step save failed: step={stepId}, stage={result?.stage}, error={result?.error}");
+                transitionGate.Reset();
+                await RefreshAsync();
+                return;
+            }
+
+            while (this != null
+                && flow.StepId == stepId
+                && !transitionGate.CanPresentNextStep(stepId, Time.unscaledTime))
+            {
+                await Task.Yield();
+            }
+
+            if (this == null || flow.StepId != stepId) return;
+            transitionGate.Reset();
+            ApplyServerState(result);
+        }
+        finally
+        {
+            if (saveInFlightStepId == stepId) saveInFlightStepId = null;
+        }
     }
 
     private async Task RefreshAsync()
@@ -169,6 +236,7 @@ public sealed class LibraryTutorialController : MonoBehaviour
         state.progress?.flows?.TryGetValue(TutorialConstants.LibraryIntro, out progress);
         string previousStep = flow.StepId;
         RestoreProgress(progress?.completedStepIds);
+        transitionGate.Reset();
         initialized = LibraryTutorialActivationPolicy.ShouldRun(state);
         if (flow.StepId == TutorialConstants.SwapDeckCard && string.IsNullOrWhiteSpace(swapRequestId))
         {
@@ -225,6 +293,44 @@ public sealed class LibraryTutorialController : MonoBehaviour
         }
     }
 
+    private void BindHelpButton()
+    {
+        helpButtonConfigured = false;
+        if (helpButton == null) return;
+
+        CustomButton custom = helpButton.GetComponentInChildren<CustomButton>(true);
+        Button standard = helpButton.GetComponentInChildren<Button>(true);
+        int persistentCallbacks = (custom?.onDelayedClick?.GetPersistentEventCount() ?? 0)
+            + (standard?.onClick?.GetPersistentEventCount() ?? 0);
+        if (persistentCallbacks > 0)
+        {
+            helpButton.SetActive(false);
+            Debug.LogError(
+                "[LibraryTutorial] Tutorial help button contains persistent callbacks. "
+                + "Remove copied navigation callbacks in the Cards scene before using it."
+            );
+            return;
+        }
+
+        if (custom != null)
+        {
+            custom.onDelayedClick.RemoveAllListeners();
+            custom.onDelayedClick.AddListener(ShowCurrentInstructionAgain);
+        }
+        if (standard != null)
+        {
+            standard.onClick.RemoveAllListeners();
+            if (custom == null) standard.onClick.AddListener(ShowCurrentInstructionAgain);
+        }
+
+        helpButtonConfigured = custom != null || standard != null;
+        if (!helpButtonConfigured)
+        {
+            helpButton.SetActive(false);
+            Debug.LogError("[LibraryTutorial] Tutorial help object has no Button or CustomButton component.");
+        }
+    }
+
     private void SelectTutorialCardIfNeeded()
     {
         if (selectedCard != null || deckController?.CurrentDeck?.cardIds == null) return;
@@ -257,9 +363,14 @@ public sealed class LibraryTutorialController : MonoBehaviour
         if (albumTutorialRoot != null) albumTutorialRoot.SetActive(IsActive);
         if (cardTutorialRoot != null) cardTutorialRoot.SetActive(IsActive);
         if (backButton != null) backButton.SetActive(!IsActive);
+        if (helpButton != null)
+        {
+            helpButton.SetActive(helpButtonConfigured && IsActive && flow.CanReplayInstruction);
+        }
 
         if (!IsActive)
         {
+            SetSpotlight(null);
             SetBlocker(false, null);
             return;
         }
@@ -272,18 +383,94 @@ public sealed class LibraryTutorialController : MonoBehaviour
                 panels[flow.StepIndex].SetActive(true);
                 panels[flow.StepIndex].transform.SetAsLastSibling();
             }
+
+            RectTransform spotlight = flow.StepId == TutorialConstants.OpenCardDetail
+                ? selectedCard?.transform as RectTransform
+                : null;
+            SetSpotlight(spotlight);
+            AddTargetOutline(spotlight);
             return;
         }
 
+        SetSpotlight(null);
         RectTransform allowed = null;
         if (flow.IsAwaitingAction)
         {
             allowed = flow.StepId == TutorialConstants.SwapDeckCard
                 ? deckManager?.deckPanel?.transform as RectTransform
                 : selectedCard?.transform as RectTransform;
-            AddTargetOutline(allowed);
+            if (ShouldHighlightActionTarget(flow.StepId)) AddTargetOutline(allowed);
         }
         SetBlocker(true, allowed);
+    }
+
+    private static bool ShouldHighlightActionTarget(string stepId)
+    {
+        return stepId == TutorialConstants.OpenCardDetail
+            || stepId == TutorialConstants.SwapDeckCard;
+    }
+
+    private void SetSpotlight(RectTransform target)
+    {
+        if (target == spotlightTarget && spotlightCanvas != null) return;
+
+        ClearSpotlight();
+        if (target == null) return;
+
+        Canvas parentCanvas = target.parent == null
+            ? null
+            : target.parent.GetComponentInParent<Canvas>();
+        Canvas canvas = target.GetComponent<Canvas>();
+        spotlightCanvasAdded = canvas == null;
+        if (spotlightCanvasAdded)
+        {
+            canvas = target.gameObject.AddComponent<Canvas>();
+        }
+
+        spotlightTarget = target;
+        spotlightCanvas = canvas;
+        spotlightOriginalOverrideSorting = canvas.overrideSorting;
+        spotlightOriginalSortingLayerId = canvas.sortingLayerID;
+        spotlightOriginalSortingOrder = canvas.sortingOrder;
+
+        canvas.overrideSorting = true;
+        if (parentCanvas != null)
+        {
+            canvas.sortingLayerID = parentCanvas.sortingLayerID;
+            canvas.sortingOrder = parentCanvas.sortingOrder + 100;
+        }
+        else
+        {
+            canvas.sortingOrder = 100;
+        }
+    }
+
+    private void ClearSpotlight()
+    {
+        if (spotlightCanvas != null)
+        {
+            if (spotlightCanvasAdded)
+            {
+                spotlightCanvas.enabled = false;
+                if (Application.isPlaying) Destroy(spotlightCanvas);
+                else DestroyImmediate(spotlightCanvas);
+            }
+            else
+            {
+                spotlightCanvas.overrideSorting = spotlightOriginalOverrideSorting;
+                spotlightCanvas.sortingLayerID = spotlightOriginalSortingLayerId;
+                spotlightCanvas.sortingOrder = spotlightOriginalSortingOrder;
+            }
+        }
+
+        spotlightTarget = null;
+        spotlightCanvas = null;
+        spotlightCanvasAdded = false;
+    }
+
+    private void OnDestroy()
+    {
+        ClearSpotlight();
     }
 
     private void EnsureInputBlocker()
@@ -309,8 +496,26 @@ public sealed class LibraryTutorialController : MonoBehaviour
     {
         if (inputBlocker == null) return;
         inputBlocker.AllowedTarget = allowed;
+        inputBlocker.SecondaryAllowedTarget = active
+            && helpButtonConfigured
+            && helpButton != null
+            && helpButton.activeInHierarchy
+                ? helpButton.transform as RectTransform
+                : null;
         inputBlocker.gameObject.SetActive(active);
         if (active) inputBlocker.transform.SetAsLastSibling();
+    }
+
+    private void BeginActionTransition(bool keepTargetHighlight)
+    {
+        if (helpButton != null) helpButton.SetActive(false);
+        if (!keepTargetHighlight) RemoveTargetHighlight();
+    }
+
+    private void RemoveTargetHighlight()
+    {
+        RemoveTargetOutline();
+        SetSpotlight(null);
     }
 
     private void AddTargetOutline(RectTransform target)
@@ -325,7 +530,11 @@ public sealed class LibraryTutorialController : MonoBehaviour
 
     private void RemoveTargetOutline()
     {
-        if (targetOutline != null) Destroy(targetOutline);
+        if (targetOutline != null)
+        {
+            targetOutline.enabled = false;
+            Destroy(targetOutline);
+        }
         targetOutline = null;
     }
 

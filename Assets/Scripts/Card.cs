@@ -121,6 +121,7 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
     public LibraryTutorialController libraryTutorialController;
     public GameObject blockedRecycleDeckPrompt;
     private bool isRecycleInFlight;
+    private Album albumController;
 
     public string connectionString;
 
@@ -175,9 +176,10 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
 
     }
 
-    public void Initialize(GameObject deckPanelReference)
+    public void Initialize(GameObject deckPanelReference, Album owner)
     {
         deckPanel = deckPanelReference;
+        albumController = owner;
     }
 
     private int CalculateExpForLevel(int level)
@@ -355,9 +357,9 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
             Debug.LogError($"[CardRecycle] Card was removed but reward requires manual review: card={cardId}, requestId={requestId}, stage={response.stage}, error={response.error}");
         }
 
-        if (AlbumLoveValue.Instance != null)
+        if (albumController != null)
         {
-            yield return StartCoroutine(AlbumLoveValue.Instance.GetPlayerCurrencyBalance());
+            yield return StartCoroutine(albumController.RefreshPlayerCurrencyBalance());
         }
 
         if (deckManager != null && deckManager.libraryDeckController != null)
@@ -732,7 +734,8 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         pointerUpPosition = eventData.position;
         float distance = Vector2.Distance(pointerDownPosition, pointerUpPosition);
 
-        if (libraryTutorialController != null && libraryTutorialController.IsActive && !isZoomed)
+        bool tutorialActive = libraryTutorialController != null && libraryTutorialController.IsActive;
+        if (ShouldHandleTutorialOwnedCardPointer(tutorialActive, isZoomed, deckCard))
         {
             if (distance <= swipeDistanceThreshold) ToggleZoom();
             dragInProgress = false;
@@ -769,6 +772,15 @@ public class Card : MonoBehaviour, IAttackCount, IPointerDownHandler, IPointerUp
         }
 
         dragInProgress = false;
+    }
+
+    private static bool ShouldHandleTutorialOwnedCardPointer(
+        bool tutorialActive,
+        bool cardIsZoomed,
+        bool cardIsInDeck
+    )
+    {
+        return tutorialActive && !cardIsZoomed && !cardIsInDeck;
     }
 
     public void ToggleZoom()

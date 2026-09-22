@@ -45,6 +45,31 @@ public class AlbumDiagnosticsTests
     }
 
     [Test]
+    public void DeckSwap_KeepsSelectedCollectionCardDetailOpen()
+    {
+        string deckManagerPath = Path.Combine(
+            Application.dataPath,
+            "Scripts",
+            "Album",
+            "DeckManager.cs"
+        );
+        Assert.IsTrue(File.Exists(deckManagerPath), "DeckManager.cs was not found.");
+
+        string source = File.ReadAllText(deckManagerPath);
+        string swapMethod = ExtractMethodBody(
+            source,
+            "public async Task<bool> SwapWithSelectedCardAsync",
+            "private void CreateCardInDeck"
+        );
+
+        StringAssert.DoesNotContain(
+            "selectedCard.ZoomOut()",
+            swapMethod,
+            "A successful deck swap must leave the selected collection-card detail open."
+        );
+    }
+
+    [Test]
     public void LegacyPlayerDecksRuntime_IsRemovedFromClientDeckFlow()
     {
         string scriptsPath = Path.Combine(Application.dataPath, "Scripts");
@@ -203,6 +228,7 @@ public class AlbumDiagnosticsTests
         string scriptsPath = Path.Combine(Application.dataPath, "Scripts");
         string cardPath = Path.Combine(scriptsPath, "Card.cs");
         string albumSourcePath = Path.Combine(scriptsPath, "Album.cs");
+        string legacyLoveValuePath = Path.Combine(scriptsPath, "Album", "AlbumLoveValue.cs");
         string serverFunctionsPath = Path.Combine(
             scriptsPath,
             "Networking",
@@ -231,6 +257,7 @@ public class AlbumDiagnosticsTests
 
         Assert.IsTrue(File.Exists(cardPath), "Card.cs was not found.");
         Assert.IsTrue(File.Exists(albumSourcePath), "Album.cs was not found.");
+        Assert.IsFalse(File.Exists(legacyLoveValuePath), "Legacy AlbumLoveValue.cs must stay removed.");
         Assert.IsTrue(File.Exists(serverFunctionsPath), "ServerFunctionsManager.cs was not found.");
         Assert.IsTrue(File.Exists(cardRecycleServicePath), "CardRecycleService.cs was not found.");
         Assert.IsTrue(File.Exists(confirmDialogPath), "ConfirmDialogController.cs was not found.");
@@ -254,7 +281,7 @@ public class AlbumDiagnosticsTests
         StringAssert.Contains("LoadForCurrentPlayer(useCardRenderDelay: false)", cardSource);
         StringAssert.Contains("TryFindCardDeckUsage", cardSource);
         StringAssert.Contains("deckUsage", cardSource);
-        StringAssert.Contains("AlbumLoveValue.Instance.GetPlayerCurrencyBalance()", cardSource);
+        StringAssert.Contains("albumController.RefreshPlayerCurrencyBalance()", cardSource);
         StringAssert.DoesNotContain("public void RemoveCard()", cardSource);
         StringAssert.DoesNotContain("UpdateUserDataRequest", cardSource);
         StringAssert.DoesNotContain("PlayFabClientAPI.UpdateUserData", cardSource);
@@ -268,6 +295,8 @@ public class AlbumDiagnosticsTests
 
         StringAssert.Contains("public CardRecycleService cardRecycleService;", albumSource);
         StringAssert.Contains("public ConfirmDialogController recycleConfirmationDialog;", albumSource);
+        StringAssert.Contains("public IEnumerator RefreshPlayerCurrencyBalance()", albumSource);
+        StringAssert.Contains("novaKarta.GetComponent<Card>().Initialize(deckPanel, this);", albumSource);
         StringAssert.Contains("novaKarta.GetComponent<Card>().cardRecycleService = cardRecycleService;", albumSource);
         StringAssert.Contains("novaKarta.GetComponent<Card>().recycleConfirmationDialog = recycleConfirmationDialog;", albumSource);
 

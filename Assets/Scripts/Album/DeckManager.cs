@@ -185,7 +185,6 @@ public class DeckManager : MonoBehaviour
             tutorialSwapConfirmed = await libraryTutorialController.ReconcileSwapAsync();
             SceneLoadingOverlay.Hide();
         }
-        if ((swapped || tutorialSwapConfirmed) && !selectedCard.deckCard) selectedCard.ZoomOut();
 
         return swapped || tutorialSwapConfirmed;
     }

@@ -1304,6 +1304,8 @@ public class BattleTimelineBuilderTests
         };
     }
 
+    // Unity JsonUtility populates these fixture fields through reflection.
+#pragma warning disable CS0649
     [Serializable]
     private class FixtureEnvelope
     {
@@ -1379,6 +1381,7 @@ public class BattleTimelineBuilderTests
         public int duration;
         public string source;
     }
+#pragma warning restore CS0649
 }
 
 
