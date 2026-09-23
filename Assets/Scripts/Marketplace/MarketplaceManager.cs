@@ -20,15 +20,14 @@ public class MarketplaceManager : MonoBehaviour
         public int price = DefaultPackPrice;
     }
 
-    public GameObject tutorial;
     public GameObject insolvencyPanel;
     public CardGenerator cardGenerator;
     public TMP_Text loveValue;
-    public GameObject blockPanel;
 
     [Header("Server-Owned Pack Purchase")]
     public ServerFunctionsManager serverFunctionsManager;
     public TutorialService tutorialService;
+    public MarketplaceTutorialController marketplaceTutorialController;
     public GameObject purchaseConfirmationPanel;
     public GameObject backButton;
     public string librarySceneName = "Cards";
@@ -53,35 +52,66 @@ public class MarketplaceManager : MonoBehaviour
     private bool hasCurrencyBalance;
     private TutorialStateResponse tutorialState;
     private bool firstPackTutorialActive;
+    private bool keepLoadingOverlayVisible;
 
     private void Awake()
     {
-        SetTutorialVisible(false);
+        marketplaceTutorialController?.Hide();
     }
 
-    private void Start()
+    private IEnumerator Start()
     {
         SetPurchaseConfirmationVisible(false);
-        SetBlockPanelVisible(false);
-        ShowIntroScreen();
-        StartCoroutine(GetPlayerCurrencyBalance());
-        StartCoroutine(LoadMarketplaceTutorialState());
-    }
+        SetMarketplaceContentVisible(showIntro: false, showShop: false);
+        SetBackBlocked(true);
+        SceneLoadingOverlay.SetMessage("LOADING...");
+        SceneLoadingOverlay.Show();
 
-    private void ShowIntroScreen()
-    {
-        if (introScreen != null) introScreen.SetActive(true);
-        if (shopScreen != null) shopScreen.SetActive(false);
+        if (tutorialService == null || marketplaceTutorialController == null)
+        {
+            FailClosed("Marketplace tutorial references are not assigned.");
+            yield break;
+        }
+
+        if (!marketplaceTutorialController.Configure(tutorialService))
+        {
+            FailClosed("Marketplace tutorial references are not assigned.");
+            yield break;
+        }
+        yield return StartCoroutine(LoadMarketplaceTutorialState());
+        if (tutorialState == null || !tutorialState.success)
+        {
+            yield break;
+        }
+
+        ApplyResolvedTutorialPresentation(tutorialState);
+        yield return StartCoroutine(GetPlayerCurrencyBalance());
+
+        marketplaceTutorialController.Begin(tutorialState);
+        SceneLoadingOverlay.Hide();
+
+        Debug.LogWarning(
+            $"[MarketplaceManager] Bootstrap complete: firstPackActive={firstPackTutorialActive}, "
+                + $"route={tutorialState.recommendedRoute}, stateResolved=true"
+        );
     }
 
     public void ShowShopScreen()
     {
-        if (introScreen != null) introScreen.SetActive(false);
-        if (shopScreen != null) shopScreen.SetActive(true);
+        SetMarketplaceContentVisible(showIntro: false, showShop: true);
     }
 
     public void StartGenerateCardPack(int packIndex)
     {
+        if (firstPackTutorialActive
+            && (marketplaceTutorialController == null || !marketplaceTutorialController.CanSelectPack))
+        {
+            Debug.LogWarning(
+                $"[MarketplaceManager] Tutorial pack selection ignored before instruction acknowledgement: packIndex={packIndex}"
+            );
+            return;
+        }
+
         if (isPurchasingPack)
         {
             Debug.LogWarning($"[MarketplaceManager] Pack purchase ignored while busy: packIndex={packIndex}");
@@ -170,13 +200,16 @@ public class MarketplaceManager : MonoBehaviour
     private IEnumerator HandleCardPackPurchase(int packIndex, bool openLibraryAfterPurchase)
     {
         isPurchasingPack = true;
-        SetBlockPanelVisible(false);
+        keepLoadingOverlayVisible = false;
         SceneLoadingOverlay.SetMessage("BUYING...");
         SceneLoadingOverlay.Show();
 
         yield return StartCoroutine(PurchaseCardPackFromServer(packIndex, openLibraryAfterPurchase));
 
-        SceneLoadingOverlay.Hide();
+        if (!keepLoadingOverlayVisible)
+        {
+            SceneLoadingOverlay.Hide();
+        }
         isPurchasingPack = false;
     }
 
@@ -282,10 +315,34 @@ public class MarketplaceManager : MonoBehaviour
 
         if (openLibraryAfterPurchase)
         {
-            yield return StartCoroutine(CompleteMarketplaceTutorialAfterPurchase());
+            SceneLoadingOverlay.SetMessage("VERIFYING...");
+            SceneLoadingOverlay.Show();
+
+            System.Threading.Tasks.Task<TutorialStateResponse> stateTask =
+                tutorialService.RefreshCurrentPlayerStateAsync();
+            yield return new WaitUntil(() => stateTask.IsCompleted);
+
+            tutorialState = stateTask.Result;
+            bool tutorialPurchaseVerified = tutorialState != null
+                && tutorialState.success
+                && tutorialState.gates?.safeCardDeckState == true
+                && tutorialState.gates.needsFirstPack == false;
+            if (!tutorialPurchaseVerified)
+            {
+                keepLoadingOverlayVisible = true;
+                FailClosed(
+                    $"First pack verification failed: stage={tutorialState?.stage}, error={tutorialState?.error}"
+                );
+                yield break;
+            }
+
+            firstPackTutorialActive = false;
+            marketplaceTutorialController.Begin(tutorialState);
+            SetBackBlocked(false);
             Debug.LogWarning(
                 $"[MarketplaceManager] Tutorial pack purchase complete; opening library scene '{librarySceneName}'."
             );
+            SceneLoadingOverlay.Hide();
             SceneManager.LoadScene(librarySceneName);
         }
         else
@@ -383,14 +440,6 @@ public class MarketplaceManager : MonoBehaviour
         yield return new WaitUntil(() => isCompleted);
     }
 
-    private void SetBlockPanelVisible(bool visible)
-    {
-        if (blockPanel != null)
-        {
-            blockPanel.SetActive(visible);
-        }
-    }
-
     private void SetPurchaseConfirmationVisible(bool visible)
     {
         if (purchaseConfirmationPanel != null)
@@ -430,109 +479,47 @@ public class MarketplaceManager : MonoBehaviour
 
     private IEnumerator LoadMarketplaceTutorialState()
     {
-        TutorialService service = EnsureTutorialService();
-        if (service == null)
+        System.Threading.Tasks.Task<TutorialStateResponse> stateTask =
+            tutorialService.GetCurrentPlayerStateAsync();
+        if (!stateTask.IsCompleted)
         {
-            Debug.LogError("[MarketplaceManager] Cannot load tutorial state: TutorialService is not assigned.");
-            yield break;
+            yield return new WaitUntil(() => stateTask.IsCompleted);
         }
-
-        System.Threading.Tasks.Task<TutorialStateResponse> stateTask = service.RefreshCurrentPlayerStateAsync();
-        yield return new WaitUntil(() => stateTask.IsCompleted);
 
         tutorialState = stateTask.Result;
         if (tutorialState == null || !tutorialState.success)
         {
-            Debug.LogError(
-                $"[MarketplaceManager] Tutorial state load failed: stage={tutorialState?.stage}, error={tutorialState?.error}"
+            FailClosed(
+                $"Tutorial state load failed: stage={tutorialState?.stage}, error={tutorialState?.error}"
             );
             yield break;
         }
+    }
 
-        firstPackTutorialActive = tutorialState.gates?.needsFirstPack == true;
-        SetTutorialVisible(firstPackTutorialActive);
+    private void ApplyResolvedTutorialPresentation(TutorialStateResponse state)
+    {
+        firstPackTutorialActive = state?.gates?.needsFirstPack == true;
         SetBackBlocked(firstPackTutorialActive);
-
-        Debug.LogWarning(
-            $"[MarketplaceManager] Tutorial state applied: firstPackActive={firstPackTutorialActive}, route={tutorialState.recommendedRoute}, blockNavigation={tutorialState.blockNavigation}"
+        SetMarketplaceContentVisible(
+            showIntro: !firstPackTutorialActive,
+            showShop: firstPackTutorialActive
         );
-
-        if (firstPackTutorialActive)
-        {
-            yield return StartCoroutine(CompleteTutorialStep(
-                TutorialConstants.MarketplaceFirstPack,
-                TutorialConstants.OpenMarketplace
-            ));
-        }
     }
 
-    private IEnumerator CompleteMarketplaceTutorialAfterPurchase()
+    private void SetMarketplaceContentVisible(bool showIntro, bool showShop)
     {
-        firstPackTutorialActive = false;
-        SetTutorialVisible(false);
-        SetBackBlocked(false);
-
-        yield return StartCoroutine(CompleteTutorialStep(
-            TutorialConstants.MarketplaceFirstPack,
-            TutorialConstants.BuyFirstPack
-        ));
+        if (introScreen != null) introScreen.SetActive(showIntro);
+        if (shopScreen != null) shopScreen.SetActive(showShop);
     }
 
-    private IEnumerator CompleteTutorialStep(string tutorialId, string stepId)
+    private void FailClosed(string reason)
     {
-        TutorialService service = EnsureTutorialService();
-        if (service == null)
-        {
-            Debug.LogError(
-                $"[MarketplaceManager] Cannot complete tutorial step: tutorialService missing, tutorial={tutorialId}, step={stepId}"
-            );
-            yield break;
-        }
-
-        System.Threading.Tasks.Task<TutorialStateResponse> stepTask =
-            service.CompleteCurrentPlayerStepAsync(tutorialId, stepId);
-        yield return new WaitUntil(() => stepTask.IsCompleted);
-
-        tutorialState = stepTask.Result;
-        if (tutorialState == null || !tutorialState.success)
-        {
-            Debug.LogError(
-                $"[MarketplaceManager] Tutorial step failed: tutorial={tutorialId}, step={stepId}, stage={tutorialState?.stage}, error={tutorialState?.error}"
-            );
-        }
-    }
-
-    private TutorialService EnsureTutorialService()
-    {
-        if (tutorialService == null)
-        {
-            tutorialService = GetComponent<TutorialService>();
-        }
-
-        if (tutorialService == null)
-        {
-            tutorialService = FindFirstObjectByType<TutorialService>(FindObjectsInactive.Include);
-        }
-
-        if (tutorialService == null)
-        {
-            tutorialService = gameObject.AddComponent<TutorialService>();
-        }
-
-        if (tutorialService.serverFunctionsManager == null)
-        {
-            tutorialService.serverFunctionsManager = serverFunctionsManager;
-        }
-
-        return tutorialService;
-    }
-
-    private void SetTutorialVisible(bool visible)
-    {
-        if (tutorial != null)
-        {
-            tutorial.SetActive(visible);
-        }
+        SetMarketplaceContentVisible(showIntro: false, showShop: false);
+        SetBackBlocked(true);
+        marketplaceTutorialController?.Hide();
+        SceneLoadingOverlay.SetMessage("CONNECTION ERROR");
+        SceneLoadingOverlay.Show();
+        Debug.LogError($"[MarketplaceManager] {reason}");
     }
 
     private void SetBackBlocked(bool blocked)

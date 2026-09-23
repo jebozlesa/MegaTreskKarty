@@ -11,6 +11,7 @@ public static class PlayerSessionLogout
 
     public static void ClearLocalSession()
     {
+        TutorialSessionState.Clear();
         PlayerPrefs.DeleteKey("username");
         PlayerPrefs.DeleteKey("email");
         PlayerPrefs.DeleteKey("password");

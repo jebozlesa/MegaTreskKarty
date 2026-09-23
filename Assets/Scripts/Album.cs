@@ -304,7 +304,7 @@ public class Album : MonoBehaviour
             yield break;
         }
 
-        System.Threading.Tasks.Task<TutorialStateResponse> stateTask = service.RefreshCurrentPlayerStateAsync();
+        System.Threading.Tasks.Task<TutorialStateResponse> stateTask = service.GetCurrentPlayerStateAsync();
         yield return new WaitUntil(() => stateTask.IsCompleted);
 
         tutorialState = stateTask.Result;
