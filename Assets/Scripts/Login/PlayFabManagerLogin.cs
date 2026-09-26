@@ -25,8 +25,6 @@ public class PlayFabManagerLogin : MonoBehaviour
     public TutorialService tutorialService;
     public ServerFunctionsManager serverFunctionsManager;
     public string mainSceneName = "Main";
-    public string marketplaceSceneName = "Marketplace";
-    public string librarySceneName = "Cards";
 
     public static PlayFabManagerLogin Instance { get; private set; }
 
@@ -252,13 +250,23 @@ public class PlayFabManagerLogin : MonoBehaviour
             yield break;
         }
 
-        string sceneName = ResolveSceneForTutorialRoute(state.recommendedRoute);
+        if (!string.Equals(state.recommendedRoute, "Main", StringComparison.OrdinalIgnoreCase))
+        {
+            messageStalinBubble.SetActive(true);
+            controlPanel.SetActive(true);
+            messageStalinText.text = "Invalid tutorial route.";
+            Debug.LogError(
+                $"[PlayFabManagerLogin] Unexpected tutorial route: {state.recommendedRoute}"
+            );
+            yield break;
+        }
+
         Debug.LogWarning(
-            $"[PlayFabManagerLogin] Tutorial route resolved: player={LoggedInPlayerId}, route={state.recommendedRoute}, scene={sceneName}, "
+            $"[PlayFabManagerLogin] Tutorial route resolved: player={LoggedInPlayerId}, route={state.recommendedRoute}, scene={mainSceneName}, "
                 + $"safe={state.gates?.safeCardDeckState}, needsFirstPack={state.gates?.needsFirstPack}, "
                 + $"needsLibrarySwap={state.gates?.needsLibraryDeckSwap}"
         );
-        SceneManager.LoadScene(sceneName);
+        SceneManager.LoadScene(mainSceneName);
     }
 
     private TutorialService EnsureTutorialService()
@@ -289,21 +297,6 @@ public class PlayFabManagerLogin : MonoBehaviour
         }
 
         return tutorialService;
-    }
-
-    private string ResolveSceneForTutorialRoute(string route)
-    {
-        if (string.Equals(route, "Marketplace", StringComparison.OrdinalIgnoreCase))
-        {
-            return marketplaceSceneName;
-        }
-
-        if (string.Equals(route, "Cards", StringComparison.OrdinalIgnoreCase))
-        {
-            return librarySceneName;
-        }
-
-        return mainSceneName;
     }
 
     public void ResetPasswordButton()

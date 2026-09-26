@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public sealed class LibraryTutorialController : MonoBehaviour
@@ -12,6 +13,8 @@ public sealed class LibraryTutorialController : MonoBehaviour
     private readonly List<GameObject> panels = new List<GameObject>();
     private readonly List<Card> renderedCards = new List<Card>();
     private readonly List<string> persistedSteps = new List<string>();
+
+    [SerializeField] private string postTutorialSceneName = "Main";
 
     private TutorialService tutorialService;
     private LibraryDeckController deckController;
@@ -245,6 +248,15 @@ public sealed class LibraryTutorialController : MonoBehaviour
         PrepareCurrentStepView();
         Debug.LogWarning($"[LibraryTutorial] Progress applied: {previousStep}->{flow.StepId}, done={flow.IsDone}");
         Render();
+
+        if (previousStep == TutorialConstants.LibraryComplete && flow.IsDone)
+        {
+            Debug.LogWarning(
+                $"[LibraryTutorial] Completed; returning to Main scene '{postTutorialSceneName}'."
+            );
+            SceneLoadingOverlay.Show();
+            SceneManager.LoadScene(postTutorialSceneName);
+        }
     }
 
     private void RestoreProgress(IEnumerable<string> completedStepIds)

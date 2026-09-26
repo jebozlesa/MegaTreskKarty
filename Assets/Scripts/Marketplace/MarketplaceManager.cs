@@ -30,7 +30,7 @@ public class MarketplaceManager : MonoBehaviour
     public MarketplaceTutorialController marketplaceTutorialController;
     public GameObject purchaseConfirmationPanel;
     public GameObject backButton;
-    public string librarySceneName = "Cards";
+    public string postTutorialSceneName = "Main";
     public List<ClientPackPrice> clientPackPrices = new List<ClientPackPrice>
     {
         new ClientPackPrice { packIndex = 0, price = DefaultPackPrice },
@@ -340,10 +340,10 @@ public class MarketplaceManager : MonoBehaviour
             marketplaceTutorialController.Begin(tutorialState);
             SetBackBlocked(false);
             Debug.LogWarning(
-                $"[MarketplaceManager] Tutorial pack purchase complete; opening library scene '{librarySceneName}'."
+                $"[MarketplaceManager] Tutorial pack purchase complete; returning to Main scene '{postTutorialSceneName}'."
             );
             SceneLoadingOverlay.Hide();
-            SceneManager.LoadScene(librarySceneName);
+            SceneManager.LoadScene(postTutorialSceneName);
         }
         else
         {

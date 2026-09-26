@@ -75,6 +75,88 @@ public class TutorialOnboardingRegressionTests
     }
 
     [Test]
+    public void MainMenuFlow_RequiresIntroBeforeTheMarketplaceDestination()
+    {
+        Type flowType = RuntimeType("MainMenuTutorialFlow");
+        object flow = Activator.CreateInstance(flowType);
+        MethodInfo restore = flowType.GetMethod("Restore");
+        MethodInfo acknowledge = flowType.GetMethod("AcknowledgeInstruction");
+        MethodInfo completeIntroTransition = flowType.GetMethod("CompleteIntroTransition");
+        MethodInfo canNavigate = flowType.GetMethod("CanNavigate");
+
+        restore.Invoke(flow, new object[] { true, true, false, false });
+        Assert.AreEqual("Marketplace", ReadProperty(flowType, flow, "Target").ToString());
+        Assert.AreEqual("IntroInstruction", ReadProperty(flowType, flow, "Phase").ToString());
+        Assert.IsFalse((bool)canNavigate.Invoke(flow, new object[] { "Marketplace" }));
+
+        acknowledge.Invoke(flow, null);
+        Assert.AreEqual("IntroTransition", ReadProperty(flowType, flow, "Phase").ToString());
+        Assert.IsFalse((bool)canNavigate.Invoke(flow, new object[] { "Marketplace" }));
+
+        Assert.IsTrue((bool)completeIntroTransition.Invoke(flow, null));
+        Assert.AreEqual("TargetInstruction", ReadProperty(flowType, flow, "Phase").ToString());
+        Assert.IsFalse((bool)canNavigate.Invoke(flow, new object[] { "Marketplace" }));
+
+        acknowledge.Invoke(flow, null);
+        Assert.AreEqual("AwaitingTarget", ReadProperty(flowType, flow, "Phase").ToString());
+        Assert.IsTrue((bool)canNavigate.Invoke(flow, new object[] { "Marketplace" }));
+        Assert.IsFalse((bool)canNavigate.Invoke(flow, new object[] { "Cards" }));
+    }
+
+    [Test]
+    public void MainMenuFlow_UsesOnlyTheCurrentCanonicalDestination()
+    {
+        Type flowType = RuntimeType("MainMenuTutorialFlow");
+        object flow = Activator.CreateInstance(flowType);
+        MethodInfo restore = flowType.GetMethod("Restore");
+        MethodInfo acknowledge = flowType.GetMethod("AcknowledgeInstruction");
+        MethodInfo completeIntroTransition = flowType.GetMethod("CompleteIntroTransition");
+        MethodInfo canNavigate = flowType.GetMethod("CanNavigate");
+
+        restore.Invoke(flow, new object[] { true, false, true, false });
+        Assert.AreEqual("Library", ReadProperty(flowType, flow, "Target").ToString());
+        Assert.AreEqual("TargetInstruction", ReadProperty(flowType, flow, "Phase").ToString());
+        Assert.IsFalse((bool)completeIntroTransition.Invoke(flow, null));
+        acknowledge.Invoke(flow, null);
+        Assert.IsTrue((bool)canNavigate.Invoke(flow, new object[] { "Cards" }));
+        Assert.IsFalse((bool)canNavigate.Invoke(flow, new object[] { "Game" }));
+
+        restore.Invoke(flow, new object[] { true, false, false, false });
+        Assert.AreEqual("RoyalRumble", ReadProperty(flowType, flow, "Target").ToString());
+        Assert.AreEqual("TargetInstruction", ReadProperty(flowType, flow, "Phase").ToString());
+        acknowledge.Invoke(flow, null);
+        Assert.IsTrue((bool)canNavigate.Invoke(flow, new object[] { "Game" }));
+
+        restore.Invoke(flow, new object[] { true, false, false, true });
+        Assert.AreEqual("None", ReadProperty(flowType, flow, "Target").ToString());
+        Assert.AreEqual("Inactive", ReadProperty(flowType, flow, "Phase").ToString());
+        Assert.IsTrue((bool)canNavigate.Invoke(flow, new object[] { "Settings" }));
+    }
+
+    [Test]
+    public void MainMenuFlow_IgnoresDuplicateOrOutOfOrderAcknowledgements()
+    {
+        Type flowType = RuntimeType("MainMenuTutorialFlow");
+        object flow = Activator.CreateInstance(flowType);
+        MethodInfo restore = flowType.GetMethod("Restore");
+        MethodInfo acknowledge = flowType.GetMethod("AcknowledgeInstruction");
+        MethodInfo completeIntroTransition = flowType.GetMethod("CompleteIntroTransition");
+
+        restore.Invoke(flow, new object[] { true, true, false, false });
+        Assert.IsFalse((bool)completeIntroTransition.Invoke(flow, null));
+
+        acknowledge.Invoke(flow, null);
+        acknowledge.Invoke(flow, null);
+        Assert.AreEqual("IntroTransition", ReadProperty(flowType, flow, "Phase").ToString());
+
+        Assert.IsTrue((bool)completeIntroTransition.Invoke(flow, null));
+        Assert.IsFalse((bool)completeIntroTransition.Invoke(flow, null));
+        acknowledge.Invoke(flow, null);
+        acknowledge.Invoke(flow, null);
+        Assert.AreEqual("AwaitingTarget", ReadProperty(flowType, flow, "Phase").ToString());
+    }
+
+    [Test]
     public void MarketplaceBootstrap_ShowsResolvedShopBeforeCurrencyLoadingCompletes()
     {
         Type managerType = RuntimeType("MarketplaceManager");
@@ -148,7 +230,23 @@ public class TutorialOnboardingRegressionTests
 
         StringAssert.Contains("LoadTutorialRouteAfterDelay", source);
         StringAssert.Contains("GetTutorialStateAsync(LoggedInPlayerId)", source);
-        StringAssert.Contains("ResolveSceneForTutorialRoute", source);
+        StringAssert.Contains("SceneManager.LoadScene(mainSceneName)", source);
+        StringAssert.DoesNotContain("ResolveSceneForTutorialRoute", source);
+        StringAssert.DoesNotContain("marketplaceSceneName", source);
+        StringAssert.DoesNotContain("librarySceneName", source);
+    }
+
+    [Test]
+    public void MarketplaceAndLibrary_ReturnToMainAfterTheirTutorialMilestones()
+    {
+        string marketplace = ReadScript("Marketplace", "MarketplaceManager.cs");
+        string library = ReadScript("Tutorial", "LibraryTutorialController.cs");
+
+        StringAssert.Contains("postTutorialSceneName = \"Main\"", marketplace);
+        StringAssert.Contains("SceneManager.LoadScene(postTutorialSceneName)", marketplace);
+        StringAssert.Contains("postTutorialSceneName = \"Main\"", library);
+        StringAssert.Contains("SceneManager.LoadScene(postTutorialSceneName)", library);
+        StringAssert.DoesNotContain("librarySceneName", marketplace);
     }
 
     [Test]
@@ -249,19 +347,24 @@ public class TutorialOnboardingRegressionTests
     }
 
     [Test]
-    public void RoyalRumble_SourceReferencesPlayerActionCheckpoints()
+    public void MainMenuTutorial_UsesSessionCacheAndExplicitSceneReferences()
     {
-        string shell = ReadScript("RoyalRumble", "RoyalRumbleShellController.cs");
-        string coordinator = ReadScript("RoyalRumble", "RoyalRumbleBattleCoordinator.cs");
+        string controller = ReadScript("Tutorial", "MainMenuTutorialController.cs");
 
-        StringAssert.Contains("TutorialConstants.SelectPlayerCard", shell);
-        StringAssert.Contains("TutorialConstants.SelectAttack", shell);
-        StringAssert.Contains("TutorialConstants.ConfirmAttack", shell);
-        StringAssert.Contains("TutorialConstants.CompleteControls", shell);
-        StringAssert.Contains("TutorialConstants.SelectPlayerCard", coordinator);
-        StringAssert.Contains("TutorialConstants.SelectAttack", coordinator);
-        StringAssert.Contains("TutorialConstants.ConfirmAttack", coordinator);
-        StringAssert.Contains("TutorialConstants.CompleteControls", coordinator);
+        StringAssert.Contains("TutorialSessionState.TryGet", controller);
+        StringAssert.Contains("introHintPanel", controller);
+        StringAssert.Contains("introAcknowledgeButton", controller);
+        StringAssert.Contains("marketplaceButton", controller);
+        StringAssert.Contains("libraryButton", controller);
+        StringAssert.Contains("royalRumbleButton", controller);
+        StringAssert.Contains("HintTransitionDelayMilliseconds = 750", controller);
+        StringAssert.Contains("SceneLoadingOverlay.Hide()", controller);
+        StringAssert.Contains("spotlight.Show(targetButton?.transform as RectTransform, null)", controller);
+        StringAssert.DoesNotContain("tutorialCanvas", controller);
+        StringAssert.DoesNotContain("originalPanelChildStates", controller);
+        StringAssert.DoesNotContain("ShowPanelBackdropOnly", controller);
+        StringAssert.DoesNotContain("FindFirstObjectByType", controller);
+        StringAssert.DoesNotContain("GetComponentInChildren", controller);
     }
 
     private static string ReadScript(params string[] pathParts)
