@@ -1,8 +1,6 @@
 {
     "name": "Tests",
-    "references": [
-        "Assembly-CSharp"
-    ],
+    "references": [],
     "optionalUnityReferences": [
         "TestAssemblies"
     ]

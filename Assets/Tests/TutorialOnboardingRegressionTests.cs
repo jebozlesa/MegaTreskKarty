@@ -300,12 +300,23 @@ public class TutorialOnboardingRegressionTests
     [Test]
     public void MarketplaceScene_UsesTheActionGatedControllerWithoutLegacyCallbacks()
     {
-        string scene = ReadAsset("Scenes", "Marketplace.unity");
+        string scene = ReadAsset("Scenes", "Marketplace.unity").Replace("\r\n", "\n");
         string tutorialPanelPrefab = ReadAsset("Prefabs", "TutorialPanel.prefab");
 
         StringAssert.Contains("guid: 8ef8dcd6cf14446695667ece16f13d60", scene);
-        StringAssert.Contains("firstHintAcknowledgeButton: {fileID: 5036749099754977561}", scene);
-        StringAssert.Contains("secondHintAcknowledgeButton: {fileID: 789599162}", scene);
+        string firstHintButton = AssertTutorialButtonReference(
+            scene,
+            "firstHintAcknowledgeButton"
+        );
+        AssertTutorialButtonReference(scene, "secondHintAcknowledgeButton");
+        AssertComponentReferencesGameObject(
+            scene,
+            "firstHintInteractableButton",
+            firstHintButton,
+            "4e29b1a8efbd4b44bb3f3716e73f07ff"
+        );
+        StringAssert.DoesNotContain("m_Name: TutorialPanel1Btn", scene);
+        StringAssert.DoesNotContain("m_Name: TutorialPanel2Btn", scene);
         StringAssert.DoesNotContain("MarketplaceTutorial, Assembly-CSharp", scene);
         StringAssert.DoesNotContain("guid: e9ac9957ad63b7b41acdc36df4e1179b", scene);
         StringAssert.DoesNotContain("MarketplaceTutorial, Assembly-CSharp", tutorialPanelPrefab);
@@ -367,6 +378,21 @@ public class TutorialOnboardingRegressionTests
         StringAssert.DoesNotContain("GetComponentInChildren", controller);
     }
 
+    [Test]
+    public void MainMenuScene_TutorialAcknowledgementUsesVisibleButtonsOnly()
+    {
+        string scene = ReadAsset("Scenes", "Main.unity").Replace("\r\n", "\n");
+
+        AssertTutorialButtonReference(scene, "introAcknowledgeButton");
+        AssertTutorialButtonReference(scene, "marketplaceAcknowledgeButton");
+        AssertTutorialButtonReference(scene, "libraryAcknowledgeButton");
+        AssertTutorialButtonReference(scene, "royalRumbleAcknowledgeButton");
+        StringAssert.DoesNotContain("m_Name: TutorialPanel1Btn", scene);
+        StringAssert.DoesNotContain("m_Name: TutorialPanel2Btn", scene);
+        StringAssert.DoesNotContain("m_Name: TutorialPanel3Btn", scene);
+        StringAssert.DoesNotContain("m_Name: TutorialPanel4Btn", scene);
+    }
+
     private static string ReadScript(params string[] pathParts)
     {
         string[] fullParts = new string[pathParts.Length + 2];
@@ -392,5 +418,78 @@ public class TutorialOnboardingRegressionTests
         Assert.GreaterOrEqual(start, 0, header + " was not found.");
         int end = source.IndexOf("\n--- !u!", start + header.Length, System.StringComparison.Ordinal);
         return end < 0 ? source.Substring(start) : source.Substring(start, end - start);
+    }
+
+    private static string AssertTutorialButtonReference(string scene, string fieldName)
+    {
+        const string customButtonScriptGuid = "6709565a3468a284ba9ce31c3a081877";
+        string componentId = ReadReferencedFileId(scene, fieldName);
+        string component = ReadYamlObject(scene, "--- !u!114 &" + componentId);
+
+        StringAssert.Contains("guid: " + customButtonScriptGuid, component);
+        StringAssert.Contains("m_Calls: []", component);
+
+        string gameObjectId = ReadReferencedFileId(component, "m_GameObject");
+        string gameObject = ReadYamlObject(scene, "--- !u!1 &" + gameObjectId);
+        StringAssert.Contains("m_Name: Button", gameObject);
+        AssertEnabledButtonOnGameObject(scene, gameObjectId);
+        return gameObjectId;
+    }
+
+    private static void AssertEnabledButtonOnGameObject(string scene, string gameObjectId)
+    {
+        const string buttonScriptGuid = "4e29b1a8efbd4b44bb3f3716e73f07ff";
+        string gameObjectReference = "m_GameObject: {fileID: " + gameObjectId + "}";
+        string[] yamlObjects = scene.Split(
+            new[] { "\n--- !u!" },
+            StringSplitOptions.None
+        );
+
+        foreach (string yamlObject in yamlObjects)
+        {
+            if (
+                yamlObject.Contains("guid: " + buttonScriptGuid)
+                && yamlObject.Contains(gameObjectReference)
+            )
+            {
+                StringAssert.Contains("m_Enabled: 1", yamlObject);
+                StringAssert.Contains("m_Calls: []", yamlObject);
+                return;
+            }
+        }
+
+        Assert.Fail("Visible tutorial object has no Button component: " + gameObjectId);
+    }
+
+    private static void AssertComponentReferencesGameObject(
+        string scene,
+        string fieldName,
+        string expectedGameObjectId,
+        string expectedScriptGuid
+    )
+    {
+        string componentId = ReadReferencedFileId(scene, fieldName);
+        string component = ReadYamlObject(scene, "--- !u!114 &" + componentId);
+
+        StringAssert.Contains("guid: " + expectedScriptGuid, component);
+        StringAssert.Contains("m_Enabled: 1", component);
+        Assert.AreEqual(
+            expectedGameObjectId,
+            ReadReferencedFileId(component, "m_GameObject"),
+            fieldName + " must reference the same visible tutorial button."
+        );
+    }
+
+    private static string ReadReferencedFileId(string source, string fieldName)
+    {
+        string prefix = fieldName + ": {fileID: ";
+        int start = source.IndexOf(prefix, StringComparison.Ordinal);
+        Assert.GreaterOrEqual(start, 0, fieldName + " reference was not found.");
+        start += prefix.Length;
+        int end = source.IndexOf('}', start);
+        Assert.Greater(end, start, fieldName + " reference is malformed.");
+        string fileId = source.Substring(start, end - start).Trim();
+        Assert.AreNotEqual("0", fileId, fieldName + " must be assigned.");
+        return fileId;
     }
 }
