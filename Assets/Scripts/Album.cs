@@ -53,9 +53,6 @@ public class Album : MonoBehaviour
         if (blockedRecycleDeckPrompt != null)
         {
             blockedRecycleDeckPrompt.SetActive(false);
-            DismissPanelButton dismiss = blockedRecycleDeckPrompt.GetComponent<DismissPanelButton>();
-            if (dismiss == null) dismiss = blockedRecycleDeckPrompt.AddComponent<DismissPanelButton>();
-            dismiss.Configure(blockedRecycleDeckPrompt);
         }
 
         deckPanel.SetActive(false);
