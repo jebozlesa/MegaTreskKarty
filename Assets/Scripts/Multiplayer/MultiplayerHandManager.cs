@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,56 +15,82 @@ public class MultiplayerHandManager : MonoBehaviour
     public AttackDescriptions attackDescriptions;
     public FightSystemMultiplayer fightSystem;
     public ServerFunctionsManager serverFunctionsManager;
-    private string myPlayerId;
-    private string roomCode;
-    private bool cardsCreated = false;
-
-
-
+    private int preparationGeneration;
+    private TaskCompletionSource<bool> preparation;
+    private readonly List<Kard> preparedCards = new List<Kard>();
     private readonly Dictionary<string, GeneratedCard> cardDefinitions = new Dictionary<string, GeneratedCard>();
 
 
-    public void CreateCardsFromDecks(string myPlayerId, string roomCode)
+    public Task PrepareStartupHandAsync(string myPlayerId, string roomCode)
     {
-        Debug.Log($"[CreateCardsFromDecks] Called with myPlayerId={myPlayerId}, roomCode={roomCode}");
-        
-        // Prevent duplicate card creation
-        if (cardsCreated)
+        if (preparation != null) return preparation.Task;
+        int generation = ++preparationGeneration;
+        preparation = new TaskCompletionSource<bool>();
+        var completion = preparation;
+        serverFunctionsManager.GetRoomDecks(roomCode, myPlayerId, result =>
         {
-            Debug.Log("[CreateCardsFromDecks] Cards already created, skipping...");
-            return;
-        }
-
-        serverFunctionsManager.GetRoomDecks(roomCode, result =>
-        {
-            if (result != null && result.FunctionResult != null)
+            if (!OwnsPreparation(generation)) { completion.TrySetCanceled(); return; }
+            try
             {
-                try
-                {
-                    var functionResult = Newtonsoft.Json.Linq.JObject.Parse(result.FunctionResult.ToString());
-                    Debug.Log($"[CreateCardsFromDecks] FunctionResult: {functionResult}");
-
-                    if (functionResult["playerDecks"] != null && functionResult["playerDecks"][myPlayerId] != null && functionResult["playerDecks"][myPlayerId]["cards"] != null)
-                    {
-                        var cardsArray = functionResult["playerDecks"][myPlayerId]["cards"] as Newtonsoft.Json.Linq.JArray;
-                        Debug.Log($"[CreateCardsFromDecks] Found cards array, count={cardsArray?.Count ?? 0}");
-                        CreateMultiplayerHandFromRoom(cardsArray);
-                    }
-                    else
-                    {
-                        Debug.LogWarning("[CreateCardsFromDecks] Deck or cards not found for this player yet.");
-                    }
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogError("[CreateCardsFromDecks] Error parsing deck info: " + e.Message);
-                }
+                object raw = result?.FunctionResult;
+                JObject response = raw is string text ? JObject.Parse(text) : raw == null ? null : JObject.FromObject(raw);
+                var state = BattleContractMapper.ParseMatchStateResult(response);
+                if (response?["success"]?.Value<bool>() != true || state?.roomCode != roomCode
+                    || state.viewerPlayerId != myPlayerId || state.status != "active")
+                    throw new System.InvalidOperationException("Startup deck read was not confirmed");
+                JArray cards = response["playerDecks"]?[myPlayerId]?["cards"] as JArray;
+                ValidateStartupCardIds(cards?.Select(card => (string)card["CardID"]).ToArray());
+                CreateMultiplayerHandFromRoom(cards);
+                StartCoroutine(FinishPreparation(generation, completion));
             }
-            else
-            {
-                Debug.LogError("[CreateCardsFromDecks] No result from GetRoomDecks");
-            }
+            catch (System.Exception error) { completion.TrySetException(error); }
         });
+        return completion.Task;
+    }
+
+    private static void ValidateStartupCardIds(string[] ids)
+    {
+        if (ids == null || ids.Length != 5 || ids.Any(string.IsNullOrEmpty) || ids.Distinct().Count() != 5)
+            throw new System.InvalidOperationException("Startup requires five distinct cards");
+    }
+
+    private bool OwnsPreparation(int generation) => this != null && isActiveAndEnabled
+        && generation == preparationGeneration && multiplayerService != null && multiplayerService.CanContinueStartup;
+
+    private IEnumerator FinishPreparation(int generation, TaskCompletionSource<bool> completion)
+    {
+        // Allow active Kard components to run Start before acknowledging local readiness.
+        yield return null;
+        if (!OwnsPreparation(generation)) { completion.TrySetCanceled(); yield break; }
+        bool complete = preparedCards.Count == 5 && preparedCards.All(card => card != null
+            && card.gameObject.activeInHierarchy && fightSystem.player.hand.Contains(card)
+            && card.cardImage != null && card.cardImage.sprite != null);
+        if (!complete) completion.TrySetException(new System.InvalidOperationException("Five startup card visuals were not initialized"));
+        else
+        {
+            Debug.LogWarning("[MultiplayerHandManager] Startup hand prepared: cards=5");
+            completion.TrySetResult(true);
+        }
+    }
+
+    public void CancelPreparation()
+    {
+        preparationGeneration++;
+        preparation?.TrySetCanceled();
+        foreach (var card in preparedCards)
+        {
+            if (card == null) continue;
+            fightSystem?.player?.hand.Remove(card);
+            Destroy(card.gameObject);
+        }
+        preparedCards.Clear();
+        cardDefinitions.Clear();
+    }
+
+    private void OnDestroy()
+    {
+        preparationGeneration++;
+        preparation?.TrySetCanceled();
     }
 
     void CreateMultiplayerHandFromRoom(JArray cardsArray)
@@ -73,8 +101,7 @@ public class MultiplayerHandManager : MonoBehaviour
         GameObject playerGO = fightSystem.hrac;
         if (player == null || playerGO == null)
         {
-            Debug.LogError("[CreateMultiplayerHandFromRoom] Player or playerGO is null!");
-            return;
+            throw new System.InvalidOperationException("Startup player/hand parent is missing");
         }
 
         foreach (JObject cardData in cardsArray)
@@ -107,12 +134,11 @@ public class MultiplayerHandManager : MonoBehaviour
                 {
                     cardDefinitions[card.CardID] = card;
                 }
-            CreateCardInGame(card, playerGO, player);
+            var created = CreateCardInGame(card, playerGO, player);
+            if (created == null) throw new System.InvalidOperationException("Startup card creation failed");
+            preparedCards.Add(created);
         }
         
-        // Mark cards as created to prevent duplicates
-        cardsCreated = true;
-        Debug.Log("[CreateMultiplayerHandFromRoom] Cards creation completed, flag set");
     }
 
     public Kard CreateCardInGame(GeneratedCard cardData, GameObject parentOverride, Player player, bool addToHand = true, bool enableMultiplayerDrag = true, GameObject battleAreaOverride = null)
@@ -185,13 +211,6 @@ public class MultiplayerHandManager : MonoBehaviour
         }
 
         return kardComponent;
-    }
-
-    public void ResetCardsState()
-    {
-        cardsCreated = false;
-        cardDefinitions.Clear();
-        Debug.Log("[MultiplayerHandManager] Cards state reset");
     }
 
         public GeneratedCard GetCardDefinition(string cardId)

@@ -1,6 +1,25 @@
 # Multiplayer smoke notes
 
-This note captures the current expected state of the Unity multiplayer client after the recent battle-flow cleanup.
+## Current Resume Point (2026-10-06)
+
+Active topic: TASK-012 / A9 Startup Readiness And No-Contest. Approved code and
+automation are complete (Unity PlayMode Tests 239/239); coordinated server/client
+deployment, PlayFab ready-endpoint registration and device acceptance are pending.
+Read the [A9 cross-PC testing handover](../../../mega-tresk-server/docs/multiplayer/2026-10-06-a9-testing-handover.md)
+in the sibling server repository before testing or changing code. Server source of
+truth is mega-tresk-server/api, never the deprecated vercel-api mirror in this repo.
+
+No new A9 Inspector wiring is required. Transfer both repositories, including the
+new MultiplayerStartupRegressionTests.cs and its .meta and the user's saved lobby
+scene edit. Keep Unity 6000.0.80f1. Do not manually clear RoomCode to bypass recovery.
+Automatic offline waiting-search abandonment remains a separate future step.
+
+The notes below are the historical pre-A8/A9 baseline, not current lifecycle/error
+policy. In particular, startup creates active visuals behind loading but blocks
+interaction until both clients acknowledge readiness; expected leave/terminal
+outcomes must be validated for the exact room, not silently suppressed.
+
+## Historical Baseline
 
 ## Current loading baseline
 

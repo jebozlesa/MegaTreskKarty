@@ -72,6 +72,7 @@ public class AttackSelectionManager : MonoBehaviour
     /// </summary>
     private void OnAttackButtonClicked(int attackType)
     {
+        if (fightSystem == null || !fightSystem.CanInteractWithBattle) return;
         selectionFlow?.OnAttackButtonClicked(attackType);
     }
 
@@ -80,6 +81,7 @@ public class AttackSelectionManager : MonoBehaviour
     /// </summary>
     private void OnConfirmAttackClicked()
     {
+        if (fightSystem == null || !fightSystem.CanInteractWithBattle) return;
         selectionFlow?.OnConfirmAttackClicked();
     }
 
@@ -88,6 +90,8 @@ public class AttackSelectionManager : MonoBehaviour
     /// </summary>
     private void SetAttackButtonsInteractable(bool button1Enabled, bool button2Enabled, bool button3Enabled, bool button4Enabled)
     {
+        if (fightSystem == null || !fightSystem.CanInteractWithBattle)
+            button1Enabled = button2Enabled = button3Enabled = button4Enabled = false;
         if (button1 != null) button1.interactable = button1Enabled;
         if (button2 != null) button2.interactable = button2Enabled;
         if (button3 != null) button3.interactable = button3Enabled;
@@ -118,7 +122,7 @@ public class AttackSelectionManager : MonoBehaviour
     {
         if (confirmButton != null)
         {
-            confirmButton.interactable = enabled;
+            confirmButton.interactable = enabled && fightSystem != null && fightSystem.CanInteractWithBattle;
         }
     }
 

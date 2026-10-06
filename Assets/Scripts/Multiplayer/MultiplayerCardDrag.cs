@@ -106,7 +106,8 @@ public class MultiplayerCardDrag : MonoBehaviour, IDragHandler, IBeginDragHandle
             return false;
         }
 
-        return (fightSystem.state == FightStateMultiplayer.PLAYERDEATH || fightSystem.state == FightStateMultiplayer.START) && kard.isDragable;
+        return fightSystem.CanInteractWithBattle
+            && (fightSystem.state == FightStateMultiplayer.PLAYERDEATH || fightSystem.state == FightStateMultiplayer.START) && kard.isDragable;
     }
 
     private bool IsOverBattleArea()
@@ -130,6 +131,7 @@ public class MultiplayerCardDrag : MonoBehaviour, IDragHandler, IBeginDragHandle
 
     public void OnCardDropped(Kard card, MultiplayerCardDrag dragHandler)
     {
+        if (fightSystem == null || !fightSystem.CanInteractWithBattle) return;
         if (card == null)
         {
             Debug.LogWarning("[FightSystemMultiplayer] OnCardDropped called with null card");
