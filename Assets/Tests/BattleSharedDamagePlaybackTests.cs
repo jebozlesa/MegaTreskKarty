@@ -153,9 +153,11 @@ public class BattleSharedDamagePlaybackTests
         StringAssert.Contains("case BattleStepType.BleedTick:", source);
         StringAssert.Contains("case BattleStepType.BurnTick:", source);
         StringAssert.Contains("case BattleStepType.ExposureTick:", source);
+        StringAssert.Contains("case BattleStepType.PoisonTick:", source);
         StringAssert.Contains("PlaySingleBleedAnimation(context, actor, step.Amount, isPlayerActor)", source);
         StringAssert.Contains("PlayBurnAnimation(context, actor, step.Amount, isPlayerActor)", source);
         StringAssert.Contains("PlayExposureAnimation(context, actor, step.Amount, isPlayerActor)", source);
+        StringAssert.Contains("PlayPoisonAnimation(context, actor, step.Amount, isPlayerActor)", source);
     }
 
     [Test]
@@ -167,6 +169,7 @@ public class BattleSharedDamagePlaybackTests
         StringAssert.Contains("LogEffectTickAnimation(\"start\", \"BleedTick\"", source);
         StringAssert.Contains("LogEffectTickAnimation(\"start\", \"BurnTick\"", source);
         StringAssert.Contains("LogEffectTickAnimation(\"start\", \"ExposureTick\"", source);
+        StringAssert.Contains("LogEffectTickAnimation(\"start\", \"PoisonTick\"", source);
         StringAssert.Contains("LogEffectTickAnimation(\"start\", \"SatelliteTick\"", source);
         StringAssert.Contains("LogEffectTickAnimation(\"missing-animations\"", source);
         StringAssert.Contains("LogEffectTickAnimation(\"finish\"", source);
@@ -180,7 +183,27 @@ public class BattleSharedDamagePlaybackTests
         StringAssert.Contains("string.Equals(step.Source, \"bleed\", StringComparison.OrdinalIgnoreCase)", source);
         StringAssert.Contains("string.Equals(step.Source, \"burn\", StringComparison.OrdinalIgnoreCase)", source);
         StringAssert.Contains("string.Equals(step.Source, \"exposure\", StringComparison.OrdinalIgnoreCase)", source);
+        StringAssert.Contains("string.Equals(step.Source, \"poison\", StringComparison.OrdinalIgnoreCase)", source);
         StringAssert.Contains("!isTickDamage", source);
+    }
+
+    [Test]
+    public void BattleTimelinePlayback_UsesExistingPoisonTickAnimation()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
+
+        StringAssert.Contains("animations.PlayPoisonContinueAnimation(card.transform)", source);
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", source);
+    }
+
+    [Test]
+    public void BattleTimelinePlayback_UsesExistingConfusionForgotAnimation()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
+
+        StringAssert.Contains("case BattleStepType.ConfusionForgot:", source);
+        StringAssert.Contains("PlayConfusionForgotAnimation(context, actor)", source);
+        StringAssert.Contains("animations.PlayConfusionForgetAnimation(card.transform)", source);
     }
 
     [Test]
@@ -347,6 +370,8 @@ public class BattleSharedDamagePlaybackTests
         StringAssert.Contains("case BattleStepType.BleedTick:", source);
         StringAssert.Contains("case BattleStepType.BurnTick:", source);
         StringAssert.Contains("case BattleStepType.ExposureTick:", source);
+        StringAssert.Contains("case BattleStepType.PoisonTick:", source);
+        StringAssert.Contains("case BattleStepType.ConfusionForgot:", source);
         StringAssert.Contains("case BattleStepType.ExposureRemoved:", source);
         StringAssert.Contains("case BattleStepType.EffectApplied:", source);
         StringAssert.Contains("case BattleStepType.EffectRemoved:", source);

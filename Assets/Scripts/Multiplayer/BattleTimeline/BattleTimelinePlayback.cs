@@ -87,6 +87,18 @@ public static class BattleTimelinePlayback
                     }
                     break;
 
+                case BattleStepType.PoisonTick:
+                    if (actor != null && step.Amount > 0)
+                    {
+                        yield return PlayPoisonAnimation(context, actor, step.Amount, isPlayerActor);
+                        yield return new WaitForSeconds(context.TickDelaySeconds);
+                    }
+                    else
+                    {
+                        LogEffectTickAnimation("skipped", "PoisonTick", context, step, actor, step.Amount, null);
+                    }
+                    break;
+
                 case BattleStepType.ExposureRemoved:
                     if (actor != null)
                     {
@@ -170,6 +182,13 @@ public static class BattleTimelinePlayback
                     if (actor != null && step.Amount > 0)
                     {
                         yield return PlaySelfDamageAnimation(context, actor, step.Amount, isPlayerActor);
+                    }
+                    break;
+
+                case BattleStepType.ConfusionForgot:
+                    if (actor != null)
+                    {
+                        yield return PlayConfusionForgotAnimation(context, actor);
                     }
                     break;
 
@@ -505,6 +524,50 @@ public static class BattleTimelinePlayback
         LogEffectTickAnimation("finish", "ExposureTick", context, null, card, damage, animations);
     }
 
+    private static IEnumerator PlayPoisonAnimation(BattleTimelinePlaybackContext context, Kard card, int damage, bool isPlayerCard)
+    {
+        AttackAnimations animations = context.AttackComponent?.attackAnimations;
+        LogEffectTickAnimation("start", "PoisonTick", context, null, card, damage, animations);
+
+        if (animations != null)
+        {
+            yield return animations.PlayPoisonContinueAnimation(card.transform);
+        }
+        else
+        {
+            LogEffectTickAnimation("missing-animations", "PoisonTick", context, null, card, damage, animations);
+        }
+
+        yield return BattleValuePlayback.PlayDamage(
+            card,
+            damage,
+            isPlayerCard,
+            context.CardAnimator,
+            context.PlayerLifeBar,
+            context.EnemyLifeBar
+        );
+
+        yield return ShowDialog(context, $"{card.cardName} is poisoned! -{damage} HP");
+        LogEffectTickAnimation("finish", "PoisonTick", context, null, card, damage, animations);
+    }
+
+    private static IEnumerator PlayConfusionForgotAnimation(BattleTimelinePlaybackContext context, Kard card)
+    {
+        AttackAnimations animations = context.AttackComponent?.attackAnimations;
+        if (animations != null)
+        {
+            yield return animations.PlayConfusionForgetAnimation(card.transform);
+        }
+        else
+        {
+            Debug.LogWarning(
+                $"[CONFUSION_FORGOT_ANIM] Missing animations for {card.cardName}({card.cardId})"
+            );
+        }
+
+        yield return ShowDialog(context, $"{card.cardName} forgot to attack!");
+    }
+
     private static void LogEffectTickAnimation(
         string phase,
         string tickType,
@@ -683,7 +746,8 @@ public static class BattleTimelinePlayback
         bool isTickDamage =
             string.Equals(step.Source, "bleed", StringComparison.OrdinalIgnoreCase)
             || string.Equals(step.Source, "burn", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(step.Source, "exposure", StringComparison.OrdinalIgnoreCase);
+            || string.Equals(step.Source, "exposure", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(step.Source, "poison", StringComparison.OrdinalIgnoreCase);
 
         return !isTickDamage
             && !string.Equals(step.Source, "attack", StringComparison.OrdinalIgnoreCase);

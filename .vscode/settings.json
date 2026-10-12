@@ -69,5 +69,5 @@
     "[markdown]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
-    "dotnet.defaultSolution": "MegaTreskKarty.sln"
+    "dotnet.defaultSolution": "MegaTreskKarty.slnx"
 }

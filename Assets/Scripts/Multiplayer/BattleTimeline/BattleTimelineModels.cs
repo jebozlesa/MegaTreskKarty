@@ -22,7 +22,9 @@ public enum BattleStepType
     OngoingActionProgress,
     OngoingActionResolved,
     OngoingActionCancelled,
-    Death
+    Death,
+    PoisonTick,
+    ConfusionForgot
 }
 
 [Serializable]
