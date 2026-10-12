@@ -1,14 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
-using PlayFab;
-using PlayFab.ClientModels;
-using PlayFab.CloudScriptModels;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public class MultiplayerService : MonoBehaviour
 {
@@ -32,12 +29,26 @@ public class MultiplayerService : MonoBehaviour
     public string RoomCode => roomCode;
     public string MyPlayerId => myPlayerId;
 
-    private bool isWaitingForOpponent;
-    private Coroutine pollingCoroutine;
     private Coroutine heartbeatCoroutine;
     private Coroutine matchStateMonitorCoroutine;
     private bool leaveRequested;
     private bool matchCompletionHandled;
+    private bool leaveConfirmed;
+    private int lifecycleVersion;
+    public const string PendingStartupCancellationKey = "PendingStartupCancellationRoomCode";
+    private bool localPrepared;
+    private bool serverStarted;
+    private bool startupAborted;
+    private bool applicationPaused;
+    private bool applicationFocused = true;
+    private double startupDeadline;
+    public bool CanInteractWithBattle => CanContinueStartup && localPrepared && serverStarted;
+    public bool CanAcknowledgeStartup => CanContinueStartup && localPrepared && !applicationPaused && applicationFocused
+        && StartupRemainingMilliseconds > 0;
+    public int StartupRemainingMilliseconds => Mathf.Max(0,
+        (int)((startupDeadline - Time.realtimeSinceStartupAsDouble) * 1000));
+    public bool CanContinueStartup => this != null && isActiveAndEnabled && !leaveRequested
+        && !leaveConfirmed && !matchCompletionHandled && !startupAborted;
 
     [Header("Heartbeat Settings")]
     [SerializeField]
@@ -46,324 +57,175 @@ public class MultiplayerService : MonoBehaviour
     public MultiplayerHandManager handManager;
     public FightSystemMultiplayer fightSystem;
 
-    // private bool cardsCreated = false;
-
     public async Task InitGame(System.Action onGameInitialized = null)
     {
-        myPlayerId = PlayFabManagerLogin.Instance.LoggedInPlayerId;
+        myPlayerId = PlayFabManagerLogin.Instance?.LoggedInPlayerId;
         roomCode = PlayerPrefs.GetString("RoomCode", "");
-        isWaitingForOpponent = PlayerPrefs.GetString("IsWaitingForOpponent", "false") == "true";
-
-        Debug.Log(
-            $"[MultiplayerService] InitGame start: playerId={myPlayerId}, roomCode={roomCode}, isWaitingForOpponent={isWaitingForOpponent}, platform={Application.platform}"
-        );
-
-        Debug.Log(
-            "[MultiplayerService] Exit flow expects the scene Button.OnClick to call OnExitToLobby or OnExitToMainMenu directly"
-        );
-
-        if (string.IsNullOrEmpty(roomCode))
-        {
-            Debug.LogError(
-                "[MultiplayerService] InitGame aborted: RoomCode PlayerPrefs value is empty"
-            );
-            statusText.text = "No room found!";
-            return;
-        }
-
-        // Nacitanie informacii o hracoch a balickov
-        await LoadPlayersInfoAsync();
-        Debug.Log("[MultiplayerService] LoadPlayersInfoAsync completed");
-
-        // Spustenie heartbeat systemu
+        startupDeadline = Time.realtimeSinceStartupAsDouble + 30;
+        int version = ++lifecycleVersion;
+        if (serverFunctionsManager == null || string.IsNullOrEmpty(roomCode) || string.IsNullOrEmpty(myPlayerId))
+            throw new System.InvalidOperationException("Missing authenticated player, room or server manager");
+        Debug.LogWarning($"[MultiplayerService] Startup requested: player={myPlayerId}, room={roomCode}");
+        await AwaitStartupAsync(LoadPlayersInfoAsync());
+        EnsureStartupCurrent(version);
         StartHeartbeat();
         StartMatchStateMonitor();
-
-        if (isWaitingForOpponent)
-        {
-            statusText.text = "Waiting for opponent...";
-            pollingCoroutine = StartCoroutine(PollForOpponent());
-        }
-
-        // Zavolaj callback az ked je vsetko hotove
-        Debug.Log("[MultiplayerService] InitGame completed");
+        Debug.LogWarning($"[MultiplayerService] Startup confirmed: room={roomCode}");
         onGameInitialized?.Invoke();
     }
 
-    // Pridaj async verziu LoadPlayersInfo
     public async Task LoadPlayersInfoAsync()
     {
-        string username = PlayerPrefs.GetString("username", myPlayerId);
-        var tcs = new System.Threading.Tasks.TaskCompletionSource<bool>();
-
-        serverFunctionsManager.JoinOrCreateRoom(
-            myPlayerId,
-            username,
-            async result =>
-            {
-                if (result != null && result.FunctionResult != null)
-                {
-                    try
-                    {
-                        JObject functionResult = JObject.Parse(result.FunctionResult.ToString());
-                        if (functionResult["room"] != null)
-                        {
-                            var room = functionResult["room"];
-                            if (room["playersInfo"] != null)
-                            {
-                                JArray playersInfo = room["playersInfo"] as JArray;
-                                ProcessPlayersInfo(playersInfo);
-
-                                await LoadPlayerDecks(myPlayerId, roomCode);
-                            }
-                        }
-                    }
-                    catch (System.Exception e)
-                    {
-                        Debug.LogError("Error parsing room info: " + e.Message);
-                        MarkPlayersInfoLoadFailed("Failed to parse room info");
-                    }
-                }
-                else
-                {
-                    Debug.LogError("No result from JoinOrCreateRoom");
-                    MarkPlayersInfoLoadFailed("No room info returned");
-                }
-                tcs.SetResult(true);
-            }
-        );
-
-        await tcs.Task;
+        int version = lifecycleVersion;
+        double requestedAt = Time.realtimeSinceStartupAsDouble;
+        MatchStateDto state = await AwaitStartupAsync(GetMatchStateAsync(roomCode, myPlayerId));
+        EnsureStartupCurrent(version);
+        ValidateStartupState(state, roomCode, myPlayerId);
+        ApplyStartupSnapshot(state, requestedAt);
+        ProcessPlayersInfo(state);
+        requestedAt = Time.realtimeSinceStartupAsDouble;
+        var result = await AwaitStartupAsync(serverFunctionsManager.LoadPlayerDecksIntoRoomAsync(myPlayerId, roomCode));
+        EnsureStartupCurrent(version);
+        JObject response = result?.FunctionResult == null ? null
+            : result.FunctionResult is string text ? JObject.Parse(text) : JObject.FromObject(result.FunctionResult);
+        if (response?["success"]?.Value<bool>() != true)
+            throw new System.InvalidOperationException("Room deck load failed: " + response?["error"]);
+        state = BattleContractMapper.ParseMatchStateResult(response);
+        ValidateStartupState(state, roomCode, myPlayerId);
+        ApplyStartupSnapshot(state, requestedAt);
+        Debug.LogWarning($"[MultiplayerService] Deck load confirmed: room={roomCode}, alreadyLoaded={response["alreadyLoaded"]}");
     }
 
-    void OnDestroy()
+    private void EnsureStartupCurrent(int version)
     {
-        Debug.Log(
-            $"[MultiplayerService] OnDestroy: playerId={myPlayerId}, roomCode={roomCode}, leaveRequested={leaveRequested}, matchCompletionHandled={matchCompletionHandled}"
-        );
+        if (!CanContinueStartup || version != lifecycleVersion)
+            throw new System.OperationCanceledException("Multiplayer startup no longer owns this scene");
+    }
 
-        // Zastavime vsetky systemy
+    private static void ValidateStartupState(MatchStateDto state, string expectedRoom, string expectedPlayer)
+    {
+        if (state == null || state.roomCode != expectedRoom || state.viewerPlayerId != expectedPlayer
+            || state.status != "active" || state.phase == MatchPhaseCompleted
+            || state.schemaVersion != 2 || state.startup == null
+            || !System.DateTimeOffset.TryParse(state.startup.matchedAt, out _)
+            || state.playersCount != 2 || state.seats == null || state.seats.Count != 2
+            || state.seats.Any(seat => string.IsNullOrEmpty(seat?.playerId))
+            || state.seats.Select(seat => seat.playerId).Distinct().Count() != 2
+            || !state.seats.Any(seat => seat.playerId == expectedPlayer))
+            throw new System.InvalidOperationException("Room is not the requested active two-player match");
+    }
+
+    private void ApplyStartupSnapshot(MatchStateDto state, double requestedAt)
+    {
+        ValidateStartupState(state, roomCode, myPlayerId);
+        serverStarted = !string.IsNullOrEmpty(state.startup.startedAt) && state.startup.bothReady;
+        if (!serverStarted)
+        {
+            double remaining = state.startup.remainingMs / 1000.0;
+            startupDeadline = System.Math.Min(startupDeadline, requestedAt + remaining);
+        }
+    }
+
+    public async Task AwaitStartupAsync(Task task)
+    {
+        int version = lifecycleVersion;
+        int remaining = StartupRemainingMilliseconds;
+        if (remaining <= 0) throw new System.TimeoutException("Startup deadline reached");
+        if (await Task.WhenAny(task, Task.Delay(remaining)) != task)
+        {
+            _ = task.ContinueWith(failed => { _ = failed.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
+            throw new System.TimeoutException("Startup deadline reached");
+        }
+        EnsureStartupCurrent(version);
+        await task;
+    }
+
+    public async Task<T> AwaitStartupAsync<T>(Task<T> task)
+    {
+        await AwaitStartupAsync((Task)task);
+        return await task;
+    }
+
+    public async Task<MatchStateDto> PollStartupAsync()
+    {
+        double requestedAt = Time.realtimeSinceStartupAsDouble;
+        var state = await AwaitStartupAsync(GetMatchStateAsync(roomCode, myPlayerId));
+        if (state?.status == "completed")
+        {
+            HandleRemoteMatchCompletion(state);
+            throw new System.OperationCanceledException("Startup ended on server");
+        }
+        ApplyStartupSnapshot(state, requestedAt);
+        return state;
+    }
+
+    public async Task ConfirmLocalStartupAsync()
+    {
+        localPrepared = true;
+        while (CanContinueStartup && (applicationPaused || !applicationFocused))
+            await AwaitStartupAsync(Task.Delay(100));
+        if (!CanAcknowledgeStartup) throw new System.OperationCanceledException("Startup is not current/foreground");
+        var ready = new TaskCompletionSource<object>();
+        double requestedAt = Time.realtimeSinceStartupAsDouble;
+        serverFunctionsManager.MarkMatchStartupReady(roomCode, myPlayerId, result => ready.TrySetResult(result?.FunctionResult));
+        var response = await AwaitStartupAsync(ready.Task);
+        var state = BattleContractMapper.ParseMatchStateResult(response);
+        if (state?.status == "completed")
+        {
+            HandleRemoteMatchCompletion(state);
+            throw new System.OperationCanceledException("Startup cancelled before readiness");
+        }
+        JObject envelope = response is string text ? JObject.Parse(text) : response == null ? null : JObject.FromObject(response);
+        if (envelope?["success"]?.Value<bool>() != true) throw new System.InvalidOperationException("Readiness was not confirmed");
+        ApplyStartupSnapshot(state, requestedAt);
+        while (!serverStarted)
+        {
+            await AwaitStartupAsync(Task.Delay(250));
+            await PollStartupAsync();
+        }
+        Debug.LogWarning($"[MultiplayerService] Both clients prepared; game started: room={roomCode}");
+    }
+
+    public async Task AbortStartupAsync(string reason)
+    {
+        if (this == null || leaveRequested || leaveConfirmed || matchCompletionHandled || startupAborted) return;
+        startupAborted = true;
+        lifecycleVersion++;
+        handManager?.CancelPreparation();
+        StopHeartbeat(); StopMatchStateMonitor();
+        if (PlayerPrefs.GetString("RoomCode", "") == roomCode)
+        {
+            PlayerPrefs.SetString(PendingStartupCancellationKey, roomCode);
+            PlayerPrefs.Save();
+        }
+        Debug.LogWarning($"[MultiplayerService] Startup aborted: room={roomCode}, reason={reason}");
+        var left = new TaskCompletionSource<bool>();
+        LeaveMultiplayerRoom(success => left.TrySetResult(success));
+        await Task.WhenAny(left.Task, Task.Delay(10000));
+        if (this != null && gameObject.scene == SceneManager.GetActiveScene())
+            SceneManager.LoadScene("MultiplayerLobby");
+    }
+
+    private void OnDestroy()
+    {
+        lifecycleVersion++;
         StopHeartbeat();
         StopMatchStateMonitor();
-        if (pollingCoroutine != null)
+        if (serverFunctionsManager != null && !string.IsNullOrEmpty(myPlayerId)
+            && !string.IsNullOrEmpty(roomCode) && !leaveRequested && !leaveConfirmed && !matchCompletionHandled)
         {
-            StopCoroutine(pollingCoroutine);
-        }
-
-        // Opustime miestnost pri zatvoreni (emergency cleanup)
-        if (
-            serverFunctionsManager != null
-            && !string.IsNullOrEmpty(myPlayerId)
-            && !leaveRequested
-            && !matchCompletionHandled
-        )
-        {
-            // Pri emergency cleanup len opustime miestnost
-            Debug.Log("[MultiplayerService] OnDestroy emergency LeaveRoom requested");
-            serverFunctionsManager.LeaveRoom(myPlayerId);
-        }
-        else
-        {
-            Debug.Log("[MultiplayerService] OnDestroy emergency LeaveRoom skipped");
+            Debug.LogWarning($"[MultiplayerService] Emergency leave: room={roomCode}");
+            serverFunctionsManager.LeaveRoom(myPlayerId, roomCode);
         }
     }
 
-    async Task LoadPlayerDecks(string playerId, string roomCode)
+    private void ProcessPlayersInfo(MatchStateDto state)
     {
-        try
-        {
-            var result = await serverFunctionsManager.LoadPlayerDecksIntoRoomAsync(
-                playerId,
-                roomCode
-            );
-            if (result != null && result.FunctionResult != null)
-            {
-                Debug.Log("Player decks loaded successfully.");
-            }
-            else
-            {
-                Debug.LogError("Failed to load player decks: " + result?.Error);
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError("Error loading player decks: " + ex.Message);
-        }
-    }
-
-    void ProcessPlayersInfo(JArray playersInfo)
-    {
-        string myUsername = PlayerPrefs.GetString("username", myPlayerId);
-        string opponentUsername = "";
-
-        // Najdeme informacie o hracoch
-        foreach (JObject playerInfo in playersInfo)
-        {
-            string playerId = playerInfo["playerId"].ToString();
-            string username = playerInfo["username"].ToString();
-
-            if (playerId == myPlayerId)
-            {
-                myUsername = username;
-            }
-            else
-            {
-                opponentUsername = username;
-            }
-        }
-
-        // Nastavime mena podla poradia hracov
-        if (playersInfo.Count >= 2)
-        {
-            // Obaja hraci su pripojeni
-            JObject firstPlayer = playersInfo[0] as JObject;
-            bool amIFirstPlayer = firstPlayer["playerId"].ToString() == myPlayerId;
-
-            if (amIFirstPlayer)
-            {
-                // Som prvy hrac (domaci)
-                playerNameText.text = myUsername;
-                enemyNameText.text = opponentUsername;
-            }
-            else
-            {
-                // Som druhy hrac (host)
-                enemyNameText.text = myUsername;
-                playerNameText.text = opponentUsername;
-            }
-
-            // [ERR] Removed "Connected!" message - hraci idu priamo na "Choose fighter!"
-            // statusText.text = "Connected!";
-            isWaitingForOpponent = false;
-
-            // Zastavime polling ak bezal
-            if (pollingCoroutine != null)
-            {
-                StopCoroutine(pollingCoroutine);
-                pollingCoroutine = null;
-            }
-        }
-        else if (playersInfo.Count == 1)
-        {
-            // Len jeden hrac je pripojeny (som to ja)
-            playerNameText.text = myUsername;
-            enemyNameText.text = "";
-            statusText.text = "Waiting for opponent...";
-            isWaitingForOpponent = true;
-        }
-    }
-
-    void MarkPlayersInfoLoadFailed(string reason)
-    {
-        Debug.LogError($"[MultiplayerService] Player info load failed: {reason}");
-        enemyNameText.text = "";
-        statusText.text = "Failed to load room!";
-    }
-
-    IEnumerator PollForOpponent()
-    {
-        while (isWaitingForOpponent)
-        {
-            yield return new WaitForSeconds(2f); // Kontrola kazde 2 sekundy
-
-            serverFunctionsManager.GetMatchState(
-                roomCode,
-                myPlayerId,
-                result =>
-                {
-                    if (result != null && result.FunctionResult != null)
-                    {
-                        try
-                        {
-                            MatchStateDto matchState = BattleContractMapper.ParseMatchStateResult(
-                                result.FunctionResult
-                            );
-                            if (matchState != null && matchState.seats != null)
-                            {
-                                ProcessPlayersInfo(matchState);
-                            }
-                        }
-                        catch (System.Exception e)
-                        {
-                            Debug.LogError("Error parsing match state (polling): " + e.Message);
-                        }
-                    }
-                    else
-                    {
-                        Debug.LogError("No result from GetMatchState (polling)");
-                    }
-                }
-            );
-        }
-    }
-
-    void ProcessPlayersInfo(MatchStateDto matchState)
-    {
-        if (matchState == null || matchState.seats == null)
-        {
-            return;
-        }
-
-        string myUsername = PlayerPrefs.GetString("username", myPlayerId);
-        string opponentUsername = "";
-
-        foreach (var seat in matchState.seats)
-        {
-            if (seat == null || string.IsNullOrEmpty(seat.playerId))
-            {
-                continue;
-            }
-
-            if (seat.playerId == myPlayerId)
-            {
-                myUsername = string.IsNullOrEmpty(seat.username) ? myUsername : seat.username;
-            }
-            else
-            {
-                opponentUsername = seat.username;
-            }
-        }
-
-        if (matchState.playersCount >= 2)
-        {
-            bool amIFirstPlayer =
-                matchState.seats.Count > 0 && matchState.seats[0]?.playerId == myPlayerId;
-            if (amIFirstPlayer)
-            {
-                playerNameText.text = myUsername;
-                enemyNameText.text = opponentUsername;
-            }
-            else
-            {
-                enemyNameText.text = myUsername;
-                playerNameText.text = opponentUsername;
-            }
-
-            isWaitingForOpponent = false;
-            if (pollingCoroutine != null)
-            {
-                StopCoroutine(pollingCoroutine);
-                pollingCoroutine = null;
-            }
-        }
-        else
-        {
-            playerNameText.text = myUsername;
-            enemyNameText.text = "";
-            statusText.text = "Waiting for opponent...";
-            isWaitingForOpponent = true;
-        }
-    }
-
-    // Verejne metody pre manualne nastavenie mien (pre spatnu kompatibilitu)
-    public void ShowPlayerName(string playerName)
-    {
-        playerNameText.text = playerName;
-    }
-
-    public void ShowEnemyName(string enemyName)
-    {
-        enemyNameText.text = enemyName;
+        bool amIFirstPlayer = state.seats[0].playerId == myPlayerId;
+        string mine = state.seats.First(seat => seat.playerId == myPlayerId).username;
+        string opponent = state.seats.First(seat => seat.playerId != myPlayerId).username;
+        playerNameText.text = amIFirstPlayer ? mine : opponent;
+        enemyNameText.text = amIFirstPlayer ? opponent : mine;
     }
 
     // === HEARTBEAT SYSTEM ===
@@ -414,7 +276,7 @@ public class MultiplayerService : MonoBehaviour
 
     private IEnumerator MatchStateMonitorLoop()
     {
-        while (!matchCompletionHandled)
+        while (CanContinueStartup)
         {
             yield return new WaitForSeconds(MatchStateMonitorIntervalSeconds);
 
@@ -443,6 +305,7 @@ public class MultiplayerService : MonoBehaviour
                 continue;
             }
 
+            if (!CanContinueStartup) yield break;
             MatchStateDto matchState = matchStateTask.Result;
             Debug.Log(
                 $"[MultiplayerService] MatchState monitor poll result: roomCode={matchState.roomCode}, status={matchState.status}, phase={matchState.phase}, playersCount={matchState.playersCount}, reason={matchState.matchResult?.reason}, winner={matchState.matchResult?.winnerPlayerId}, loser={matchState.matchResult?.loserPlayerId}"
@@ -464,7 +327,8 @@ public class MultiplayerService : MonoBehaviour
 
     private void HandleRemoteMatchCompletion(MatchStateDto matchState)
     {
-        if (matchCompletionHandled)
+        if (matchCompletionHandled || matchState == null || matchState.roomCode != roomCode
+            || matchState.viewerPlayerId != myPlayerId)
         {
             Debug.Log("[MultiplayerService] HandleRemoteMatchCompletion skipped: already handled");
             return;
@@ -474,15 +338,11 @@ public class MultiplayerService : MonoBehaviour
             $"[MultiplayerService] HandleRemoteMatchCompletion start: phase={matchState.phase}, reason={matchState.matchResult?.reason}, winner={matchState.matchResult?.winnerPlayerId}, loser={matchState.matchResult?.loserPlayerId}"
         );
         matchCompletionHandled = true;
+        lifecycleVersion++;
+        if (string.IsNullOrEmpty(matchState.startup?.startedAt)) handManager?.CancelPreparation();
         StopHeartbeat();
-        if (pollingCoroutine != null)
-        {
-            StopCoroutine(pollingCoroutine);
-            pollingCoroutine = null;
-        }
 
-        PlayerPrefs.DeleteKey("RoomCode");
-        PlayerPrefs.DeleteKey("IsWaitingForOpponent");
+        ClearOwnedRoomKeys();
         Debug.Log(
             "[MultiplayerService] Cleared local room PlayerPrefs after confirmed match completion"
         );
@@ -492,6 +352,13 @@ public class MultiplayerService : MonoBehaviour
         string reason = matchState.matchResult?.reason ?? matchState.completionReason;
         bool iWon = !string.IsNullOrEmpty(winnerPlayerId) && winnerPlayerId == myPlayerId;
         bool iLost = !string.IsNullOrEmpty(loserPlayerId) && loserPlayerId == myPlayerId;
+
+        if (reason == "cancelled" && !iWon && !iLost)
+        {
+            Debug.LogWarning($"[MultiplayerService] Startup cancelled without result: room={roomCode}");
+            SceneManager.LoadScene("MultiplayerLobby");
+            return;
+        }
 
         if (fightSystem != null)
         {
@@ -506,11 +373,21 @@ public class MultiplayerService : MonoBehaviour
         }
 
         string message = BuildMatchCompletedMessage(reason, iWon, iLost);
-        statusText.text = message;
+        if (statusText != null) statusText.text = message;
         fightSystem?.multiplayerUI?.ShowStatus(message);
         Debug.Log(
             $"[MultiplayerService] Match completed. reason={reason}, winner={winnerPlayerId}, loser={loserPlayerId}"
         );
+    }
+
+    private void ClearOwnedRoomKeys()
+    {
+        if (PlayerPrefs.GetString("RoomCode", "") != roomCode) return;
+        PlayerPrefs.DeleteKey("RoomCode");
+        PlayerPrefs.DeleteKey("IsWaitingForOpponent");
+        if (PlayerPrefs.GetString(PendingStartupCancellationKey, "") == roomCode)
+            PlayerPrefs.DeleteKey(PendingStartupCancellationKey);
+        PlayerPrefs.Save();
     }
 
     private static string BuildMatchCompletedMessage(string reason, bool iWon, bool iLost)
@@ -550,17 +427,17 @@ public class MultiplayerService : MonoBehaviour
 
     IEnumerator HeartbeatLoop()
     {
-        while (true)
+        while (CanContinueStartup)
         {
-            yield return new WaitForSeconds(heartbeatInterval);
+            yield return new WaitForSecondsRealtime(heartbeatInterval);
 
             // Posli heartbeat na server
-            if (serverFunctionsManager != null && !string.IsNullOrEmpty(myPlayerId))
+            if (CanContinueStartup && serverFunctionsManager != null && !string.IsNullOrEmpty(myPlayerId) && !string.IsNullOrEmpty(roomCode))
             {
                 Debug.Log(
                     $"[MultiplayerService] Heartbeat request: playerId={myPlayerId}, roomCode={roomCode}"
                 );
-                serverFunctionsManager.Heartbeat(myPlayerId);
+                serverFunctionsManager.Heartbeat(myPlayerId, roomCode);
             }
         }
     }
@@ -569,121 +446,86 @@ public class MultiplayerService : MonoBehaviour
 
     void OnApplicationPause(bool pauseStatus)
     {
+        applicationPaused = pauseStatus;
         Debug.Log(
             $"[MultiplayerService] OnApplicationPause: pauseStatus={pauseStatus}, playerId={myPlayerId}, roomCode={roomCode}"
         );
         if (pauseStatus)
         {
             // Aplikacia sa pozastavuje - posli heartbeat
-            if (serverFunctionsManager != null && !string.IsNullOrEmpty(myPlayerId))
+            if (CanContinueStartup && serverFunctionsManager != null && !string.IsNullOrEmpty(myPlayerId) && !string.IsNullOrEmpty(roomCode))
             {
-                serverFunctionsManager.Heartbeat(myPlayerId);
+                serverFunctionsManager.Heartbeat(myPlayerId, roomCode);
             }
         }
     }
 
     void OnApplicationFocus(bool hasFocus)
     {
+        applicationFocused = hasFocus;
         Debug.Log(
             $"[MultiplayerService] OnApplicationFocus: hasFocus={hasFocus}, playerId={myPlayerId}, roomCode={roomCode}"
         );
         if (!hasFocus)
         {
             // Aplikacia straca focus - posli heartbeat
-            if (serverFunctionsManager != null && !string.IsNullOrEmpty(myPlayerId))
+            if (CanContinueStartup && serverFunctionsManager != null && !string.IsNullOrEmpty(myPlayerId) && !string.IsNullOrEmpty(roomCode))
             {
-                serverFunctionsManager.Heartbeat(myPlayerId);
+                serverFunctionsManager.Heartbeat(myPlayerId, roomCode);
             }
         }
     }
 
     public void LeaveMultiplayerRoom(System.Action<bool> onCompleted = null)
     {
-        Debug.Log(
-            $"[MultiplayerService] LeaveMultiplayerRoom requested: playerId={myPlayerId}, roomCode={roomCode}, leaveRequested={leaveRequested}, matchCompletionHandled={matchCompletionHandled}"
-        );
-
-        // Manualne opustenie miestnosti
-        if (serverFunctionsManager == null || string.IsNullOrEmpty(myPlayerId))
+        if (leaveConfirmed || matchCompletionHandled)
         {
-            Debug.LogError(
-                "[MultiplayerService] Cannot leave room: serverFunctionsManager or playerId missing"
-            );
+            // The server-confirmed terminal snapshot already ended our membership.
+            onCompleted?.Invoke(true);
+            return;
+        }
+        if (leaveRequested || serverFunctionsManager == null
+            || string.IsNullOrEmpty(myPlayerId) || string.IsNullOrEmpty(roomCode))
+        {
             onCompleted?.Invoke(false);
             return;
         }
-
         leaveRequested = true;
-        statusText.text = "Leaving room...";
-        Debug.Log("[MultiplayerService] LeaveRoom server call starting");
-
-        serverFunctionsManager.LeaveRoom(
-            myPlayerId,
-            result =>
+        int version = ++lifecycleVersion;
+        string expectedRoom = roomCode;
+        StopHeartbeat();
+        StopMatchStateMonitor();
+        if (statusText != null) statusText.text = "Leaving room...";
+        Debug.LogWarning($"[MultiplayerService] Leave requested: room={expectedRoom}");
+        serverFunctionsManager.LeaveRoom(myPlayerId, expectedRoom, result =>
+        {
+            if (this == null || version != lifecycleVersion || roomCode != expectedRoom) return;
+            bool succeeded = false;
+            try
             {
-                Debug.Log(
-                    $"[MultiplayerService] LeaveRoom callback received: resultNull={result == null}, functionResultNull={result?.FunctionResult == null}"
-                );
-                if (result == null || result.FunctionResult == null)
-                {
-                    leaveRequested = false;
-                    Debug.LogError(
-                        "[MultiplayerService] LeaveRoom failed; keeping local room state"
-                    );
-                    statusText.text = "Leave failed";
-                    onCompleted?.Invoke(false);
-                    return;
-                }
-
-                bool leaveSucceeded = false;
-                try
-                {
-                    Debug.Log(
-                        $"[MultiplayerService] LeaveRoom raw FunctionResult: {result.FunctionResult}"
-                    );
-                    var functionResult = JObject.Parse(result.FunctionResult.ToString());
-                    leaveSucceeded = functionResult["success"]?.Value<bool>() == true;
-                    if (!leaveSucceeded)
-                    {
-                        Debug.LogError(
-                            $"[MultiplayerService] LeaveRoom rejected: {functionResult["message"] ?? functionResult["error"]}"
-                        );
-                    }
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogError(
-                        $"[MultiplayerService] Failed to parse LeaveRoom result: {e.Message}"
-                    );
-                }
-
-                if (!leaveSucceeded)
-                {
-                    leaveRequested = false;
-                    statusText.text = "Leave failed";
-                    onCompleted?.Invoke(false);
-                    return;
-                }
-
-                Debug.Log($"[MultiplayerService] LeaveRoom succeeded: {result.FunctionResult}");
-
-                PlayerPrefs.DeleteKey("RoomCode");
-                PlayerPrefs.DeleteKey("IsWaitingForOpponent");
-                Debug.Log(
-                    "[MultiplayerService] Cleared local room PlayerPrefs after successful LeaveRoom"
-                );
-
-                StopHeartbeat();
-                StopMatchStateMonitor();
-                if (pollingCoroutine != null)
-                {
-                    StopCoroutine(pollingCoroutine);
-                    pollingCoroutine = null;
-                }
-
-                onCompleted?.Invoke(true);
+                JObject response = result?.FunctionResult == null ? null
+                    : result.FunctionResult is string text ? JObject.Parse(text) : JObject.FromObject(result.FunctionResult);
+                MatchStateDto state = BattleContractMapper.ParseMatchStateResult(response);
+                succeeded = response?["success"]?.Value<bool>() == true
+                    && (string)response["roomCode"] == expectedRoom
+                    && state?.roomCode == expectedRoom && state.viewerPlayerId == myPlayerId
+                    && state.status == "completed" && state.phase == MatchPhaseCompleted;
             }
-        );
+            catch (System.Exception ex) { Debug.LogWarning("[MultiplayerService] Leave response invalid: " + ex.Message); }
+            leaveRequested = false;
+            if (!succeeded)
+            {
+                if (statusText != null) statusText.text = "Leave failed";
+                serverFunctionsManager.ShowNetworkErrorIndicator("Leave failed");
+                Debug.LogWarning($"[MultiplayerService] Leave failed; room retained: {expectedRoom}");
+                onCompleted?.Invoke(false);
+                return;
+            }
+            leaveConfirmed = true;
+            ClearOwnedRoomKeys();
+            Debug.LogWarning($"[MultiplayerService] Leave confirmed: room={expectedRoom}");
+            onCompleted?.Invoke(true);
+        });
     }
 
     // === EXIT FUNKCIONALITA ===
@@ -720,8 +562,8 @@ public class MultiplayerService : MonoBehaviour
             Debug.Log($"[MultiplayerService] OnExitToMainMenu leave completed: success={success}");
             if (success)
             {
-                Debug.Log("[MultiplayerService] Loading MainMenu scene after successful leave");
-                SceneManager.LoadScene("MainMenu");
+                Debug.Log("[MultiplayerService] Loading Main scene after successful leave");
+                SceneManager.LoadScene("Main");
             }
         });
     }
@@ -865,6 +707,8 @@ public class MultiplayerService : MonoBehaviour
                     var matchState = BattleContractMapper.ParseMatchStateResult(
                         result.FunctionResult
                     );
+                    if (matchState?.roomCode != roomCode || matchState?.viewerPlayerId != playerId)
+                        matchState = null;
                     if (matchState == null)
                     {
                         Debug.LogWarning(
@@ -885,5 +729,4 @@ public class MultiplayerService : MonoBehaviour
         return await tcs.Task;
     }
 
-    // Legacy note: selected-card clearing is no longer a client flow-control primitive.
 }

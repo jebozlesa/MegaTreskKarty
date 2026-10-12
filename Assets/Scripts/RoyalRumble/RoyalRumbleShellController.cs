@@ -29,13 +29,12 @@ public class RoyalRumbleShellController : MonoBehaviour
     public AttackDescriptions attackDescriptions;
     public RecordHandler recordHandler;
     public GameObject cardPrefab;
-    public TutorialService tutorialService;
+    public RoyalRumbleTutorialController tutorialController;
 
     [Header("Scene References")]
     public GameObject playerBoard;
     public GameObject enemyBoard;
     public GameObject startupControlPanel;
-    public GameObject tutorialRoot;
 
     [Header("Attack UI")]
     public Button attackButton1;
@@ -84,7 +83,12 @@ public class RoyalRumbleShellController : MonoBehaviour
 
     public bool CanDragCard(Kard card)
     {
-        if (card == null || isBusy || currentSession == null)
+        if (
+            card == null
+            || isBusy
+            || currentSession == null
+            || (tutorialController != null && !tutorialController.AllowsCardPlacement)
+        )
         {
             return false;
         }
@@ -136,6 +140,7 @@ public class RoyalRumbleShellController : MonoBehaviour
             return;
         }
 
+        bool keepLoadingOverlayVisible = false;
         isBusy = true;
         hasStartedRun = true;
         SetStartupUiVisible(false);
@@ -156,12 +161,6 @@ public class RoyalRumbleShellController : MonoBehaviour
                 );
                 isBusy = false;
                 hasStartedRun = false;
-                return;
-            }
-
-            await LoadRoyalRumbleTutorialStateAsync();
-            if (this == null || isShuttingDown)
-            {
                 return;
             }
 
@@ -200,6 +199,22 @@ public class RoyalRumbleShellController : MonoBehaviour
                 return;
             }
 
+            if (tutorialController == null)
+            {
+                keepLoadingOverlayVisible = true;
+                SceneLoadingOverlay.SetMessage("TUTORIAL LOAD FAILED");
+                Debug.LogError(
+                    "[RoyalRumbleShellController] RoyalRumbleTutorialController reference is missing."
+                );
+                return;
+            }
+
+            if (!await tutorialController.InitializeAsync())
+            {
+                keepLoadingOverlayVisible = true;
+                return;
+            }
+
             isBusy = false;
 
             if (
@@ -228,7 +243,10 @@ public class RoyalRumbleShellController : MonoBehaviour
         }
         finally
         {
-            SceneLoadingOverlay.Hide();
+            if (!keepLoadingOverlayVisible)
+            {
+                SceneLoadingOverlay.Hide();
+            }
         }
     }
 
@@ -250,106 +268,6 @@ public class RoyalRumbleShellController : MonoBehaviour
         }
     }
 
-    private async Task LoadRoyalRumbleTutorialStateAsync()
-    {
-        TutorialService service = ResolveTutorialService();
-        if (service == null)
-        {
-            SetRoyalRumbleTutorialVisible(false);
-            return;
-        }
-
-        TutorialStateResponse state = await service.GetTutorialStateAsync(playerId);
-        bool shouldShow =
-            state != null
-            && state.success
-            && !state.IsFlowCompleted(TutorialConstants.RoyalRumbleFirstBattle);
-        SetRoyalRumbleTutorialVisible(shouldShow);
-        Debug.LogWarning(
-            $"[RoyalRumbleShellController] Tutorial state loaded: showFirstBattle={shouldShow}, route={state?.recommendedRoute}, blockNavigation={state?.blockNavigation}"
-        );
-    }
-
-    private async void CompleteRoyalRumbleTutorialStep(string stepId)
-    {
-        TutorialService service = ResolveTutorialService();
-        if (service == null)
-        {
-            return;
-        }
-
-        TutorialStateResponse state = await service.CompleteStepAsync(
-            playerId,
-            TutorialConstants.RoyalRumbleFirstBattle,
-            stepId
-        );
-        SetRoyalRumbleTutorialVisible(
-            state != null
-                && state.success
-                && !state.IsFlowCompleted(TutorialConstants.RoyalRumbleFirstBattle)
-        );
-    }
-
-    private async void CompleteRoyalRumbleAttackConfirmationTutorial()
-    {
-        TutorialService service = ResolveTutorialService();
-        if (service == null)
-        {
-            return;
-        }
-
-        TutorialStateResponse state = await service.CompleteStepAsync(
-            playerId,
-            TutorialConstants.RoyalRumbleFirstBattle,
-            TutorialConstants.ConfirmAttack
-        );
-        if (state == null || !state.success)
-        {
-            return;
-        }
-
-        state = await service.CompleteStepAsync(
-            playerId,
-            TutorialConstants.RoyalRumbleFirstBattle,
-            TutorialConstants.CompleteControls
-        );
-        SetRoyalRumbleTutorialVisible(
-            state != null
-                && state.success
-                && !state.IsFlowCompleted(TutorialConstants.RoyalRumbleFirstBattle)
-        );
-    }
-
-    private TutorialService ResolveTutorialService()
-    {
-        if (tutorialService != null)
-        {
-            return tutorialService;
-        }
-
-        tutorialService = GetComponent<TutorialService>();
-        if (tutorialService == null)
-        {
-            tutorialService = gameObject.AddComponent<TutorialService>();
-        }
-
-        ServerFunctionsManager serverManager = GetComponent<ServerFunctionsManager>();
-        if (serverManager != null)
-        {
-            tutorialService.serverFunctionsManager = serverManager;
-        }
-
-        return tutorialService;
-    }
-
-    private void SetRoyalRumbleTutorialVisible(bool isVisible)
-    {
-        if (tutorialRoot != null)
-        {
-            tutorialRoot.SetActive(isVisible);
-        }
-    }
-
     public void ShowDragSelectionHint()
     {
         SetStatus("Drag a fighter to the battle area.");
@@ -357,6 +275,11 @@ public class RoyalRumbleShellController : MonoBehaviour
 
     public void AttackButton(int attackType)
     {
+        if (tutorialController != null && !tutorialController.AllowsAttackSelection)
+        {
+            return;
+        }
+
         PendingOngoingActionTurnData pendingAction = GetPendingOngoingAction();
         if (pendingAction != null)
         {
@@ -378,12 +301,18 @@ public class RoyalRumbleShellController : MonoBehaviour
 
         if (attackSelectionFlow?.SelectedAttackType == attackType)
         {
-            CompleteRoyalRumbleTutorialStep(TutorialConstants.SelectAttack);
+            _ = tutorialController?.OnAttackSelectedAsync();
         }
+
     }
 
     public void ConfirmAttackButton()
     {
+        if (tutorialController != null && !tutorialController.AllowsConfirmation)
+        {
+            return;
+        }
+
         PendingOngoingActionTurnData pendingAction = GetPendingOngoingAction();
         if (pendingAction != null)
         {
@@ -465,8 +394,11 @@ public class RoyalRumbleShellController : MonoBehaviour
                 $"[RoyalRumbleShellController] Fighter selected via drag: cardId={card.cardId}, name={card.cardName}, hp={card.health}/{card.maxHealth}, "
                     + $"attacks=[{card.attack1},{card.attack2},{card.attack3},{card.attack4}]"
             );
-            CompleteRoyalRumbleTutorialStep(TutorialConstants.SelectPlayerCard);
             SetStatus("Choose attack!");
+            if (tutorialController != null)
+            {
+                await tutorialController.OnPlayerCardSelectedAsync();
+            }
         }
         finally
         {
@@ -612,6 +544,7 @@ public class RoyalRumbleShellController : MonoBehaviour
         PromoteEnemyCardToBoard(selectedEnemy);
         SetStatus("Choose fighter.");
         UpdateAttackButtons();
+        tutorialController?.OnBattleSceneReady();
         LogVerboseWarning("[RoyalRumbleShellController] RR shell enemy reveal finished.");
     }
 
@@ -895,11 +828,26 @@ public class RoyalRumbleShellController : MonoBehaviour
             lastAutoSubmittedPendingKey = null;
         }
 
+        if (tutorialController != null && tutorialController.IsActive)
+        {
+            bool firstManualSubmission = tutorialController.AllowsConfirmation;
+            if (firstManualSubmission)
+            {
+                if (!tutorialController.OnAttackSubmissionStarted())
+                {
+                    return;
+                }
+            }
+            else if (!tutorialController.IsResolvingFirstRound)
+            {
+                return;
+            }
+        }
+
         LogVerboseWarning(
             $"[RoyalRumbleShellController] SubmitSelectedAttack accepted: slot={attackData.attackType}, attackId={attackData.attackId}, "
                 + $"attackName={GetAttackName(attackData.attackId)}, displayedCount={attackData.attackCount}, cardId={attackData.cardId}"
         );
-        CompleteRoyalRumbleAttackConfirmationTutorial();
         StartCoroutine(SubmitAttackRoutine(attackData.attackType));
     }
 
@@ -950,6 +898,7 @@ public class RoyalRumbleShellController : MonoBehaviour
         {
             SetStatus("Battle failed.");
             isBusy = false;
+            tutorialController?.OnAttackSubmissionFailed();
             UpdateAttackButtons();
             yield break;
         }
@@ -1043,6 +992,17 @@ public class RoyalRumbleShellController : MonoBehaviour
         yield return StartCoroutine(
             PlayCardProgressionFeedback(envelope.cardProgression, previousPlayerSelectedCardId)
         );
+
+        if (tutorialController != null && tutorialController.IsResolvingFirstRound)
+        {
+            Task<bool> tutorialCompletionTask =
+                tutorialController.OnBattleExchangeCompletedAsync(pendingAfter != null);
+            yield return new WaitUntil(() => tutorialCompletionTask.IsCompleted);
+            if (this == null || isShuttingDown)
+            {
+                yield break;
+            }
+        }
 
         isBusy = false;
         UpdateAttackButtons();
@@ -1677,6 +1637,8 @@ public class RoyalRumbleShellController : MonoBehaviour
 
     private void SetAttackButtonsInteractable(bool enabled)
     {
+        enabled = enabled
+            && (tutorialController == null || tutorialController.AllowsAttackSelection);
         if (attackButton1 != null)
             attackButton1.interactable = enabled;
         if (attackButton2 != null)
@@ -1694,21 +1656,42 @@ public class RoyalRumbleShellController : MonoBehaviour
         bool button4Enabled
     )
     {
+        bool tutorialAllowsSelection = tutorialController == null
+            || tutorialController.AllowsAttackSelection;
         if (attackButton1 != null)
-            attackButton1.interactable = button1Enabled;
+            attackButton1.interactable = button1Enabled && tutorialAllowsSelection;
         if (attackButton2 != null)
-            attackButton2.interactable = button2Enabled;
+            attackButton2.interactable = button2Enabled && tutorialAllowsSelection;
         if (attackButton3 != null)
-            attackButton3.interactable = button3Enabled;
+            attackButton3.interactable = button3Enabled && tutorialAllowsSelection;
         if (attackButton4 != null)
-            attackButton4.interactable = button4Enabled;
+            attackButton4.interactable = button4Enabled && tutorialAllowsSelection;
     }
 
     private void SetConfirmButtonState(bool enabled)
     {
         if (confirmButton != null)
         {
-            confirmButton.interactable = enabled;
+            confirmButton.interactable = enabled
+                && !isBusy
+                && (tutorialController == null || tutorialController.AllowsConfirmation);
+        }
+    }
+
+    public void RefreshTutorialControlledInputs()
+    {
+        foreach (Kard card in renderedPlayerHandCards)
+        {
+            if (card != null)
+            {
+                card.isDragable = CanDragCard(card);
+            }
+        }
+
+        UpdateAttackButtons();
+        if (attackSelectionFlow?.SelectedAttackType > 0)
+        {
+            SetConfirmButtonState(true);
         }
     }
 

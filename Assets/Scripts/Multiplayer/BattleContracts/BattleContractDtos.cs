@@ -121,6 +121,7 @@ public class MatchStateDto
     public string opponentPlayerId;
     public List<MatchSeatDto> seats;
     public MatchDeckStateDto decks;
+    public MatchStartupStateDto startup;
     public Dictionary<string, SelectedCardData> selectedCards;
     public MatchBattleStateDto battle;
     public MatchNextTurnReadyDto nextTurnReady;
@@ -182,4 +183,15 @@ public class MatchNextTurnReadyDto
     public List<string> readyPlayerIds;
     public int readyCount;
     public bool bothReady;
+}
+
+[Serializable]
+public class MatchStartupStateDto
+{
+    public string matchedAt;
+    public string deadlineAt;
+    public int remainingMs;
+    public Dictionary<string, bool> readyByPlayerId;
+    public bool bothReady;
+    public string startedAt;
 }

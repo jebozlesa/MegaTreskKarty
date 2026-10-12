@@ -1,5 +1,5 @@
 using System.Collections;
-using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 using TMPro;
 using UnityEngine;
@@ -8,445 +8,452 @@ using UnityEngine.UI;
 
 public class MultiplayerLobbyUI : MonoBehaviour
 {
-    private static bool VerboseLobbyLogs => false;
-
-    private enum MatchmakingState
-    {
-        Idle,
-        Connecting,
-        Waiting,
-        Starting,
-    }
+    private enum MatchmakingState { Idle, Connecting, Waiting, Reconciling, Cancelling, Error, Starting }
 
     public Button joinButton;
     public ServerFunctionsManager serverFunctionsManager;
 
-    private string PlayerId => PlayFabManagerLogin.Instance.LoggedInPlayerId;
+    private string playerId;
+    private string ownedRoomCode;
     private Coroutine waitForOpponentCoroutine;
+    private Coroutine waitingHeartbeatCoroutine;
+    private const float WaitingHeartbeatInterval = 5f;
+    private float waitingDeadline;
+    private int waitingPresenceVersion;
+    private bool applicationPaused;
+    private bool waitingResumeRequired;
     private TMP_Text joinButtonLabel;
     private Text joinButtonLegacyLabel;
-    private MatchmakingState matchmakingState = MatchmakingState.Idle;
+    private MatchmakingState matchmakingState;
     private int matchmakingRequestVersion;
     private bool cancelRequested;
+    private bool retryReconciliation;
 
-    private static void LogVerbose(string message)
+    private void Start()
     {
-        if (VerboseLobbyLogs)
+        playerId = PlayFabManagerLogin.Instance?.LoggedInPlayerId;
+        if (joinButton == null || serverFunctionsManager == null || string.IsNullOrEmpty(playerId))
         {
-            Debug.Log(message);
-        }
-    }
-
-    void Start()
-    {
-        if (joinButton == null)
-        {
-            Debug.LogError("[Lobby] joinButton is not assigned on MultiplayerLobbyUI.");
+            Debug.LogError("[Lobby] Missing button, server manager or authenticated player.");
+            if (joinButton != null) joinButton.interactable = false;
             return;
         }
-
+        joinButtonLabel = joinButton.GetComponentInChildren<TMP_Text>();
+        joinButtonLegacyLabel = joinButtonLabel == null ? joinButton.GetComponentInChildren<Text>() : null;
         joinButton.onClick.AddListener(OnJoinClicked);
-        joinButtonLabel = joinButton != null ? joinButton.GetComponentInChildren<TMP_Text>() : null;
-        joinButtonLegacyLabel =
-            joinButtonLabel == null ? joinButton.GetComponentInChildren<Text>() : null;
+        ownedRoomCode = PlayerPrefs.GetString("RoomCode", "");
+        if (string.IsNullOrEmpty(ownedRoomCode)) ResetMatchmakingUi();
+        else ReconcileExistingRoom();
+        serverFunctionsManager.CleanupRooms();
+    }
 
-        SetJoinButtonText("CONNECT");
-
-        // Pri vstupe do lobby vycistime stare miestnosti
-        CleanupOldRooms();
-
-        // Ak sa vraciame z multiplayeru, opustime staru miestnost
-        LeaveAnyExistingRoom();
+    private void OnDestroy()
+    {
+        matchmakingRequestVersion++;
+        if (joinButton != null) joinButton.onClick.RemoveListener(OnJoinClicked);
+        StopWaiting();
     }
 
     private void SetJoinButtonText(string text)
     {
-        if (joinButtonLabel != null)
-        {
-            joinButtonLabel.text = text;
-            return;
-        }
+        if (joinButtonLabel != null) joinButtonLabel.text = text;
+        else if (joinButtonLegacyLabel != null) joinButtonLegacyLabel.text = text;
+    }
 
-        if (joinButtonLegacyLabel != null)
+    private bool OwnsRequest(int version, string expectedRoom = null)
+    {
+        return this != null && isActiveAndEnabled && version == matchmakingRequestVersion
+            && (expectedRoom == null || (ownedRoomCode == expectedRoom
+                && PlayerPrefs.GetString("RoomCode", "") == expectedRoom));
+    }
+
+    private void OnJoinClicked()
+    {
+        switch (matchmakingState)
         {
-            joinButtonLegacyLabel.text = text;
+            case MatchmakingState.Idle: StartMatchmaking(); break;
+            case MatchmakingState.Connecting:
+            case MatchmakingState.Waiting: RequestCancelMatchmaking(); break;
+            case MatchmakingState.Error:
+                if (retryReconciliation) ReconcileExistingRoom();
+                else if (!string.IsNullOrEmpty(ownedRoomCode)) BeginCancellation();
+                else StartMatchmaking();
+                break;
         }
     }
 
-    void OnJoinClicked()
+    private void ReconcileExistingRoom()
     {
-        if (matchmakingState == MatchmakingState.Idle)
+        int version = ++matchmakingRequestVersion;
+        string expectedRoom = ownedRoomCode;
+        retryReconciliation = true;
+        SetBusy(MatchmakingState.Reconciling, "CONNECTING...", false);
+        Debug.LogWarning($"[Lobby] Reconciling room={expectedRoom}, request={version}");
+        serverFunctionsManager.GetMatchState(expectedRoom, playerId, result =>
         {
-            StartMatchmaking();
-            return;
-        }
-
-        RequestCancelMatchmaking();
+            if (!OwnsRequest(version, expectedRoom)) return;
+            object response = result?.FunctionResult;
+            if (IsMissingRoom(response, expectedRoom)) { ClearOwnedRoom(expectedRoom); return; }
+            MatchStateDto state = ParseOwnedState(response, expectedRoom);
+            if (state == null) { SetError("Room reconciliation failed"); return; }
+            if (state.status == "completed") ClearOwnedRoom(expectedRoom);
+            else if (state.status == "active" && !HasPendingStartupCancellation(expectedRoom)) StartConfirmedBattle(version);
+            else { retryReconciliation = false; BeginCancellation(); }
+        });
     }
 
     private void StartMatchmaking()
     {
-        cancelRequested = false;
-        matchmakingState = MatchmakingState.Connecting;
-        matchmakingRequestVersion++;
-        int requestVersion = matchmakingRequestVersion;
-
-        SetJoinButtonText("CANCEL");
-        SceneLoadingOverlay.Show();
-        SceneLoadingOverlay.SetMessage("CONNECTING...");
-
-        string username = PlayerPrefs.GetString("username", PlayerId);
-        serverFunctionsManager.JoinOrCreateRoom(
-            PlayerId,
-            username,
-            result =>
+        // Keep cancellation intent when retrying a CONNECT whose response was lost.
+        int version = ++matchmakingRequestVersion;
+        retryReconciliation = false;
+        SetBusy(cancelRequested ? MatchmakingState.Cancelling : MatchmakingState.Connecting,
+            "CONNECTING...", !cancelRequested);
+        Debug.LogWarning($"[Lobby] CONNECT requested: player={playerId}, request={version}");
+        serverFunctionsManager.JoinOrCreateRoom(playerId, PlayerPrefs.GetString("username", playerId), result =>
+        {
+            if (!OwnsRequest(version)) return;
+            JObject response = ParseResponse(result?.FunctionResult);
+            MatchStateDto state = ParseOwnedState(response, null);
+            if (response?["success"]?.Value<bool>() != true || state == null)
             {
-                if (requestVersion != matchmakingRequestVersion)
-                {
-                    return;
-                }
-
-                if (VerboseLobbyLogs)
-                {
-                    LogVerbose(
-                        $"FunctionResult raw: {Newtonsoft.Json.JsonConvert.SerializeObject(result?.FunctionResult)}"
-                    );
-                }
-                if (result != null && result.FunctionResult != null)
-                {
-                    JObject functionResult = null;
-                    try
-                    {
-                        functionResult = JObject.Parse(result.FunctionResult.ToString());
-                    }
-                    catch
-                    {
-                        Debug.LogError("Failed to parse FunctionResult to JObject");
-                    }
-                    LogVerbose($"FunctionResult JObject: {functionResult}");
-                    if (functionResult != null && functionResult["room"] != null)
-                    {
-                        var room = functionResult["room"];
-                        LogVerbose($"Room object: {room}");
-
-                        // Ulozenie informacii o miestnosti
-                        string roomCode = room["roomCode"].ToString();
-                        PlayerPrefs.SetString("RoomCode", roomCode);
-
-                        if (cancelRequested)
-                        {
-                            CancelAfterJoinResponse(roomCode, requestVersion);
-                            return;
-                        }
-
-                        // Kontrola poctu hracov na urcenie spravania
-                        var playersArray = room["players"] as JArray;
-                        bool isWaiting = playersArray != null && playersArray.Count == 1;
-
-                        // Ulozenie stavu cakania
-                        PlayerPrefs.SetString("IsWaitingForOpponent", isWaiting ? "true" : "false");
-
-                        if (isWaiting)
-                        {
-                            matchmakingState = MatchmakingState.Waiting;
-                            SceneLoadingOverlay.SetMessage("SEARCHING FOR PREY...");
-                            waitForOpponentCoroutine = StartCoroutine(
-                                WaitForOpponentAndStartBattle(requestVersion)
-                            );
-                        }
-                        else
-                        {
-                            matchmakingState = MatchmakingState.Starting;
-                            // [OK] Immediate transition - druhy hrac sa pripojil
-                            StartCoroutine(StartBattleWithDelay(requestVersion));
-                        }
-                    }
-                    else
-                    {
-                        ResetMatchmakingUi();
-                    }
-                }
-                else
-                {
-                    ResetMatchmakingUi();
-                }
+                SetError("CONNECT failed; retry will reconcile server membership");
+                return;
             }
-        );
+            ownedRoomCode = state.roomCode;
+            PlayerPrefs.SetString("RoomCode", ownedRoomCode);
+            PlayerPrefs.SetString("IsWaitingForOpponent", state.status == "waiting" ? "true" : "false");
+            Debug.LogWarning($"[Lobby] CONNECT confirmed: room={ownedRoomCode}, status={state.status}");
+            if (state.status == "completed") { ClearOwnedRoom(ownedRoomCode); return; }
+            if (cancelRequested) { BeginCancellation(); return; }
+            if (state.status == "active") { StartConfirmedBattle(version); return; }
+            BeginWaiting(true);
+        });
     }
 
     private void RequestCancelMatchmaking()
     {
-        string roomCode = PlayerPrefs.GetString("RoomCode", "");
+        cancelRequested = true;
+        StopWaiting();
+        if (string.IsNullOrEmpty(ownedRoomCode))
+        {
+            // CONNECT is still in flight. Its callback must supply the exact room to cancel.
+            SetBusy(MatchmakingState.Cancelling, "CANCELLING...", false);
+            return;
+        }
+        BeginCancellation();
+    }
+
+    private void BeginCancellation()
+    {
+        StopWaiting();
+        waitingResumeRequired = false;
+        cancelRequested = true;
+        retryReconciliation = false;
+        int version = ++matchmakingRequestVersion;
+        string expectedRoom = ownedRoomCode;
+        SetBusy(MatchmakingState.Cancelling, "CANCELLING...", false);
+        Debug.LogWarning($"[Lobby] CANCEL requested: room={expectedRoom}, request={version}");
+        if (HasPendingStartupCancellation(expectedRoom))
+            serverFunctionsManager.LeaveRoom(playerId, expectedRoom,
+                result => ApplyCancellationResponse(result?.FunctionResult, expectedRoom, version));
+        else serverFunctionsManager.CancelMatchmaking(playerId, expectedRoom,
+            result => ApplyCancellationResponse(result?.FunctionResult, expectedRoom, version));
+    }
+
+    private void ApplyCancellationResponse(object response, string expectedRoom, int version)
+    {
+        if (!OwnsRequest(version, expectedRoom)) return;
+        if (IsMissingRoom(response, expectedRoom)) { ClearOwnedRoom(expectedRoom); return; }
+        MatchStateDto state = ParseOwnedState(response, expectedRoom);
+        if (state == null) { SetError("CANCEL failed; room retained for retry"); return; }
+        if (state.status == "completed") ClearOwnedRoom(expectedRoom);
+        else if (state.status == "active" && !HasPendingStartupCancellation(expectedRoom)
+            && !string.IsNullOrEmpty(state.startup?.startedAt))
+        {
+            Debug.LogWarning($"[Lobby] CANCEL lost to a match: room={expectedRoom}");
+            StartConfirmedBattle(version);
+        }
+        else SetError("CANCEL not confirmed; room retained for retry");
+    }
+
+    private static bool HasPendingStartupCancellation(string room)
+    {
+        return PlayerPrefs.GetString(MultiplayerService.PendingStartupCancellationKey, "") == room;
+    }
+
+    private IEnumerator WaitForOpponent(int version, string expectedRoom)
+    {
+        int presenceVersion = waitingPresenceVersion;
+        while (OwnsWaitingPresence(version, expectedRoom, presenceVersion) && Time.realtimeSinceStartup < waitingDeadline)
+        {
+            yield return new WaitForSecondsRealtime(1f);
+            if (!OwnsWaitingPresence(version, expectedRoom, presenceVersion)) yield break;
+            if (Time.realtimeSinceStartup >= waitingDeadline) break;
+            bool received = false;
+            object response = null;
+            serverFunctionsManager.GetMatchState(expectedRoom, playerId, result =>
+            {
+                response = result?.FunctionResult;
+                received = true;
+            });
+            yield return new WaitUntil(() => received || !OwnsWaitingPresence(version, expectedRoom, presenceVersion)
+                || Time.realtimeSinceStartup >= waitingDeadline);
+            if (!OwnsWaitingPresence(version, expectedRoom, presenceVersion)) yield break;
+            if (!received) break;
+            if (IsMissingRoom(response, expectedRoom))
+            {
+                waitForOpponentCoroutine = null;
+                ClearOwnedRoom(expectedRoom);
+                yield break;
+            }
+            MatchStateDto state = ParseOwnedState(response, expectedRoom);
+            if (state == null)
+            {
+                waitForOpponentCoroutine = null;
+                SetError("Queue poll failed; room retained for cancellation");
+                yield break;
+            }
+            if (state.status != "waiting")
+            {
+                waitForOpponentCoroutine = null;
+                if (state.status == "completed") ClearOwnedRoom(expectedRoom);
+                else StartConfirmedBattle(version);
+                yield break;
+            }
+        }
+        waitForOpponentCoroutine = null;
+        if (OwnsWaitingPresence(version, expectedRoom, presenceVersion))
+        {
+            Debug.LogWarning($"[Lobby] Waiting timeout: cancelling room={expectedRoom}");
+            RequestCancelMatchmaking();
+        }
+    }
+
+    private void BeginWaiting(bool newDeadline)
+    {
+        StopWaiting();
+        if (newDeadline) waitingDeadline = Time.realtimeSinceStartup + 60f;
+        if (Time.realtimeSinceStartup >= waitingDeadline) { RequestCancelMatchmaking(); return; }
+        SetBusy(MatchmakingState.Waiting, "SEARCHING FOR PREY...", true);
+        waitingResumeRequired = applicationPaused;
+        if (applicationPaused) return;
+        Debug.LogWarning($"[Lobby] Waiting presence started: room={ownedRoomCode}, remaining={waitingDeadline - Time.realtimeSinceStartup:F1}s");
+        waitForOpponentCoroutine = StartCoroutine(WaitForOpponent(matchmakingRequestVersion, ownedRoomCode));
+        waitingHeartbeatCoroutine = StartCoroutine(WaitingHeartbeatLoop(matchmakingRequestVersion, ownedRoomCode, waitingPresenceVersion));
+    }
+
+    private bool OwnsWaitingPresence(int version, string expectedRoom, int presenceVersion)
+    {
+        return OwnsRequest(version, expectedRoom) && presenceVersion == waitingPresenceVersion
+            && matchmakingState == MatchmakingState.Waiting && !cancelRequested && !applicationPaused;
+    }
+
+    private bool CanRenewWaitingPresence(int version, string expectedRoom, int presenceVersion)
+    {
+        return OwnsWaitingPresence(version, expectedRoom, presenceVersion) && Time.realtimeSinceStartup < waitingDeadline;
+    }
+
+    private IEnumerator WaitingHeartbeatLoop(int version, string expectedRoom, int presenceVersion)
+    {
+        // Let the coroutine handle be stored before a potentially synchronous failure stops waiting.
+        yield return null;
+        while (CanRenewWaitingPresence(version, expectedRoom, presenceVersion))
+        {
+            bool received = false;
+            object response = null;
+            serverFunctionsManager.Heartbeat(playerId, expectedRoom, result =>
+            {
+                response = result?.FunctionResult;
+                received = true;
+            });
+            yield return new WaitUntil(() => received || !CanRenewWaitingPresence(version, expectedRoom, presenceVersion));
+            if (!CanRenewWaitingPresence(version, expectedRoom, presenceVersion)) yield break;
+            if (!ApplyWaitingHeartbeatResponse(response, version, expectedRoom, presenceVersion))
+            {
+                waitingHeartbeatCoroutine = null;
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(WaitingHeartbeatInterval);
+        }
+        waitingHeartbeatCoroutine = null;
+    }
+
+    private bool ApplyWaitingHeartbeatResponse(object response, int version, string expectedRoom, int presenceVersion)
+    {
+        if (!CanRenewWaitingPresence(version, expectedRoom, presenceVersion)) return false;
+        JObject data = ParseResponse(response);
+        if (data?["success"]?.Value<bool>() != true || (string)data["roomCode"] != expectedRoom)
+        {
+            SetError("Waiting heartbeat failed; room retained for cancellation");
+            return false;
+        }
+        if (data["roomCompleted"]?.Value<bool>() == true)
+        {
+            Debug.LogWarning($"[Lobby] Waiting presence ended; awaiting canonical state: room={expectedRoom}");
+            return false;
+        }
+        return true;
+    }
+
+    private void OnApplicationPause(bool paused)
+    {
+        applicationPaused = paused;
+        if (paused)
+        {
+            if (matchmakingState != MatchmakingState.Waiting && !waitingResumeRequired) return;
+            waitingResumeRequired = true;
+            matchmakingRequestVersion++;
+            StopWaiting();
+            Debug.LogWarning($"[Lobby] Waiting presence paused: room={ownedRoomCode}");
+        }
+        else if (waitingResumeRequired && !string.IsNullOrEmpty(ownedRoomCode))
+        {
+            int version = ++matchmakingRequestVersion;
+            string expectedRoom = ownedRoomCode;
+            retryReconciliation = true;
+            SetBusy(MatchmakingState.Reconciling, "CONNECTING...", false);
+            Debug.LogWarning($"[Lobby] Waiting resume verification: room={expectedRoom}, request={version}");
+            serverFunctionsManager.GetMatchState(expectedRoom, playerId,
+                result => ApplyWaitingResumeResponse(result?.FunctionResult, expectedRoom, version));
+        }
+    }
+
+    private void ApplyWaitingResumeResponse(object response, string expectedRoom, int version)
+    {
+        if (!OwnsRequest(version, expectedRoom) || applicationPaused || matchmakingState != MatchmakingState.Reconciling) return;
+        waitingResumeRequired = false;
+        if (IsMissingRoom(response, expectedRoom)) { ClearOwnedRoom(expectedRoom); return; }
+        MatchStateDto state = ParseOwnedState(response, expectedRoom);
+        if (state == null) { SetError("Waiting resume verification failed; room retained for cancellation"); return; }
+        retryReconciliation = false;
+        if (state.status == "completed") ClearOwnedRoom(expectedRoom);
+        else if (state.status == "active") StartConfirmedBattle(version);
+        else BeginWaiting(false);
+    }
+
+    private static JObject ParseResponse(object response)
+    {
+        if (response == null) return null;
+        try { return response as JObject ?? (response is string text ? JObject.Parse(text) : JObject.FromObject(response)); }
+        catch (System.Exception) { return null; }
+    }
+
+    private static bool IsMissingRoom(object response, string expectedRoom)
+    {
+        JObject data = ParseResponse(response);
+        return data?["success"]?.Value<bool>() == false && (string)data["error"] == "room_not_found"
+            && (string)data["roomCode"] == expectedRoom;
+    }
+
+    private MatchStateDto ParseOwnedState(object response, string expectedRoom)
+    {
+        try
+        {
+            MatchStateDto state = BattleContractMapper.ParseMatchStateResult(response);
+            if (state == null || string.IsNullOrEmpty(state.roomCode)
+                || (expectedRoom != null && state.roomCode != expectedRoom)
+                || state.viewerPlayerId != playerId || state.seats == null
+                || !state.seats.Any(seat => seat?.playerId == playerId)
+                || state.seats.Count != state.playersCount
+                || state.seats.Any(seat => string.IsNullOrEmpty(seat?.playerId))
+                || state.seats.Select(seat => seat.playerId).Distinct().Count() != state.playersCount)
+                return null;
+            if (state.status == "active" && state.playersCount == 2 && state.phase != "completed"
+                && state.schemaVersion == 2 && state.startup != null
+                && System.DateTimeOffset.TryParse(state.startup.matchedAt, out _)) return state;
+            if (state.status == "waiting" && state.playersCount == 1 && state.phase == "waiting_for_players") return state;
+            if (state.status == "completed" && state.phase == "completed") return state;
+            return null;
+        }
+        catch (System.Exception) { return null; }
+    }
+
+    private void ClearOwnedRoom(string expectedRoom)
+    {
+        if (ownedRoomCode != expectedRoom || PlayerPrefs.GetString("RoomCode", "") != expectedRoom) return;
+        PlayerPrefs.DeleteKey("RoomCode");
+        PlayerPrefs.DeleteKey("IsWaitingForOpponent");
+        if (HasPendingStartupCancellation(expectedRoom))
+            PlayerPrefs.DeleteKey(MultiplayerService.PendingStartupCancellationKey);
+        PlayerPrefs.Save();
+        Debug.LogWarning($"[Lobby] Terminal/missing room acknowledged: room={expectedRoom}");
+        ownedRoomCode = null;
+        ResetMatchmakingUi();
+    }
+
+    private void ResetMatchmakingUi()
+    {
+        StopWaiting();
+        SceneLoadingOverlay.Hide();
+        matchmakingState = MatchmakingState.Idle;
+        cancelRequested = false;
+        retryReconciliation = false;
+        waitingResumeRequired = false;
+        if (joinButton != null) joinButton.interactable = true;
+        SetJoinButtonText("CONNECT");
+    }
+
+    private void SetError(string reason)
+    {
+        StopWaiting();
+        waitingResumeRequired = false;
+        SceneLoadingOverlay.Hide();
+        matchmakingState = MatchmakingState.Error;
+        if (joinButton != null) joinButton.interactable = true;
+        SetJoinButtonText(retryReconciliation || string.IsNullOrEmpty(ownedRoomCode) ? "RETRY" : "RETRY CANCEL");
+        serverFunctionsManager?.ShowNetworkErrorIndicator(reason);
+        Debug.LogWarning($"[Lobby] {reason}; room={ownedRoomCode}");
+    }
+
+    private void StopWaiting()
+    {
+        waitingPresenceVersion++;
         if (waitForOpponentCoroutine != null)
         {
             StopCoroutine(waitForOpponentCoroutine);
             waitForOpponentCoroutine = null;
         }
-
-        cancelRequested = true;
-        ResetMatchmakingUi(true);
-
-        if (string.IsNullOrEmpty(roomCode) || serverFunctionsManager == null)
+        if (waitingHeartbeatCoroutine != null)
         {
-            return;
-        }
-
-        serverFunctionsManager.CancelMatchmaking(
-            PlayerId,
-            roomCode,
-            result =>
-            {
-                if (result == null)
-                {
-                    Debug.LogError("[Lobby] Cancel matchmaking failed; keeping local queue state");
-                    return;
-                }
-
-                if (result.FunctionResult == null)
-                {
-                    Debug.LogError(
-                        "[Lobby] Cancel matchmaking returned empty FunctionResult; keeping local queue state"
-                    );
-                    return;
-                }
-
-                bool cancelled = false;
-                try
-                {
-                    var functionResult = JObject.Parse(result.FunctionResult.ToString());
-                    cancelled = functionResult["success"]?.Value<bool>() == true;
-                    if (!cancelled)
-                    {
-                        Debug.LogError(
-                            $"[Lobby] Cancel matchmaking rejected: {functionResult["error"]}"
-                        );
-                    }
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogError(
-                        $"[Lobby] Failed to parse cancel matchmaking result: {e.Message}"
-                    );
-                }
-
-                if (!cancelled)
-                {
-                    return;
-                }
-
-                PlayerPrefs.DeleteKey("RoomCode");
-                PlayerPrefs.DeleteKey("IsWaitingForOpponent");
-            }
-        );
-    }
-
-    private void CancelAfterJoinResponse(string roomCode, int requestVersion)
-    {
-        if (string.IsNullOrEmpty(roomCode) || serverFunctionsManager == null)
-        {
-            return;
-        }
-
-        serverFunctionsManager.CancelMatchmaking(
-            PlayerId,
-            roomCode,
-            result =>
-            {
-                if (requestVersion != matchmakingRequestVersion)
-                {
-                    return;
-                }
-
-                if (result == null || result.FunctionResult == null)
-                {
-                    Debug.LogError(
-                        "[Lobby] Cancel matchmaking after join response failed; keeping local queue state"
-                    );
-                    ResetMatchmakingUi();
-                    return;
-                }
-
-                PlayerPrefs.DeleteKey("RoomCode");
-                PlayerPrefs.DeleteKey("IsWaitingForOpponent");
-                ResetMatchmakingUi();
-            }
-        );
-    }
-
-    private void ResetMatchmakingUi(bool keepCancelRequested = false)
-    {
-        SceneLoadingOverlay.Hide();
-        SceneLoadingOverlay.SetMessage("WAIT!!!");
-        matchmakingState = MatchmakingState.Idle;
-        cancelRequested = keepCancelRequested;
-        SetJoinButtonText("CONNECT");
-    }
-
-    /// <summary>
-    /// Caka kym sa nepripoji druhy hrac, potom spusti battle
-    /// </summary>
-    private IEnumerator WaitForOpponentAndStartBattle(int requestVersion)
-    {
-        string roomCode = PlayerPrefs.GetString("RoomCode", "");
-        int pollAttempts = 0;
-        const int MAX_POLL_ATTEMPTS = 60; // 60 sekund timeout
-
-        while (pollAttempts < MAX_POLL_ATTEMPTS)
-        {
-            yield return new WaitForSeconds(1f);
-            pollAttempts++;
-
-            bool isCompleted = false;
-            bool bothPlayersReady = false;
-
-            serverFunctionsManager.GetMatchState(
-                roomCode,
-                PlayerId,
-                result =>
-                {
-                    if (result?.FunctionResult != null)
-                    {
-                        try
-                        {
-                            var resultData = JObject.Parse(result.FunctionResult.ToString());
-                            if (resultData["matchState"]?["playersCount"] != null)
-                            {
-                                int playersCount = resultData["matchState"]
-                                    ["playersCount"]
-                                    .Value<int>();
-                                bothPlayersReady = (playersCount >= 2);
-
-                                Debug.Log($"[Lobby] Polling: {playersCount}/2 players in room");
-                            }
-                        }
-                        catch (System.Exception e)
-                        {
-                            Debug.LogError($"[Lobby] Error parsing GetMatchState: {e.Message}");
-                        }
-                    }
-                    isCompleted = true;
-                }
-            );
-
-            yield return new WaitUntil(() => isCompleted);
-
-            if (requestVersion != matchmakingRequestVersion || cancelRequested)
-            {
-                yield break;
-            }
-
-            if (bothPlayersReady)
-            {
-                Debug.Log("[Lobby] Both players connected - starting battle!");
-                yield return StartCoroutine(StartBattleWithDelay(requestVersion));
-                break;
-            }
-
-            SceneLoadingOverlay.SetMessage("SEARCHING FOR PREY...");
-        }
-
-        if (requestVersion != matchmakingRequestVersion || cancelRequested)
-        {
-            yield break;
-        }
-
-        if (pollAttempts >= MAX_POLL_ATTEMPTS)
-        {
-            ResetMatchmakingUi();
-            Debug.LogError("[Lobby] Timeout waiting for opponent");
-            // Mozno by sme mohli vratit hraca spat alebo restart lobby
+            StopCoroutine(waitingHeartbeatCoroutine);
+            waitingHeartbeatCoroutine = null;
+            Debug.LogWarning($"[Lobby] Waiting presence stopped: room={ownedRoomCode}");
         }
     }
 
-    /// <summary>
-    /// Spusti battle scene s kratkym delay pre UI feedback
-    /// </summary>
-    private IEnumerator StartBattleWithDelay(int requestVersion)
+    private void SetBusy(MatchmakingState state, string message, bool canCancel)
     {
-        if (requestVersion != matchmakingRequestVersion || cancelRequested)
+        matchmakingState = state;
+        SetJoinButtonText("CANCEL");
+        SceneLoadingOverlay.Show();
+        SceneLoadingOverlay.SetMessage(message);
+        if (joinButton == null) return;
+        joinButton.interactable = canCancel;
+        if (canCancel)
         {
-            yield break;
-        }
-
-        Debug.Log("[Lobby] StartBattleWithDelay() called");
-        SceneLoadingOverlay.SetMessage("CONNECTING...");
-        yield return new WaitForSeconds(1f); // UI feedback delay
-
-        if (requestVersion != matchmakingRequestVersion || cancelRequested)
-        {
-            yield break;
-        }
-
-        Debug.Log("[Lobby] Loading Multiplayer battle scene...");
-        SceneManager.LoadScene("Multiplayer");
-    }
-
-    // === CLEANUP METODY ===
-
-    void CleanupOldRooms()
-    {
-        if (serverFunctionsManager != null)
-        {
-            serverFunctionsManager.CleanupRooms(result =>
-            {
-                if (result != null && result.FunctionResult != null)
-                {
-                    Debug.Log("Cleanup completed: " + result.FunctionResult);
-                }
-            });
+            Canvas canvas = joinButton.GetComponentInParent<Canvas>();
+            if (canvas == null || joinButton.transform.parent != canvas.transform)
+                Debug.LogError("[Lobby] ConnectButton must be directly under Canvas to stay above loading.");
+            else joinButton.transform.SetAsLastSibling();
         }
     }
 
-    void LeaveAnyExistingRoom()
+    private void StartConfirmedBattle(int version)
     {
-        // Ak ma hrac ulozeny roomCode, opusti tuto miestnost
-        string existingRoomCode = PlayerPrefs.GetString("RoomCode", "");
-        string isWaiting = PlayerPrefs.GetString("IsWaitingForOpponent", "false");
-        if (string.IsNullOrEmpty(existingRoomCode))
-        {
-            Debug.Log("[Lobby] LeaveAnyExistingRoom skipped: no local RoomCode");
-            return;
-        }
+        StopWaiting();
+        waitingResumeRequired = false;
+        cancelRequested = false;
+        retryReconciliation = false;
+        PlayerPrefs.SetString("IsWaitingForOpponent", "false");
+        SetBusy(MatchmakingState.Starting, "CONNECTING...", false);
+        Debug.LogWarning($"[Lobby] Match confirmed: room={ownedRoomCode}");
+        StartCoroutine(StartBattleWithDelay(version, ownedRoomCode));
+    }
 
-        if (serverFunctionsManager == null)
-        {
-            Debug.LogError(
-                "[Lobby] LeaveAnyExistingRoom cannot run: serverFunctionsManager is null"
-            );
-            return;
-        }
-
-        Debug.Log(
-            $"[Lobby] LeaveAnyExistingRoom found local room state: roomCode={existingRoomCode}, isWaiting={isWaiting}"
-        );
-        if (isWaiting != "true")
-        {
-            Debug.LogWarning(
-                "[Lobby] Clearing stale local room state without leaveRoom because player is not marked as waiting"
-            );
-            PlayerPrefs.DeleteKey("RoomCode");
-            PlayerPrefs.DeleteKey("IsWaitingForOpponent");
-            return;
-        }
-
-        serverFunctionsManager.LeaveRoom(
-            PlayerId,
-            result =>
-            {
-                if (result == null || result.FunctionResult == null)
-                {
-                    Debug.LogError(
-                        $"[Lobby] LeaveAnyExistingRoom failed for room {existingRoomCode}; keeping local state"
-                    );
-                    return;
-                }
-
-                Debug.Log(
-                    $"[Lobby] LeaveAnyExistingRoom succeeded for room {existingRoomCode}: {result.FunctionResult}"
-                );
-                PlayerPrefs.DeleteKey("RoomCode");
-                PlayerPrefs.DeleteKey("IsWaitingForOpponent");
-            }
-        );
+    private IEnumerator StartBattleWithDelay(int version, string expectedRoom)
+    {
+        yield return new WaitForSecondsRealtime(1f);
+        if (OwnsRequest(version, expectedRoom)) SceneManager.LoadScene("Multiplayer");
     }
 }

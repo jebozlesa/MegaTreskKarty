@@ -262,7 +262,7 @@ public class BattleSharedDamagePlaybackTests
     {
         string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "MultiplayerService.cs");
         Assert.IsFalse(source.Contains("LeaveRoom(myPlayerId, null)"));
-        StringAssert.Contains("LeaveRoom(myPlayerId);", source);
+        StringAssert.Contains("LeaveRoom(myPlayerId, roomCode);", source);
     }
 
     [Test]

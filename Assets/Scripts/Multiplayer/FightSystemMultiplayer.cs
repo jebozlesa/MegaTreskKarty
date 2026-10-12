@@ -26,9 +26,7 @@ public enum FightStateMultiplayer
 
 public class FightSystemMultiplayer : MonoBehaviour
 {
-    private const string MatchPhaseCompleted = "completed";
-    private const int MatchReadyPollDelayMs = 1000;
-    private const int MatchReadyMaxAttempts = 30;
+    public bool CanInteractWithBattle => multiplayerService != null && multiplayerService.CanInteractWithBattle;
 
     [System.Serializable]
     public class PendingOngoingActionTurn
@@ -158,6 +156,7 @@ public class FightSystemMultiplayer : MonoBehaviour
 
         SetStartupUiVisible(false);
         SceneLoadingOverlay.Show();
+        bool started = false;
 
         try
         {
@@ -168,27 +167,22 @@ public class FightSystemMultiplayer : MonoBehaviour
                 $"[FightSystemMultiplayer] Initializing game for player {myPlayerId} in room {roomCode}"
             );
             await multiplayerService.InitGame();
+            if (!CanContinueStartup()) return;
 
-            bool decksReady = await WaitForDecksReadyAsync();
-            if (!decksReady)
-            {
-                Debug.LogError("[FightSystemMultiplayer] Timed out waiting for both decks to load");
-                ShowStartupConnectionError("Timed out waiting for decks");
-                return;
-            }
+            await WaitForDecksReadyAsync();
+            if (!CanContinueStartup()) return;
 
             Debug.LogWarning(
                 "[FightSystemMultiplayer] InitGame completed and decks are ready, loading cards..."
             );
 
-            // Use retry logic for card loading
-            bool cardsLoaded = await LoadPlayerCardsWithRetry(myPlayerId, roomCode);
-            if (!cardsLoaded)
-            {
-                Debug.LogError("[FightSystemMultiplayer] Failed to load cards after all retries");
-                ShowStartupConnectionError("Failed to load cards");
-                return;
-            }
+            // Initialize active card visuals behind loading; interaction is readiness-gated.
+            SetStartupUiVisible(true);
+            await multiplayerService.AwaitStartupAsync(multiplayerHandManager.PrepareStartupHandAsync(myPlayerId, roomCode));
+            if (!CanContinueStartup()) return;
+            await multiplayerService.ConfirmLocalStartupAsync();
+            if (!CanInteractWithBattle) return;
+            started = true;
 
             HideStartupConnectionError();
             Debug.LogWarning(
@@ -196,16 +190,32 @@ public class FightSystemMultiplayer : MonoBehaviour
             );
             multiplayerUI?.ShowStatus(MultiplayerUI.MSG_CHOOSE_FIGHTER);
         }
+        catch (System.OperationCanceledException)
+        {
+            Debug.LogWarning("[FightSystemMultiplayer] Startup cancelled by leave or scene change");
+            if (CanContinueStartup()) await multiplayerService.AbortStartupAsync("Local preparation cancelled");
+        }
         catch (System.Exception ex)
         {
-            Debug.LogError($"[FightSystemMultiplayer] Startup failed with exception: {ex}");
-            ShowStartupConnectionError("Startup exception");
+            if (!CanContinueStartup()) return;
+            Debug.LogWarning($"[FightSystemMultiplayer] Startup ended: {ex.Message}");
+            SetStartupUiVisible(false);
+            await multiplayerService.AbortStartupAsync(ex.Message);
         }
         finally
         {
-            SceneLoadingOverlay.Hide();
-            SetStartupUiVisible(true);
+            if (this != null && gameObject.scene == UnityEngine.SceneManagement.SceneManager.GetActiveScene())
+            {
+                SceneLoadingOverlay.Hide();
+                SetStartupUiVisible(started && CanInteractWithBattle);
+            }
         }
+    }
+
+    private bool CanContinueStartup()
+    {
+        return this != null && isActiveAndEnabled && multiplayerService != null
+            && multiplayerService.CanContinueStartup;
     }
 
     private void SetStartupUiVisible(bool isVisible)
@@ -226,23 +236,6 @@ public class FightSystemMultiplayer : MonoBehaviour
         }
     }
 
-    private void ShowStartupConnectionError(string reason)
-    {
-        Debug.LogError(
-            $"[FightSystemMultiplayer] Showing startup network error indicator. Reason: {reason}"
-        );
-        if (serverFunctionsManager != null)
-        {
-            serverFunctionsManager.ShowNetworkErrorIndicator(reason);
-        }
-        else
-        {
-            Debug.LogError(
-                "[FightSystemMultiplayer] ServerFunctionsManager missing; cannot show network error indicator."
-            );
-        }
-    }
-
     private void HideStartupConnectionError()
     {
         if (serverFunctionsManager != null)
@@ -251,105 +244,21 @@ public class FightSystemMultiplayer : MonoBehaviour
         }
     }
 
-    private async Task<bool> WaitForDecksReadyAsync()
+    private async Task WaitForDecksReadyAsync()
     {
-        for (int attempt = 1; attempt <= MatchReadyMaxAttempts; attempt++)
+        while (CanContinueStartup())
         {
             multiplayerUI?.ShowStatus("Syncing decks...");
-
-            MatchStateDto matchState = await multiplayerService.GetMatchStateAsync(
-                roomCode,
-                myPlayerId
-            );
-            if (matchState != null)
-            {
-                bool allDecksLoaded = matchState.decks != null && matchState.decks.allLoaded;
-                Debug.Log(
-                    $"[FightSystemMultiplayer] MatchState poll {attempt}/{MatchReadyMaxAttempts}: phase={matchState.phase}, loaded={matchState.decks?.loadedCount ?? 0}, allLoaded={allDecksLoaded}"
-                );
-
-                if (allDecksLoaded)
-                {
-                    return true;
-                }
-
-                if (
-                    string.Equals(
-                        matchState.phase,
-                        MatchPhaseCompleted,
-                        System.StringComparison.OrdinalIgnoreCase
-                    )
-                )
-                {
-                    Debug.LogWarning(
-                        "[FightSystemMultiplayer] Room completed while waiting for decks"
-                    );
-                    return false;
-                }
-            }
-            else
-            {
-                Debug.LogWarning(
-                    $"[FightSystemMultiplayer] MatchState poll {attempt}/{MatchReadyMaxAttempts} returned null"
-                );
-            }
-
-            if (attempt < MatchReadyMaxAttempts)
-            {
-                await Task.Delay(MatchReadyPollDelayMs);
-            }
+            MatchStateDto matchState = await multiplayerService.PollStartupAsync();
+            if (matchState.decks?.allLoaded == true) return;
+            await multiplayerService.AwaitStartupAsync(Task.Delay(250));
         }
-
-        return false;
-    }
-
-    private async System.Threading.Tasks.Task<bool> LoadPlayerCardsWithRetry(
-        string myPlayerId,
-        string roomCode
-    )
-    {
-        const int MAX_RETRIES = 3;
-        const int RETRY_DELAY_MS = 3000;
-
-        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++)
-        {
-            Debug.Log($"[FightSystemMultiplayer] Loading cards attempt {attempt}/{MAX_RETRIES}");
-
-            // Reset cards state before each attempt to prevent conflicts
-            multiplayerHandManager.ResetCardsState();
-
-            // Start card loading
-            multiplayerHandManager.CreateCardsFromDecks(myPlayerId, roomCode);
-
-            // Wait up to 10 seconds for cards to load
-            for (int wait = 0; wait < 100; wait++) // 100 * 100ms = 10 seconds
-            {
-                await System.Threading.Tasks.Task.Delay(100);
-
-                if (player != null && player.hand != null && player.hand.Count > 0)
-                {
-                    Debug.Log(
-                        $"[FightSystemMultiplayer] Cards loaded successfully! Player has {player.hand.Count} cards"
-                    );
-                    return true;
-                }
-            }
-
-            Debug.LogWarning(
-                $"[FightSystemMultiplayer] Cards loading attempt {attempt} failed, retrying..."
-            );
-
-            if (attempt < MAX_RETRIES)
-            {
-                await System.Threading.Tasks.Task.Delay(RETRY_DELAY_MS);
-            }
-        }
-
-        return false;
+        throw new System.OperationCanceledException("Startup no longer owns this scene");
     }
 
     public void OnCardDropped(Kard card, MultiplayerCardDrag dragHandler)
     {
+        if (!CanInteractWithBattle) { dragHandler?.ResetToOriginalPosition(); return; }
         if (card == null)
         {
             Debug.LogWarning("[FightSystemMultiplayer] OnCardDropped called with null card");

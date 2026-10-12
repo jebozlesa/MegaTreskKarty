@@ -28,7 +28,14 @@ public sealed class LibraryTutorialFlow
     public bool IsDone => StepIndex >= Steps.Length;
     public bool IsSaving { get; private set; }
     public bool IsAwaitingAction { get; private set; }
-    public bool IsInstructionVisible => !IsDone && !IsSaving && !IsAwaitingAction;
+    public bool IsInstructionReplayVisible { get; private set; }
+    public bool IsInstructionVisible => !IsDone
+        && !IsSaving
+        && (!IsAwaitingAction || IsInstructionReplayVisible);
+    public bool CanReplayInstruction => !IsDone
+        && !IsSaving
+        && IsAwaitingAction
+        && !IsInstructionReplayVisible;
 
     public void Restore(IEnumerable<string> completedStepIds)
     {
@@ -41,12 +48,19 @@ public sealed class LibraryTutorialFlow
 
         IsSaving = false;
         IsAwaitingAction = false;
+        IsInstructionReplayVisible = false;
     }
 
     public bool Acknowledge()
     {
         if (!IsInstructionVisible)
         {
+            return false;
+        }
+
+        if (IsInstructionReplayVisible)
+        {
+            IsInstructionReplayVisible = false;
             return false;
         }
 
@@ -60,9 +74,24 @@ public sealed class LibraryTutorialFlow
         return false;
     }
 
+    public bool ShowInstructionAgain()
+    {
+        if (!CanReplayInstruction)
+        {
+            return false;
+        }
+
+        IsInstructionReplayVisible = true;
+        return true;
+    }
+
     public bool TryAction(string action)
     {
-        if (IsDone || IsSaving || !IsAwaitingAction || string.IsNullOrWhiteSpace(action))
+        if (IsDone
+            || IsSaving
+            || !IsAwaitingAction
+            || IsInstructionReplayVisible
+            || string.IsNullOrWhiteSpace(action))
         {
             return false;
         }
@@ -77,6 +106,81 @@ public sealed class LibraryTutorialFlow
 
         IsSaving = true;
         IsAwaitingAction = false;
+        IsInstructionReplayVisible = false;
         return true;
+    }
+}
+
+public sealed class LibraryTutorialTransitionGate
+{
+    private const float BrowseIdleDelaySeconds = 3f;
+    private const float VisualResultDelaySeconds = 0.75f;
+
+    private string activeStepId;
+    private float lastInteractionTime;
+
+    public bool TryBegin(string stepId, float currentTime)
+    {
+        if (string.IsNullOrWhiteSpace(stepId) || activeStepId != null)
+        {
+            return false;
+        }
+
+        activeStepId = stepId;
+        lastInteractionTime = currentTime;
+        return true;
+    }
+
+    public bool TryObserve(string stepId, string action, float currentTime)
+    {
+        if (activeStepId != stepId || !AllowsRepeatedHorizontalGesture(stepId, action))
+        {
+            return false;
+        }
+
+        lastInteractionTime = currentTime;
+        return true;
+    }
+
+    public bool CanPresentNextStep(string stepId, float currentTime)
+    {
+        if (activeStepId == null)
+        {
+            return true;
+        }
+
+        return activeStepId == stepId
+            && currentTime - lastInteractionTime >= GetDelaySeconds(stepId);
+    }
+
+    public void Reset()
+    {
+        activeStepId = null;
+        lastInteractionTime = 0f;
+    }
+
+    private static bool AllowsRepeatedHorizontalGesture(string stepId, string action)
+    {
+        bool isBrowseStep = stepId == TutorialConstants.ViewCardStats
+            || stepId == TutorialConstants.BrowseCardAttacks;
+        return isBrowseStep && (action == "left" || action == "right");
+    }
+
+    private static float GetDelaySeconds(string stepId)
+    {
+        if (stepId == TutorialConstants.ViewCardStats
+            || stepId == TutorialConstants.BrowseCardAttacks)
+        {
+            return BrowseIdleDelaySeconds;
+        }
+
+        if (stepId == TutorialConstants.OpenCardDetail
+            || stepId == TutorialConstants.ViewCardAttacks
+            || stepId == TutorialConstants.ReturnToCardFront)
+        {
+            return VisualResultDelaySeconds;
+        }
+
+        return 0f;
     }
 }

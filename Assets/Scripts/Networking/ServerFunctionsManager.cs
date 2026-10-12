@@ -141,7 +141,6 @@ public class ServerFunctionsManager : MonoBehaviour
         );
     }
 
-    // Upravené: pripojenie do miestnosti podľa novej logiky s username
     public void JoinOrCreateRoom(
         string playerId,
         string username,
@@ -156,8 +155,6 @@ public class ServerFunctionsManager : MonoBehaviour
         CallFunction("joinOrCreateRoom", parameters, callback);
     }
 
-    // Legacy note: room/player polling now uses getMatchState, not getRoomPlayersInfo.
-
     public void GetMatchState(
         string roomCode,
         string playerId,
@@ -166,9 +163,9 @@ public class ServerFunctionsManager : MonoBehaviour
     {
         callback ??= NoOpCallback;
 
-        if (string.IsNullOrEmpty(roomCode) && string.IsNullOrEmpty(playerId))
+        if (string.IsNullOrEmpty(roomCode) || string.IsNullOrEmpty(playerId))
         {
-            Debug.LogError("GetMatchState: roomCode or playerId is required!");
+            Debug.LogError("GetMatchState: roomCode and playerId are required!");
             callback?.Invoke(null);
             return;
         }
@@ -212,26 +209,17 @@ public class ServerFunctionsManager : MonoBehaviour
         CallFunction("updatePlayerInfo", parameters, callback);
     }
 
-    // Preťažená verzia JoinOrCreateRoom pre spätnú kompatibilitu
-    public void JoinOrCreateRoom(string playerId, Action<ExecuteFunctionResult> callback)
+    public void LeaveRoom(string playerId, string roomCode, Action<ExecuteFunctionResult> callback = null)
     {
-        string username = PlayerPrefs.GetString("username", playerId);
-        JoinOrCreateRoom(playerId, username, callback);
+        Debug.LogWarning($"[ServerFunctionsManager] LeaveRoom requested: playerId={playerId}, roomCode={roomCode}");
+        var parameters = new { playerId, roomCode };
+        CallFunctionWithRetry("leaveRoom", parameters, callback ?? NoOpCallback);
     }
 
-    // Nová funkcia: opustenie miestnosti
-    public void LeaveRoom(string playerId, Action<ExecuteFunctionResult> callback = null)
+    public void Heartbeat(string playerId, string roomCode, Action<ExecuteFunctionResult> callback = null)
     {
-        Debug.Log($"[ServerFunctionsManager] LeaveRoom requested: playerId={playerId}");
-        var parameters = new { playerId = playerId };
-        CallFunction("leaveRoom", parameters, callback ?? (_ => { }));
-    }
-
-    // Nová funkcia: heartbeat (životný signál)
-    public void Heartbeat(string playerId, Action<ExecuteFunctionResult> callback = null)
-    {
-        LogVerbose($"Heartbeat called with playerId: {playerId}");
-        var parameters = new { playerId = playerId };
+        LogVerbose($"Heartbeat: playerId={playerId}, roomCode={roomCode}");
+        var parameters = new { playerId, roomCode };
         CallFunction(
             "heartbeat",
             parameters,
@@ -271,12 +259,18 @@ public class ServerFunctionsManager : MonoBehaviour
     }
 
     // Nová funkcia: získanie deckov v miestnosti cez getRoomDecks
-    public void GetRoomDecks(string roomCode, Action<ExecuteFunctionResult> callback)
+    public void GetRoomDecks(string roomCode, string playerId, Action<ExecuteFunctionResult> callback)
     {
         callback ??= NoOpCallback;
         LogVerboseWarning($"GetRoomDecks called with roomCode: {roomCode}");
-        var parameters = new { roomCode = roomCode };
+        var parameters = new { roomCode, playerId };
         CallFunction("getRoomDecks", parameters, callback);
+    }
+
+    public void MarkMatchStartupReady(string roomCode, string playerId, Action<ExecuteFunctionResult> callback)
+    {
+        Debug.LogWarning($"[ServerFunctionsManager] Startup ready requested: room={roomCode}, player={playerId}");
+        CallFunctionWithRetry("markMatchStartupReady", new { roomCode, playerId }, callback);
     }
 
     public void SetSelectedCard(

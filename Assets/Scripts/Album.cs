@@ -30,6 +30,7 @@ public class Album : MonoBehaviour
     public LibraryTutorialController libraryTutorialController;
     public GameObject blockedRecycleDeckPrompt;
     public GameObject backButton;
+    public GameObject tutorialHelpButton;
     private Coroutine libraryCardsRenderCoroutine;
     private int libraryCardsRenderVersion;
     private TutorialStateResponse tutorialState;
@@ -42,6 +43,7 @@ public class Album : MonoBehaviour
         connectionString = $"URI=file:{Database.Instance.GetDatabasePath()}";
         SetTutorialVisible(false);
         if (backButton != null) backButton.SetActive(false);
+        if (tutorialHelpButton != null) tutorialHelpButton.SetActive(false);
         SceneLoadingOverlay.SetMessage("LOADING LIBRARY...");
         SceneLoadingOverlay.Show();
         if (cardTutorial != null)
@@ -51,9 +53,6 @@ public class Album : MonoBehaviour
         if (blockedRecycleDeckPrompt != null)
         {
             blockedRecycleDeckPrompt.SetActive(false);
-            DismissPanelButton dismiss = blockedRecycleDeckPrompt.GetComponent<DismissPanelButton>();
-            if (dismiss == null) dismiss = blockedRecycleDeckPrompt.AddComponent<DismissPanelButton>();
-            dismiss.Configure(blockedRecycleDeckPrompt);
         }
 
         deckPanel.SetActive(false);
@@ -75,7 +74,7 @@ public class Album : MonoBehaviour
             TryLoginAgain();
         }
 
-        StartCoroutine(GetPlayerCurrencyBalance());
+        StartCoroutine(RefreshPlayerCurrencyBalance());
     }
 
     void TryLoginAgain()
@@ -132,7 +131,7 @@ public class Album : MonoBehaviour
         return cardStory;
     }
 
-    private IEnumerator GetPlayerCurrencyBalance()
+    public IEnumerator RefreshPlayerCurrencyBalance()
     {
         var request = new GetUserInventoryRequest();
         bool isCompleted = false;
@@ -271,7 +270,7 @@ public class Album : MonoBehaviour
             novaKarta.GetComponent<Card>().zoomedCardHolder = zoomedCardHolder;
             novaKarta.GetComponent<Card>().transform.SetParent(content.transform);
             novaKarta.GetComponent<Card>().transform.localScale = Vector3.one;
-            novaKarta.GetComponent<Card>().Initialize(deckPanel);
+            novaKarta.GetComponent<Card>().Initialize(deckPanel, this);
             novaKarta.GetComponent<Card>().deckManager = deckManager;
             novaKarta.GetComponent<Card>().cardRecycleService = cardRecycleService;
             novaKarta.GetComponent<Card>().recycleConfirmationDialog = recycleConfirmationDialog;
@@ -302,7 +301,7 @@ public class Album : MonoBehaviour
             yield break;
         }
 
-        System.Threading.Tasks.Task<TutorialStateResponse> stateTask = service.RefreshCurrentPlayerStateAsync();
+        System.Threading.Tasks.Task<TutorialStateResponse> stateTask = service.GetCurrentPlayerStateAsync();
         yield return new WaitUntil(() => stateTask.IsCompleted);
 
         tutorialState = stateTask.Result;
@@ -363,7 +362,8 @@ public class Album : MonoBehaviour
             deckManager,
             tutorial,
             cardTutorial,
-            backButton
+            backButton,
+            tutorialHelpButton
         );
 
         if (deckManager != null)

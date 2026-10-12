@@ -11,12 +11,14 @@ public class TutorialService : MonoBehaviour
 
     public TutorialStateResponse CurrentState { get; private set; }
 
-    public Task<TutorialStateResponse> GetTutorialStateAsync(string playerId)
+    public async Task<TutorialStateResponse> GetTutorialStateAsync(string playerId)
     {
-        return ExecuteAsync(
+        TutorialStateResponse state = await ExecuteAsync(
             callback => ResolveServerFunctionsManager()?.GetTutorialState(playerId, callback),
             "GetTutorialStateAsync"
         );
+        CacheSuccessfulState(playerId, state);
+        return state;
     }
 
     public async Task<TutorialStateResponse> CompleteStepAsync(
@@ -37,7 +39,26 @@ public class TutorialService : MonoBehaviour
             "CompleteStepAsync"
         );
 
+        CacheSuccessfulState(playerId, state);
         return state;
+    }
+
+    public Task<TutorialStateResponse> GetCurrentPlayerStateAsync()
+    {
+        string playerId = ResolvePlayerId();
+        if (string.IsNullOrWhiteSpace(playerId))
+        {
+            Debug.LogWarning("[TutorialService] Cannot get tutorial state: playerId is empty");
+            return Task.FromResult<TutorialStateResponse>(null);
+        }
+
+        if (TutorialSessionState.TryGet(playerId, out TutorialStateResponse cachedState))
+        {
+            CurrentState = cachedState;
+            return Task.FromResult(cachedState);
+        }
+
+        return GetTutorialStateAsync(playerId);
     }
 
     public async Task<TutorialStateResponse> RefreshCurrentPlayerStateAsync()
@@ -67,20 +88,6 @@ public class TutorialService : MonoBehaviour
         }
 
         return await CompleteStepAsync(playerId, tutorialId, stepId);
-    }
-
-    public bool ShouldShowFlow(string tutorialId)
-    {
-        return CurrentState != null
-            && CurrentState.success
-            && !CurrentState.IsFlowCompleted(tutorialId);
-    }
-
-    public bool HasCompletedStep(string tutorialId, string stepId)
-    {
-        return CurrentState != null
-            && CurrentState.success
-            && CurrentState.HasCompletedStep(tutorialId, stepId);
     }
 
     private async Task<TutorialStateResponse> ExecuteAsync(
@@ -137,6 +144,17 @@ public class TutorialService : MonoBehaviour
         });
 
         return await tcs.Task;
+    }
+
+    private void CacheSuccessfulState(string playerId, TutorialStateResponse state)
+    {
+        if (state == null || !state.success)
+        {
+            return;
+        }
+
+        CurrentState = state;
+        TutorialSessionState.Store(playerId, state);
     }
 
     private ServerFunctionsManager ResolveServerFunctionsManager()

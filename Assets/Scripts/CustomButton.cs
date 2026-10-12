@@ -34,6 +34,11 @@ public class CustomButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
         }
     }
 
+    private void OnDisable()
+    {
+        RestoreOriginalColor();
+    }
+
     public void OnPointerDown(PointerEventData eventData)
     {
         if (button == null || !button.IsActive() || !button.IsInteractable()) return;
@@ -54,8 +59,12 @@ public class CustomButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
     {
         yield return new WaitForSeconds(delay);
         if (button == null || !button.IsActive() || !button.IsInteractable()) yield break;
+        RestoreOriginalColor();
         onDelayedClick.Invoke();
+    }
 
+    private void RestoreOriginalColor()
+    {
         if (innerImage != null)
         {
             innerImage.color = originalColor;

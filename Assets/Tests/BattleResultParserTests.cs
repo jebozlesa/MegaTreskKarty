@@ -638,6 +638,8 @@ public class BattleResultParserTests
         return method.Invoke(null, new[] { payload });
     }
 
+    // Unity JsonUtility populates these fixture fields through reflection.
+#pragma warning disable CS0649
     [Serializable]
     private class FixtureEnvelope
     {
@@ -706,4 +708,5 @@ public class BattleResultParserTests
         public string source;
         public int intensity;
     }
+#pragma warning restore CS0649
 }

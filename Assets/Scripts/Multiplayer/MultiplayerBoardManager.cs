@@ -53,6 +53,7 @@ public class MultiplayerBoardManager : MonoBehaviour
 
     public async Task HandleCardSelectedAsync(Kard card, MultiplayerCardDrag dragHandler)
     {
+        if (fightSystem == null || !fightSystem.CanInteractWithBattle) return;
         isSubmittingSelection = true;
         localSelectedCard = card;
         localSelectedCardDrag = dragHandler;

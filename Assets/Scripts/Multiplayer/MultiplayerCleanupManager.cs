@@ -75,12 +75,16 @@ public class MultiplayerCleanupManager : MonoBehaviour
                     try
                     {
                         var resultObj = Newtonsoft.Json.Linq.JObject.Parse(result.FunctionResult.ToString());
-                        if (resultObj["removedPlayers"] != null || resultObj["removedRooms"] != null)
+                        if (resultObj["success"]?.ToObject<bool>() == true && resultObj["stats"] != null)
                         {
-                            int removedPlayers = resultObj["removedPlayers"]?.ToObject<int>() ?? 0;
-                            int removedRooms = resultObj["removedRooms"]?.ToObject<int>() ?? 0;
-                            Debug.Log($"Cleanup completed: {removedPlayers} players, {removedRooms} rooms removed");
+                            var stats = resultObj["stats"];
+                            int expired = stats["expiredWaitingRooms"]?.ToObject<int>() ?? 0;
+                            int startupExpired = stats["expiredStartupRooms"]?.ToObject<int>() ?? 0;
+                            int timedOut = stats["completedTimedOutRooms"]?.ToObject<int>() ?? 0;
+                            int terminal = stats["removedCompletedRooms"]?.ToObject<int>() ?? 0;
+                            Debug.LogWarning($"[MultiplayerCleanup] Completed: waitingExpired={expired}, startupExpired={startupExpired}, timedOut={timedOut}, terminalDeleted={terminal}");
                         }
+                        else Debug.LogWarning("[MultiplayerCleanup] Cleanup rejected or stats missing");
                     }
                     catch (System.Exception e)
                     {

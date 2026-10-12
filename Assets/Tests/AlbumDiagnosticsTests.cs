@@ -1,6 +1,8 @@
 using System.IO;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class AlbumDiagnosticsTests
 {
@@ -45,9 +47,47 @@ public class AlbumDiagnosticsTests
     }
 
     [Test]
+    public void DeckSwap_KeepsSelectedCollectionCardDetailOpen()
+    {
+        string deckManagerPath = Path.Combine(
+            Application.dataPath,
+            "Scripts",
+            "Album",
+            "DeckManager.cs"
+        );
+        Assert.IsTrue(File.Exists(deckManagerPath), "DeckManager.cs was not found.");
+
+        string source = File.ReadAllText(deckManagerPath);
+        string swapMethod = ExtractMethodBody(
+            source,
+            "public async Task<bool> SwapWithSelectedCardAsync",
+            "private void CreateCardInDeck"
+        );
+
+        StringAssert.DoesNotContain(
+            "selectedCard.ZoomOut()",
+            swapMethod,
+            "A successful deck swap must leave the selected collection-card detail open."
+        );
+    }
+
+    [Test]
     public void LegacyPlayerDecksRuntime_IsRemovedFromClientDeckFlow()
     {
         string scriptsPath = Path.Combine(Application.dataPath, "Scripts");
+        Assert.IsFalse(
+            File.Exists(Path.Combine(scriptsPath, "PlayerDeck.cs")),
+            "Legacy PlayerDeck.cs must stay removed."
+        );
+        Assert.IsFalse(
+            File.Exists(Path.Combine(scriptsPath, "Deck", "Deck.cs")),
+            "Legacy Deck.cs must stay removed."
+        );
+        Assert.IsFalse(
+            File.Exists(Path.Combine(scriptsPath, "Deck", "DeckListWrapper.cs")),
+            "Legacy DeckListWrapper.cs must stay removed."
+        );
+
         string[] runtimeFiles =
         {
             Path.Combine(scriptsPath, "Album", "DeckManager.cs"),
@@ -203,6 +243,7 @@ public class AlbumDiagnosticsTests
         string scriptsPath = Path.Combine(Application.dataPath, "Scripts");
         string cardPath = Path.Combine(scriptsPath, "Card.cs");
         string albumSourcePath = Path.Combine(scriptsPath, "Album.cs");
+        string legacyLoveValuePath = Path.Combine(scriptsPath, "Album", "AlbumLoveValue.cs");
         string serverFunctionsPath = Path.Combine(
             scriptsPath,
             "Networking",
@@ -231,6 +272,7 @@ public class AlbumDiagnosticsTests
 
         Assert.IsTrue(File.Exists(cardPath), "Card.cs was not found.");
         Assert.IsTrue(File.Exists(albumSourcePath), "Album.cs was not found.");
+        Assert.IsFalse(File.Exists(legacyLoveValuePath), "Legacy AlbumLoveValue.cs must stay removed.");
         Assert.IsTrue(File.Exists(serverFunctionsPath), "ServerFunctionsManager.cs was not found.");
         Assert.IsTrue(File.Exists(cardRecycleServicePath), "CardRecycleService.cs was not found.");
         Assert.IsTrue(File.Exists(confirmDialogPath), "ConfirmDialogController.cs was not found.");
@@ -254,7 +296,7 @@ public class AlbumDiagnosticsTests
         StringAssert.Contains("LoadForCurrentPlayer(useCardRenderDelay: false)", cardSource);
         StringAssert.Contains("TryFindCardDeckUsage", cardSource);
         StringAssert.Contains("deckUsage", cardSource);
-        StringAssert.Contains("AlbumLoveValue.Instance.GetPlayerCurrencyBalance()", cardSource);
+        StringAssert.Contains("albumController.RefreshPlayerCurrencyBalance()", cardSource);
         StringAssert.DoesNotContain("public void RemoveCard()", cardSource);
         StringAssert.DoesNotContain("UpdateUserDataRequest", cardSource);
         StringAssert.DoesNotContain("PlayFabClientAPI.UpdateUserData", cardSource);
@@ -268,6 +310,8 @@ public class AlbumDiagnosticsTests
 
         StringAssert.Contains("public CardRecycleService cardRecycleService;", albumSource);
         StringAssert.Contains("public ConfirmDialogController recycleConfirmationDialog;", albumSource);
+        StringAssert.Contains("public IEnumerator RefreshPlayerCurrencyBalance()", albumSource);
+        StringAssert.Contains("novaKarta.GetComponent<Card>().Initialize(deckPanel, this);", albumSource);
         StringAssert.Contains("novaKarta.GetComponent<Card>().cardRecycleService = cardRecycleService;", albumSource);
         StringAssert.Contains("novaKarta.GetComponent<Card>().recycleConfirmationDialog = recycleConfirmationDialog;", albumSource);
 
@@ -288,6 +332,88 @@ public class AlbumDiagnosticsTests
         StringAssert.DoesNotContain("m_MethodName: ShowAttackList", albumCardPrefabSource);
         StringAssert.DoesNotContain("m_MethodName: HideAttackList", albumCardPrefabSource);
         StringAssert.DoesNotContain("AttackScroll", albumCardPrefabSource);
+    }
+
+    [Test]
+    public void CardRecycleBlockedPrompt_UsesOnlyItsVisibleAcknowledgementButton()
+    {
+        string scriptsPath = Path.Combine(Application.dataPath, "Scripts");
+        string albumSourcePath = Path.Combine(scriptsPath, "Album.cs");
+        string dismissHelperPath = Path.Combine(scriptsPath, "UI", "DismissPanelButton.cs");
+        string cardsScenePath = Path.Combine(Application.dataPath, "Scenes", "Cards.unity");
+
+        Assert.IsTrue(File.Exists(albumSourcePath), "Album.cs was not found.");
+        Assert.IsTrue(File.Exists(cardsScenePath), "Cards.unity was not found.");
+
+        string albumSource = File.ReadAllText(albumSourcePath);
+        string cardsScene = File.ReadAllText(cardsScenePath).Replace("\r\n", "\n");
+
+        Assert.IsFalse(
+            File.Exists(dismissHelperPath),
+            "The recycle blocker must not depend on a generic runtime button finder."
+        );
+        StringAssert.DoesNotContain("DismissPanelButton", albumSource);
+        StringAssert.DoesNotContain(
+            "m_Name: Hint1Btn",
+            cardsScene,
+            "The copied fullscreen tutorial click-catcher must stay removed from Cards.unity."
+        );
+
+        string acknowledgementButton = ExtractYamlObject(
+            cardsScene,
+            "--- !u!114 &4853700086726999121"
+        );
+        StringAssert.Contains("m_Enabled: 1", acknowledgementButton);
+        StringAssert.Contains("m_Target: {fileID: 4853700087339883771}", acknowledgementButton);
+        StringAssert.Contains("m_MethodName: SetActive", acknowledgementButton);
+
+        StringAssert.DoesNotContain(
+            "--- !u!114 &4853700087339883765",
+            cardsScene,
+            "BlockSellDeckCard root must not retain its obsolete disabled Button component."
+        );
+    }
+
+    [Test]
+    public void CustomButton_RestoresPressedColorWhenDisabled()
+    {
+        System.Type customButtonType = System.Type.GetType("CustomButton, Assembly-CSharp");
+        Assert.NotNull(customButtonType, "CustomButton must exist in Assembly-CSharp.");
+
+        GameObject buttonObject = new GameObject(
+            "CustomButtonUnderTest",
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(Image),
+            typeof(Button)
+        );
+
+        try
+        {
+            buttonObject.SetActive(false);
+            Image image = buttonObject.GetComponent<Image>();
+            image.color = Color.black;
+
+            Component customButton = buttonObject.AddComponent(customButtonType);
+            FieldInfo innerImage = customButtonType.GetField("innerImage", BindingFlags.Instance | BindingFlags.Public);
+            Assert.NotNull(innerImage, "CustomButton.innerImage must remain assignable.");
+            innerImage.SetValue(customButton, image);
+
+            MethodInfo awake = customButtonType.GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic);
+            MethodInfo onDisable = customButtonType.GetMethod("OnDisable", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.NotNull(awake, "CustomButton must capture its original visual state during Awake.");
+            Assert.NotNull(onDisable, "CustomButton must restore its visual state when disabled.");
+
+            awake.Invoke(customButton, null);
+            image.color = Color.yellow;
+            onDisable.Invoke(customButton, null);
+
+            Assert.AreEqual(Color.black, image.color, "Disabling a pressed CustomButton must restore its original color.");
+        }
+        finally
+        {
+            Object.DestroyImmediate(buttonObject);
+        }
     }
 
     [Test]
@@ -343,6 +469,20 @@ public class AlbumDiagnosticsTests
 
         int end = source.IndexOf(endMarker, start, System.StringComparison.Ordinal);
         Assert.Greater(end, start, $"End marker was not found after: {startMarker}");
+
+        return source.Substring(start, end - start);
+    }
+
+    private static string ExtractYamlObject(string source, string marker)
+    {
+        int start = source.IndexOf(marker, System.StringComparison.Ordinal);
+        Assert.GreaterOrEqual(start, 0, marker + " was not found.");
+
+        int end = source.IndexOf("\n--- !u!", start + marker.Length, System.StringComparison.Ordinal);
+        if (end < 0)
+        {
+            end = source.Length;
+        }
 
         return source.Substring(start, end - start);
     }
