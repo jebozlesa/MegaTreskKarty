@@ -3980,7 +3980,7 @@ public class AttackAnimations : MonoBehaviour
     }
 
     //17e
-    public IEnumerator PlayConfusionForgetAnimation(Transform targetCard)
+    public IEnumerator PlayConfusionDecisionAnimation(Transform targetCard)
     {
         Sprite sprite = Resources.Load<Sprite>("Game/Animations/confusionstart");
         AudioClip startSound = Resources.Load<AudioClip>("Sounds/Game/Animations/confusionforget");
@@ -3996,6 +3996,12 @@ public class AttackAnimations : MonoBehaviour
                 switchRatio: 0.5f // V polovici animácie sa zmení na fľašu vína
             )
         );
+    }
+
+    public IEnumerator PlayConfusionForgetAnimation(Transform targetCard)
+    {
+        // Placeholder until the dedicated forgot-to-attack animation is available.
+        yield return PlayConfusionDecisionAnimation(targetCard);
     }
 
     //17e

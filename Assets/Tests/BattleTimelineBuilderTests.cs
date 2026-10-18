@@ -465,7 +465,7 @@ public class BattleTimelineBuilderTests
     }
 
     [Test]
-    public void Build_ConfusionForgotTimeline_ContainsDedicatedStep()
+    public void Build_ConfusionTimeline_ContainsDecisionCueAndForgotOutcome()
     {
         var battleResult = new Dictionary<string, object>
         {
@@ -475,6 +475,14 @@ public class BattleTimelineBuilderTests
                     { "version", 2 },
                     { "steps", new List<object>
                         {
+                            new Dictionary<string, object>
+                            {
+                                { "type", "EffectTriggered" },
+                                { "actorCardId", "confused_a" },
+                                { "targetCardId", "confused_a" },
+                                { "effectType", 17 },
+                                { "source", "confusion" }
+                            },
                             new Dictionary<string, object>
                             {
                                 { "type", "ConfusionForgot" },
@@ -490,6 +498,11 @@ public class BattleTimelineBuilderTests
 
         List<object> steps = BuildTimelineFromBattleResultDict(battleResult);
 
+        Assert.IsTrue(GetStepsByType(steps, "EffectTriggered").Any(s =>
+            GetStringField(s, "ActorCardId") == "confused_a"
+            && GetStringField(s, "TargetCardId") == "confused_a"
+            && GetIntField(s, "EffectType") == 17
+            && GetStringField(s, "Source") == "confusion"));
         Assert.IsTrue(GetStepsByType(steps, "ConfusionForgot").Any(s =>
             GetStringField(s, "ActorCardId") == "confused_a"
             && GetStringField(s, "TargetCardId") == "confused_a"

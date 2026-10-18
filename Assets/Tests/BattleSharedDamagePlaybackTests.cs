@@ -207,6 +207,29 @@ public class BattleSharedDamagePlaybackTests
     }
 
     [Test]
+    public void BattleTimelinePlayback_PlaysConfusionDecisionCueWithMandatoryDialog()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
+        string animations = ReadProjectFile("Assets", "Scripts", "Game", "Animations", "AttackAnimations.cs");
+
+        int cueCaseStart = source.IndexOf("case BattleStepType.EffectTriggered:", StringComparison.Ordinal);
+        int cueCaseEnd = source.IndexOf("case BattleStepType.EffectApplied:", cueCaseStart, StringComparison.Ordinal);
+
+        Assert.That(cueCaseStart, Is.GreaterThanOrEqualTo(0));
+        Assert.That(cueCaseEnd, Is.GreaterThan(cueCaseStart));
+        string cueCase = source.Substring(cueCaseStart, cueCaseEnd - cueCaseStart);
+
+        StringAssert.Contains("case BattleStepType.EffectTriggered:", source);
+        StringAssert.Contains("PlayEffectTriggeredAnimation(context, actor, step.EffectType)", source);
+        StringAssert.Contains("context.DialogText.color = isPlayerActor ? Color.blue : Color.red;", cueCase);
+        StringAssert.Contains("animations.PlayConfusionDecisionAnimation(card.transform)", source);
+        StringAssert.Contains("$\"{card.cardName} is confused and is not sure what to do...\"", source);
+        StringAssert.Contains("public IEnumerator PlayConfusionDecisionAnimation(Transform targetCard)", animations);
+        StringAssert.Contains("public IEnumerator PlayConfusionForgetAnimation(Transform targetCard)", animations);
+        StringAssert.Contains("yield return PlayConfusionDecisionAnimation(targetCard);", animations);
+    }
+
+    [Test]
     public void BattleSubmitter_PollsViaGetBattleStatusNotDummyAttackZero()
     {
         string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleSubmitter.cs");
@@ -329,6 +352,25 @@ public class BattleSharedDamagePlaybackTests
     }
 
     [Test]
+    public void SharedTimelinePlayback_UsesConfusionAnimationForConfusionSelfDamage()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
+
+        StringAssert.Contains(
+            "PlaySelfDamageAnimation(context, actor, step.Amount, isPlayerActor, step.Source)",
+            source
+        );
+        StringAssert.Contains(
+            "string.Equals(source, \"confusion\", StringComparison.OrdinalIgnoreCase)",
+            source
+        );
+        StringAssert.Contains(
+            "yield return animations.PlayConfusionHurtItselfAnimation(card.transform);",
+            source
+        );
+    }
+
+    [Test]
     public void RoyalRumbleBattlePlayback_UsesSharedEffectApplicationAndSelfRemoval()
     {
         string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
@@ -371,6 +413,7 @@ public class BattleSharedDamagePlaybackTests
         StringAssert.Contains("case BattleStepType.BurnTick:", source);
         StringAssert.Contains("case BattleStepType.ExposureTick:", source);
         StringAssert.Contains("case BattleStepType.PoisonTick:", source);
+        StringAssert.Contains("case BattleStepType.EffectTriggered:", source);
         StringAssert.Contains("case BattleStepType.ConfusionForgot:", source);
         StringAssert.Contains("case BattleStepType.ExposureRemoved:", source);
         StringAssert.Contains("case BattleStepType.EffectApplied:", source);

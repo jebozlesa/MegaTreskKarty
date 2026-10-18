@@ -24,7 +24,8 @@ public enum BattleStepType
     OngoingActionCancelled,
     Death,
     PoisonTick,
-    ConfusionForgot
+    ConfusionForgot,
+    EffectTriggered
 }
 
 [Serializable]

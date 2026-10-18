@@ -181,7 +181,7 @@ public static class BattleTimelinePlayback
                 case BattleStepType.SelfDamage:
                     if (actor != null && step.Amount > 0)
                     {
-                        yield return PlaySelfDamageAnimation(context, actor, step.Amount, isPlayerActor);
+                        yield return PlaySelfDamageAnimation(context, actor, step.Amount, isPlayerActor, step.Source);
                     }
                     break;
 
@@ -189,6 +189,18 @@ public static class BattleTimelinePlayback
                     if (actor != null)
                     {
                         yield return PlayConfusionForgotAnimation(context, actor);
+                    }
+                    break;
+
+                case BattleStepType.EffectTriggered:
+                    if (actor != null)
+                    {
+                        if (context.DialogText != null)
+                        {
+                            context.DialogText.color = isPlayerActor ? Color.blue : Color.red;
+                        }
+
+                        yield return PlayEffectTriggeredAnimation(context, actor, step.EffectType);
                     }
                     break;
 
@@ -425,8 +437,22 @@ public static class BattleTimelinePlayback
         }
     }
 
-    private static IEnumerator PlaySelfDamageAnimation(BattleTimelinePlaybackContext context, Kard card, int damage, bool isPlayerCard)
+    private static IEnumerator PlaySelfDamageAnimation(
+        BattleTimelinePlaybackContext context,
+        Kard card,
+        int damage,
+        bool isPlayerCard,
+        string source)
     {
+        if (string.Equals(source, "confusion", StringComparison.OrdinalIgnoreCase))
+        {
+            AttackAnimations animations = context.AttackComponent?.attackAnimations;
+            if (animations != null)
+            {
+                yield return animations.PlayConfusionHurtItselfAnimation(card.transform);
+            }
+        }
+
         yield return BattleValuePlayback.PlayDamage(
             card,
             damage,
@@ -566,6 +592,35 @@ public static class BattleTimelinePlayback
         }
 
         yield return ShowDialog(context, $"{card.cardName} forgot to attack!");
+    }
+
+    private static IEnumerator PlayEffectTriggeredAnimation(
+        BattleTimelinePlaybackContext context,
+        Kard card,
+        int effectType
+    )
+    {
+        if (effectType != 17)
+        {
+            Debug.LogWarning(
+                $"[EFFECT_TRIGGERED_ANIM] Unsupported effect type {effectType} for {card.cardName}({card.cardId})"
+            );
+            yield break;
+        }
+
+        AttackAnimations animations = context.AttackComponent?.attackAnimations;
+        if (animations != null)
+        {
+            yield return animations.PlayConfusionDecisionAnimation(card.transform);
+        }
+        else
+        {
+            Debug.LogWarning(
+                $"[CONFUSION_DECISION_ANIM] Missing animations for {card.cardName}({card.cardId})"
+            );
+        }
+
+        yield return ShowDialog(context, $"{card.cardName} is confused and is not sure what to do...");
     }
 
     private static void LogEffectTickAnimation(
