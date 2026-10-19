@@ -419,6 +419,97 @@ public class BattleTimelineBuilderTests
     }
 
     [Test]
+    public void Build_PoisonTickTimeline_ContainsPoisonTickAndDamage()
+    {
+        var battleResult = new Dictionary<string, object>
+        {
+            {
+                "timelineV2", new Dictionary<string, object>
+                {
+                    { "version", 2 },
+                    { "steps", new List<object>
+                        {
+                            new Dictionary<string, object>
+                            {
+                                { "type", "PoisonTick" },
+                                { "actorCardId", "poison_a" },
+                                { "targetCardId", "poison_a" },
+                                { "amount", 1 },
+                                { "source", "poison" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "Damage" },
+                                { "actorCardId", "poison_a" },
+                                { "targetCardId", "poison_a" },
+                                { "amount", 1 },
+                                { "source", "poison" }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        List<object> steps = BuildTimelineFromBattleResultDict(battleResult);
+
+        Assert.IsTrue(GetStepsByType(steps, "PoisonTick").Any(s =>
+            GetStringField(s, "ActorCardId") == "poison_a"
+            && GetStringField(s, "TargetCardId") == "poison_a"
+            && GetIntField(s, "Amount") == 1
+            && GetStringField(s, "Source") == "poison"));
+        Assert.IsTrue(GetStepsByType(steps, "Damage").Any(s =>
+            GetStringField(s, "TargetCardId") == "poison_a"
+            && GetIntField(s, "Amount") == 1
+            && GetStringField(s, "Source") == "poison"));
+    }
+
+    [Test]
+    public void Build_ConfusionTimeline_ContainsDecisionCueAndForgotOutcome()
+    {
+        var battleResult = new Dictionary<string, object>
+        {
+            {
+                "timelineV2", new Dictionary<string, object>
+                {
+                    { "version", 2 },
+                    { "steps", new List<object>
+                        {
+                            new Dictionary<string, object>
+                            {
+                                { "type", "EffectTriggered" },
+                                { "actorCardId", "confused_a" },
+                                { "targetCardId", "confused_a" },
+                                { "effectType", 17 },
+                                { "source", "confusion" }
+                            },
+                            new Dictionary<string, object>
+                            {
+                                { "type", "ConfusionForgot" },
+                                { "actorCardId", "confused_a" },
+                                { "targetCardId", "confused_a" },
+                                { "source", "confusion" }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        List<object> steps = BuildTimelineFromBattleResultDict(battleResult);
+
+        Assert.IsTrue(GetStepsByType(steps, "EffectTriggered").Any(s =>
+            GetStringField(s, "ActorCardId") == "confused_a"
+            && GetStringField(s, "TargetCardId") == "confused_a"
+            && GetIntField(s, "EffectType") == 17
+            && GetStringField(s, "Source") == "confusion"));
+        Assert.IsTrue(GetStepsByType(steps, "ConfusionForgot").Any(s =>
+            GetStringField(s, "ActorCardId") == "confused_a"
+            && GetStringField(s, "TargetCardId") == "confused_a"
+            && GetStringField(s, "Source") == "confusion"));
+    }
+
+    [Test]
     public void Build_BoostTimeline_ContainsSelfStatChangesAndPostAttackWakeUp()
     {
         var battleResult = new Dictionary<string, object>
