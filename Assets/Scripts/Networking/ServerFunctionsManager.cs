@@ -25,6 +25,7 @@ public class ServerFunctionsManager : MonoBehaviour
     public float retryDelay = 1f;
 
     private bool isShuttingDown;
+    private bool CanProcessCallbacks => this != null && !isShuttingDown && isActiveAndEnabled;
 
     private static void LogVerbose(string message)
     {
@@ -76,6 +77,12 @@ public class ServerFunctionsManager : MonoBehaviour
     )
     {
         callback ??= NoOpCallback;
+        if (!CanProcessCallbacks)
+        {
+            callback(null);
+            return;
+        }
+
         LogVerboseWarning(
             $"CallFunction: {functionName}, parameters: {Newtonsoft.Json.JsonConvert.SerializeObject(parameters)}"
         );
@@ -95,50 +102,72 @@ public class ServerFunctionsManager : MonoBehaviour
 
         PlayFabCloudScriptAPI.ExecuteFunction(
             request,
-            result =>
-            {
-                LogVerboseWarning(
-                    $"ExecuteFunction result: {Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}"
-                );
-                if (ShouldAlwaysLogFunction(functionName))
-                {
-                    Debug.Log(
-                        $"[ServerFunctionsManager] ExecuteFunction success: {functionName}, result={Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}"
-                    );
-                }
-
-                // Success - hide network error indicator
-                HideNetworkError();
-
-                callback?.Invoke(result);
-            },
-            error =>
-            {
-                // Transient cloud/network failures are often resolved by retry.
-                string errorReport = error?.GenerateErrorReport() ?? string.Empty;
-                Debug.LogWarning(errorReport);
-                if (ShouldAlwaysLogFunction(functionName))
-                {
-                    Debug.LogError(
-                        $"[ServerFunctionsManager] ExecuteFunction error: {functionName}, error={errorReport}"
-                    );
-                }
-
-                if (ShouldShowNetworkError(functionName, errorReport))
-                {
-                    ShowNetworkError($"Server error: {functionName}");
-                }
-                else
-                {
-                    HideNetworkError();
-                    Debug.LogWarning(
-                        $"[ServerFunctionsManager] Suppressed network indicator for expected {functionName} error"
-                    );
-                }
-
-                callback?.Invoke(null);
-            }
+            result => HandleFunctionSuccess(functionName, result, callback),
+            error => HandleFunctionError(functionName, error, callback)
         );
+    }
+
+    private void HandleFunctionSuccess(
+        string functionName,
+        ExecuteFunctionResult result,
+        Action<ExecuteFunctionResult> callback
+    )
+    {
+        if (!CanProcessCallbacks)
+        {
+            callback?.Invoke(null);
+            return;
+        }
+
+        LogVerboseWarning(
+            $"ExecuteFunction result: {Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}"
+        );
+        if (ShouldAlwaysLogFunction(functionName))
+        {
+            Debug.Log(
+                $"[ServerFunctionsManager] ExecuteFunction success: {functionName}, result={Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}"
+            );
+        }
+
+        HideNetworkError();
+        callback?.Invoke(result);
+    }
+
+    private void HandleFunctionError(
+        string functionName,
+        PlayFabError error,
+        Action<ExecuteFunctionResult> callback
+    )
+    {
+        if (!CanProcessCallbacks)
+        {
+            callback?.Invoke(null);
+            return;
+        }
+
+        // Transient cloud/network failures are often resolved by retry.
+        string errorReport = error?.GenerateErrorReport() ?? string.Empty;
+        Debug.LogWarning(errorReport);
+        if (ShouldAlwaysLogFunction(functionName))
+        {
+            Debug.LogError(
+                $"[ServerFunctionsManager] ExecuteFunction error: {functionName}, error={errorReport}"
+            );
+        }
+
+        if (ShouldShowNetworkError(functionName, errorReport))
+        {
+            ShowNetworkError($"Server error: {functionName}");
+        }
+        else
+        {
+            HideNetworkError();
+            Debug.LogWarning(
+                $"[ServerFunctionsManager] Suppressed network indicator for expected {functionName} error"
+            );
+        }
+
+        callback?.Invoke(null);
     }
 
     public void JoinOrCreateRoom(
@@ -771,7 +800,7 @@ public class ServerFunctionsManager : MonoBehaviour
         int retriesLeft = -1
     )
     {
-        if (this == null || isShuttingDown || !isActiveAndEnabled)
+        if (!CanProcessCallbacks)
         {
             callback?.Invoke(null);
             return;
@@ -785,7 +814,7 @@ public class ServerFunctionsManager : MonoBehaviour
             parameters,
             result =>
             {
-                if (this == null || isShuttingDown || !isActiveAndEnabled)
+                if (!CanProcessCallbacks)
                 {
                     callback?.Invoke(null);
                     return;
@@ -829,7 +858,7 @@ public class ServerFunctionsManager : MonoBehaviour
     )
     {
         yield return new WaitForSeconds(retryDelay);
-        if (this == null || isShuttingDown || !isActiveAndEnabled)
+        if (!CanProcessCallbacks)
         {
             callback?.Invoke(null);
             yield break;
@@ -844,6 +873,12 @@ public class ServerFunctionsManager : MonoBehaviour
         int retriesLeft
     )
     {
+        if (!CanProcessCallbacks)
+        {
+            callback?.Invoke(null);
+            return;
+        }
+
         Debug.Log(
             $"[ServerFunctionsManager] ExecuteFunction request: getMatchState, parameters={Newtonsoft.Json.JsonConvert.SerializeObject(parameters)}, retriesLeft={retriesLeft}"
         );
@@ -856,57 +891,58 @@ public class ServerFunctionsManager : MonoBehaviour
 
         PlayFabCloudScriptAPI.ExecuteFunction(
             request,
-            result =>
-            {
-                LogVerboseWarning(
-                    $"ExecuteFunction result: {Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}"
-                );
-                Debug.Log(
-                    $"[ServerFunctionsManager] ExecuteFunction success: getMatchState, result={Newtonsoft.Json.JsonConvert.SerializeObject(result.FunctionResult)}"
-                );
-                HideNetworkError();
-                callback?.Invoke(result);
-            },
-            error =>
-            {
-                string errorReport = error?.GenerateErrorReport() ?? string.Empty;
-                bool isMissingFunction =
-                    errorReport.IndexOf(
-                        MatchStateFunctionMissingMessage,
-                        StringComparison.OrdinalIgnoreCase
-                    ) >= 0;
-
-                if (isMissingFunction)
-                {
-                    Debug.LogError(
-                        "[ServerFunctionsManager] getMatchState is not registered in PlayFab."
-                    );
-                }
-
-                Debug.LogWarning(errorReport);
-                Debug.LogError(
-                    $"[ServerFunctionsManager] ExecuteFunction error: getMatchState, error={errorReport}"
-                );
-                ShowNetworkError("Server error: getMatchState");
-
-                if (retriesLeft > 0)
-                {
-                    Debug.LogWarning(
-                        $"[ServerFunctionsManager] Retrying getMatchState ({retriesLeft} attempts left)..."
-                    );
-                    StartCoroutine(
-                        RetryMatchStateAfterDelay(parameters, callback, retriesLeft - 1)
-                    );
-                }
-                else
-                {
-                    Debug.LogError(
-                        $"[ServerFunctionsManager] Failed: getMatchState failed after {maxRetries} retries!"
-                    );
-                    callback?.Invoke(null);
-                }
-            }
+            result => HandleFunctionSuccess("getMatchState", result, callback),
+            error => HandleMatchStateError(parameters, callback, retriesLeft, error)
         );
+    }
+
+    private void HandleMatchStateError(
+        object parameters,
+        Action<ExecuteFunctionResult> callback,
+        int retriesLeft,
+        PlayFabError error
+    )
+    {
+        if (!CanProcessCallbacks)
+        {
+            callback?.Invoke(null);
+            return;
+        }
+
+        string errorReport = error?.GenerateErrorReport() ?? string.Empty;
+        bool isMissingFunction =
+            errorReport.IndexOf(
+                MatchStateFunctionMissingMessage,
+                StringComparison.OrdinalIgnoreCase
+            ) >= 0;
+
+        if (isMissingFunction)
+        {
+            Debug.LogError(
+                "[ServerFunctionsManager] getMatchState is not registered in PlayFab."
+            );
+        }
+
+        Debug.LogWarning(errorReport);
+        Debug.LogError(
+            $"[ServerFunctionsManager] ExecuteFunction error: getMatchState, error={errorReport}"
+        );
+        ShowNetworkError("Server error: getMatchState");
+
+        if (retriesLeft > 0)
+        {
+            Debug.LogWarning(
+                $"[ServerFunctionsManager] Retrying getMatchState ({retriesLeft} attempts left)..."
+            );
+            StartCoroutine(RetryMatchStateAfterDelay(parameters, callback, retriesLeft - 1));
+        }
+        else
+        {
+            Debug.LogError(
+                $"[ServerFunctionsManager] Failed: getMatchState failed after {maxRetries} retries!"
+            );
+            callback?.Invoke(null);
+        }
     }
 
     private static bool ShouldShowNetworkError(string functionName, string errorReport)
@@ -937,7 +973,7 @@ public class ServerFunctionsManager : MonoBehaviour
     )
     {
         yield return new WaitForSeconds(retryDelay);
-        if (this == null || isShuttingDown || !isActiveAndEnabled)
+        if (!CanProcessCallbacks)
         {
             callback?.Invoke(null);
             yield break;

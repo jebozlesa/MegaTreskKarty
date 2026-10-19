@@ -23,7 +23,6 @@ public class MultiplayerLobbyUI : MonoBehaviour
     private bool applicationPaused;
     private bool waitingResumeRequired;
     private TMP_Text joinButtonLabel;
-    private Text joinButtonLegacyLabel;
     private MatchmakingState matchmakingState;
     private int matchmakingRequestVersion;
     private bool cancelRequested;
@@ -39,7 +38,6 @@ public class MultiplayerLobbyUI : MonoBehaviour
             return;
         }
         joinButtonLabel = joinButton.GetComponentInChildren<TMP_Text>();
-        joinButtonLegacyLabel = joinButtonLabel == null ? joinButton.GetComponentInChildren<Text>() : null;
         joinButton.onClick.AddListener(OnJoinClicked);
         ownedRoomCode = PlayerPrefs.GetString("RoomCode", "");
         if (string.IsNullOrEmpty(ownedRoomCode)) ResetMatchmakingUi();
@@ -57,7 +55,6 @@ public class MultiplayerLobbyUI : MonoBehaviour
     private void SetJoinButtonText(string text)
     {
         if (joinButtonLabel != null) joinButtonLabel.text = text;
-        else if (joinButtonLegacyLabel != null) joinButtonLegacyLabel.text = text;
     }
 
     private bool OwnsRequest(int version, string expectedRoom = null)

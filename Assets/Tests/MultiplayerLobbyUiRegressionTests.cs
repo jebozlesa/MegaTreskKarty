@@ -55,18 +55,25 @@ public class MultiplayerLobbyUiRegressionTests
     }
 
     [Test]
-    public void SetJoinButtonText_UpdatesLegacyLabel_WhenTmpLabelIsMissing()
+    public void LobbyConnectUsesTmpPrefabWithoutLegacyRuntimeFallback()
     {
         Component lobby = CreateLobbyComponent();
-        GameObject labelObject = new GameObject("LegacyLabel");
-        createdObjects.Add(labelObject);
-        Text label = labelObject.AddComponent<Text>();
-
-        SetPrivateField(lobby, "joinButtonLabel", null);
-        SetPrivateField(lobby, "joinButtonLegacyLabel", label);
-        InvokeSetJoinButtonText(lobby, "CANCEL");
-
-        Assert.AreEqual("CANCEL", label.text);
+        Type assetDatabase = Type.GetType("UnityEditor.AssetDatabase, UnityEditor.CoreModule", true);
+        MethodInfo loadAsset = assetDatabase.GetMethod("LoadAssetAtPath", new[] { typeof(string), typeof(Type) });
+        MethodInfo getDependencies = assetDatabase.GetMethod("GetDependencies", new[] { typeof(string), typeof(bool) });
+        Assert.IsNotNull(loadAsset);
+        Assert.IsNotNull(getDependencies);
+        const string prefabPath = "Assets/Prefabs/Button.prefab";
+        GameObject prefab = (GameObject)loadAsset.Invoke(null, new object[] { prefabPath, typeof(GameObject) });
+        Assert.IsNotNull(prefab);
+        Type tmpType = Type.GetType("TMPro.TMP_Text, Unity.TextMeshPro", true);
+        Assert.IsNotNull(prefab.GetComponentInChildren(tmpType, true));
+        Assert.IsNull(prefab.GetComponentInChildren<Text>(true));
+        string[] dependencies = (string[])getDependencies.Invoke(null,
+            new object[] { "Assets/Scenes/MultiplayerLobby.unity", true });
+        CollectionAssert.Contains(dependencies, prefabPath);
+        Assert.IsNull(lobby.GetType().GetField("joinButtonLegacyLabel", BindingFlags.Instance | BindingFlags.NonPublic),
+            "Lobby uses the existing TMP button prefab; no legacy Text fallback should remain.");
     }
 
     [Test]
