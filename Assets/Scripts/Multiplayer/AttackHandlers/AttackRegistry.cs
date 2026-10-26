@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
 public sealed class AttackExecutionContext
 {
@@ -55,14 +54,20 @@ public sealed class AttackExecutionContext
 
 public sealed class AttackDefinition
 {
-    public AttackDefinition(string name, Func<AttackExecutionContext, IEnumerator> execute)
+    public AttackDefinition(string name, Func<AttackExecutionContext, IEnumerator> execute,
+        Func<Kard, int, AttackAnimations, Func<string, IEnumerator>, IEnumerator> effectApplication = null,
+        bool isComposite = false)
     {
         Name = name;
         Execute = execute;
+        EffectApplication = effectApplication;
+        IsComposite = isComposite;
     }
 
     public string Name { get; }
     public Func<AttackExecutionContext, IEnumerator> Execute { get; }
+    public Func<Kard, int, AttackAnimations, Func<string, IEnumerator>, IEnumerator> EffectApplication { get; }
+    public bool IsComposite { get; }
 }
 
 public static class AttackRegistry
@@ -803,16 +808,10 @@ public static class AttackRegistry
             [64] = new AttackDefinition("Handcuff Escape", ctx =>
                 Attack64Handler.Execute(
                     ctx.Attacker,
-                    ctx.Defender,
-                    ctx.IsMyAttack,
                     ctx.Animations,
-                    ctx.CardAnimator,
-                    ctx.PlayerLifeBar,
-                    ctx.EnemyLifeBar,
-                    ctx.ShowDialog,
-                    ctx.EffectsApplied,
-                    ctx.AttackResult
-                )
+                    ctx.ShowDialog
+                ),
+                Attack64Handler.PlayEffectApplication
             ),
             [65] = new AttackDefinition("Illusion", ctx =>
                 Attack65Handler.Execute(
@@ -1348,7 +1347,7 @@ public static class AttackRegistry
                     ctx.EnemyLifeBar,
                     ctx.ShowDialog,
                     ctx.AttackResult
-                )
+                ), isComposite: true
             ),
             [108] = new AttackDefinition("Oriental Spice", ctx =>
                 Attack108Handler.Execute(
@@ -1540,7 +1539,7 @@ public static class AttackRegistry
                     ctx.EnemyLifeBar,
                     ctx.ShowDialog,
                     ctx.AttackResult
-                )
+                ), isComposite: true
             ),
             [122] = new AttackDefinition("Sport Skills", ctx =>
                 Attack122Handler.Execute(
@@ -1575,17 +1574,34 @@ public static class AttackRegistry
             : $"Attack#{attackId}";
     }
 
-    public static IEnumerator ExecuteOrFallback(int attackId, AttackExecutionContext context)
+    public static IEnumerator PlayEffectApplication(
+        int attackId, Kard target, int effectType, AttackAnimations animations, Func<string, IEnumerator> showDialog)
     {
-        if (Definitions.TryGetValue(attackId, out AttackDefinition definition))
+        if (Definitions.TryGetValue(attackId, out AttackDefinition definition) && definition.EffectApplication != null)
+            yield return definition.EffectApplication(target, effectType, animations, showDialog);
+    }
+
+    public static bool TryValidate(int attackId, string attackResult, bool validatePayload, out string error)
+    {
+        error = null;
+        if (!Definitions.TryGetValue(attackId, out AttackDefinition definition))
         {
-            return definition.Execute(context);
+            error = $"Unknown attackId: {attackId}";
+            return false;
         }
 
-        Debug.LogWarning(
-            $"[ExecuteAttackAnimation] Unknown attackId={attackId}, using Punch as fallback"
-        );
-        return Definitions[1].Execute(context);
+        return !validatePayload || !definition.IsComposite
+            || ComboAttackPlayback.TryParseSequence(attackResult, out _, out error);
+    }
+
+    public static IEnumerator Execute(int attackId, AttackExecutionContext context)
+    {
+        if (!Definitions.TryGetValue(attackId, out AttackDefinition definition))
+            throw new ArgumentOutOfRangeException(nameof(attackId), attackId, "Attack is not registered.");
+        if (definition.IsComposite
+            && !ComboAttackPlayback.TryParseSequence(context.AttackResult, out _, out string error))
+            throw new InvalidOperationException(error);
+        return definition.Execute(context);
     }
 }
 

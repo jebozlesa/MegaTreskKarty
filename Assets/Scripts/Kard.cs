@@ -8,7 +8,6 @@ using UnityEngine.EventSystems;
 using System.Data;
 using Mono.Data.Sqlite;
 using System;
-using System.Linq;
 
 public enum CardState { ATTACK, MAYBE, STAY }
 
@@ -53,8 +52,6 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 
     public GameObject cardPrefab;
     public Transform board; // Referencia na hraciu plochu
-
-    public List<List<int>> effects = new List<List<int>>();
 
     public CardState state = CardState.ATTACK;
 
@@ -201,128 +198,6 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         transform.rotation = originalRotation;
     }
 
-    public bool CheckEffect(int id)
-    {
-        bool idExists = false;
-
-        for (int i = 0; i < effects.Count; i++)
-        {
-            int effectId = effects[i][0];
-            if (effectId == id)
-            {
-                idExists = true;
-                Debug.Log(Time.time + "  " + cardName + " mĂˇ efekt s ID " + id + ".");
-                break;
-            }
-        }
-
-        return idExists;
-    }
-
-
-    public IEnumerator AddEffect(int id, int param)
-    {
-        Debug.Log(Time.time + "  " + cardName + " pridĂˇva efekt " + id + ", " + param);
-
-        // Pre efekty, ktorĂ© mĂ´Ĺľu byĹĄ na karte viackrĂˇt (ID 1 a 4)
-        if (id == 1 || id == 4)
-        {
-            // VĹľdy pridĂˇme efekt bez kontroly duplicity
-            effects.Add(new List<int> { id, param });
-            AddEffectIcon(GetEffectNameById(id));
-            RepositionEffectIcons();
-        }
-        else
-        {
-            // Skontrolujeme, ÄŤi efekt uĹľ existuje
-            bool idExists = effects.Any(e => e[0] == id);
-
-            if (!idExists)
-            {
-                // PridĂˇme efekt a ikonku
-                effects.Add(new List<int> { id, param });
-                AddEffectIcon(GetEffectNameById(id));
-                RepositionEffectIcons();
-            }
-            else
-            {
-                Debug.Log(Time.time + "  " + cardName + " uĹľ mĂˇ efekt s ID " + id + ".");
-            }
-        }
-
-        yield return new WaitForSeconds(0.1f);
-    }
-
-    // PomocnĂˇ metĂłda na kontrolu, ÄŤi bola ikonka efektu uĹľ pridanĂˇ
-    private bool IsEffectIconAdded(int effectId)
-    {
-        string effectName = GetEffectNameById(effectId);
-        Transform iconTransform = effectIconContainer.Find(effectName + "Icon");
-        return iconTransform != null;
-    }
-
-
-    public void RemoveEffect(int index)
-    {
-        int effectId = effects[index][0];
-        string effectName = GetEffectNameById(effectId);
-
-        effects.RemoveAt(index);
-
-        StartCoroutine(RemoveEffectIcon(effectName));
-
-        // Pre efekty, ktorĂ© mĂ´Ĺľu byĹĄ na karte viackrĂˇt (ID 1 a 4)
-        if (effectId == 1 || effectId == 4)
-        {
-            // Skontrolujeme, ÄŤi eĹˇte existujĂş ÄŹalĹˇie inĹˇtancie efektu
-            bool effectStillExists = effects.Any(e => e[0] == effectId);
-            if (!effectStillExists)
-            {
-                // OdstrĂˇnime ikonku, ak uĹľ neexistujĂş ÄŹalĹˇie inĹˇtancie
-                RemoveEffectIcon(GetEffectNameById(effectId));
-            }
-        }
-        else
-        {
-            // Pre ostatnĂ© efekty odstrĂˇnime ikonku okamĹľite
-            RemoveEffectIcon(GetEffectNameById(effectId));
-        }
-    }
-
-
-    public void RemoveEffectById(int id)
-    {
-        // OdstrĂˇnime vĹˇetky efekty s danĂ˝m ID
-        effects.RemoveAll(e => e[0] == id);
-
-        // Pre efekty, ktorĂ© mĂ´Ĺľu byĹĄ na karte viackrĂˇt (ID 1 a 4)
-        if (id == 1 || id == 4)
-        {
-            // Skontrolujeme, ÄŤi eĹˇte existujĂş ÄŹalĹˇie inĹˇtancie efektu
-            bool effectStillExists = effects.Any(e => e[0] == id);
-            if (!effectStillExists)
-            {
-                // OdstrĂˇnime ikonku, ak uĹľ neexistujĂş ÄŹalĹˇie inĹˇtancie
-                StartCoroutine(RemoveEffectIcon(GetEffectNameById(id)));
-            }
-        }
-        else
-        {
-            // Pre ostatnĂ© efekty odstrĂˇnime ikonku okamĹľite
-            StartCoroutine(RemoveEffectIcon(GetEffectNameById(id)));
-        }
-    }
-
-
-    public void RemoveEffectsById(int[] ids)
-    {
-        foreach (int id in ids)
-        {
-            RemoveEffectById(id);
-        }
-    }
-
-
     public void AddEffectIcon(string effectName)
 {
     // NaÄŤĂ­tanie ikonky z Resources
@@ -332,7 +207,6 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
         string placeholderPath = effectName switch
         {
             "Blockade" => "Game/Animations/continentalblocade",
-            "Trident" => "Game/Animations/trident",
             _ => null
         };
         if (!string.IsNullOrEmpty(placeholderPath))
@@ -435,69 +309,6 @@ public class Kard : MonoBehaviour, IAttackCount//, IPointerClickHandler
 }
 
 
-
-    private string GetEffectNameById(int id)
-    {
-        switch (id)
-        {
-            case 1:
-                return "bleed";
-            case 2:
-                return "asceticism";
-            case 3:
-                return "sleep";  // Boredom sleep from attack 11
-            case 4:
-                return "exposure";
-            case 5:
-                return "siege";
-            case 6:
-                return "fury";
-            case 7:
-                return "famine";
-            case 8:
-                return "electricity"; // OpravenĂ˝ preklep
-            case 9:
-                return "tether";
-            case 10:
-                return "starving";
-            case 11:
-                return "envelop";
-            case 12:
-                return "blockade";
-            case 13:
-                return "depression";
-            case 14:
-                return "art_inspiration"; // Pre lepĹˇiu ÄŤitateÄľnosĹĄ ikonky
-            case 15:
-                return "autoportrait";
-            case 16:
-                return "burn";
-            case 17:
-                return "confusion";
-            case 18:
-                return "satellite";
-            case 19:
-                return "fear";
-            case 20:
-                return "horns";
-            case 21:
-                return "calm";
-            case 22:
-                return "reloading";
-            case 23:
-                return "trident";
-            case 24:
-                return "poison";
-            case 26:
-                return "curse";
-            case 27:
-                return "knockout";  // Boredom sleep from attack 11
-            // Pridajte ÄŹalĹˇie efekty podÄľa potreby
-            default:
-                Debug.LogError("NeznĂˇmy efekt s ID: " + id);
-                return "unknown";
-        }
-    }
 
     public void TakeDamage(int dmg)
     {

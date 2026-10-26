@@ -51,78 +51,6 @@ public static class BattleTimelinePlayback
 
             switch (step.Type)
             {
-                case BattleStepType.BleedTick:
-                    if (actor != null && step.Amount > 0)
-                    {
-                        yield return PlaySingleBleedAnimation(context, actor, step.Amount, isPlayerActor);
-                        yield return new WaitForSeconds(context.TickDelaySeconds);
-                    }
-                    else
-                    {
-                        LogEffectTickAnimation("skipped", "BleedTick", context, step, actor, step.Amount, null);
-                    }
-                    break;
-
-                case BattleStepType.BurnTick:
-                    if (actor != null && step.Amount > 0)
-                    {
-                        yield return PlayBurnAnimation(context, actor, step.Amount, isPlayerActor);
-                        yield return new WaitForSeconds(context.TickDelaySeconds);
-                    }
-                    else
-                    {
-                        LogEffectTickAnimation("skipped", "BurnTick", context, step, actor, step.Amount, null);
-                    }
-                    break;
-
-                case BattleStepType.ExposureTick:
-                    if (actor != null && step.Amount > 0)
-                    {
-                        yield return PlayExposureAnimation(context, actor, step.Amount, isPlayerActor);
-                        yield return new WaitForSeconds(context.TickDelaySeconds);
-                    }
-                    else
-                    {
-                        LogEffectTickAnimation("skipped", "ExposureTick", context, step, actor, step.Amount, null);
-                    }
-                    break;
-
-                case BattleStepType.PoisonTick:
-                    if (actor != null && step.Amount > 0)
-                    {
-                        yield return PlayPoisonAnimation(context, actor, step.Amount, isPlayerActor);
-                        yield return new WaitForSeconds(context.TickDelaySeconds);
-                    }
-                    else
-                    {
-                        LogEffectTickAnimation("skipped", "PoisonTick", context, step, actor, step.Amount, null);
-                    }
-                    break;
-
-                case BattleStepType.ExposureRemoved:
-                    if (actor != null)
-                    {
-                        yield return RemoveEndedEffectIcon(context, actor, 4);
-                        yield return ShowDialog(context, $"{actor.cardName}'s irradiation is gone");
-                        yield return new WaitForSeconds(context.TickDelaySeconds);
-                    }
-                    break;
-
-                case BattleStepType.Recovery:
-                    if (actor != null)
-                    {
-                        yield return PlayRecoveryAnimation(context, actor, isPlayerActor ? "My card" : "Enemy card");
-                        yield return new WaitForSeconds(0.5f);
-                    }
-                    break;
-
-                case BattleStepType.WakeUp:
-                    if (actor != null)
-                    {
-                        yield return PlayWakeUpAnimation(context, actor, step.EffectType);
-                    }
-                    break;
-
                 case BattleStepType.Attack:
                     if (actor == null || target == null || step.Skipped || step.Blocked)
                     {
@@ -142,6 +70,11 @@ public static class BattleTimelinePlayback
                     if (context.DialogText != null)
                     {
                         context.DialogText.color = isPlayerActor ? Color.blue : Color.red;
+                    }
+
+                    if (string.Equals(step.Source, "confusion", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Debug.LogWarning($"[CONFUSION] Random attack playback: card={actor.cardId}, attackId={step.AttackId}");
                     }
 
                     yield return ExecuteAttackAnimation(
@@ -181,25 +114,13 @@ public static class BattleTimelinePlayback
                 case BattleStepType.SelfDamage:
                     if (actor != null && step.Amount > 0)
                     {
-                        yield return PlaySelfDamageAnimation(context, actor, step.Amount, isPlayerActor, step.Source);
-                    }
-                    break;
-
-                case BattleStepType.ConfusionForgot:
-                    if (actor != null)
-                    {
-                        yield return PlayConfusionForgotAnimation(context, actor);
+                        yield return PlaySelfDamageAnimation(context, actor, step.Amount, isPlayerActor);
                     }
                     break;
 
                 case BattleStepType.EffectTriggered:
                     if (actor != null)
                     {
-                        if (context.DialogText != null)
-                        {
-                            context.DialogText.color = isPlayerActor ? Color.blue : Color.red;
-                        }
-
                         yield return PlayEffectTriggeredAnimation(context, actor, step.EffectType);
                     }
                     break;
@@ -207,6 +128,10 @@ public static class BattleTimelinePlayback
                 case BattleStepType.EffectApplied:
                     if (target != null)
                     {
+                        yield return AttackRegistry.PlayEffectApplication(
+                            step.AttackId, target, step.EffectType,
+                            context.AttackComponent != null ? context.AttackComponent.attackAnimations : null,
+                            message => ShowDialog(context, message));
                         var effectData = new Dictionary<string, object>
                         {
                             { "type", step.EffectType },
@@ -225,6 +150,12 @@ public static class BattleTimelinePlayback
                     if (target != null)
                     {
                         yield return RemoveEndedEffectIcon(context, target, step.EffectType);
+                        if (step.EffectType == 4 && step.RemovalReason == "recovered")
+                        {
+                            yield return ShowDialog(context, $"{target.cardName}'s irradiation is gone");
+                            yield return new WaitForSeconds(context.TickDelaySeconds);
+                            break;
+                        }
                         if (step.EffectType == 7)
                         {
                             yield return ShowDialog(context, $"{target.cardName} is starving no more");
@@ -282,21 +213,27 @@ public static class BattleTimelinePlayback
                 case BattleStepType.Damage:
                     if (target != null && ShouldPlayStandaloneDamage(step))
                     {
-                        yield return BattleValuePlayback.PlayDamage(
-                            target,
-                            step.Amount,
-                            target.cardId == context.PlayerCardId,
-                            context.CardAnimator,
-                            context.PlayerLifeBar,
-                            context.EnemyLifeBar
-                        );
+                        bool isPlayerTarget = target.cardId == context.PlayerCardId;
+                        switch (step.EffectType)
+                        {
+                            case 1: yield return PlaySingleBleedAnimation(context, target, step.Amount, isPlayerTarget); break;
+                            case 16: yield return PlayBurnAnimation(context, target, step.Amount, isPlayerTarget); break;
+                            case 4: yield return PlayExposureAnimation(context, target, step.Amount, isPlayerTarget); break;
+                            case 24: yield return PlayPoisonAnimation(context, target, step.Amount, isPlayerTarget); break;
+                            default:
+                                yield return BattleValuePlayback.PlayDamage(target, step.Amount, isPlayerTarget,
+                                    context.CardAnimator, context.PlayerLifeBar, context.EnemyLifeBar);
+                                break;
+                        }
+                        if (step.EffectType == 1 || step.EffectType == 16 || step.EffectType == 4 || step.EffectType == 24)
+                            yield return new WaitForSeconds(context.TickDelaySeconds);
                     }
                     break;
 
                 case BattleStepType.Heal:
                     if (
                         target != null
-                        && string.Equals(step.Source, "famine", StringComparison.OrdinalIgnoreCase)
+                        && step.EffectType == 7
                     )
                     {
                         AttackAnimations animations = context.AttackComponent?.attackAnimations;
@@ -377,21 +314,7 @@ public static class BattleTimelinePlayback
             attackerEffects
         );
 
-        yield return AttackRegistry.ExecuteOrFallback(attackId, attackContext);
-    }
-
-    private static IEnumerator PlayWakeUpAnimation(BattleTimelinePlaybackContext context, Kard card, int effectType)
-    {
-        yield return RemoveEndedEffectIcon(context, card, effectType, 3);
-
-        yield return ShowDialog(context, $"{card.cardName} wakes up!");
-    }
-
-    private static IEnumerator PlayRecoveryAnimation(BattleTimelinePlaybackContext context, Kard card, string cardDescription)
-    {
-        yield return RemoveEndedEffectIcon(context, card, 2);
-
-        yield return ShowDialog(context, $"{card.cardName} feels blessed again!");
+        yield return AttackRegistry.Execute(attackId, attackContext);
     }
 
     private static IEnumerator PlayBlockAnimation(BattleTimelinePlaybackContext context, Kard card, int? blockedBy)
@@ -406,7 +329,6 @@ public static class BattleTimelinePlayback
         switch (blockedBy)
         {
             case 2:
-                yield return animations.PlayConfusionHurtItselfAnimation(card.transform);
                 yield return ShowDialog(context, $"{card.cardName} practizes asceticism...");
                 break;
 
@@ -441,18 +363,8 @@ public static class BattleTimelinePlayback
         BattleTimelinePlaybackContext context,
         Kard card,
         int damage,
-        bool isPlayerCard,
-        string source)
+        bool isPlayerCard)
     {
-        if (string.Equals(source, "confusion", StringComparison.OrdinalIgnoreCase))
-        {
-            AttackAnimations animations = context.AttackComponent?.attackAnimations;
-            if (animations != null)
-            {
-                yield return animations.PlayConfusionHurtItselfAnimation(card.transform);
-            }
-        }
-
         yield return BattleValuePlayback.PlayDamage(
             card,
             damage,
@@ -577,29 +489,28 @@ public static class BattleTimelinePlayback
         LogEffectTickAnimation("finish", "PoisonTick", context, null, card, damage, animations);
     }
 
-    private static IEnumerator PlayConfusionForgotAnimation(BattleTimelinePlaybackContext context, Kard card)
-    {
-        AttackAnimations animations = context.AttackComponent?.attackAnimations;
-        if (animations != null)
-        {
-            yield return animations.PlayConfusionForgetAnimation(card.transform);
-        }
-        else
-        {
-            Debug.LogWarning(
-                $"[CONFUSION_FORGOT_ANIM] Missing animations for {card.cardName}({card.cardId})"
-            );
-        }
-
-        yield return ShowDialog(context, $"{card.cardName} forgot to attack!");
-    }
-
     private static IEnumerator PlayEffectTriggeredAnimation(
         BattleTimelinePlaybackContext context,
         Kard card,
         int effectType
     )
     {
+        AttackAnimations animations = context.AttackComponent?.attackAnimations;
+        if (effectType == 2)
+        {
+            if (animations != null)
+            {
+                yield return animations.PlayConfusionHurtItselfAnimation(card.transform);
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"[ASCETICISM_HIT_ANIM] Missing animations for {card.cardName}({card.cardId})"
+                );
+            }
+            yield break;
+        }
+
         if (effectType != 17)
         {
             Debug.LogWarning(
@@ -608,7 +519,6 @@ public static class BattleTimelinePlayback
             yield break;
         }
 
-        AttackAnimations animations = context.AttackComponent?.attackAnimations;
         if (animations != null)
         {
             yield return animations.PlayConfusionDecisionAnimation(card.transform);
@@ -620,7 +530,7 @@ public static class BattleTimelinePlayback
             );
         }
 
-        yield return ShowDialog(context, $"{card.cardName} is confused and is not sure what to do...");
+        yield return ShowDialog(context, $"{card.cardName} is confused. Screw the plan!", card.cardId == context.PlayerCardId);
     }
 
     private static void LogEffectTickAnimation(
@@ -798,31 +708,22 @@ public static class BattleTimelinePlayback
 
     private static bool ShouldPlayStandaloneDamage(BattleStep step)
     {
-        bool isTickDamage =
-            string.Equals(step.Source, "bleed", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(step.Source, "burn", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(step.Source, "exposure", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(step.Source, "poison", StringComparison.OrdinalIgnoreCase);
-
-        return !isTickDamage
-            && !string.Equals(step.Source, "attack", StringComparison.OrdinalIgnoreCase);
+        return !string.Equals(step.Source, "attack", StringComparison.OrdinalIgnoreCase);
     }
 
     private static IEnumerator RemoveEndedEffectIcon(
         BattleTimelinePlaybackContext context,
         Kard card,
-        int effectType,
-        int fallbackEffectType = 0)
+        int effectType)
     {
-        int resolvedEffectType = effectType != 0 ? effectType : fallbackEffectType;
-        if (context == null || card == null || resolvedEffectType == 0)
+        if (context == null || card == null || effectType == 0)
         {
             yield break;
         }
 
         yield return BattleEffectPlayback.RemoveEffectIconOnly(
             card,
-            resolvedEffectType,
+            effectType,
             card.cardId == context.PlayerCardId,
             context.AttackComponent
         );
@@ -926,7 +827,7 @@ public static class BattleTimelinePlayback
 
             if (
                 next.Type == BattleStepType.Heal
-                && string.Equals(next.TargetCardId, attackerCardId, StringComparison.Ordinal)
+                && string.Equals(next.ActorCardId, attackerCardId, StringComparison.Ordinal)
                 && string.Equals(next.Source, "attack", StringComparison.OrdinalIgnoreCase)
             )
             {
@@ -937,10 +838,12 @@ public static class BattleTimelinePlayback
         return 0;
     }
 
-    private static IEnumerator ShowDialog(BattleTimelinePlaybackContext context, string message)
+    private static IEnumerator ShowDialog(BattleTimelinePlaybackContext context, string message, bool? isPlayerActor = null)
     {
         if (context.DialogText != null)
         {
+            if (isPlayerActor.HasValue)
+                context.DialogText.color = isPlayerActor.Value ? Color.blue : Color.red;
             context.DialogText.text = message ?? string.Empty;
         }
 

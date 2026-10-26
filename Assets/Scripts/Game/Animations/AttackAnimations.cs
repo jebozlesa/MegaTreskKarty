@@ -3998,12 +3998,6 @@ public class AttackAnimations : MonoBehaviour
         );
     }
 
-    public IEnumerator PlayConfusionForgetAnimation(Transform targetCard)
-    {
-        // Placeholder until the dedicated forgot-to-attack animation is available.
-        yield return PlayConfusionDecisionAnimation(targetCard);
-    }
-
     //17e
     public IEnumerator PlayConfusionEndAnimation(Transform targetCard)
     {

@@ -6,15 +6,467 @@ using UnityEngine;
 
 public class BattleSharedDamagePlaybackTests
 {
+    [TestCase(71, 19, true, false)]
+    [TestCase(71, 19, false, false)]
+    [TestCase(71, 21, true, false)]
+    [TestCase(71, 21, false, false)]
+    [TestCase(64, 9, true, true)]
+    [TestCase(64, 9, false, true)]
+    [TestCase(64, 12, true, false)]
+    [TestCase(64, 12, false, false)]
+    [TestCase(3, 19, true, false)]
+    [TestCase(3, 19, false, false)]
+    [TestCase(10, 3, true, false)]
+    [TestCase(10, 3, false, false)]
+    [TestCase(26, 3, true, false)]
+    [TestCase(26, 3, false, false)]
+    public void CausalCleanupFollowsCastBeforeRollbackAndSecondaryEffect(
+        int attackId, int effectType, bool casterIsPlayer, bool confusion)
+    {
+        var runtime = Array.Find(AppDomain.CurrentDomain.GetAssemblies(), a => a.GetName().Name == "Assembly-CSharp");
+        Assert.IsNotNull(runtime);
+        Type cardType = runtime.GetType("Kard", true);
+        Type contextType = runtime.GetType("BattleTimelinePlaybackContext", true);
+        Type stepType = runtime.GetType("BattleStep", true);
+        Type eventType = runtime.GetType("BattleStepType", true);
+        var root = new GameObject("CausalCleanup", typeof(RectTransform));
+        root.SetActive(false);
+        try
+        {
+            Component Card(string id)
+            {
+                var child = new GameObject(id, typeof(RectTransform));
+                child.transform.SetParent(root.transform, false);
+                var card = child.AddComponent(cardType);
+                cardType.GetField("cardId").SetValue(card, id);
+                cardType.GetField("cardName").SetValue(card, id);
+                cardType.GetProperty("health").SetValue(card, 20);
+                cardType.GetProperty("maxHealth").SetValue(card, 20);
+                return card;
+            }
+            var caster = Card("caster");
+            var target = Card("target");
+            var context = Activator.CreateInstance(contextType);
+            contextType.GetField("PlayerCard").SetValue(context, casterIsPlayer ? caster : target);
+            contextType.GetField("EnemyCard").SetValue(context, casterIsPlayer ? target : caster);
+            contextType.GetField("PlayerCardId").SetValue(context, casterIsPlayer ? "caster" : "target");
+            contextType.GetField("EnemyCardId").SetValue(context, casterIsPlayer ? "target" : "caster");
+            var attack = root.AddComponent(runtime.GetType("Attack", true));
+            attack.GetType().GetField("attackAnimations").SetValue(attack,
+                root.AddComponent(runtime.GetType("AttackAnimations", true)));
+            contextType.GetField("AttackComponent").SetValue(context, attack);
+            var steps = (System.Collections.IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(stepType));
+            object Step(string kind, string targetId)
+            {
+                var step = Activator.CreateInstance(stepType);
+                stepType.GetField("Type").SetValue(step, Enum.Parse(eventType, kind));
+                stepType.GetField("ActorCardId").SetValue(step, "caster");
+                stepType.GetField("TargetCardId").SetValue(step, targetId);
+                steps.Add(step);
+                return step;
+            }
+            var cast = Step("Attack", "target");
+            stepType.GetField("AttackId").SetValue(cast, attackId);
+            stepType.GetField("AttackResult").SetValue(cast, "escaped");
+            if (confusion) stepType.GetField("EffectsApplied").SetValue(cast,
+                new List<Dictionary<string, object>> { new Dictionary<string, object> { { "type", 17 }, { "duration", 2 } } });
+            string cleansedId = attackId == 10 ? "target" : "caster";
+            var removal = Step("EffectRemoved", cleansedId);
+            stepType.GetField("EffectType").SetValue(removal, effectType);
+            stepType.GetField("RemovalReason").SetValue(removal, "cleansed");
+            var rollback = Step("StatChange", cleansedId);
+            stepType.GetField("StatName").SetValue(rollback, "STR");
+            stepType.GetField("Amount").SetValue(rollback, 2);
+            if (confusion)
+            {
+                var applied = Step("EffectApplied", "target");
+                stepType.GetField("AttackId").SetValue(applied, attackId);
+                stepType.GetField("EffectType").SetValue(applied, 17);
+                stepType.GetField("Duration").SetValue(applied, 2);
+            }
+            string castName = attackId == 71 ? "<PlayBattleCryAnimation>"
+                : attackId == 64 ? "<PlayHandcuffEscapeAnimation>"
+                : attackId == 3 ? "<PlayHealAnimation>"
+                : attackId == 10 ? "<PlayScratchAnimation>" : "<PlayBoostAnimation>";
+            var trace = new List<string>();
+            void Drain(System.Collections.IEnumerator routine)
+            {
+                string name = routine.GetType().Name;
+                if (name.Contains(castName)) { trace.Add("cast"); return; }
+                if (name.Contains("<RemoveEndedEffectIcon>"))
+                {
+                    CollectionAssert.AreEqual(new[] { "cast" }, trace);
+                    trace.Add("cleanup");
+                    return;
+                }
+                if (name.Contains("<PlayTimelineStatChange>"))
+                {
+                    CollectionAssert.AreEqual(new[] { "cast", "cleanup" }, trace);
+                    trace.Add("rollback");
+                    return;
+                }
+                if (name.Contains("<PlayConfusionStartAnimation>"))
+                {
+                    CollectionAssert.AreEqual(new[] { "cast", "cleanup", "rollback" }, trace);
+                    trace.Add("confusion");
+                    return;
+                }
+                if (name.Contains("<AddEffectIconOnly>")) { trace.Add("icon"); return; }
+                while (routine.MoveNext())
+                    if (routine.Current is System.Collections.IEnumerator nested) Drain(nested);
+            }
+            Drain((System.Collections.IEnumerator)runtime.GetType("BattleTimelinePlayback", true).GetMethod("Play")
+                .Invoke(null, new object[] { context, steps }));
+            CollectionAssert.AreEqual(confusion
+                ? new[] { "cast", "cleanup", "rollback", "confusion", "icon" }
+                : new[] { "cast", "cleanup", "rollback" }, trace);
+        }
+        finally { UnityEngine.Object.DestroyImmediate(root); }
+    }
+
+    [TestCase(75, true, 18)]
+    [TestCase(75, false, 18)]
+    [TestCase(75, true, 20)]
+    [TestCase(75, false, 20)]
+    [TestCase(115, true, 18)]
+    [TestCase(115, false, 18)]
+    [TestCase(115, true, 20)]
+    [TestCase(115, false, 20)]
+    public void TargetHealTimelineHasOneHandlerValueOwner(int attackId, bool casterIsPlayer, int targetHealth)
+    {
+        var runtime = Array.Find(AppDomain.CurrentDomain.GetAssemblies(), a => a.GetName().Name == "Assembly-CSharp");
+        Assert.IsNotNull(runtime);
+        Type cardType = runtime.GetType("Kard", true);
+        Type contextType = runtime.GetType("BattleTimelinePlaybackContext", true);
+        Type stepType = runtime.GetType("BattleStep", true);
+        Type eventType = runtime.GetType("BattleStepType", true);
+        var root = new GameObject("TargetHealOwner", typeof(RectTransform));
+        root.SetActive(false);
+        try
+        {
+            Component Card(string id, int health)
+            {
+                var child = new GameObject(id, typeof(RectTransform));
+                child.transform.SetParent(root.transform, false);
+                var card = child.AddComponent(cardType);
+                cardType.GetField("cardId").SetValue(card, id);
+                cardType.GetField("cardName").SetValue(card, id);
+                cardType.GetProperty("health").SetValue(card, health);
+                cardType.GetProperty("maxHealth").SetValue(card, 20);
+                return card;
+            }
+            var caster = Card("poet", 9);
+            var target = Card("reader", targetHealth);
+            var context = Activator.CreateInstance(contextType);
+            contextType.GetField("PlayerCard").SetValue(context, casterIsPlayer ? caster : target);
+            contextType.GetField("EnemyCard").SetValue(context, casterIsPlayer ? target : caster);
+            contextType.GetField("PlayerCardId").SetValue(context, casterIsPlayer ? "poet" : "reader");
+            contextType.GetField("EnemyCardId").SetValue(context, casterIsPlayer ? "reader" : "poet");
+            contextType.GetField("CardAnimator").SetValue(context, root.AddComponent(runtime.GetType("MultiplayerCardAnimator", true)));
+            Type attackType = runtime.GetType("Attack", true);
+            var attack = root.AddComponent(attackType);
+            attackType.GetField("attackAnimations").SetValue(attack, root.AddComponent(runtime.GetType("AttackAnimations", true)));
+            contextType.GetField("AttackComponent").SetValue(context, attack);
+            var steps = (System.Collections.IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(stepType));
+            object Step(string kind)
+            {
+                var step = Activator.CreateInstance(stepType);
+                stepType.GetField("Type").SetValue(step, Enum.Parse(eventType, kind));
+                stepType.GetField("ActorCardId").SetValue(step, "poet");
+                stepType.GetField("TargetCardId").SetValue(step, "reader");
+                stepType.GetField("Source").SetValue(step, "attack");
+                steps.Add(step);
+                return step;
+            }
+            var cast = Step("Attack");
+            stepType.GetField("AttackId").SetValue(cast, attackId);
+            stepType.GetField("AttackResult").SetValue(cast, attackId == 75 ? "liked-it" : "inspired");
+            if (targetHealth < 20) stepType.GetField("Amount").SetValue(Step("Heal"), 1);
+            int Health(Component card) => (int)cardType.GetProperty("health").GetValue(card);
+            var trace = new List<string>();
+            string castVisual = attackId == 75 ? "<PlayIambicPentameterAnimation>" : "<PlayCubismAnimation>";
+            void Drain(System.Collections.IEnumerator routine)
+            {
+                string name = routine.GetType().Name;
+                if (name.Contains(castVisual))
+                {
+                    Assert.AreEqual(targetHealth, Health(target));
+                    trace.Add("cast");
+                    return;
+                }
+                if (name.Contains("<PlayHeal>"))
+                {
+                    CollectionAssert.AreEqual(new[] { "cast" }, trace);
+                    Assert.AreEqual(!casterIsPlayer, routine.GetType().GetField("isMyCard").GetValue(routine));
+                    trace.Add("heal");
+                }
+                if (name.Contains("<AnimateHeal>"))
+                {
+                    Assert.AreEqual(Math.Min(20, targetHealth + 1), Health(target));
+                    trace.Add("number");
+                    return;
+                }
+                while (routine.MoveNext())
+                    if (routine.Current is System.Collections.IEnumerator nested) Drain(nested);
+            }
+            Drain((System.Collections.IEnumerator)runtime.GetType("BattleTimelinePlayback", true).GetMethod("Play")
+                .Invoke(null, new object[] { context, steps }));
+            CollectionAssert.AreEqual(attackId == 75 || targetHealth < 20
+                ? new[] { "cast", "heal", "number" } : new[] { "cast" }, trace);
+            Assert.AreEqual(Math.Min(20, targetHealth + 1), Health(target));
+            Assert.AreEqual(9, Health(caster));
+        }
+        finally { UnityEngine.Object.DestroyImmediate(root); }
+    }
+
+    [TestCase("caster", "caster", "attack", false, 3)]
+    [TestCase("caster", "target", "attack", false, 3)]
+    [TestCase("other", "caster", "attack", false, 0)]
+    [TestCase("caster", "caster", "famine", false, 0)]
+    [TestCase("caster", "caster", "attack", true, 0)]
+    public void AttackHealReaderUsesActorAndStopsAtNextAttack(string actor, string target, string source, bool nextAttack, int expected)
+    {
+        var runtime = Array.Find(AppDomain.CurrentDomain.GetAssemblies(), a => a.GetName().Name == "Assembly-CSharp");
+        Assert.IsNotNull(runtime);
+        Type stepType = runtime.GetType("BattleStep", true);
+        Type eventType = runtime.GetType("BattleStepType", true);
+        var steps = (System.Collections.IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(stepType));
+        void Add(string kind, string actorId, string targetId, string valueSource)
+        {
+            var step = Activator.CreateInstance(stepType);
+            stepType.GetField("Type").SetValue(step, Enum.Parse(eventType, kind));
+            stepType.GetField("ActorCardId").SetValue(step, actorId);
+            stepType.GetField("TargetCardId").SetValue(step, targetId);
+            stepType.GetField("Source").SetValue(step, valueSource);
+            stepType.GetField("Amount").SetValue(step, 3);
+            steps.Add(step);
+        }
+        Add("Attack", "caster", "target", "attack");
+        if (nextAttack) Add("Attack", "other", "caster", "attack");
+        Add("Heal", actor, target, source);
+        var read = runtime.GetType("BattleTimelinePlayback", true).GetMethod("GetAttackHealFromTimeline",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        Assert.IsNotNull(read);
+        Assert.AreEqual(expected, read.Invoke(null, new object[] { steps, 0, "caster" }));
+    }
+
+    [TestCase(1, true, 8, true)]
+    [TestCase(1, false, 1, true)]
+    [TestCase(16, true, 8, true)]
+    [TestCase(16, false, 1, false)]
+    [TestCase(4, true, 8, true)]
+    [TestCase(4, false, 1, true)]
+    [TestCase(24, true, 8, false)]
+    [TestCase(24, false, 1, true)]
+    public void TypedPassiveDamageAwaitsEachAnimationThenChangesHpOnce(int effectType, bool isPlayer, int health, bool withAnimations)
+    {
+        VerifyPassiveValuePlayback(effectType, isPlayer, health, withAnimations);
+    }
+
+    [TestCase(true, 9)]
+    [TestCase(false, 10)]
+    public void TypedFamineKeepsContinueAtFullHealthWithoutZeroHealAnimation(bool isPlayer, int health)
+    {
+        VerifyPassiveValuePlayback(7, isPlayer, health, true);
+    }
+
+    private static void VerifyPassiveValuePlayback(int effectType, bool isPlayer, int health, bool withAnimations)
+    {
+        var runtime = Array.Find(AppDomain.CurrentDomain.GetAssemblies(), a => a.GetName().Name == "Assembly-CSharp");
+        Assert.IsNotNull(runtime);
+        Type cardType = runtime.GetType("Kard", true);
+        Type contextType = runtime.GetType("BattleTimelinePlaybackContext", true);
+        Type stepType = runtime.GetType("BattleStep", true);
+        Type eventType = runtime.GetType("BattleStepType", true);
+        var root = new GameObject("PassiveValueOrder", typeof(RectTransform));
+        root.SetActive(false);
+        try
+        {
+            var card = root.AddComponent(cardType);
+            cardType.GetField("cardId").SetValue(card, "subject");
+            cardType.GetField("cardName").SetValue(card, "Subject");
+            cardType.GetProperty("health").SetValue(card, health);
+            cardType.GetProperty("maxHealth").SetValue(card, 10);
+            var context = Activator.CreateInstance(contextType);
+            contextType.GetField(isPlayer ? "PlayerCard" : "EnemyCard").SetValue(context, card);
+            contextType.GetField("PlayerCardId").SetValue(context, isPlayer ? "subject" : "observer");
+            contextType.GetField("EnemyCardId").SetValue(context, isPlayer ? "observer" : "subject");
+            contextType.GetField("CardAnimator").SetValue(context, root.AddComponent(runtime.GetType("MultiplayerCardAnimator", true)));
+            contextType.GetField("FinalDelaySeconds").SetValue(context, 0f);
+            Type textType = Type.GetType("TMPro.TextMeshProUGUI, Unity.TextMeshPro", true);
+            var text = root.AddComponent(textType);
+            contextType.GetField("DialogText").SetValue(context, text);
+            if (withAnimations)
+            {
+                Type attackType = runtime.GetType("Attack", true);
+                var attack = root.AddComponent(attackType);
+                attackType.GetField("attackAnimations").SetValue(attack, root.AddComponent(runtime.GetType("AttackAnimations", true)));
+                contextType.GetField("AttackComponent").SetValue(context, attack);
+            }
+            var steps = (System.Collections.IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(stepType));
+            bool heal = effectType == 7;
+            int instances = !heal && health > 1 ? 2 : 1;
+            int amount = heal ? 10 - health : Math.Min(health, 2);
+            string source = effectType == 1 ? "bleed" : effectType == 16 ? "burn" : effectType == 4 ? "exposure" : heal ? "famine" : "poison";
+            for (int i = 0; i < instances; i++)
+            {
+                var step = Activator.CreateInstance(stepType);
+                stepType.GetField("Type").SetValue(step, Enum.Parse(eventType, heal ? "Heal" : "Damage"));
+                stepType.GetField("ActorCardId").SetValue(step, "subject");
+                stepType.GetField("TargetCardId").SetValue(step, "subject");
+                stepType.GetField("EffectType").SetValue(step, effectType);
+                stepType.GetField("Amount").SetValue(step, amount);
+                stepType.GetField("Source").SetValue(step, source);
+                steps.Add(step);
+            }
+            int Health() => (int)cardType.GetProperty("health").GetValue(card);
+            string visual = effectType == 1 ? "PlayBleedContinueAnimation" : effectType == 16 ? "PlayBurnContinueAnimation"
+                : effectType == 4 ? "PlayExposureAnimation" : heal ? "PlayFamineContinueAnimation" : "PlayPoisonContinueAnimation";
+            var trace = new List<string>();
+            int values = 0;
+            int visuals = 0;
+            int ticks = 0;
+            void Drain(System.Collections.IEnumerator routine)
+            {
+                string name = routine.GetType().Name;
+                if (routine.GetType().DeclaringType?.Name == "AttackAnimations" && name.Contains("<" + visual + ">"))
+                {
+                    Assert.AreEqual(health + (heal ? amount : -amount) * values, Health(), "Animation must finish before its value");
+                    if (effectType == 1)
+                        Assert.AreEqual(amount, routine.GetType().GetField("drops").GetValue(routine));
+                    visuals++;
+                    trace.Add("visual");
+                    return;
+                }
+                if (name.Contains(heal ? "<PlayHeal>" : "<PlayDamage>"))
+                {
+                    Assert.AreEqual(withAnimations ? values + 1 : 0, visuals);
+                    Assert.AreEqual(health + (heal ? amount : -amount) * values, Health());
+                    values++;
+                    trace.Add("value");
+                }
+                if (name.Contains("<AnimateDamage>") || name.Contains("<AnimateHeal>"))
+                {
+                    Assert.AreEqual(health + (heal ? amount : -amount) * values, Health());
+                    Assert.AreEqual(amount, routine.GetType().GetField(heal ? "healAmount" : "damageAmount").GetValue(routine));
+                    trace.Add("number");
+                    return;
+                }
+                if (name.Contains("<ShowDialog>"))
+                {
+                    Assert.AreEqual(health - amount * values, Health());
+                    trace.Add("copy");
+                }
+                while (routine.MoveNext())
+                {
+                    if (routine.Current is System.Collections.IEnumerator nested) Drain(nested);
+                    else if (routine.Current is WaitForSeconds && name.Contains("<Play>")) ticks++;
+                }
+            }
+            Drain((System.Collections.IEnumerator)runtime.GetType("BattleTimelinePlayback", true).GetMethod("Play")
+                .Invoke(null, new object[] { context, steps }));
+            var expected = new List<string>();
+            for (int i = 0; i < instances; i++)
+            {
+                if (withAnimations) expected.Add("visual");
+                expected.Add("value");
+                if (amount > 0) expected.Add("number");
+                if (!heal) expected.Add("copy");
+            }
+            CollectionAssert.AreEqual(expected, trace);
+            Assert.AreEqual(health + (heal ? amount : -amount) * instances, Health());
+            Assert.AreEqual(heal ? 0 : instances, ticks, "Retain one tick wait per damaging instance");
+            if (!heal) StringAssert.Contains(effectType == 4 ? "is irradiated" : "-" + amount + " HP", (string)textType.GetProperty("text").GetValue(text));
+        }
+        finally { UnityEngine.Object.DestroyImmediate(root); }
+    }
+
     [Test]
     public void BattleTimelinePlayback_DoesNotContainSharedDamageFallbackAfterHandlerExecution()
     {
         string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
 
-        StringAssert.Contains("yield return AttackRegistry.ExecuteOrFallback(attackId, attackContext);", source);
+        StringAssert.Contains("yield return AttackRegistry.Execute(attackId, attackContext);", source);
         Assert.IsFalse(source.Contains("defender.health == defenderHealthBeforeAttack"));
         Assert.IsFalse(source.Contains("[AttackPlayback] Applying shared damage fallback"));
         Assert.IsFalse(source.Contains("private IEnumerator PlayTimelineDamageAnimation("));
+    }
+
+    [TestCase(true)]
+    [TestCase(false)]
+    public void UtilityAndBlockadeKeepSeparateStatAnimationsAndAttackDamageIsNotReplayed(bool isPlayer)
+    {
+        var runtime = Array.Find(AppDomain.CurrentDomain.GetAssemblies(), a => a.GetName().Name == "Assembly-CSharp");
+        Type cardType = runtime.GetType("Kard", true);
+        Type contextType = runtime.GetType("BattleTimelinePlaybackContext", true);
+        Type stepType = runtime.GetType("BattleStep", true);
+        Type eventType = runtime.GetType("BattleStepType", true);
+        var root = new GameObject("ValueAndStatOwners", typeof(RectTransform));
+        root.SetActive(false);
+        try
+        {
+            var card = root.AddComponent(cardType);
+            cardType.GetField("cardId").SetValue(card, "subject");
+            cardType.GetProperty("health").SetValue(card, 10);
+            cardType.GetProperty("maxHealth").SetValue(card, 10);
+            cardType.GetProperty("knowledge").SetValue(card, 2);
+            cardType.GetProperty("strength").SetValue(card, 5);
+            var context = Activator.CreateInstance(contextType);
+            contextType.GetField(isPlayer ? "PlayerCard" : "EnemyCard").SetValue(context, card);
+            contextType.GetField("PlayerCardId").SetValue(context, isPlayer ? "subject" : "observer");
+            contextType.GetField("EnemyCardId").SetValue(context, isPlayer ? "observer" : "subject");
+            contextType.GetField("FinalDelaySeconds").SetValue(context, 0f);
+            contextType.GetField("CardAnimator").SetValue(context, root.AddComponent(runtime.GetType("MultiplayerCardAnimator", true)));
+            Type attackType = runtime.GetType("Attack", true);
+            var attack = root.AddComponent(attackType);
+            attackType.GetField("attackAnimations").SetValue(attack, root.AddComponent(runtime.GetType("AttackAnimations", true)));
+            contextType.GetField("AttackComponent").SetValue(context, attack);
+            var steps = (System.Collections.IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(stepType));
+            void Add(string kind, string source, int amount, int effectType = 0, string stat = null)
+            {
+                var step = Activator.CreateInstance(stepType);
+                foreach (var pair in new Dictionary<string, object> {
+                    { "Type", Enum.Parse(eventType, kind) }, { "ActorCardId", "subject" }, { "TargetCardId", "subject" },
+                    { "Source", source }, { "Amount", amount }, { "EffectType", effectType }, { "StatName", stat } })
+                    stepType.GetField(pair.Key).SetValue(step, pair.Value);
+                if (kind == "Blocked") stepType.GetField("BlockedBy").SetValue(step, (int?)12);
+                steps.Add(step);
+            }
+            for (int i = 0; i < 2; i++) { Add("SatelliteTick", "satellite", 1, 18); Add("StatChange", "satellite", 1, 0, "KNO"); }
+            Add("Damage", "blockade", 2);
+            Add("StatChange", "blockade", -1, 0, "STR");
+            Add("Blocked", "effect", 0, 12);
+            Add("Damage", "attack", 2);
+            int Value(string key) => (int)cardType.GetProperty(key).GetValue(card);
+            var trace = new List<string>();
+            void Drain(System.Collections.IEnumerator current)
+            {
+                string name = current.GetType().Name;
+                if (name.Contains("<PlaySatelliteAnimation>"))
+                {
+                    Assert.AreEqual(10, Value("health"));
+                    Assert.AreEqual(2 + trace.FindAll(s => s == "stat").Count, Value("knowledge"));
+                    trace.Add("satellite"); return;
+                }
+                if (name.Contains("<AnimateStatChange>")) { trace.Add("stat"); return; }
+                if (name.Contains("<AnimateDamage>"))
+                {
+                    Assert.AreEqual(8, Value("health")); Assert.AreEqual(5, Value("strength"));
+                    trace.Add("damage"); return;
+                }
+                if (name.Contains("<PlayBlocadeWaitAnimation>"))
+                {
+                    Assert.AreEqual(8, Value("health")); Assert.AreEqual(4, Value("strength"));
+                    trace.Add("blockade"); return;
+                }
+                while (current.MoveNext()) if (current.Current is System.Collections.IEnumerator nested) Drain(nested);
+            }
+            Drain((System.Collections.IEnumerator)runtime.GetType("BattleTimelinePlayback", true).GetMethod("Play")
+                .Invoke(null, new object[] { context, steps }));
+            CollectionAssert.AreEqual(new[] { "satellite", "stat", "satellite", "stat", "damage", "stat", "blockade" }, trace);
+            Assert.AreEqual(8, Value("health")); Assert.AreEqual(4, Value("knowledge")); Assert.AreEqual(4, Value("strength"));
+        }
+        finally { UnityEngine.Object.DestroyImmediate(root); }
     }
 
     [Test]
@@ -116,7 +568,7 @@ public class BattleSharedDamagePlaybackTests
 
         StringAssert.Contains("BattleEffectPlayback.AddEffectIconOnly(", timelineSource);
         StringAssert.Contains("BattleEffectPlayback.RemoveEffectIconOnly(", timelineSource);
-        StringAssert.Contains("public static IEnumerator DisplayMultipleEffects(", effectSource);
+        StringAssert.Contains("public static void SyncEffectIconsFromSnapshot(", effectSource);
         StringAssert.Contains("public static string GetEffectName(", effectSource);
         Assert.IsFalse(timelineSource.Contains("GetEffectVisuals("));
         Assert.IsFalse(timelineSource.Contains("BattleEffectVisuals"));
@@ -128,64 +580,51 @@ public class BattleSharedDamagePlaybackTests
         string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleEffectPlayback.cs");
         StringAssert.Contains("public static IEnumerator AddEffectIconOnly(", source);
         StringAssert.Contains("public static IEnumerator RemoveEffectIconOnly(", source);
-        StringAssert.Contains("public static IEnumerator DisplayMultipleEffects(", source);
+        StringAssert.Contains("public static void SyncEffectIconsFromSnapshot(", source);
         StringAssert.Contains("public static string GetEffectName(", source);
         StringAssert.Contains("PlayFamineEndAnimation(card.transform)", source);
     }
 
-    [Test]
-    public void SharedBattleEffectPlayback_DoesNotExposeOngoingMarkerEffectsAsIcons()
+    [TestCase(1, "Bleed")]
+    [TestCase(2, "Asceticism")]
+    [TestCase(3, "Sleep")]
+    [TestCase(27, "Sleep")]
+    [TestCase(4, "Exposure")]
+    [TestCase(6, "Fury")]
+    [TestCase(7, "Famine")]
+    [TestCase(8, "Electricity")]
+    [TestCase(9, "Tether")]
+    [TestCase(12, "Blockade")]
+    [TestCase(13, "Depression")]
+    [TestCase(16, "Burn")]
+    [TestCase(17, "Confusion")]
+    [TestCase(18, "Satellite")]
+    [TestCase(19, "Fear")]
+    [TestCase(21, "Calm")]
+    [TestCase(24, "Poison")]
+    public void SharedBattleEffectPlayback_MapsRegisteredEffectIcons(int type, string expected)
     {
-        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleEffectPlayback.cs");
-        StringAssert.Contains("case 20:", source);
-        StringAssert.Contains("case 22:", source);
-        StringAssert.Contains("case 23:", source);
-        StringAssert.Contains("Online ongoing maneuvers are rendered from timeline ongoing-action steps", source);
-        Assert.IsFalse(source.Contains("return \"Reloading\";"));
-        Assert.IsFalse(source.Contains("return \"Trident\";"));
+        var playback = Type.GetType("BattleEffectPlayback, Assembly-CSharp", true);
+        Assert.AreEqual(expected, playback.GetMethod("GetEffectName").Invoke(null, new object[] { type }));
     }
 
-
-    [Test]
-    public void BattleTimelinePlayback_DotTickHandlersOwnTheirDamagePlayback()
+    [TestCase(5)]
+    [TestCase(10)]
+    [TestCase(11)]
+    [TestCase(14)]
+    [TestCase(15)]
+    [TestCase(20)]
+    [TestCase(22)]
+    [TestCase(23)]
+    [TestCase(26)]
+    public void SharedBattleEffectPlayback_UnsupportedTypesUseTheUnknownPath(int type)
     {
-        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
-        StringAssert.Contains("case BattleStepType.BleedTick:", source);
-        StringAssert.Contains("case BattleStepType.BurnTick:", source);
-        StringAssert.Contains("case BattleStepType.ExposureTick:", source);
-        StringAssert.Contains("case BattleStepType.PoisonTick:", source);
-        StringAssert.Contains("PlaySingleBleedAnimation(context, actor, step.Amount, isPlayerActor)", source);
-        StringAssert.Contains("PlayBurnAnimation(context, actor, step.Amount, isPlayerActor)", source);
-        StringAssert.Contains("PlayExposureAnimation(context, actor, step.Amount, isPlayerActor)", source);
-        StringAssert.Contains("PlayPoisonAnimation(context, actor, step.Amount, isPlayerActor)", source);
+        var playback = Type.GetType("BattleEffectPlayback, Assembly-CSharp", true);
+        UnityEngine.TestTools.LogAssert.Expect(LogType.Warning,
+            "[BattleEffectPlayback] Unknown effect type: " + type);
+        Assert.IsNull(playback.GetMethod("GetEffectName").Invoke(null, new object[] { type }));
     }
 
-    [Test]
-    public void BattleTimelinePlayback_LogsEffectTickAnimationLifecycle()
-    {
-        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
-        StringAssert.Contains("private static void LogEffectTickAnimation(", source);
-        StringAssert.Contains("[EFFECT_TICK_ANIM]", source);
-        StringAssert.Contains("LogEffectTickAnimation(\"start\", \"BleedTick\"", source);
-        StringAssert.Contains("LogEffectTickAnimation(\"start\", \"BurnTick\"", source);
-        StringAssert.Contains("LogEffectTickAnimation(\"start\", \"ExposureTick\"", source);
-        StringAssert.Contains("LogEffectTickAnimation(\"start\", \"PoisonTick\"", source);
-        StringAssert.Contains("LogEffectTickAnimation(\"start\", \"SatelliteTick\"", source);
-        StringAssert.Contains("LogEffectTickAnimation(\"missing-animations\"", source);
-        StringAssert.Contains("LogEffectTickAnimation(\"finish\"", source);
-    }
-
-    [Test]
-    public void BattleTimelinePlayback_GenericDamageBranch_DoesNotReplayDotTickDamage()
-    {
-        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
-        StringAssert.Contains("bool isTickDamage =", source);
-        StringAssert.Contains("string.Equals(step.Source, \"bleed\", StringComparison.OrdinalIgnoreCase)", source);
-        StringAssert.Contains("string.Equals(step.Source, \"burn\", StringComparison.OrdinalIgnoreCase)", source);
-        StringAssert.Contains("string.Equals(step.Source, \"exposure\", StringComparison.OrdinalIgnoreCase)", source);
-        StringAssert.Contains("string.Equals(step.Source, \"poison\", StringComparison.OrdinalIgnoreCase)", source);
-        StringAssert.Contains("!isTickDamage", source);
-    }
 
     [Test]
     public void BattleTimelinePlayback_UsesExistingPoisonTickAnimation()
@@ -197,36 +636,61 @@ public class BattleSharedDamagePlaybackTests
     }
 
     [Test]
-    public void BattleTimelinePlayback_UsesExistingConfusionForgotAnimation()
+    public void ConfusionRemovalUsesExistingEndAnimationWithoutForgotBranch()
     {
-        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
-
-        StringAssert.Contains("case BattleStepType.ConfusionForgot:", source);
-        StringAssert.Contains("PlayConfusionForgotAnimation(context, actor)", source);
-        StringAssert.Contains("animations.PlayConfusionForgetAnimation(card.transform)", source);
+        string effects = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleEffectPlayback.cs");
+        string playback = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
+        string animations = ReadProjectFile("Assets", "Scripts", "Game", "Animations", "AttackAnimations.cs");
+        StringAssert.Contains("effectType == 17", effects);
+        StringAssert.Contains("animations.PlayConfusionEndAnimation(card.transform)", effects);
+        Assert.IsFalse(playback.Contains("case BattleStepType.ConfusionForgot:"));
+        Assert.IsFalse(animations.Contains("PlayConfusionForgetAnimation("));
     }
 
     [Test]
-    public void BattleTimelinePlayback_PlaysConfusionDecisionCueWithMandatoryDialog()
+    public void BattleTimelinePlayback_PlaysRandomConfusionCueWithApprovedDialog()
     {
         string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
-        string animations = ReadProjectFile("Assets", "Scripts", "Game", "Animations", "AttackAnimations.cs");
+        string cue = ExtractMethodBlock(source, "private static IEnumerator PlayEffectTriggeredAnimation(");
+        StringAssert.Contains("animations.PlayConfusionDecisionAnimation(card.transform)", cue);
+        StringAssert.Contains("is confused. Screw the plan!", cue);
+        StringAssert.Contains("card.cardId == context.PlayerCardId", cue);
+        Assert.IsFalse(ExtractMethodBlock(source, "public static IEnumerator Play(")
+            .Contains("case BattleStepType.ConfusionForgot:"));
+    }
 
-        int cueCaseStart = source.IndexOf("case BattleStepType.EffectTriggered:", StringComparison.Ordinal);
-        int cueCaseEnd = source.IndexOf("case BattleStepType.EffectApplied:", cueCaseStart, StringComparison.Ordinal);
-
-        Assert.That(cueCaseStart, Is.GreaterThanOrEqualTo(0));
-        Assert.That(cueCaseEnd, Is.GreaterThan(cueCaseStart));
-        string cueCase = source.Substring(cueCaseStart, cueCaseEnd - cueCaseStart);
-
-        StringAssert.Contains("case BattleStepType.EffectTriggered:", source);
-        StringAssert.Contains("PlayEffectTriggeredAnimation(context, actor, step.EffectType)", source);
-        StringAssert.Contains("context.DialogText.color = isPlayerActor ? Color.blue : Color.red;", cueCase);
-        StringAssert.Contains("animations.PlayConfusionDecisionAnimation(card.transform)", source);
-        StringAssert.Contains("$\"{card.cardName} is confused and is not sure what to do...\"", source);
-        StringAssert.Contains("public IEnumerator PlayConfusionDecisionAnimation(Transform targetCard)", animations);
-        StringAssert.Contains("public IEnumerator PlayConfusionForgetAnimation(Transform targetCard)", animations);
-        StringAssert.Contains("yield return PlayConfusionDecisionAnimation(targetCard);", animations);
+    [TestCase(true)]
+    [TestCase(false)]
+    public void ConfusionDialogWritesMessageAndActorColorBeforeItsWait(bool isPlayer)
+    {
+        var runtime = Array.Find(AppDomain.CurrentDomain.GetAssemblies(),
+            assembly => assembly.GetName().Name == "Assembly-CSharp");
+        Assert.IsNotNull(runtime);
+        Type contextType = runtime.GetType("BattleTimelinePlaybackContext", true);
+        Type playbackType = runtime.GetType("BattleTimelinePlayback", true);
+        var context = Activator.CreateInstance(contextType);
+        Type textType = Type.GetType("TMPro.TextMeshProUGUI, Unity.TextMeshPro", true);
+        var root = new GameObject("ConfusionDialog", typeof(RectTransform));
+        try
+        {
+            var text = root.AddComponent(textType);
+            textType.GetProperty("text").SetValue(text, "previous");
+            textType.GetProperty("color").SetValue(text, Color.green);
+            contextType.GetField("DialogText").SetValue(context, text);
+            contextType.GetField("DialogDelaySeconds").SetValue(context, 0.75f);
+            var method = playbackType.GetMethod("ShowDialog",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            var routine = (System.Collections.IEnumerator)method.Invoke(null,
+                new object[] { context, "NAME is confused. Screw the plan!", (bool?)isPlayer });
+            Assert.IsTrue(routine.MoveNext());
+            Assert.AreEqual("NAME is confused. Screw the plan!", textType.GetProperty("text").GetValue(text));
+            Assert.AreEqual(isPlayer ? Color.blue : Color.red, textType.GetProperty("color").GetValue(text));
+            Assert.IsInstanceOf<WaitForSeconds>(routine.Current);
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(root);
+        }
     }
 
     [Test]
@@ -352,22 +816,13 @@ public class BattleSharedDamagePlaybackTests
     }
 
     [Test]
-    public void SharedTimelinePlayback_UsesConfusionAnimationForConfusionSelfDamage()
+    public void SharedSelfDamageRemainsWithoutTheRetiredConfusionOutcome()
     {
         string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
-
-        StringAssert.Contains(
-            "PlaySelfDamageAnimation(context, actor, step.Amount, isPlayerActor, step.Source)",
-            source
-        );
-        StringAssert.Contains(
-            "string.Equals(source, \"confusion\", StringComparison.OrdinalIgnoreCase)",
-            source
-        );
-        StringAssert.Contains(
-            "yield return animations.PlayConfusionHurtItselfAnimation(card.transform);",
-            source
-        );
+        string method = ExtractMethodBlock(source, "private static IEnumerator PlaySelfDamageAnimation(");
+        StringAssert.Contains("BattleValuePlayback.PlayDamage(", method);
+        Assert.IsFalse(method.Contains("PlayConfusionHurtItselfAnimation"));
+        StringAssert.Contains("animations.PlayConfusionHurtItselfAnimation(card.transform)", source);
     }
 
     [Test]
@@ -409,13 +864,7 @@ public class BattleSharedDamagePlaybackTests
     {
         string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
 
-        StringAssert.Contains("case BattleStepType.BleedTick:", source);
-        StringAssert.Contains("case BattleStepType.BurnTick:", source);
-        StringAssert.Contains("case BattleStepType.ExposureTick:", source);
-        StringAssert.Contains("case BattleStepType.PoisonTick:", source);
         StringAssert.Contains("case BattleStepType.EffectTriggered:", source);
-        StringAssert.Contains("case BattleStepType.ConfusionForgot:", source);
-        StringAssert.Contains("case BattleStepType.ExposureRemoved:", source);
         StringAssert.Contains("case BattleStepType.EffectApplied:", source);
         StringAssert.Contains("case BattleStepType.EffectRemoved:", source);
         StringAssert.Contains("case BattleStepType.Blocked:", source);
@@ -429,18 +878,166 @@ public class BattleSharedDamagePlaybackTests
         string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePlayback.cs");
         string effects = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleEffectPlayback.cs");
 
-        StringAssert.Contains("PlayWakeUpAnimation(context, actor, step.EffectType)", source);
-        StringAssert.Contains("RemoveEndedEffectIcon(context, card, effectType, 3)", source);
-        StringAssert.Contains("RemoveEndedEffectIcon(context, card, 2)", source);
-        StringAssert.Contains("RemoveEndedEffectIcon(context, actor, 4)", source);
         StringAssert.Contains("RemoveEndedEffectIcon(context, target, step.EffectType)", source);
         StringAssert.Contains("animations.PlaySleepEndAnimation(card.transform)", effects);
         StringAssert.Contains("animations.PlayAscetismEndAnimation(card.transform)", effects);
         StringAssert.Contains("animations.PlayExposureEndAnimation(card.transform)", effects);
     }
 
+    [TestCase("recovered", true)]
+    [TestCase("cleansed", false)]
+    public void CanonicalExposureExit_UsesOneSharedRemovalAndReasonSpecificCopy(string reason, bool showsRecovery)
+    {
+        var runtime = Array.Find(AppDomain.CurrentDomain.GetAssemblies(),
+            assembly => assembly.GetName().Name == "Assembly-CSharp");
+        Assert.IsNotNull(runtime);
+        Type cardType = runtime.GetType("Kard", true);
+        Type contextType = runtime.GetType("BattleTimelinePlaybackContext", true);
+        Type stepType = runtime.GetType("BattleStep", true);
+        Type eventType = runtime.GetType("BattleStepType", true);
+        Type playbackType = runtime.GetType("BattleTimelinePlayback", true);
+        Type textType = Type.GetType("TMPro.TextMeshProUGUI, Unity.TextMeshPro", true);
+        var root = new GameObject("EffectExit", typeof(RectTransform));
+        root.SetActive(false);
+        try
+        {
+            var card = root.AddComponent(cardType);
+            cardType.GetField("cardId").SetValue(card, "recipient");
+            cardType.GetField("cardName").SetValue(card, "Recipient");
+            var icons = new GameObject("Icons", typeof(RectTransform));
+            icons.transform.SetParent(root.transform, false);
+            cardType.GetField("effectIconContainer").SetValue(card, icons.transform);
+            var dialogRoot = new GameObject("Dialog", typeof(RectTransform));
+            dialogRoot.transform.SetParent(root.transform, false);
+            var text = dialogRoot.AddComponent(textType);
+            textType.GetProperty("text").SetValue(text, "previous");
+            var context = Activator.CreateInstance(contextType);
+            contextType.GetField("PlayerCard").SetValue(context, card);
+            contextType.GetField("PlayerCardId").SetValue(context, "recipient");
+            contextType.GetField("DialogText").SetValue(context, text);
+            contextType.GetField("DialogDelaySeconds").SetValue(context, 0f);
+            contextType.GetField("TickDelaySeconds").SetValue(context, 0f);
+            contextType.GetField("FinalDelaySeconds").SetValue(context, 0f);
+            var step = Activator.CreateInstance(stepType);
+            stepType.GetField("Type").SetValue(step, Enum.Parse(eventType, "EffectRemoved"));
+            stepType.GetField("ActorCardId").SetValue(step, "caster");
+            stepType.GetField("TargetCardId").SetValue(step, "recipient");
+            stepType.GetField("EffectType").SetValue(step, 4);
+            stepType.GetField("RemovalReason").SetValue(step, reason);
+            var steps = (System.Collections.IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(stepType));
+            steps.Add(step);
+            var routine = (System.Collections.IEnumerator)playbackType.GetMethod("Play").Invoke(null, new object[] { context, steps });
+            int removals = 0;
+            void Drain(System.Collections.IEnumerator current)
+            {
+                if (current.GetType().Name.Contains("<RemoveEffectIconOnly>")) removals++;
+                while (current.MoveNext())
+                    if (current.Current is System.Collections.IEnumerator nested) Drain(nested);
+            }
+            Drain(routine);
+            Assert.AreEqual(1, removals);
+            Assert.AreEqual(showsRecovery ? "Recipient's irradiation is gone" : "previous", textType.GetProperty("text").GetValue(text));
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(root);
+        }
+    }
+
+    [TestCase(true, 5)]
+    [TestCase(false, 5)]
+    [TestCase(true, 1)]
+    [TestCase(false, 1)]
+    public void AsceticismCueCompletesBeforeOneSharedDamageAndShake(bool isPlayer, int initialHealth)
+    {
+        var runtime = Array.Find(AppDomain.CurrentDomain.GetAssemblies(),
+            assembly => assembly.GetName().Name == "Assembly-CSharp");
+        Assert.IsNotNull(runtime);
+        Type cardType = runtime.GetType("Kard", true);
+        Type contextType = runtime.GetType("BattleTimelinePlaybackContext", true);
+        Type stepType = runtime.GetType("BattleStep", true);
+        Type eventType = runtime.GetType("BattleStepType", true);
+        Type playbackType = runtime.GetType("BattleTimelinePlayback", true);
+        Type attackType = runtime.GetType("Attack", true);
+        var root = new GameObject("AsceticismOrder", typeof(RectTransform));
+        root.SetActive(false);
+        try
+        {
+            var card = root.AddComponent(cardType);
+            cardType.GetField("cardId").SetValue(card, "ascetic");
+            cardType.GetField("cardName").SetValue(card, "Ascetic");
+            cardType.GetProperty("health").SetValue(card, initialHealth);
+            cardType.GetProperty("maxHealth").SetValue(card, initialHealth);
+            var attack = root.AddComponent(attackType);
+            attackType.GetField("attackAnimations").SetValue(attack,
+                root.AddComponent(runtime.GetType("AttackAnimations", true)));
+            var context = Activator.CreateInstance(contextType);
+            contextType.GetField(isPlayer ? "PlayerCard" : "EnemyCard").SetValue(context, card);
+            contextType.GetField("PlayerCardId").SetValue(context, isPlayer ? "ascetic" : "observer");
+            contextType.GetField("EnemyCardId").SetValue(context, isPlayer ? "observer" : "ascetic");
+            contextType.GetField("AttackComponent").SetValue(context, attack);
+            contextType.GetField("CardAnimator").SetValue(context,
+                root.AddComponent(runtime.GetType("MultiplayerCardAnimator", true)));
+            contextType.GetField("FinalDelaySeconds").SetValue(context, 0f);
+            var steps = (System.Collections.IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(stepType));
+            object AddStep(string name)
+            {
+                var step = Activator.CreateInstance(stepType);
+                stepType.GetField("Type").SetValue(step, Enum.Parse(eventType, name));
+                stepType.GetField("ActorCardId").SetValue(step, "ascetic");
+                stepType.GetField("TargetCardId").SetValue(step, "ascetic");
+                stepType.GetField("EffectType").SetValue(step, 2);
+                stepType.GetField("Source").SetValue(step, "asceticism");
+                steps.Add(step);
+                return step;
+            }
+            AddStep("EffectTriggered");
+            stepType.GetField("Amount").SetValue(AddStep("Damage"), 1);
+            stepType.GetField("BlockedBy").SetValue(AddStep("Blocked"), (int?)2);
+            if (initialHealth == 1) AddStep("Death");
+
+            int Health() => (int)cardType.GetProperty("health").GetValue(card);
+            var trace = new List<string>();
+            bool fistCompleted = false;
+            void Drain(System.Collections.IEnumerator current)
+            {
+                string name = current.GetType().Name;
+                // Drive real sequencing, but complete visual leaves without scene assets.
+                if (name.Contains("<PlayConfusionHurtItselfAnimation>"))
+                {
+                    Assert.AreEqual(initialHealth, Health(), "Fist must finish before HP changes");
+                    trace.Add("fist");
+                    fistCompleted = true;
+                    return;
+                }
+                if (name.Contains("<AnimateDamage>"))
+                {
+                    Assert.IsTrue(fistCompleted, "Shake must follow the completed fist");
+                    trace.Add("shake");
+                    return;
+                }
+                if (name.Contains("<PlayDamage>"))
+                {
+                    Assert.IsTrue(fistCompleted, "Damage must await the fist cue");
+                    Assert.AreEqual(initialHealth, Health());
+                    trace.Add("damage");
+                }
+                while (current.MoveNext())
+                    if (current.Current is System.Collections.IEnumerator nested) Drain(nested);
+            }
+            Drain((System.Collections.IEnumerator)playbackType.GetMethod("Play")
+                .Invoke(null, new object[] { context, steps }));
+            CollectionAssert.AreEqual(new[] { "fist", "damage", "shake" }, trace);
+            Assert.AreEqual(initialHealth - 1, Health());
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(root);
+        }
+    }
+
     [Test]
-    public void MultiplayerTimelinePilot_UsesSharedTimelinePlayback()
+    public void MultiplayerTimeline_UsesSharedTimelinePlayback()
     {
         string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs");
 
@@ -449,15 +1046,207 @@ public class BattleSharedDamagePlaybackTests
     }
 
     [Test]
-    public void RoyalRumbleSnapshotEffectSync_DetachesRemovedIconsBeforeRepositioning()
+    public void BattleRuntime_HasNoRetiredTimelinePilotPolicy()
     {
-        string shell = ReadProjectFile("Assets", "Scripts", "RoyalRumble", "RoyalRumbleShellController.cs");
-        string coordinator = ReadProjectFile("Assets", "Scripts", "RoyalRumble", "RoyalRumbleBattleCoordinator.cs");
+        var runtime = Array.Find(AppDomain.CurrentDomain.GetAssemblies(), a => a.GetName().Name == "Assembly-CSharp");
+        Assert.IsNotNull(runtime);
+        Assert.IsNull(runtime.GetType("BattleTimelinePilotPolicy"));
+        string path = Path.Combine(Application.dataPath, "Scripts", "Multiplayer", "BattleTimeline", "BattleTimelinePilotPolicy.cs");
+        Assert.IsFalse(File.Exists(path));
+        Assert.IsFalse(File.Exists(path + ".meta"));
+    }
 
-        StringAssert.Contains("DestroyEffectIconBeforeReposition(icon);", shell);
-        StringAssert.Contains("DestroyEffectIconBeforeReposition(icon);", coordinator);
-        StringAssert.Contains("icon.SetParent(null, false);", shell);
-        StringAssert.Contains("icon.SetParent(null, false);", coordinator);
+    [Test]
+    public void MultiplayerTimeline_UsesExistingValidatorWithoutAPilotGate()
+    {
+        string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.cs");
+        StringAssert.Contains("BattleTimelineBuilder.TryBuild(", source);
+        Assert.IsFalse(source.Contains("BattleTimelinePilotPolicy"));
+        Assert.IsFalse(source.Contains("ShouldRunTimeline"));
+        Assert.IsFalse(source.Contains("PlayerPrefs"));
+    }
+
+    [Test]
+    public void SnapshotEffectIcons_UseOneSharedOwnerAcrossAllBattleClients()
+    {
+        string[] callers =
+        {
+            ReadProjectFile("Assets", "Scripts", "RoyalRumble", "RoyalRumbleShellController.cs"),
+            ReadProjectFile("Assets", "Scripts", "RoyalRumble", "RoyalRumbleBattleCoordinator.cs"),
+            ReadProjectFile("Assets", "Scripts", "Campaign", "Online", "CampaignOnlineShellController.cs"),
+            ReadProjectFile("Assets", "Scripts", "Multiplayer", "BattleResultProcessor.ServerRefresh.cs"),
+        };
+        foreach (string source in callers)
+        {
+            StringAssert.Contains("BattleEffectPlayback.SyncEffectIconsFromSnapshot(", source);
+            Assert.IsFalse(source.Contains("private void SyncEffectIconsFromSnapshot("));
+            Assert.IsFalse(source.Contains("DestroyEffectIconBeforeReposition("));
+            Assert.IsFalse(source.Contains("card.AddEffectIcon("));
+        }
+    }
+
+    [Test]
+    public void SnapshotEffectIcons_PreserveCountsAndSurvivingObjectsAcrossSameFrameSync()
+    {
+        using var fixture = new EffectIconFixture();
+        fixture.Sync(1, 1);
+        Assert.AreEqual(2, fixture.Icons.childCount);
+        Transform first = fixture.Icons.GetChild(0);
+        Transform second = fixture.Icons.GetChild(1);
+        fixture.Sync(1, 1);
+        Assert.AreSame(first, fixture.Icons.GetChild(0));
+        Assert.AreSame(second, fixture.Icons.GetChild(1));
+        fixture.Sync(1);
+        Assert.AreEqual(1, fixture.Icons.childCount, "Excess icon must detach before scheduled destruction");
+        Assert.AreSame(first, fixture.Icons.GetChild(0));
+        fixture.Sync(1, 1);
+        Assert.AreEqual(2, fixture.Icons.childCount, "Detached pending destruction must not satisfy a new instance");
+        Assert.AreSame(first, fixture.Icons.GetChild(0));
+        Assert.AreNotSame(second, fixture.Icons.GetChild(1));
+        fixture.Sync();
+        Assert.AreEqual(0, fixture.Icons.childCount);
+        fixture.Sync();
+        Assert.AreEqual(0, fixture.Icons.childCount);
+    }
+
+    [Test]
+    public void SnapshotEffectIcons_RemoveStaleTypesWhilePreservingOtherInstances()
+    {
+        using var fixture = new EffectIconFixture();
+        fixture.Sync(1, 1, 24);
+        Transform poison = fixture.Icons.GetChild(2);
+        fixture.Sync(24, 24);
+        Assert.AreEqual(2, fixture.Icons.childCount);
+        Assert.AreSame(poison, fixture.Icons.GetChild(0));
+        foreach (Transform icon in fixture.Icons)
+            StringAssert.StartsWith("PoisonIcon_", icon.name);
+    }
+
+    [Test]
+    public void SnapshotEffectIcons_SharedSleepVisualNameDoesNotCreateDuplicatesOnReplacement()
+    {
+        using var fixture = new EffectIconFixture();
+        fixture.Sync(3);
+        Transform sleep = fixture.Icons.GetChild(0);
+        fixture.Sync(27);
+        Assert.AreEqual(1, fixture.Icons.childCount);
+        Assert.AreSame(sleep, fixture.Icons.GetChild(0));
+    }
+
+    [Test]
+    public void SnapshotEffectIcons_DoNotMutateGameplayOrExposeUnusedApplicationPlayback()
+    {
+        using var fixture = new EffectIconFixture();
+        string[] stats = { "strength", "speed", "attack", "defense", "knowledge", "charisma" };
+        for (int i = 0; i < stats.Length; i++)
+            fixture.CardType.GetProperty(stats[i]).SetValue(fixture.Card, i + 2);
+        fixture.Sync(1, 1, 24);
+        fixture.Sync(24);
+        Assert.AreEqual(9, fixture.CardType.GetProperty("health").GetValue(fixture.Card));
+        Assert.AreEqual(20, fixture.CardType.GetProperty("maxHealth").GetValue(fixture.Card));
+        for (int i = 0; i < stats.Length; i++)
+            Assert.AreEqual(i + 2, fixture.CardType.GetProperty(stats[i]).GetValue(fixture.Card), stats[i]);
+        Assert.IsNull(fixture.CardType.GetField("effects"));
+        Assert.IsNull(fixture.EffectPlaybackType.GetMethod("DisplayMultipleEffects"));
+        Assert.IsNull(fixture.EffectPlaybackType.GetMethod("DisplayEffectIcon",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static));
+    }
+
+    [UnityEngine.TestTools.UnityTest]
+    public System.Collections.IEnumerator OrderedEffectIcons_PreserveTwoApplicationsAndTwoSeparateRemovals()
+    {
+        using var fixture = new EffectIconFixture();
+        yield return fixture.Play("EffectApplied", "EffectApplied");
+        Assert.AreEqual(2, fixture.Icons.childCount);
+        fixture.Sync(1, 1);
+        Assert.AreEqual(2, fixture.Icons.childCount, "Snapshot must not replay applications");
+        yield return fixture.Play("EffectRemoved");
+        Assert.AreEqual(1, fixture.Icons.childCount);
+        Transform survivor = fixture.Icons.GetChild(0);
+        fixture.Sync(1);
+        Assert.AreSame(survivor, fixture.Icons.GetChild(0));
+        yield return fixture.Play("EffectRemoved");
+        Assert.AreEqual(0, fixture.Icons.childCount);
+        Assert.AreEqual(9, fixture.CardType.GetProperty("health").GetValue(fixture.Card));
+    }
+
+    private sealed class EffectIconFixture : IDisposable
+    {
+        public readonly Type CardType;
+        public readonly Type EffectPlaybackType;
+        public readonly Component Card;
+        public readonly Transform Icons;
+        private readonly System.Reflection.Assembly runtime;
+        private readonly GameObject root;
+        private readonly Type effectDataType;
+
+        public EffectIconFixture()
+        {
+            runtime = Array.Find(AppDomain.CurrentDomain.GetAssemblies(),
+                assembly => assembly.GetName().Name == "Assembly-CSharp");
+            Assert.IsNotNull(runtime);
+            CardType = runtime.GetType("Kard", true);
+            EffectPlaybackType = runtime.GetType("BattleEffectPlayback", true);
+            effectDataType = runtime.GetType("SelectedCardData+EffectData", true);
+            root = new GameObject("EffectIconSnapshot", typeof(RectTransform));
+            root.SetActive(false);
+            Card = root.AddComponent(CardType);
+            CardType.GetField("cardId").SetValue(Card, "recipient");
+            CardType.GetField("cardName").SetValue(Card, "Recipient");
+            CardType.GetProperty("health").SetValue(Card, 9);
+            CardType.GetProperty("maxHealth").SetValue(Card, 20);
+            Icons = new GameObject("Icons", typeof(RectTransform)).transform;
+            Icons.SetParent(root.transform, false);
+            CardType.GetField("effectIconContainer").SetValue(Card, Icons);
+        }
+
+        public void Sync(params int[] types)
+        {
+            var method = EffectPlaybackType.GetMethod("SyncEffectIconsFromSnapshot");
+            Assert.IsNotNull(method, "Existing effect playback must own silent snapshot count reconciliation");
+            Array effects = Array.CreateInstance(effectDataType, types.Length);
+            for (int i = 0; i < types.Length; i++)
+            {
+                object effect = Activator.CreateInstance(effectDataType);
+                effectDataType.GetField("type").SetValue(effect, types[i].ToString());
+                effectDataType.GetField("duration").SetValue(effect, 2);
+                effects.SetValue(effect, i);
+            }
+            method.Invoke(null, new object[] { Card, effects });
+        }
+
+        public System.Collections.IEnumerator Play(params string[] names)
+        {
+            Type stepType = runtime.GetType("BattleStep", true);
+            Type contextType = runtime.GetType("BattleTimelinePlaybackContext", true);
+            Type eventType = runtime.GetType("BattleStepType", true);
+            var context = Activator.CreateInstance(contextType);
+            contextType.GetField("PlayerCard").SetValue(context, Card);
+            contextType.GetField("PlayerCardId").SetValue(context, "recipient");
+            contextType.GetField("DialogDelaySeconds").SetValue(context, 0f);
+            contextType.GetField("TickDelaySeconds").SetValue(context, 0f);
+            contextType.GetField("FinalDelaySeconds").SetValue(context, 0f);
+            var steps = (System.Collections.IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(stepType));
+            foreach (string name in names)
+            {
+                object step = Activator.CreateInstance(stepType);
+                stepType.GetField("Type").SetValue(step, Enum.Parse(eventType, name));
+                stepType.GetField("ActorCardId").SetValue(step, "recipient");
+                stepType.GetField("TargetCardId").SetValue(step, "recipient");
+                stepType.GetField("EffectType").SetValue(step, 1);
+                stepType.GetField("Duration").SetValue(step, 2);
+                stepType.GetField("Source").SetValue(step, "attack");
+                stepType.GetField("RemovalReason").SetValue(step, "cleansed");
+                steps.Add(step);
+            }
+            return (System.Collections.IEnumerator)runtime.GetType("BattleTimelinePlayback", true)
+                .GetMethod("Play").Invoke(null, new object[] { context, steps });
+        }
+
+        public void Dispose()
+        {
+            UnityEngine.Object.DestroyImmediate(root);
+        }
     }
 
     [Test]

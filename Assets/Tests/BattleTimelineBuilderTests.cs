@@ -9,6 +9,198 @@ using UnityEngine;
 
 public class BattleTimelineBuilderTests
 {
+    [TestCase(0)]
+    [TestCase(-1)]
+    [TestCase(31)]
+    [TestCase(48)]
+    [TestCase(124)]
+    [TestCase(999)]
+    public void Build_RejectsUnknownAttackBeforePublishingAnySteps(int attackId)
+    {
+        var result = AttackTimeline(AttackStep(1), AttackStep(attackId));
+        Assert.IsFalse(TryBuildTimelineFromBattleResultDict(result, out var steps, out string error));
+        Assert.IsEmpty(steps, "A rejected result must not expose a playable prefix.");
+        StringAssert.Contains(attackId.ToString(), error);
+    }
+
+    [Test]
+    public void Build_PreservesEveryImplementedAttackId()
+    {
+        for (int id = 1; id <= 123; id++)
+        {
+            if (id == 31 || id == 48) continue;
+            var step = AttackStep(id, id == 107 || id == 121 ? ComboPayload(1, 2) : null);
+            Assert.IsTrue(TryBuildTimelineFromBattleResultDict(AttackTimeline(step), out var steps, out string error),
+                $"Attack {id}: {error}");
+            Assert.AreEqual(id, GetIntField(steps[0], "AttackId"));
+        }
+    }
+
+    [TestCase(107, null)]
+    [TestCase(121, "")]
+    [TestCase(107, "not-json")]
+    [TestCase(107, "{}")]
+    [TestCase(121, "{\"subAttacks\":[]}")]
+    [TestCase(107, "{\"subAttacks\":[null]}")]
+    [TestCase(121, "{\"subAttacks\":[{}]}")]
+    [TestCase(107, "{\"subAttacks\":[{\"attackId\":1},{\"attackId\":999}]}")]
+    [TestCase(121, "{\"subAttacks\":[{\"attackId\":118},{\"attackId\":0}]}")]
+    [TestCase(107, "{\"subAttacks\":[{\"attackId\":1.5}]}")]
+    [TestCase(121, "{\"subAttacks\":[{\"attackId\":\"1\"}]}")]
+    public void Build_RejectsInvalidComboBeforeAnyAnimation(int attackId, string payload)
+    {
+        Assert.IsFalse(TryBuildTimelineFromBattleResultDict(
+            AttackTimeline(AttackStep(1), AttackStep(attackId, payload)), out var steps, out string error));
+        Assert.IsEmpty(steps);
+        Assert.IsNotEmpty(error);
+    }
+
+    [TestCase(107)]
+    [TestCase(121)]
+    public void Build_ValidatesNestedComboBeforeAnyAnimation(int attackId)
+    {
+        string nested = "{\"subAttacks\":[{\"attackId\":107,\"attackResult\":\"{\\\"subAttacks\\\":[{\\\"attackId\\\":999}]}\"}]}";
+        Assert.IsFalse(TryBuildTimelineFromBattleResultDict(
+            AttackTimeline(AttackStep(attackId, nested)), out var steps, out string error));
+        Assert.IsEmpty(steps);
+        StringAssert.Contains("999", error);
+    }
+
+    [TestCase(107, true)]
+    [TestCase(107, false)]
+    [TestCase(121, true)]
+    [TestCase(121, false)]
+    public void Build_NonExecutedComboDoesNotRequireAnExecutionPayload(int attackId, bool blocked)
+    {
+        var step = AttackStep(attackId);
+        step[blocked ? "blocked" : "skipped"] = true;
+        Assert.IsTrue(TryBuildTimelineFromBattleResultDict(AttackTimeline(step), out _, out string error), error);
+    }
+
+    [TestCase(107)]
+    [TestCase(121)]
+    public void Build_ValidComboPreservesItsChosenSequence(int attackId)
+    {
+        foreach (string payload in new[] { ComboPayload(1), ComboPayload(1, 2) })
+        {
+            var steps = BuildTimelineFromBattleResultDict(AttackTimeline(AttackStep(attackId, payload)));
+            Assert.AreEqual(payload, GetStringField(steps[0], "AttackResult"));
+        }
+    }
+
+    [Test]
+    public void AttackRegistry_HasNoFallbackAndRejectsUnknownDispatch()
+    {
+        Type registry = GetRuntimeType("AttackRegistry");
+        Assert.IsNull(registry.GetMethod("ExecuteOrFallback", BindingFlags.Public | BindingFlags.Static));
+        MethodInfo execute = registry.GetMethod("Execute", BindingFlags.Public | BindingFlags.Static);
+        Assert.IsNotNull(execute);
+        var error = Assert.Throws<TargetInvocationException>(() => execute.Invoke(null, new object[] { 999, null }));
+        Assert.IsInstanceOf<ArgumentOutOfRangeException>(error.InnerException);
+    }
+
+    [Test]
+    public void ComboPlayback_RejectsInvalidLaterAttackBeforeYieldingTheFirst()
+    {
+        object context = CreateAttackContext(ComboPayload(1, 999));
+        MethodInfo play = GetRuntimeType("ComboAttackPlayback").GetMethod("PlaySequence");
+        var playback = (IEnumerator)play.Invoke(null, new[] { context });
+        Assert.Throws<InvalidOperationException>(() => playback.MoveNext());
+    }
+
+    [TestCase(1, 2)]
+    [TestCase(118, 92)]
+    public void ComboPlayback_ValidSequenceDispatchesChosenHandlersExactlyOnce(int first, int second)
+    {
+        MethodInfo play = GetRuntimeType("ComboAttackPlayback").GetMethod("PlaySequence");
+        var playback = (IEnumerator)play.Invoke(null, new[] { CreateAttackContext(ComboPayload(first, second)) });
+        foreach (int id in new[] { first, second })
+        {
+            Assert.IsTrue(playback.MoveNext());
+            Assert.AreEqual("Attack" + id + "Handler", playback.Current.GetType().DeclaringType.Name);
+        }
+        Assert.IsFalse(playback.MoveNext());
+    }
+
+    private static object CreateAttackContext(string payload) => Activator.CreateInstance(
+        GetRuntimeType("AttackExecutionContext"), new object[] {
+            null, null, 0, 0, true, 0, null, null, null, null, null, null, payload, null });
+
+    private static Type GetRuntimeType(string name) => Type.GetType(name + ", Assembly-CSharp", true);
+
+    private static Dictionary<string, object> AttackStep(int id, string payload = null) =>
+        new Dictionary<string, object> { { "type", "Attack" }, { "attackId", id },
+            { "actorCardId", "actor" }, { "targetCardId", "target" }, { "attackResult", payload } };
+
+    private static Dictionary<string, object> AttackTimeline(params Dictionary<string, object>[] steps) =>
+        new Dictionary<string, object> { { "timelineV2", new Dictionary<string, object> {
+            { "version", 2 }, { "steps", steps.Cast<object>().ToList() } } } };
+
+    private static string ComboPayload(params int[] ids) =>
+        "{\"subAttacks\":[" + string.Join(",", ids.Select(id => "{\"attackId\":" + id + "}")) + "]}";
+
+    [TestCase("BleedTick")]
+    [TestCase("BurnTick")]
+    [TestCase("ExposureTick")]
+    [TestCase("PoisonTick")]
+    [TestCase("4")]
+    [TestCase("5")]
+    [TestCase("6")]
+    [TestCase("20")]
+    public void Build_RejectsRetiredNumericTickEvents(string type)
+    {
+        var result = ValueTimeline(new Dictionary<string, object> { { "type", type } });
+        Assert.IsFalse(TryBuildTimelineFromBattleResultDict(result, out _, out string error));
+        StringAssert.Contains("Unknown step type", error);
+    }
+
+    [TestCase("Damage", "bleed", 1, 2)]
+    [TestCase("Damage", "burn", 16, 1)]
+    [TestCase("Damage", "exposure", 4, 1)]
+    [TestCase("Damage", "poison", 24, 1)]
+    [TestCase("Heal", "famine", 7, 0)]
+    public void Build_TypedPassiveValuePreservesKindAndAppliedAmount(string kind, string source, int effectType, int amount)
+    {
+        var steps = BuildTimelineFromBattleResultDict(ValueTimeline(PassiveValue(kind, source, effectType, amount)));
+        Assert.AreEqual(1, steps.Count);
+        Assert.AreEqual(kind, GetStepTypeName(steps[0]));
+        Assert.AreEqual(effectType, GetIntField(steps[0], "EffectType"));
+        Assert.AreEqual(amount, GetIntField(steps[0], "Amount"));
+    }
+
+    [TestCase("effectType", null)]
+    [TestCase("effectType", 7)]
+    [TestCase("effectType", 999)]
+    [TestCase("effectType", "invalid")]
+    [TestCase("type", "Heal")]
+    [TestCase("source", "attack")]
+    [TestCase("actorCardId", "")]
+    [TestCase("targetCardId", " ")]
+    [TestCase("amount", null)]
+    [TestCase("amount", 0)]
+    [TestCase("amount", -1)]
+    [TestCase("amount", 1.5)]
+    public void Build_RejectsMalformedPassiveValue(string key, object value)
+    {
+        var step = PassiveValue("Damage", "bleed", 1, 2);
+        step[key] = value;
+        Assert.IsFalse(TryBuildTimelineFromBattleResultDict(ValueTimeline(step), out _, out string error));
+        StringAssert.Contains("passive value", error);
+    }
+
+    private static Dictionary<string, object> PassiveValue(string kind, string source, int effectType, int amount)
+    {
+        return new Dictionary<string, object> { { "type", kind }, { "source", source },
+            { "effectType", effectType }, { "amount", amount },
+            { "actorCardId", "subject" }, { "targetCardId", "subject" } };
+    }
+
+    private static Dictionary<string, object> ValueTimeline(Dictionary<string, object> step)
+    {
+        return new Dictionary<string, object> { { "timelineV2", new Dictionary<string, object> {
+            { "version", 2 }, { "steps", new List<object> { step } } } } };
+    }
+
     [Test]
     public void Build_AllBattleFixturesWithBattleResult_ProducesNonEmptyTimeline()
     {
@@ -130,6 +322,22 @@ public class BattleTimelineBuilderTests
     }
 
     [Test]
+    public void Build_AsceticismFixturePreservesCueBeforeOneDamageAndBlock()
+    {
+        var steps = BuildTimelineFromFixture("15_asceticism_single_damage.json");
+        int cue = IndexOfStep(steps, "EffectTriggered", "ascetic_actor");
+        int damage = IndexOfStep(steps, "Damage", "ascetic_actor");
+        int blocked = IndexOfStep(steps, "Blocked", "ascetic_actor");
+        Assert.GreaterOrEqual(cue, 0);
+        Assert.AreEqual(2, GetIntField(steps[cue], "EffectType"));
+        Assert.AreEqual("ascetic_actor", GetStringField(steps[cue], "TargetCardId"));
+        Assert.Less(cue, damage);
+        Assert.Less(damage, blocked);
+        Assert.AreEqual(1, GetStepsByType(steps, "Damage").Count);
+        Assert.AreEqual(0, GetStepsByType(steps, "SelfDamage").Count);
+    }
+
+    [Test]
     public void Build_DeathBeforeAttack_DeathComesBeforeSkippedAttack()
     {
         var steps = BuildTimelineFromFixture("06_death_before_attack_from_bleed.json");
@@ -147,10 +355,10 @@ public class BattleTimelineBuilderTests
     {
         var steps = BuildTimelineFromFixture("03_both_blocked_sleep_asceticism.json");
 
-        Assert.IsTrue(GetStepsByType(steps, "BleedTick")
+        Assert.IsTrue(GetStepsByType(steps, "Damage").Where(s => GetIntField(s, "EffectType") == 1)
             .Any(s => GetStringField(s, "ActorCardId") == "card_A" && GetIntField(s, "Amount") == 2));
 
-        Assert.IsTrue(GetStepsByType(steps, "ExposureTick")
+        Assert.IsTrue(GetStepsByType(steps, "Damage").Where(s => GetIntField(s, "EffectType") == 4)
             .Any(s => GetStringField(s, "ActorCardId") == "card_B" && GetIntField(s, "Amount") == 1));
 
         var blockedSteps = GetStepsByType(steps, "Blocked");
@@ -367,105 +575,10 @@ public class BattleTimelineBuilderTests
         Assert.IsTrue(GetStepsByType(steps, "EffectApplied").Any(s => GetStringField(s, "ActorCardId") == "cleaver_a" && GetStringField(s, "TargetCardId") == "cleaver_b" && GetIntField(s, "EffectType") == 1 && GetIntField(s, "Duration") == 6));
     }
 
-    [Test]
-    public void Build_BurnTickTimeline_ContainsBurnTickAndDamage()
-    {
-        var battleResult = new Dictionary<string, object>
-        {
-            {
-                "timelineV2", new Dictionary<string, object>
-                {
-                    { "version", 2 },
-                    { "steps", new List<object>
-                        {
-                            new Dictionary<string, object>
-                            {
-                                { "type", "BurnTick" },
-                                { "actorCardId", "burn_a" },
-                                { "targetCardId", "burn_a" },
-                                { "amount", 1 },
-                                { "source", "burn" }
-                            },
-                            new Dictionary<string, object>
-                            {
-                                { "type", "Damage" },
-                                { "actorCardId", "burn_a" },
-                                { "targetCardId", "burn_a" },
-                                { "amount", 1 },
-                                { "source", "burn" }
-                            }
-                        }
-                    }
-                }
-            },
-            {
-                "firstAttacker", new Dictionary<string, object>
-                {
-                    { "cardId", "burn_a" }, { "attackId", 23 }
-                }
-            },
-            {
-                "secondAttacker", new Dictionary<string, object>
-                {
-                    { "cardId", "burn_b" }, { "attackId", 17 }
-                }
-            }
-        };
 
-        List<object> steps = BuildTimelineFromBattleResultDict(battleResult);
-
-        Assert.IsTrue(GetStepsByType(steps, "BurnTick").Any(s => GetStringField(s, "ActorCardId") == "burn_a" && GetIntField(s, "Amount") == 1));
-        Assert.IsTrue(GetStepsByType(steps, "Damage").Any(s => GetStringField(s, "ActorCardId") == "burn_a" && GetStringField(s, "TargetCardId") == "burn_a" && GetIntField(s, "Amount") == 1 && GetStringField(s, "Source") == "burn"));
-    }
 
     [Test]
-    public void Build_PoisonTickTimeline_ContainsPoisonTickAndDamage()
-    {
-        var battleResult = new Dictionary<string, object>
-        {
-            {
-                "timelineV2", new Dictionary<string, object>
-                {
-                    { "version", 2 },
-                    { "steps", new List<object>
-                        {
-                            new Dictionary<string, object>
-                            {
-                                { "type", "PoisonTick" },
-                                { "actorCardId", "poison_a" },
-                                { "targetCardId", "poison_a" },
-                                { "amount", 1 },
-                                { "source", "poison" }
-                            },
-                            new Dictionary<string, object>
-                            {
-                                { "type", "Damage" },
-                                { "actorCardId", "poison_a" },
-                                { "targetCardId", "poison_a" },
-                                { "amount", 1 },
-                                { "source", "poison" }
-                            }
-                        }
-                    }
-                }
-            }
-        };
-
-        List<object> steps = BuildTimelineFromBattleResultDict(battleResult);
-
-        Assert.IsTrue(GetStepsByType(steps, "PoisonTick").Any(s =>
-            GetStringField(s, "ActorCardId") == "poison_a"
-            && GetStringField(s, "TargetCardId") == "poison_a"
-            && GetIntField(s, "Amount") == 1
-            && GetStringField(s, "Source") == "poison"));
-        Assert.IsTrue(GetStepsByType(steps, "Damage").Any(s =>
-            GetStringField(s, "TargetCardId") == "poison_a"
-            && GetIntField(s, "Amount") == 1
-            && GetStringField(s, "Source") == "poison"));
-    }
-
-    [Test]
-    public void Build_ConfusionTimeline_ContainsDecisionCueAndForgotOutcome()
+    public void Build_ConfusionTimeline_ContainsDecisionCueAndResolvedAttack()
     {
         var battleResult = new Dictionary<string, object>
         {
@@ -485,7 +598,8 @@ public class BattleTimelineBuilderTests
                             },
                             new Dictionary<string, object>
                             {
-                                { "type", "ConfusionForgot" },
+                                { "type", "Attack" },
+                                { "attackId", 6 },
                                 { "actorCardId", "confused_a" },
                                 { "targetCardId", "confused_a" },
                                 { "source", "confusion" }
@@ -503,14 +617,30 @@ public class BattleTimelineBuilderTests
             && GetStringField(s, "TargetCardId") == "confused_a"
             && GetIntField(s, "EffectType") == 17
             && GetStringField(s, "Source") == "confusion"));
-        Assert.IsTrue(GetStepsByType(steps, "ConfusionForgot").Any(s =>
+        Assert.IsTrue(GetStepsByType(steps, "Attack").Any(s =>
             GetStringField(s, "ActorCardId") == "confused_a"
             && GetStringField(s, "TargetCardId") == "confused_a"
             && GetStringField(s, "Source") == "confusion"));
     }
 
     [Test]
-    public void Build_BoostTimeline_ContainsSelfStatChangesAndPostAttackWakeUp()
+    [TestCase("ConfusionForgot")]
+    [TestCase("21")]
+    public void Build_RejectsRetiredConfusionStep(string stepType)
+    {
+        var battleResult = new Dictionary<string, object> {
+            { "timelineV2", new Dictionary<string, object> {
+                { "version", 2 }, { "steps", new List<object> {
+                    new Dictionary<string, object> { { "type", stepType } }
+                } }
+            } }
+        };
+        Assert.IsFalse(TryBuildTimelineFromBattleResultDict(battleResult, out _, out string error));
+        StringAssert.Contains("Unknown step type", error);
+    }
+
+    [Test]
+    public void Build_BoostTimeline_ContainsSelfStatChangesAndOnePostAttackRemoval()
     {
         var battleResult = new Dictionary<string, object>
         {
@@ -566,13 +696,8 @@ public class BattleTimelineBuilderTests
                                 { "actorCardId", "boost_a" },
                                 { "targetCardId", "boost_a" },
                                 { "effectType", 3 },
+                                { "removalReason", "cleansed" },
                                 { "source", "attack" }
-                            },
-                            new Dictionary<string, object>
-                            {
-                                { "type", "WakeUp" },
-                                { "actorCardId", "boost_a" },
-                                { "targetCardId", "boost_a" }
                             }
                         }
                     }
@@ -603,13 +728,10 @@ public class BattleTimelineBuilderTests
                 && GetStringField(s, "ActorCardId") == "boost_a"
                 && GetIntField(s, "EffectType") == 3
         );
-        int wakeUpIndex = steps.FindIndex(
-            s => GetStringField(s, "Type") == "WakeUp" && GetStringField(s, "ActorCardId") == "boost_a"
-        );
-
         Assert.That(attackIndex, Is.GreaterThanOrEqualTo(0));
         Assert.That(effectRemovedIndex, Is.GreaterThan(attackIndex));
-        Assert.That(wakeUpIndex, Is.GreaterThan(effectRemovedIndex));
+        Assert.AreEqual(1, GetStepsByType(steps, "EffectRemoved").Count);
+        Assert.AreEqual("cleansed", GetStringField(steps[effectRemovedIndex], "RemovalReason"));
         Assert.IsTrue(GetStepsByType(steps, "StatChange").Any(s => GetStringField(s, "ActorCardId") == "boost_a" && GetStringField(s, "TargetCardId") == "boost_a" && GetStringField(s, "StatName") == "ATT" && GetIntField(s, "Amount") == 3));
         Assert.IsTrue(GetStepsByType(steps, "StatChange").Any(s => GetStringField(s, "ActorCardId") == "boost_a" && GetStringField(s, "TargetCardId") == "boost_a" && GetStringField(s, "StatName") == "STR" && GetIntField(s, "Amount") == 2));
         Assert.IsTrue(GetStepsByType(steps, "StatChange").Any(s => GetStringField(s, "ActorCardId") == "boost_a" && GetStringField(s, "TargetCardId") == "boost_a" && GetStringField(s, "StatName") == "CHA" && GetIntField(s, "Amount") == -1));
@@ -633,6 +755,7 @@ public class BattleTimelineBuilderTests
                                 { "actorCardId", "calm_a" },
                                 { "targetCardId", "calm_a" },
                                 { "effectType", 21 },
+                                { "removalReason", "expired" },
                                 { "source", "effect" }
                             },
                             new Dictionary<string, object>
@@ -701,7 +824,7 @@ public class BattleTimelineBuilderTests
     }
 
     [Test]
-    public void Build_WokeUpRecovered_ContainsWakeUpAndRecoverySteps()
+    public void Build_DistinctExpiredEffects_KeepOneCanonicalExitPerCard()
     {
         var battleResult = new Dictionary<string, object>
         {
@@ -713,13 +836,17 @@ public class BattleTimelineBuilderTests
                         {
                             new Dictionary<string, object>
                             {
-                                { "type", "WakeUp" },
+                                { "type", "EffectRemoved" },
+                                { "effectType", 3 },
+                                { "removalReason", "expired" },
                                 { "actorCardId", "card_A" },
                                 { "targetCardId", "card_A" }
                             },
                             new Dictionary<string, object>
                             {
-                                { "type", "Recovery" },
+                                { "type", "EffectRemoved" },
+                                { "effectType", 2 },
+                                { "removalReason", "expired" },
                                 { "actorCardId", "card_B" },
                                 { "targetCardId", "card_B" }
                             }
@@ -743,8 +870,9 @@ public class BattleTimelineBuilderTests
 
         List<object> steps = BuildTimelineFromBattleResultDict(battleResult);
 
-        Assert.IsTrue(GetStepsByType(steps, "WakeUp").Any(s => GetStringField(s, "ActorCardId") == "card_A"));
-        Assert.IsTrue(GetStepsByType(steps, "Recovery").Any(s => GetStringField(s, "ActorCardId") == "card_B"));
+        Assert.AreEqual(2, GetStepsByType(steps, "EffectRemoved").Count);
+        Assert.IsTrue(GetStepsByType(steps, "EffectRemoved").Any(s => GetStringField(s, "TargetCardId") == "card_A"));
+        Assert.IsTrue(GetStepsByType(steps, "EffectRemoved").Any(s => GetStringField(s, "TargetCardId") == "card_B"));
     }
 
     [Test]
@@ -758,6 +886,60 @@ public class BattleTimelineBuilderTests
             .ToList();
 
         Assert.AreEqual(1, applied.Count, "Sleep effect should be added once even when effectApplied and effectsApplied are both present.");
+    }
+
+    [TestCase("expired")]
+    [TestCase("recovered")]
+    [TestCase("cleansed")]
+    public void Build_CanonicalEffectRemoval_PreservesReasonAndTarget(string reason)
+    {
+        var result = new Dictionary<string, object>
+        {
+            { "timelineV2", new Dictionary<string, object> { { "version", 2 },
+                { "steps", new List<object> { new Dictionary<string, object> {
+                    { "type", "EffectRemoved" }, { "actorCardId", "caster" },
+                    { "targetCardId", "recipient" }, { "effectType", 4 }, { "removalReason", reason }
+                } } }
+            } }
+        };
+        var steps = BuildTimelineFromBattleResultDict(result);
+        Assert.AreEqual(1, steps.Count);
+        Assert.AreEqual("recipient", GetStringField(steps[0], "TargetCardId"));
+        Assert.AreEqual(reason, GetStringField(steps[0], "RemovalReason"));
+    }
+
+    [TestCase("ExposureRemoved")]
+    [TestCase("WakeUp")]
+    [TestCase("Recovery")]
+    [TestCase("7")]
+    [TestCase("10")]
+    [TestCase("11")]
+    public void Build_RejectsRetiredEffectExitAliases(string type)
+    {
+        var result = new Dictionary<string, object> {
+            { "timelineV2", new Dictionary<string, object> { { "version", 2 },
+                { "steps", new List<object> { new Dictionary<string, object> { { "type", type } } } }
+            } }
+        };
+        Assert.IsFalse(TryBuildTimelineFromBattleResultDict(result, out _, out string error));
+        StringAssert.Contains("Unknown step type", error);
+    }
+
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("unknown")]
+    public void Build_RejectsMissingOrInvalidRemovalReason(string reason)
+    {
+        var result = new Dictionary<string, object> {
+            { "timelineV2", new Dictionary<string, object> { { "version", 2 },
+                { "steps", new List<object> { new Dictionary<string, object> {
+                    { "type", "EffectRemoved" }, { "actorCardId", "caster" },
+                    { "targetCardId", "recipient" }, { "effectType", 4 }, { "removalReason", reason }
+                } } }
+            } }
+        };
+        Assert.IsFalse(TryBuildTimelineFromBattleResultDict(result, out _, out string error));
+        StringAssert.Contains("removal reason", error);
     }
 
     [Test]
@@ -1247,7 +1429,7 @@ public class BattleTimelineBuilderTests
         bool ok = (bool)tryBuildMethod.Invoke(null, args);
         error = args[2] as string;
 
-        if (ok && args[1] is IEnumerable enumerable)
+        if (args[1] is IEnumerable enumerable)
         {
             steps = enumerable.Cast<object>().ToList();
         }
@@ -1384,6 +1566,7 @@ public class BattleTimelineBuilderTests
             { "amount", step.amount },
             { "statName", step.statName },
             { "effectType", step.effectType },
+            { "removalReason", step.removalReason },
             { "duration", step.duration },
             { "blocked", step.blocked },
             { "blockedBy", blockedBy },
@@ -1455,6 +1638,7 @@ public class BattleTimelineBuilderTests
         public int amount;
         public string statName;
         public int effectType;
+        public string removalReason;
         public int duration;
         public bool blocked;
         public int? blockedBy;

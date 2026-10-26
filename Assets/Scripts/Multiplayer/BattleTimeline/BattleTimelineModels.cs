@@ -3,29 +3,21 @@ using System.Collections.Generic;
 
 public enum BattleStepType
 {
-    Attack,
-    StatChange,
-    Blocked,
-    Damage,
-    BleedTick,
-    BurnTick,
-    ExposureTick,
-    ExposureRemoved,
-    Heal,
-    SelfDamage,
-    WakeUp,
-    Recovery,
-    EffectApplied,
-    EffectRemoved,
-    SatelliteTick,
-    OngoingActionStarted,
-    OngoingActionProgress,
-    OngoingActionResolved,
-    OngoingActionCancelled,
-    Death,
-    PoisonTick,
-    ConfusionForgot,
-    EffectTriggered
+    Attack = 0,
+    StatChange = 1,
+    Blocked = 2,
+    Damage = 3,
+    Heal = 8,
+    SelfDamage = 9,
+    EffectApplied = 12,
+    EffectRemoved = 13,
+    SatelliteTick = 14,
+    OngoingActionStarted = 15,
+    OngoingActionProgress = 16,
+    OngoingActionResolved = 17,
+    OngoingActionCancelled = 18,
+    Death = 19,
+    EffectTriggered = 22
 }
 
 [Serializable]
@@ -41,6 +33,7 @@ public class BattleStep
     public int Amount;
     public string StatName;
     public int EffectType;
+    public string RemovalReason;
     public int Duration;
     public bool Blocked;
     public int? BlockedBy;

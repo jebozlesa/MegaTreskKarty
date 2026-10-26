@@ -7060,8 +7060,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   attackAnimations: {fileID: 1860959064}
-  exceptionAttacks: 40000000
-  priorityAttacks: 
 --- !u!1 &994935274
 GameObject:
   m_ObjectHideFlags: 0
@@ -12306,52 +12304,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 52333100}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1902416956
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1902416958}
-  - component: {fileID: 1902416957}
-  m_Layer: 0
-  m_Name: Effects
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1902416957
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1902416956}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e6db235a54e7c4a4da13a05204548fe2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  attackAnimations: {fileID: 1860959064}
-  textBubble: {fileID: 0}
---- !u!4 &1902416958
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1902416956}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 691.0631, y: 1069.2083, z: -8.538935}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1912189335
 GameObject:
   m_ObjectHideFlags: 0
@@ -14481,7 +14433,6 @@ SceneRoots:
   - {fileID: 520582316}
   - {fileID: 979303242}
   - {fileID: 3518227810474828279}
-  - {fileID: 1902416958}
   - {fileID: 4743211138339946829}
   - {fileID: 888478786}
   - {fileID: 3397996965495623421}

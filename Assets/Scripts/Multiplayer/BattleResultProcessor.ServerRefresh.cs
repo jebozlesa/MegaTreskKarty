@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public partial class BattleResultProcessor
@@ -94,67 +93,7 @@ public partial class BattleResultProcessor
                 );
             }
 
-            if (cardData.effects != null && cardData.effects.Length > 0)
-            {
-                foreach (var effect in cardData.effects)
-                {
-                    Debug.Log(
-                        $"[BattleResultProcessor] {card.cardName} has effect: {effect.type} (duration: {effect.duration})"
-                    );
-
-                    int effectType = int.Parse(effect.type.ToString());
-                    string effectName = BattleEffectPlayback.GetEffectName(effectType);
-                    if (string.IsNullOrEmpty(effectName))
-                    {
-                        continue;
-                    }
-
-                    bool hasIcon = false;
-                    foreach (Transform child in card.effectIconContainer)
-                    {
-                        if (!child.name.StartsWith(effectName + "Icon"))
-                        {
-                            continue;
-                        }
-
-                        hasIcon = true;
-                        break;
-                    }
-
-                    if (hasIcon)
-                    {
-                        continue;
-                    }
-
-                    LogVerboseBattleWarning(
-                        $"[REFRESH] Adding missing {effectName} icon to {card.cardName}"
-                    );
-                    card.AddEffectIcon(effectName);
-                }
-            }
-            else
-            {
-                LogVerboseBattleWarning(
-                    $"[REFRESH] {card.cardName} has NO effects in DB - removing all effect icons"
-                );
-
-                List<Transform> iconsToRemove = new List<Transform>();
-                foreach (Transform child in card.effectIconContainer)
-                {
-                    iconsToRemove.Add(child);
-                }
-
-                foreach (Transform icon in iconsToRemove)
-                {
-                    LogVerboseBattleWarning($"[REFRESH] Removing orphaned icon: {icon.name}");
-                    Destroy(icon.gameObject);
-                }
-
-                if (iconsToRemove.Count > 0)
-                {
-                    card.RepositionEffectIcons();
-                }
-            }
+            BattleEffectPlayback.SyncEffectIconsFromSnapshot(card, cardData.effects);
 
             Debug.Log(
                 $"[BattleResultProcessor] Updated {card.cardName}: HP={card.health}/{card.maxHealth}, STR={card.strength}, DEF={card.defense}"

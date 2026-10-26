@@ -288,55 +288,19 @@ public partial class BattleResultProcessor : MonoBehaviour
             $"[BattleResultProcessor] MyAttackId={myAttackId}, MyDamageReceived={myDamage}, MyHeal={myHealAmount}, MySelfDamage={mySelfDamage}, MyBleedDamage={myBleedDamage}, MyBleedCount={myBleedDamages.Count}, MyExposureDamage={myExposureDamage}, MyExposureRemoved={myExposureRemoved}, MyAttackerSelfDamage={myAttackerSelfDamage}, MyBlocked={myAttackBlocked}, MyBlockedBy={myBlockedBy}, MyWokeUp={myWokeUp}, MyRecovered={myRecovered}, MyEffects={myEffectsApplied.Count}, MySelfEffects={myAttackerEffects.Count}, EnemyAttackId={enemyAttackId}, EnemyDamageReceived={enemyDamage}, EnemyHeal={enemyHealAmount}, EnemySelfDamage={enemySelfDamage}, EnemyBleedDamage={enemyBleedDamage}, EnemyBleedCount={enemyBleedDamages.Count}, EnemyExposureDamage={enemyExposureDamage}, EnemyExposureRemoved={enemyExposureRemoved}, EnemyAttackerSelfDamage={enemyAttackerSelfDamage}, EnemyBlocked={enemyAttackBlocked}, EnemyBlockedBy={enemyBlockedBy}, EnemyWokeUp={enemyWokeUp}, EnemyRecovered={enemyRecovered}, EnemyEffects={enemyEffectsApplied.Count}, EnemySelfEffects={enemyAttackerEffects.Count}"
         );
 
-        // ? Spusti animacie (HP sa updatne postupne!)
-        // ? REFRESH selectedCards sa spusti AZ PO animaciach
-        // ? V11: firstAttacker replaced with firstAttackerCardId (clear ID-based role)
-        // ? V11.1: Added effectsApplied arrays + attackerSelfDamage for AoE/recoil attacks
-        // ? V11.2: Added bleedDamages arrays for individual Bleed animations + exposureDamage/exposureRemoved
-        // ? V12: Added stat changes structs for clean parameter passing
-        // M10: TimelineV2 only. Missing or invalid timeline payload must fail fast.
-        if (BattleTimelinePilotPolicy.ShouldRunTimeline(battleResult, parsed, out var timelineMode))
+        // Validate the only supported playback contract before changing the view.
+        if (BattleTimelineBuilder.TryBuild(battleResult, out var timelineSteps, out var timelineError))
         {
-            if (
-                BattleTimelineBuilder.TryBuild(
-                    battleResult,
-                    out var timelineSteps,
-                    out var timelineError
-                )
-            )
-            {
-                Debug.Log(
-                    $"[TimelinePilot] Enabled for this turn, mode={timelineMode}, steps={timelineSteps.Count}"
-                );
-                StartCoroutine(
-                    PlayTimelinePilotAndRefresh(
-                        myCard,
-                        enemyCard,
-                        myCardId,
-                        enemyCardId,
-                        timelineSteps
-                    )
-                );
-                return;
-            }
-
-            Debug.LogError(
-                $"[TimelinePilot] TimelineV2 build failed (mode={timelineMode}). Legacy playback is disabled. Error: {timelineError}"
-            );
-            StartCoroutine(ShowDialog("TimelineV2 build error. Legacy playback disabled."));
+            Debug.Log($"[BattleTimeline] Validated timeline: steps={timelineSteps.Count}");
+            StartCoroutine(PlayTimelineAndRefresh(myCard, enemyCard, myCardId, enemyCardId, timelineSteps));
             return;
         }
 
-        Debug.LogError(
-            $"[TimelinePilot] TimelineV2 unavailable (mode={timelineMode}). Legacy playback is disabled."
-        );
-        StartCoroutine(
-            ShowDialog($"TimelineV2 unavailable ({timelineMode}). Legacy playback disabled.")
-        );
-        return;
+        Debug.LogError($"[BattleTimeline] TimelineV2 build failed. Error: {timelineError}");
+        StartCoroutine(ShowDialog("TimelineV2 build error. Legacy playback disabled."));
     }
 
-    private IEnumerator PlayTimelinePilotAndRefresh(
+    private IEnumerator PlayTimelineAndRefresh(
         Kard myCard,
         Kard enemyCard,
         string myCardId,
@@ -345,12 +309,12 @@ public partial class BattleResultProcessor : MonoBehaviour
     )
     {
         yield return StartCoroutine(
-            PlayTimelinePilot(myCard, enemyCard, myCardId, enemyCardId, steps)
+            PlayTimeline(myCard, enemyCard, myCardId, enemyCardId, steps)
         );
         yield return StartCoroutine(RefreshCardsFromServer());
     }
 
-    private IEnumerator PlayTimelinePilot(
+    private IEnumerator PlayTimeline(
         Kard myCard,
         Kard enemyCard,
         string myCardId,
@@ -384,23 +348,6 @@ public partial class BattleResultProcessor : MonoBehaviour
         CheckBattleOutcome(myCard, enemyCard);
     }
 
-    /// <summary>
-    /// PrehrA battle animAcie s postupnAm HP updateom
-    /// V5: PouLlAva cardId na urATenie kto AstoATil prvA
-    /// V8: PridanA attackId pre dynamickA animAcie (reuse Attack.cs metAd)
-    /// V9: PridanA healAmount pre self-heal animAcie + Sleep blocking (blocked/wokeUp flags) + effect ikony v sprAvnom poradA + blockedBy field
-    /// V10: PridanA recovered/selfDamage pre Asceticism effect
-    /// V11.1: Multiple effects arrays + attackerSelfDamage/attackerEffectsApplied pre AoE/recoil attacks
-    /// V11.2: PridanA bleedDamage pre Bleed effect processing (Priority 1)
-    /// </summary>
-    /// <summary>
-    /// VykonA animAciu pre konkrAtny Astok (router pattern)
-    /// V8: Podporuje Attack ID 1 (Punch), 2 (Kick), 3 (Heal), ... rozLiriteAlnA
-    /// V9: Heal support - self-heal attacks s healAmount + zelenA HP animAcia
-    /// V11.2: CarHit - attackerSelfDamage pre sAsATasnA animAcie damage
-    /// V12: Modular - kaLldA Astok mA svoj handler v AttackHandlers/ folder
-    /// V14: attackerEffects - effects applied to attacker SELF (backfire Sleep from UpInSmoke)
-    /// </summary>
 }
 
 

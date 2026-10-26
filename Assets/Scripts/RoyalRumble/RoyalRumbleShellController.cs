@@ -635,7 +635,7 @@ public class RoyalRumbleShellController : MonoBehaviour
             renderedEnemyActiveCard = cardInHand;
             enemy.cardInGame = cardInHand;
             enemyLifeBar?.SetBar(enemy.cardInGame);
-            SyncEffectIconsFromSnapshot(cardInHand, selectedEnemy.effects);
+            BattleEffectPlayback.SyncEffectIconsFromSnapshot(cardInHand, selectedEnemy.effects);
         }
     }
 
@@ -1334,7 +1334,7 @@ public class RoyalRumbleShellController : MonoBehaviour
         renderedPlayerActiveCard = activeCard;
         activeCard.isDragable = false;
         playerLifeBar?.SetBar(activeCard);
-        SyncEffectIconsFromSnapshot(activeCard, selectedPlayer.effects);
+        BattleEffectPlayback.SyncEffectIconsFromSnapshot(activeCard, selectedPlayer.effects);
 
         foreach (SelectedCardData cardData in currentSession.playerDeck.cards.Where(IsAlive))
         {
@@ -1423,100 +1423,9 @@ public class RoyalRumbleShellController : MonoBehaviour
             lifeBar.SetBar(card);
         }
 
-        SyncEffectIconsFromSnapshot(card, snapshot.effects);
+        BattleEffectPlayback.SyncEffectIconsFromSnapshot(card, snapshot.effects);
     }
 
-    private void SyncEffectIconsFromSnapshot(Kard card, SelectedCardData.EffectData[] effects)
-    {
-        if (card?.effectIconContainer == null)
-        {
-            return;
-        }
-
-        List<string> expectedEffectNames = new List<string>();
-        if (effects != null)
-        {
-            foreach (SelectedCardData.EffectData effect in effects)
-            {
-                if (effect == null || string.IsNullOrWhiteSpace(effect.type))
-                {
-                    continue;
-                }
-
-                if (!int.TryParse(effect.type, out int effectType))
-                {
-                    continue;
-                }
-
-                string effectName = BattleEffectPlayback.GetEffectName(effectType);
-                if (!string.IsNullOrWhiteSpace(effectName))
-                {
-                    expectedEffectNames.Add(effectName);
-                }
-            }
-        }
-
-        List<Transform> iconsToRemove = new List<Transform>();
-        foreach (Transform child in card.effectIconContainer)
-        {
-            if (child == null)
-            {
-                continue;
-            }
-
-            bool keepIcon = expectedEffectNames.Any(effectName =>
-                child.name.StartsWith(effectName + "Icon", StringComparison.Ordinal)
-            );
-
-            if (!keepIcon)
-            {
-                iconsToRemove.Add(child);
-            }
-        }
-
-        foreach (Transform icon in iconsToRemove)
-        {
-            DestroyEffectIconBeforeReposition(icon);
-        }
-
-        foreach (string effectName in expectedEffectNames)
-        {
-            bool hasIcon = false;
-            foreach (Transform child in card.effectIconContainer)
-            {
-                if (
-                    child != null
-                    && child.name.StartsWith(effectName + "Icon", StringComparison.Ordinal)
-                )
-                {
-                    hasIcon = true;
-                    break;
-                }
-            }
-
-            if (!hasIcon)
-            {
-                card.AddEffectIcon(effectName);
-            }
-        }
-
-        if (iconsToRemove.Count > 0 || expectedEffectNames.Count > 0)
-        {
-            card.RepositionEffectIcons();
-        }
-    }
-
-    private void DestroyEffectIconBeforeReposition(Transform icon)
-    {
-        if (icon == null)
-        {
-            return;
-        }
-
-        GameObject iconObject = icon.gameObject;
-        icon.SetParent(null, false);
-        Destroy(iconObject);
-    }
 
     private void ApplyPostBattleStatus(RoyalRumbleBattleEnvelopeDto envelope)
     {

@@ -54,7 +54,7 @@ public class Attack14Handler
                 yield return animations.PlayDrunkAnimation(attacker.transform);
                 yield return showDialog($"{attacker.cardName} falls asleep");
                 
-                // Effect icon sa prida automaticky neskor v DisplayMultipleEffects()
+                // The ordered EffectApplied step adds the icon after attack playback.
             }
         }
     }

@@ -6,6 +6,89 @@ using UnityEngine;
 public class BattleRecentAttackCoverageTests
 {
     [Test]
+    public void AttackComponent_OwnsOnlyItsExistingAnimationReference()
+    {
+        var type = System.Type.GetType("Attack, Assembly-CSharp", true);
+        var fields = type.GetFields(System.Reflection.BindingFlags.Instance
+            | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic
+            | System.Reflection.BindingFlags.DeclaredOnly);
+        Assert.AreEqual(1, fields.Length, "The retired local attack engine must not retain state.");
+        Assert.AreEqual("attackAnimations", fields[0].Name);
+        Assert.AreEqual(System.Type.GetType("AttackAnimations, Assembly-CSharp", true), fields[0].FieldType);
+        Assert.IsEmpty(type.GetMethods(System.Reflection.BindingFlags.Instance
+            | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic
+            | System.Reflection.BindingFlags.DeclaredOnly));
+    }
+
+    [Test]
+    public void Kard_RetainsPresentationWithoutLocalEffectStateOrMutation()
+    {
+        var type = System.Type.GetType("Kard, Assembly-CSharp", true);
+        var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public
+            | System.Reflection.BindingFlags.NonPublic;
+        Assert.IsNull(type.GetField("effects", flags));
+        foreach (string method in new[] { "CheckEffect", "AddEffect", "IsEffectIconAdded", "RemoveEffect",
+            "RemoveEffectById", "RemoveEffectsById", "GetEffectNameById" })
+            Assert.IsNull(type.GetMethod(method, flags), method);
+        foreach (string method in new[] { "AddEffectIcon", "RemoveEffectIcon", "RepositionEffectIcons" })
+            Assert.IsNotNull(type.GetMethod(method, flags), method);
+    }
+
+    [TestCase("Game.unity", "1860959064")]
+    [TestCase("Multiplayer.unity", "988871913")]
+    public void BattleScenes_KeepAttackAnimationConnectionWithoutRetiredFields(string scene, string animationId)
+    {
+        string source = ReadProjectFile("Assets", "Scenes", scene);
+        string[] blocks = source.Split(new[] { "--- !u!" }, System.StringSplitOptions.None);
+        int attackComponents = 0;
+        foreach (string block in blocks)
+        {
+            if (!block.Contains("guid: 8cd0316fd64e26b4f85f285b4fa0dd7b"))
+                continue;
+            attackComponents++;
+            StringAssert.Contains("attackAnimations: {fileID: " + animationId + "}", block);
+            Assert.IsFalse(block.Contains("exceptionAttacks:"));
+            Assert.IsFalse(block.Contains("priorityAttacks:"));
+        }
+        Assert.AreEqual(1, attackComponents);
+        Assert.IsFalse(source.Contains("\n  effects: {fileID: 0}"), "Retired simulator field must not remain serialized.");
+    }
+
+    [Test]
+    public void BattleRuntime_HasNoLocalEffectSimulator()
+    {
+        var battleType = System.Type.GetType("FightSystemMultiplayer, Assembly-CSharp", true);
+        Assert.IsNull(battleType.GetField("effects",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic),
+            "The battle must not expose the retired local effect simulator.");
+        Assert.IsNull(System.Type.GetType("Effects, Assembly-CSharp", false));
+        Assert.IsFalse(File.Exists(Path.Combine(Application.dataPath, "Scripts", "Effects.cs")));
+        Assert.IsFalse(File.Exists(Path.Combine(Application.dataPath, "Scripts", "Effects.cs.meta")));
+
+        Assert.IsNotNull(System.Type.GetType("BattleEffectPlayback, Assembly-CSharp", false),
+            "Shared timeline effect presentation must remain available.");
+        Assert.IsNotNull(System.Type.GetType("AttackAnimations, Assembly-CSharp", false),
+            "Retiring local gameplay must not remove shared animation playback.");
+    }
+
+    [Test]
+    public void BattleAssets_DoNotReferenceRetiredLocalEffectSimulator()
+    {
+        const string retiredScriptGuid = "e6db235a54e7c4a4da13a05204548fe2";
+        var references = new List<string>();
+        foreach (string pattern in new[] { "*.unity", "*.prefab", "*.asset" })
+        {
+            foreach (string path in Directory.GetFiles(Application.dataPath, pattern, SearchOption.AllDirectories))
+            {
+                if (File.ReadAllText(path).Contains(retiredScriptGuid))
+                    references.Add(path);
+            }
+        }
+
+        Assert.IsEmpty(references, "Saved assets must not keep the retired component or a missing-script reference.");
+    }
+
+    [Test]
     public void AttackRegistry_RegistersRecentHandlersThroughAttack60()
     {
         string source = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "AttackRegistry.cs");
@@ -369,8 +452,8 @@ public class BattleRecentAttackCoverageTests
         StringAssert.Contains("is trapped in chain", kusarigama);
 
         string comboPlayback = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "ComboAttackPlayback.cs");
-        StringAssert.Contains("JObject.Parse(parentContext.AttackResult)", comboPlayback);
-        StringAssert.Contains("AttackRegistry.ExecuteOrFallback(subAttackId, subAttackContext)", comboPlayback);
+        StringAssert.Contains("TryParseSequence(parentContext.AttackResult", comboPlayback);
+        StringAssert.Contains("AttackRegistry.Execute(subAttackId, subAttackContext)", comboPlayback);
 
         string ninjutsu = ReadProjectFile("Assets", "Scripts", "Multiplayer", "AttackHandlers", "Attack107Handler.cs");
         StringAssert.Contains("uses Ninjutsu", ninjutsu);
@@ -634,7 +717,7 @@ public class BattleRecentAttackCoverageTests
         string kard = ReadProjectFile("Assets", "Scripts", "Kard.cs");
         StringAssert.Contains("string placeholderPath = effectName switch", kard);
         StringAssert.Contains("\"Blockade\" => \"Game/Animations/continentalblocade\"", kard);
-        StringAssert.Contains("\"Trident\" => \"Game/Animations/trident\"", kard);
+        Assert.IsFalse(kard.Contains("\"Trident\" => \"Game/Animations/trident\""));
         StringAssert.Contains("\"Game/Animations/continentalblocade\"", kard);
     }
 

@@ -708,8 +708,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   attackAnimations: {fileID: 988871913}
-  exceptionAttacks: 40000000
-  priorityAttacks: 
 --- !u!4 &163625930
 Transform:
   m_ObjectHideFlags: 0
@@ -7175,7 +7173,6 @@ MonoBehaviour:
   attackNamesLoader: {fileID: 1299250289}
   attackCountLoader: {fileID: 2061391569}
   attackSelectionManager: {fileID: 1153135162}
-  effects: {fileID: 0}
   recordHandler: {fileID: 0}
   myPlayerId: 
   roomCode: 

@@ -81,8 +81,6 @@ public class FightSystemMultiplayer : MonoBehaviour
     public AttackCountLoader attackCountLoader;
     public AttackSelectionManager attackSelectionManager;
 
-    public Effects effects;
-
     int playerAttack;
     int enemyAttack;
 

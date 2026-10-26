@@ -1,42 +1,71 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using UnityEngine;
 
 public static class ComboAttackPlayback
 {
-    public static IEnumerator PlaySequence(AttackExecutionContext parentContext)
+    public static bool TryParseSequence(string attackResult, out JArray subAttacks, out string error)
     {
-        if (string.IsNullOrEmpty(parentContext.AttackResult))
+        subAttacks = null;
+        error = null;
+        if (string.IsNullOrWhiteSpace(attackResult))
         {
-            yield break;
+            error = "Combo attackResult is missing.";
+            return false;
         }
 
         JObject payload;
         try
         {
-            payload = JObject.Parse(parentContext.AttackResult);
+            payload = JObject.Parse(attackResult);
         }
-        catch
+        catch (JsonException exception)
         {
-            Debug.LogWarning($"[ComboAttackPlayback] Failed to parse combo payload: {parentContext.AttackResult}");
-            yield break;
+            error = $"Invalid combo JSON: {exception.Message}";
+            return false;
         }
 
-        JArray subAttacks = payload["subAttacks"] as JArray;
-        if (subAttacks == null)
+        var sequence = payload["subAttacks"] as JArray;
+        if (sequence == null || sequence.Count == 0)
         {
-            yield break;
+            error = "Combo requires a non-empty subAttacks array.";
+            return false;
         }
+
+        foreach (JToken token in sequence)
+        {
+            if (!(token is JObject subAttack) || subAttack["attackId"]?.Type != JTokenType.Integer
+                || !int.TryParse(subAttack["attackId"].ToString(), out int subAttackId))
+            {
+                error = "Combo sub-attack requires an integer attackId.";
+                return false;
+            }
+
+            JToken nestedResult = subAttack["attackResult"];
+            if (nestedResult != null && nestedResult.Type != JTokenType.Null && nestedResult.Type != JTokenType.String)
+            {
+                error = $"Invalid combo sub-attack {subAttackId}: attackResult must be a string or null.";
+                return false;
+            }
+            if (!AttackRegistry.TryValidate(subAttackId, nestedResult?.Value<string>(), true, out error))
+                return false;
+        }
+
+        subAttacks = sequence;
+        return true;
+    }
+
+    public static IEnumerator PlaySequence(AttackExecutionContext parentContext)
+    {
+        // Validate the whole sequence before yielding any sub-attack.
+        if (!TryParseSequence(parentContext.AttackResult, out var subAttacks, out string error))
+            throw new InvalidOperationException(error);
 
         foreach (JToken subAttackToken in subAttacks)
         {
-            int subAttackId = subAttackToken.Value<int?>("attackId") ?? 0;
-            if (subAttackId <= 0)
-            {
-                continue;
-            }
-
+            int subAttackId = subAttackToken.Value<int>("attackId");
             List<Dictionary<string, object>> effectsApplied =
                 (subAttackToken["effectsApplied"] as JArray)?.ToObject<List<Dictionary<string, object>>>()
                 ?? new List<Dictionary<string, object>>();
@@ -61,7 +90,7 @@ public static class ComboAttackPlayback
                 attackerEffectsApplied
             );
 
-            yield return AttackRegistry.ExecuteOrFallback(subAttackId, subAttackContext);
+            yield return AttackRegistry.Execute(subAttackId, subAttackContext);
         }
     }
 }

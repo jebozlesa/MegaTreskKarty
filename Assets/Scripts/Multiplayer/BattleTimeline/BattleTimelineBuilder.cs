@@ -69,6 +69,12 @@ public static class BattleTimelineBuilder
             return false;
         }
 
+        if (GetIntAny(timelineV2, 0, "version") != 2)
+        {
+            error = "timelineV2 version must be 2";
+            return false;
+        }
+
         var stepsValue = GetValue(timelineV2, "steps");
         if (stepsValue == null)
         {
@@ -129,6 +135,7 @@ public static class BattleTimelineBuilder
         }
 
         step.Type = stepType;
+        if (!ValidatePassiveValue(data, stepType, out error)) return false;
         step.ActorCardId = GetStringAny(data, "actorCardId", "ActorCardId");
         step.TargetCardId = GetStringAny(data, "targetCardId", "TargetCardId");
         step.AttackId = GetIntAny(data, 0, "attackId", "AttackId");
@@ -136,6 +143,7 @@ public static class BattleTimelineBuilder
         step.Amount = GetIntAny(data, 0, "amount", "Amount");
         step.StatName = GetStringAny(data, "statName", "StatName");
         step.EffectType = GetIntAny(data, 0, "effectType", "EffectType");
+        step.RemovalReason = GetStringAny(data, "removalReason");
         step.Duration = GetIntAny(data, 0, "duration", "Duration");
         step.Blocked = GetBoolAny(data, false, "blocked", "Blocked");
         step.BlockedBy = GetNullableIntAny(data, "blockedBy", "BlockedBy");
@@ -148,12 +156,54 @@ public static class BattleTimelineBuilder
         step.EffectsApplied = GetEffectListAny(data, "effectsApplied", "EffectsApplied");
         step.AttackerEffectsApplied = GetEffectListAny(data, "attackerEffectsApplied", "AttackerEffectsApplied");
 
+        if (step.Type == BattleStepType.Attack
+            && !AttackRegistry.TryValidate(step.AttackId, step.AttackResult,
+                !step.Blocked && !step.Skipped, out error))
+            return false;
+
+        if (step.Type == BattleStepType.EffectRemoved)
+        {
+            if (step.RemovalReason != "expired" && step.RemovalReason != "recovered" && step.RemovalReason != "cleansed")
+            {
+                error = "EffectRemoved removal reason must be expired, recovered or cleansed";
+                return false;
+            }
+            if (step.EffectType <= 0 || string.IsNullOrWhiteSpace(step.ActorCardId) || string.IsNullOrWhiteSpace(step.TargetCardId))
+            {
+                error = "EffectRemoved requires effect type, actor and target";
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool ValidatePassiveValue(Dictionary<string, object> data, BattleStepType type, out string error)
+    {
+        error = null;
+        if (type != BattleStepType.Damage && type != BattleStepType.Heal) return true;
+        string source = GetStringAny(data, "source", "Source");
+        int expectedType = source == "bleed" ? 1 : source == "burn" ? 16 : source == "exposure" ? 4
+            : source == "poison" ? 24 : source == "famine" ? 7 : 0;
+        object rawType = GetValueAny(data, "effectType", "EffectType");
+        if (expectedType == 0 && (rawType == null || rawType.ToString() == "0")) return true;
+        if (expectedType == 0
+            || !int.TryParse(rawType?.ToString(), out int effectType) || effectType != expectedType
+            || (type == BattleStepType.Heal) != (expectedType == 7)
+            || string.IsNullOrWhiteSpace(GetStringAny(data, "actorCardId", "ActorCardId"))
+            || string.IsNullOrWhiteSpace(GetStringAny(data, "targetCardId", "TargetCardId"))
+            || !int.TryParse(GetValueAny(data, "amount", "Amount")?.ToString(), out int amount)
+            || amount < (type == BattleStepType.Damage ? 1 : 0))
+        {
+            error = "Invalid passive value: kind, effectType, source, actor, target and applied amount must agree";
+            return false;
+        }
         return true;
     }
 
     private static bool TryParseStepType(string value, out BattleStepType type)
     {
-        if (Enum.TryParse(value, true, out type))
+        if (Enum.TryParse(value, true, out type) && Enum.IsDefined(typeof(BattleStepType), type))
         {
             return true;
         }

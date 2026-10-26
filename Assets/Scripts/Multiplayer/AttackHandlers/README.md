@@ -2,7 +2,7 @@
 
 Client multiplayer attack playback lives here.
 
-Last updated: 2026-04-24
+Last updated: 2026-10-26
 
 ## Current Status
 
@@ -46,9 +46,14 @@ Standard flow:
 
 1. create `Attack{ID}Handler.cs`
 2. add `[ID] = new AttackDefinition(...)` to `AttackRegistry.cs`
-3. add the file to `Assembly-CSharp.csproj`
+3. let Unity import the script; never edit generated `.csproj` files
 4. update this README
 5. update `Assets/Tests/BattleRecentAttackCoverageTests.cs`
+
+`BattleTimelineBuilder` validates every Attack against this registry before
+playback. `AttackRegistry.Execute` dispatches only registered IDs; an unknown
+ID is a contract error, never a replacement Punch. Keep the supported IDs aligned
+with the server registry. IDs 31 and 48 are absent from both registries.
 
 ## Combo Attacks
 
@@ -58,6 +63,14 @@ Composite attacks such as `107` and `121` should use:
 - client: `ComboAttackPlayback.cs`
 
 Do not build one-off combo playback when the shared helper fits.
+
+Register a composite handler with `isComposite: true` on its existing
+AttackDefinition. The registry then delegates payload validation to
+ComboAttackPlayback.TryParseSequence, including nested sub-attacks. Missing,
+malformed, empty or unknown-ID sequences are rejected before the first timeline
+animation; the helper also validates the complete sequence before dispatching
+any sub-attack. A blocked/skipped parent needs no execution payload but still
+needs a registered ID. Do not restore silent skips or generic attack substitutes.
 
 ## Implemented Handler Files
 

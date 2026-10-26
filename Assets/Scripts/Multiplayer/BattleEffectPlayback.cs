@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -24,24 +25,68 @@ public static class BattleEffectPlayback
         yield return null;
     }
 
-    public static IEnumerator DisplayMultipleEffects(
-        Kard card,
-        List<Dictionary<string, object>> effectsArray,
-        bool isMyCard)
+    public static void SyncEffectIconsFromSnapshot(Kard card, SelectedCardData.EffectData[] effects)
     {
-        if (effectsArray == null || effectsArray.Count == 0)
+        if (card?.effectIconContainer == null)
         {
-            yield break;
+            return;
         }
 
-        Debug.LogWarning(
-            $"[MULTI-EFFECTS] Displaying {effectsArray.Count} effects on {card.cardName}"
-        );
-
-        foreach (var effect in effectsArray)
+        var missingCounts = new Dictionary<string, int>(StringComparer.Ordinal);
+        if (effects != null)
         {
-            yield return DisplayEffectIcon(card, effect, isMyCard);
-            yield return new WaitForSeconds(0.3f);
+            foreach (var effect in effects)
+            {
+                if (effect == null || !int.TryParse(effect.type, out int effectType))
+                {
+                    continue;
+                }
+
+                string effectName = GetEffectName(effectType);
+                if (!string.IsNullOrEmpty(effectName))
+                {
+                    missingCounts.TryGetValue(effectName, out int count);
+                    missingCounts[effectName] = count + 1;
+                }
+            }
+        }
+
+        var names = new List<string>(missingCounts.Keys);
+        var excessIcons = new List<Transform>();
+        foreach (Transform icon in card.effectIconContainer)
+        {
+            string matchedName = names.Find(name => icon.name.StartsWith(name + "Icon", StringComparison.Ordinal));
+            if (matchedName != null && missingCounts[matchedName] > 0)
+            {
+                missingCounts[matchedName]--;
+            }
+            else
+            {
+                excessIcons.Add(icon);
+            }
+        }
+
+        foreach (Transform icon in excessIcons)
+        {
+            // Destroy is deferred; detach now so another sync in this frame sees exact counts.
+            icon.SetParent(null, false);
+            UnityEngine.Object.Destroy(icon.gameObject);
+        }
+
+        int countBeforeAdd = card.effectIconContainer.childCount;
+        foreach (string name in names)
+        {
+            for (int i = 0; i < missingCounts[name]; i++)
+            {
+                card.AddEffectIcon(name);
+            }
+        }
+
+        int added = card.effectIconContainer.childCount - countBeforeAdd;
+        if (excessIcons.Count > 0 || added > 0)
+        {
+            card.RepositionEffectIcons();
+            Debug.LogWarning($"[EFFECT_ICON] Snapshot synced: card={card.cardName}({card.cardId}), added={added}, removed={excessIcons.Count}, total={card.effectIconContainer.childCount}");
         }
     }
 
@@ -98,6 +143,10 @@ public static class BattleEffectPlayback
         {
             yield return animations.PlayDepressionEndAnimation(card.transform);
         }
+        else if (animations != null && effectType == 17)
+        {
+            yield return animations.PlayConfusionEndAnimation(card.transform);
+        }
         else if (animations != null && effectType == 19)
         {
             yield return animations.PlayFearEndAnimation(card.transform);
@@ -123,8 +172,6 @@ public static class BattleEffectPlayback
                 return "Sleep";
             case 4:
                 return "Exposure";
-            case 5:
-                return "Siege";
             case 6:
                 return "Fury";
             case 7:
@@ -133,18 +180,10 @@ public static class BattleEffectPlayback
                 return "Electricity";
             case 9:
                 return "Tether";
-            case 10:
-                return "Starving";
-            case 11:
-                return "ScientificLecture";
             case 12:
                 return "Blockade";
             case 13:
                 return "Depression";
-            case 14:
-                return "ArtInspiration";
-            case 15:
-                return "Autoportrait";
             case 16:
                 return "Burn";
             case 17:
@@ -153,45 +192,15 @@ public static class BattleEffectPlayback
                 return "Satellite";
             case 19:
                 return "Fear";
-            case 20:
-            case 22:
-            case 23:
-                // Online ongoing maneuvers are rendered from timeline ongoing-action steps,
-                // not from effect icons.
-                return null;
             case 21:
                 return "Calm";
             case 24:
                 return "Poison";
-            case 26:
-                return "Curse";
             default:
                 Debug.LogWarning($"[BattleEffectPlayback] Unknown effect type: {effectType}");
                 return null;
         }
     }
 
-    private static IEnumerator DisplayEffectIcon(
-        Kard card,
-        Dictionary<string, object> effectData,
-        bool isMyCard)
-    {
-        int effectType = int.Parse(effectData["type"].ToString());
-        int duration = int.Parse(effectData["duration"].ToString());
-
-        Debug.LogWarning(
-            $"[EFFECT_ICON] Adding effect icon to {card.cardName}: type={effectType}, duration={duration}"
-        );
-
-        string effectName = GetEffectName(effectType);
-        if (!string.IsNullOrEmpty(effectName))
-        {
-            card.AddEffectIcon(effectName);
-            card.RepositionEffectIcons();
-            Debug.LogWarning($"[EFFECT_ICON] Added {effectName} icon to {card.cardName}");
-        }
-
-        yield break;
-    }
 }
 
