@@ -82,6 +82,50 @@ public class BattleResultParserTests
     }
 
     [Test]
+    public void ParseMatchStateReadResult_DistinguishesStateMissingRoomAndUnavailable()
+    {
+        object missing = InvokeParseMatchStateReadResult(
+            "{\"success\":false,\"roomCode\":\"ROOM01\",\"error\":\"room_not_found\"}",
+            "ROOM01",
+            "p1"
+        );
+        Assert.AreEqual("MissingExactRoom", ReadField<object>(missing, "outcome").ToString());
+        Assert.IsNull(ReadField<object>(missing, "state"));
+
+        object wrongRoom = InvokeParseMatchStateReadResult(
+            "{\"success\":false,\"roomCode\":\"OTHER\",\"error\":\"room_not_found\"}",
+            "ROOM01",
+            "p1"
+        );
+        Assert.AreEqual("Unavailable", ReadField<object>(wrongRoom, "outcome").ToString());
+
+        object state = InvokeParseMatchStateReadResult(
+            "{\"success\":true,\"matchState\":{\"roomCode\":\"ROOM01\",\"viewerPlayerId\":\"p1\"}}",
+            "ROOM01",
+            "p1"
+        );
+        Assert.AreEqual("State", ReadField<object>(state, "outcome").ToString());
+        Assert.AreEqual("ROOM01", ReadField<string>(ReadField<object>(state, "state"), "roomCode"));
+
+        object unsuccessfulState = InvokeParseMatchStateReadResult(
+            "{\"success\":false,\"matchState\":{\"roomCode\":\"ROOM01\",\"viewerPlayerId\":\"p1\"}}",
+            "ROOM01",
+            "p1"
+        );
+        Assert.AreEqual("Unavailable", ReadField<object>(unsuccessfulState, "outcome").ToString());
+
+        object wrongPlayer = InvokeParseMatchStateReadResult(
+            "{\"success\":true,\"matchState\":{\"roomCode\":\"ROOM01\",\"viewerPlayerId\":\"p2\"}}",
+            "ROOM01",
+            "p1"
+        );
+        Assert.AreEqual("Unavailable", ReadField<object>(wrongPlayer, "outcome").ToString());
+
+        object noResponse = InvokeParseMatchStateReadResult(null, "ROOM01", "p1");
+        Assert.AreEqual("Unavailable", ReadField<object>(noResponse, "outcome").ToString());
+    }
+
+    [Test]
     public void TryParse_ReturnsFalse_WhenRequiredAttackersAreMissing()
     {
         var invalid = new Dictionary<string, object>();
@@ -636,6 +680,24 @@ public class BattleResultParserTests
         Assert.IsNotNull(method, "Method ParseMatchStateResult was not found.");
 
         return method.Invoke(null, new[] { payload });
+    }
+
+    private static object InvokeParseMatchStateReadResult(
+        object payload,
+        string expectedRoom,
+        string expectedPlayer
+    )
+    {
+        var mapperType = Type.GetType("BattleContractMapper, Assembly-CSharp");
+        Assert.IsNotNull(mapperType, "Type BattleContractMapper was not found in Assembly-CSharp.");
+
+        var method = mapperType.GetMethod(
+            "ParseMatchStateReadResult",
+            BindingFlags.Public | BindingFlags.Static
+        );
+        Assert.IsNotNull(method, "Method ParseMatchStateReadResult was not found.");
+
+        return method.Invoke(null, new[] { payload, expectedRoom, expectedPlayer });
     }
 
     // Unity JsonUtility populates these fixture fields through reflection.

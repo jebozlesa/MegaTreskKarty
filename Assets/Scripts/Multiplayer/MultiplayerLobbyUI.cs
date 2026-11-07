@@ -9,9 +9,17 @@ using UnityEngine.UI;
 public class MultiplayerLobbyUI : MonoBehaviour
 {
     private enum MatchmakingState { Idle, Connecting, Waiting, Reconciling, Cancelling, Error, Starting }
+    private const string DefaultMatchUnavailableMessage = "This match has ended and is no longer available.";
 
     public Button joinButton;
     public ServerFunctionsManager serverFunctionsManager;
+
+    [Header("Missing Room Recovery")]
+    [SerializeField, TextArea(2, 4)]
+    private string matchUnavailableMessage = DefaultMatchUnavailableMessage;
+
+    [SerializeField]
+    private ConfirmDialogController matchUnavailableDialog;
 
     private string playerId;
     private string ownedRoomCode;
@@ -42,6 +50,7 @@ public class MultiplayerLobbyUI : MonoBehaviour
         ownedRoomCode = PlayerPrefs.GetString("RoomCode", "");
         if (string.IsNullOrEmpty(ownedRoomCode)) ResetMatchmakingUi();
         else ReconcileExistingRoom();
+        TryShowPendingMissingRoomNotice();
         serverFunctionsManager.CleanupRooms();
     }
 
@@ -90,7 +99,7 @@ public class MultiplayerLobbyUI : MonoBehaviour
         {
             if (!OwnsRequest(version, expectedRoom)) return;
             object response = result?.FunctionResult;
-            if (IsMissingRoom(response, expectedRoom)) { ClearOwnedRoom(expectedRoom); return; }
+            if (TryHandleMissingRoom(response, expectedRoom)) return;
             MatchStateDto state = ParseOwnedState(response, expectedRoom);
             if (state == null) { SetError("Room reconciliation failed"); return; }
             if (state.status == "completed") ClearOwnedRoom(expectedRoom);
@@ -161,7 +170,7 @@ public class MultiplayerLobbyUI : MonoBehaviour
     private void ApplyCancellationResponse(object response, string expectedRoom, int version)
     {
         if (!OwnsRequest(version, expectedRoom)) return;
-        if (IsMissingRoom(response, expectedRoom)) { ClearOwnedRoom(expectedRoom); return; }
+        if (TryHandleMissingRoom(response, expectedRoom)) return;
         MatchStateDto state = ParseOwnedState(response, expectedRoom);
         if (state == null) { SetError("CANCEL failed; room retained for retry"); return; }
         if (state.status == "completed") ClearOwnedRoom(expectedRoom);
@@ -198,10 +207,9 @@ public class MultiplayerLobbyUI : MonoBehaviour
                 || Time.realtimeSinceStartup >= waitingDeadline);
             if (!OwnsWaitingPresence(version, expectedRoom, presenceVersion)) yield break;
             if (!received) break;
-            if (IsMissingRoom(response, expectedRoom))
+            if (TryHandleMissingRoom(response, expectedRoom))
             {
                 waitForOpponentCoroutine = null;
-                ClearOwnedRoom(expectedRoom);
                 yield break;
             }
             MatchStateDto state = ParseOwnedState(response, expectedRoom);
@@ -279,6 +287,10 @@ public class MultiplayerLobbyUI : MonoBehaviour
     private bool ApplyWaitingHeartbeatResponse(object response, int version, string expectedRoom, int presenceVersion)
     {
         if (!CanRenewWaitingPresence(version, expectedRoom, presenceVersion)) return false;
+        if (TryHandleMissingRoom(response, expectedRoom))
+        {
+            return false;
+        }
         JObject data = ParseResponse(response);
         if (data?["success"]?.Value<bool>() != true || (string)data["roomCode"] != expectedRoom)
         {
@@ -320,7 +332,7 @@ public class MultiplayerLobbyUI : MonoBehaviour
     {
         if (!OwnsRequest(version, expectedRoom) || applicationPaused || matchmakingState != MatchmakingState.Reconciling) return;
         waitingResumeRequired = false;
-        if (IsMissingRoom(response, expectedRoom)) { ClearOwnedRoom(expectedRoom); return; }
+        if (TryHandleMissingRoom(response, expectedRoom)) return;
         MatchStateDto state = ParseOwnedState(response, expectedRoom);
         if (state == null) { SetError("Waiting resume verification failed; room retained for cancellation"); return; }
         retryReconciliation = false;
@@ -338,9 +350,54 @@ public class MultiplayerLobbyUI : MonoBehaviour
 
     private static bool IsMissingRoom(object response, string expectedRoom)
     {
-        JObject data = ParseResponse(response);
-        return data?["success"]?.Value<bool>() == false && (string)data["error"] == "room_not_found"
-            && (string)data["roomCode"] == expectedRoom;
+        return BattleContractMapper.IsMissingRoomResult(response, expectedRoom);
+    }
+
+    private bool TryHandleMissingRoom(object response, string expectedRoom)
+    {
+        if (!IsMissingRoom(response, expectedRoom))
+        {
+            return false;
+        }
+
+        ClearOwnedRoom(expectedRoom);
+        ShowMissingRoomNotice();
+        return true;
+    }
+
+    private bool TryShowPendingMissingRoomNotice()
+    {
+        if (!MultiplayerMissingRoomNoticeState.Consume(playerId))
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrEmpty(ownedRoomCode))
+        {
+            Debug.LogWarning(
+                $"[Lobby] Discarded pending missing-room notice because another room is owned: room={ownedRoomCode}"
+            );
+            return false;
+        }
+
+        return ShowMissingRoomNotice();
+    }
+
+    private bool ShowMissingRoomNotice()
+    {
+        if (matchUnavailableDialog == null)
+        {
+            Debug.LogError(
+                "[Lobby] matchUnavailableDialog is not assigned; missing-room notice cannot be shown."
+            );
+            return false;
+        }
+
+        string message = string.IsNullOrWhiteSpace(matchUnavailableMessage)
+            ? DefaultMatchUnavailableMessage
+            : matchUnavailableMessage;
+        matchUnavailableDialog.Show(message, () => { });
+        return true;
     }
 
     private MatchStateDto ParseOwnedState(object response, string expectedRoom)

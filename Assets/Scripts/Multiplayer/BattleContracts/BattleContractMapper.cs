@@ -59,6 +59,77 @@ public static class BattleContractMapper
         return envelope.matchState;
     }
 
+    public static MatchStateReadResult ParseMatchStateReadResult(
+        object functionResult,
+        string expectedRoom,
+        string expectedPlayer
+    )
+    {
+        try
+        {
+            var token = ToToken(functionResult);
+            if (token == null || token.Type == JTokenType.Null)
+            {
+                return UnavailableMatchStateRead();
+            }
+
+            var envelope = token.ToObject<MatchStateEnvelopeDto>();
+            if (
+                envelope != null
+                && !envelope.success
+                && string.Equals(envelope.error, "room_not_found", StringComparison.Ordinal)
+                && string.Equals(envelope.roomCode, expectedRoom, StringComparison.Ordinal)
+            )
+            {
+                return new MatchStateReadResult
+                {
+                    outcome = MatchStateReadOutcome.MissingExactRoom,
+                };
+            }
+
+            MatchStateDto state = envelope?.matchState;
+            if (
+                envelope == null
+                || !envelope.success
+                || state == null
+                || !string.Equals(state.roomCode, expectedRoom, StringComparison.Ordinal)
+                || !string.Equals(state.viewerPlayerId, expectedPlayer, StringComparison.Ordinal)
+            )
+            {
+                return UnavailableMatchStateRead();
+            }
+
+            Normalize(state);
+            return new MatchStateReadResult
+            {
+                outcome = MatchStateReadOutcome.State,
+                state = state,
+            };
+        }
+        catch (Exception)
+        {
+            return UnavailableMatchStateRead();
+        }
+    }
+
+    public static bool IsMissingRoomResult(object functionResult, string expectedRoom)
+    {
+        MatchStateReadResult result = ParseMatchStateReadResult(
+            functionResult,
+            expectedRoom,
+            null
+        );
+        return result.outcome == MatchStateReadOutcome.MissingExactRoom;
+    }
+
+    private static MatchStateReadResult UnavailableMatchStateRead()
+    {
+        return new MatchStateReadResult
+        {
+            outcome = MatchStateReadOutcome.Unavailable,
+        };
+    }
+
     private static void Normalize(BattleResultDto dto)
     {
         if (dto == null)

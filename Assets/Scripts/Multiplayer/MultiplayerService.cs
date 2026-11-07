@@ -10,6 +10,7 @@ using UnityEngine.SceneManagement;
 public class MultiplayerService : MonoBehaviour
 {
     private const string MatchPhaseCompleted = "completed";
+    private const string MultiplayerLobbyScene = "MultiplayerLobby";
     private const float MatchStateMonitorIntervalSeconds = 2f;
 
     // Vytvorenie kariet v ruke hraca v multiplayeri podla udajov z miestnosti
@@ -34,6 +35,7 @@ public class MultiplayerService : MonoBehaviour
     private bool leaveRequested;
     private bool matchCompletionHandled;
     private bool leaveConfirmed;
+    private bool missingRoomHandled;
     private int lifecycleVersion;
     public const string PendingStartupCancellationKey = "PendingStartupCancellationRoomCode";
     private bool localPrepared;
@@ -48,7 +50,7 @@ public class MultiplayerService : MonoBehaviour
     public int StartupRemainingMilliseconds => Mathf.Max(0,
         (int)((startupDeadline - Time.realtimeSinceStartupAsDouble) * 1000));
     public bool CanContinueStartup => this != null && isActiveAndEnabled && !leaveRequested
-        && !leaveConfirmed && !matchCompletionHandled && !startupAborted;
+        && !leaveConfirmed && !matchCompletionHandled && !missingRoomHandled && !startupAborted;
 
     [Header("Heartbeat Settings")]
     [SerializeField]
@@ -191,6 +193,8 @@ public class MultiplayerService : MonoBehaviour
         if (this == null || leaveRequested || leaveConfirmed || matchCompletionHandled || startupAborted) return;
         startupAborted = true;
         lifecycleVersion++;
+        fightSystem?.multiplayerBoardManager?.CancelPendingSelection();
+        fightSystem?.battleSubmitter?.CancelPendingBattle();
         handManager?.CancelPreparation();
         StopHeartbeat(); StopMatchStateMonitor();
         if (PlayerPrefs.GetString("RoomCode", "") == roomCode)
@@ -202,8 +206,9 @@ public class MultiplayerService : MonoBehaviour
         var left = new TaskCompletionSource<bool>();
         LeaveMultiplayerRoom(success => left.TrySetResult(success));
         await Task.WhenAny(left.Task, Task.Delay(10000));
+        if (missingRoomHandled) return;
         if (this != null && gameObject.scene == SceneManager.GetActiveScene())
-            SceneManager.LoadScene("MultiplayerLobby");
+            SceneManager.LoadScene(MultiplayerLobbyScene);
     }
 
     private void OnDestroy()
@@ -212,7 +217,8 @@ public class MultiplayerService : MonoBehaviour
         StopHeartbeat();
         StopMatchStateMonitor();
         if (serverFunctionsManager != null && !string.IsNullOrEmpty(myPlayerId)
-            && !string.IsNullOrEmpty(roomCode) && !leaveRequested && !leaveConfirmed && !matchCompletionHandled)
+            && !string.IsNullOrEmpty(roomCode) && !leaveRequested && !leaveConfirmed
+            && !matchCompletionHandled && !missingRoomHandled)
         {
             Debug.LogWarning($"[MultiplayerService] Emergency leave: room={roomCode}");
             serverFunctionsManager.LeaveRoom(myPlayerId, roomCode);
@@ -291,7 +297,9 @@ public class MultiplayerService : MonoBehaviour
             Debug.Log(
                 $"[MultiplayerService] MatchState monitor poll request: roomCode={roomCode}, playerId={myPlayerId}"
             );
-            var matchStateTask = GetMatchStateAsync(roomCode, myPlayerId);
+            int version = lifecycleVersion;
+            string expectedRoom = roomCode;
+            var matchStateTask = GetMatchStateReadAsync(expectedRoom, myPlayerId);
             yield return new WaitUntil(() => matchStateTask.IsCompleted);
 
             if (
@@ -305,8 +313,26 @@ public class MultiplayerService : MonoBehaviour
                 continue;
             }
 
-            if (!CanContinueStartup) yield break;
-            MatchStateDto matchState = matchStateTask.Result;
+            if (!CanContinueStartup || version != lifecycleVersion || roomCode != expectedRoom)
+                yield break;
+
+            MatchStateReadResult readResult = matchStateTask.Result;
+            if (readResult.outcome == MatchStateReadOutcome.Unavailable)
+            {
+                Debug.LogWarning(
+                    $"[MultiplayerService] MatchState monitor poll was unavailable: roomCode={expectedRoom}"
+                );
+                continue;
+            }
+
+            if (readResult.outcome == MatchStateReadOutcome.MissingExactRoom)
+            {
+                matchStateMonitorCoroutine = null;
+                HandleMissingOwnedRoom(expectedRoom);
+                yield break;
+            }
+
+            MatchStateDto matchState = readResult.state;
             Debug.Log(
                 $"[MultiplayerService] MatchState monitor poll result: roomCode={matchState.roomCode}, status={matchState.status}, phase={matchState.phase}, playersCount={matchState.playersCount}, reason={matchState.matchResult?.reason}, winner={matchState.matchResult?.winnerPlayerId}, loser={matchState.matchResult?.loserPlayerId}"
             );
@@ -319,10 +345,61 @@ public class MultiplayerService : MonoBehaviour
                 )
             )
             {
+                matchStateMonitorCoroutine = null;
                 HandleRemoteMatchCompletion(matchState);
                 yield break;
             }
         }
+    }
+
+    private void HandleMissingOwnedRoom(string expectedRoom)
+    {
+        if (!PrepareMissingOwnedRoomRecovery(expectedRoom))
+        {
+            return;
+        }
+
+        Debug.LogWarning(
+            $"[MultiplayerService] Missing room recovery prepared: room={expectedRoom}, destination={MultiplayerLobbyScene}"
+        );
+        SceneManager.LoadScene(MultiplayerLobbyScene);
+    }
+
+    private bool PrepareMissingOwnedRoomRecovery(string expectedRoom)
+    {
+        string storedRoom = PlayerPrefs.GetString("RoomCode", "");
+        if (missingRoomHandled || roomCode != expectedRoom)
+        {
+            Debug.LogWarning(
+                $"[MultiplayerService] Ignored missing-room result outside current ownership: expected={expectedRoom}, current={roomCode}, stored={storedRoom}"
+            );
+            return false;
+        }
+
+        missingRoomHandled = true;
+        StopCurrentBattleLifecycle();
+
+        if (!string.IsNullOrEmpty(storedRoom) && storedRoom != expectedRoom)
+        {
+            Debug.LogWarning(
+                $"[MultiplayerService] Stopped superseded room lifecycle without touching newer ownership: old={expectedRoom}, stored={storedRoom}"
+            );
+            return false;
+        }
+
+        ClearOwnedRoomKeys();
+        MultiplayerMissingRoomNoticeState.Queue(myPlayerId);
+        return true;
+    }
+
+    private void StopCurrentBattleLifecycle()
+    {
+        lifecycleVersion++;
+        fightSystem?.multiplayerBoardManager?.CancelPendingSelection();
+        fightSystem?.battleSubmitter?.CancelPendingBattle();
+        handManager?.CancelPreparation();
+        StopHeartbeat();
+        StopMatchStateMonitor();
     }
 
     private void HandleRemoteMatchCompletion(MatchStateDto matchState)
@@ -382,8 +459,9 @@ public class MultiplayerService : MonoBehaviour
 
     private void ClearOwnedRoomKeys()
     {
-        if (PlayerPrefs.GetString("RoomCode", "") != roomCode) return;
-        PlayerPrefs.DeleteKey("RoomCode");
+        string storedRoom = PlayerPrefs.GetString("RoomCode", "");
+        if (!string.IsNullOrEmpty(storedRoom) && storedRoom != roomCode) return;
+        if (storedRoom == roomCode) PlayerPrefs.DeleteKey("RoomCode");
         PlayerPrefs.DeleteKey("IsWaitingForOpponent");
         if (PlayerPrefs.GetString(PendingStartupCancellationKey, "") == roomCode)
             PlayerPrefs.DeleteKey(PendingStartupCancellationKey);
@@ -478,7 +556,7 @@ public class MultiplayerService : MonoBehaviour
 
     public void LeaveMultiplayerRoom(System.Action<bool> onCompleted = null)
     {
-        if (leaveConfirmed || matchCompletionHandled)
+        if (leaveConfirmed || matchCompletionHandled || missingRoomHandled)
         {
             // The server-confirmed terminal snapshot already ended our membership.
             onCompleted?.Invoke(true);
@@ -501,11 +579,18 @@ public class MultiplayerService : MonoBehaviour
         {
             if (this == null || version != lifecycleVersion || roomCode != expectedRoom) return;
             bool succeeded = false;
+            bool missingExactRoom = false;
             try
             {
                 JObject response = result?.FunctionResult == null ? null
                     : result.FunctionResult is string text ? JObject.Parse(text) : JObject.FromObject(result.FunctionResult);
-                MatchStateDto state = BattleContractMapper.ParseMatchStateResult(response);
+                MatchStateReadResult readResult = BattleContractMapper.ParseMatchStateReadResult(
+                    response,
+                    expectedRoom,
+                    myPlayerId
+                );
+                MatchStateDto state = readResult.state;
+                missingExactRoom = readResult.outcome == MatchStateReadOutcome.MissingExactRoom;
                 succeeded = response?["success"]?.Value<bool>() == true
                     && (string)response["roomCode"] == expectedRoom
                     && state?.roomCode == expectedRoom && state.viewerPlayerId == myPlayerId
@@ -513,6 +598,12 @@ public class MultiplayerService : MonoBehaviour
             }
             catch (System.Exception ex) { Debug.LogWarning("[MultiplayerService] Leave response invalid: " + ex.Message); }
             leaveRequested = false;
+            if (missingExactRoom)
+            {
+                HandleMissingOwnedRoom(expectedRoom);
+                onCompleted?.Invoke(true);
+                return;
+            }
             if (!succeeded)
             {
                 if (statusText != null) statusText.text = "Leave failed";
@@ -540,12 +631,12 @@ public class MultiplayerService : MonoBehaviour
         LeaveMultiplayerRoom(success =>
         {
             Debug.Log($"[MultiplayerService] OnExitToLobby leave completed: success={success}");
-            if (success)
+            if (success && !missingRoomHandled)
             {
                 Debug.Log(
                     "[MultiplayerService] Loading MultiplayerLobby scene after successful leave"
                 );
-                SceneManager.LoadScene("MultiplayerLobby");
+                SceneManager.LoadScene(MultiplayerLobbyScene);
             }
         });
     }
@@ -560,7 +651,7 @@ public class MultiplayerService : MonoBehaviour
         LeaveMultiplayerRoom(success =>
         {
             Debug.Log($"[MultiplayerService] OnExitToMainMenu leave completed: success={success}");
-            if (success)
+            if (success && !missingRoomHandled)
             {
                 Debug.Log("[MultiplayerService] Loading Main scene after successful leave");
                 SceneManager.LoadScene("Main");
@@ -681,12 +772,24 @@ public class MultiplayerService : MonoBehaviour
 
     public async Task<MatchStateDto> GetMatchStateAsync(string roomCode, string playerId)
     {
-        var tcs = new TaskCompletionSource<MatchStateDto>();
+        MatchStateReadResult result = await GetMatchStateReadAsync(roomCode, playerId);
+        return result.outcome == MatchStateReadOutcome.State ? result.state : null;
+    }
+
+    private async Task<MatchStateReadResult> GetMatchStateReadAsync(
+        string roomCode,
+        string playerId
+    )
+    {
+        var tcs = new TaskCompletionSource<MatchStateReadResult>();
 
         if (serverFunctionsManager == null)
         {
-            Debug.LogError("GetMatchStateAsync: serverFunctionsManager is null");
-            tcs.TrySetResult(null);
+            Debug.LogError("GetMatchStateReadAsync: serverFunctionsManager is null");
+            tcs.TrySetResult(new MatchStateReadResult
+            {
+                outcome = MatchStateReadOutcome.Unavailable,
+            });
             return await tcs.Task;
         }
 
@@ -697,32 +800,33 @@ public class MultiplayerService : MonoBehaviour
             {
                 if (result?.FunctionResult == null)
                 {
-                    Debug.LogWarning("GetMatchStateAsync: No result returned from server");
-                    tcs.TrySetResult(null);
+                    Debug.LogWarning("GetMatchStateReadAsync: No result returned from server");
+                    tcs.TrySetResult(new MatchStateReadResult
+                    {
+                        outcome = MatchStateReadOutcome.Unavailable,
+                    });
                     return;
                 }
 
-                try
+                MatchStateReadResult readResult = BattleContractMapper.ParseMatchStateReadResult(
+                    result.FunctionResult,
+                    roomCode,
+                    playerId
+                );
+                if (readResult.outcome == MatchStateReadOutcome.Unavailable)
                 {
-                    var matchState = BattleContractMapper.ParseMatchStateResult(
-                        result.FunctionResult
+                    Debug.LogWarning(
+                        $"GetMatchStateReadAsync: Response unavailable for room {roomCode}"
                     );
-                    if (matchState?.roomCode != roomCode || matchState?.viewerPlayerId != playerId)
-                        matchState = null;
-                    if (matchState == null)
-                    {
-                        Debug.LogWarning(
-                            $"GetMatchStateAsync: Failed to parse match state for room {roomCode}"
-                        );
-                    }
-
-                    tcs.TrySetResult(matchState);
                 }
-                catch (System.Exception ex)
+                else if (readResult.outcome == MatchStateReadOutcome.MissingExactRoom)
                 {
-                    Debug.LogError($"GetMatchStateAsync: Error parsing response - {ex.Message}");
-                    tcs.TrySetResult(null);
+                    Debug.LogWarning(
+                        $"GetMatchStateReadAsync: Exact room no longer exists: {roomCode}"
+                    );
                 }
+
+                tcs.TrySetResult(readResult);
             }
         );
 

@@ -99,9 +99,23 @@ public class BattleStatChangeDto
 public class MatchStateEnvelopeDto
 {
     public bool success;
+    public string roomCode;
     public string message;
     public string error;
     public MatchStateDto matchState;
+}
+
+public enum MatchStateReadOutcome
+{
+    State,
+    MissingExactRoom,
+    Unavailable,
+}
+
+public sealed class MatchStateReadResult
+{
+    public MatchStateReadOutcome outcome;
+    public MatchStateDto state;
 }
 
 [Serializable]

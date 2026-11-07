@@ -24,6 +24,12 @@ public class BattleSubmitter : MonoBehaviour
     /// </summary>
     public void SubmitAttack(string roomCode, string playerId, string cardId, int attackId, int attackSlot)
     {
+        if (fightSystem == null || !fightSystem.CanInteractWithBattle)
+        {
+            Debug.LogWarning("[BattleSubmitter] Attack ignored outside an active battle lifecycle");
+            return;
+        }
+
         if (isWaitingForBattle)
         {
             Debug.LogWarning("[BattleSubmitter] Already waiting for battle result");
@@ -58,6 +64,12 @@ public class BattleSubmitter : MonoBehaviour
     /// </summary>
     private void OnBattleResponse(PlayFab.CloudScriptModels.ExecuteFunctionResult result)
     {
+        if (!isWaitingForBattle || fightSystem == null || !fightSystem.CanInteractWithBattle)
+        {
+            isWaitingForBattle = false;
+            return;
+        }
+
         if (result == null || result.FunctionResult == null)
         {
             Debug.LogError("[BattleSubmitter] Server response is null");
@@ -124,6 +136,12 @@ public class BattleSubmitter : MonoBehaviour
     {
         yield return new WaitForSeconds(1f);
 
+        if (!isWaitingForBattle || fightSystem == null || !fightSystem.CanInteractWithBattle)
+        {
+            isWaitingForBattle = false;
+            yield break;
+        }
+
         pollAttempts++;
 
         if (pollAttempts >= MAX_POLL_ATTEMPTS)
@@ -174,6 +192,12 @@ public class BattleSubmitter : MonoBehaviour
 
     private void HandlePolledBattleStatusResult(PlayFab.CloudScriptModels.ExecuteFunctionResult result)
     {
+        if (!isWaitingForBattle || fightSystem == null || !fightSystem.CanInteractWithBattle)
+        {
+            isWaitingForBattle = false;
+            return;
+        }
+
         if (result == null || result.FunctionResult == null)
         {
             Debug.LogWarning("[BattleSubmitter] Battle status fetch returned null after retries; continuing polling instead of aborting flow");
@@ -188,6 +212,12 @@ public class BattleSubmitter : MonoBehaviour
         }
 
         OnBattleResponse(result);
+    }
+
+    public void CancelPendingBattle()
+    {
+        isWaitingForBattle = false;
+        StopAllCoroutines();
     }
 }
 

@@ -1,6 +1,6 @@
 ﻿# Copilot Instructions - MegaTreskKarty
 
-Last updated: 2026-03-09
+Last updated: 2026-11-02
 
 ## Goal
 
@@ -8,6 +8,9 @@ Keep multiplayer battle behavior consistent while allowing isolated attack itera
 
 ## Collaboration Style
 
+- Use the two-step workflow for runtime changes: first analyze the current code,
+  ask necessary questions, and present a scoped proposal; implement only after
+  the user explicitly approves that proposal.
 - Prefer small, focused changes.
 - Do not mix unrelated refactors into gameplay fixes.
 - Preserve existing contracts unless explicitly changing them.
@@ -18,6 +21,9 @@ Keep multiplayer battle behavior consistent while allowing isolated attack itera
 - Server logic and effects are authoritative.
 - Client is primarily renderer/state synchronizer for server results.
 - Do not move game rules to client if server already decides outcome.
+- `timelineV2` is validated as a whole before playback. Unknown attacks or
+  malformed executable combo payloads fail validation; do not restore a Punch
+  fallback, partial timeline playback, or a second local battle engine.
 
 ## Attack Architecture (Client)
 
@@ -34,7 +40,11 @@ Keep multiplayer battle behavior consistent while allowing isolated attack itera
 
 ## Effect Handling Rules
 
-- Respect server fields (`blocked`, `blockedBy`, `effectsApplied`, `attackerEffectsApplied`, `wokeUp`, etc.).
+- Ordered timeline events are the executable effect playback source. Aggregate
+  result fields remain diagnostics/read-model data unless an active contract
+  explicitly names a consumer; do not replay the same mutation from both paths.
+- Respect server identity and control fields (`blocked`, `blockedBy`, card IDs,
+  effect IDs, removal reasons, etc.).
 - Do not infer alternate outcomes when server already provides explicit state.
 - Keep icon and animation behavior deterministic and role-correct.
 

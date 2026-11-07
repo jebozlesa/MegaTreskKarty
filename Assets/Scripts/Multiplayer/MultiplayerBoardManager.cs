@@ -93,6 +93,8 @@ public class MultiplayerBoardManager : MonoBehaviour
                 await MultiplayerService.SubmitSelectedCardAsync(RoomCode, MyPlayerId, localSelectedCardData);
             }
 
+            if (fightSystem == null || !fightSystem.CanInteractWithBattle) return;
+
             if (fightSystem != null)
             {
                 fightSystem.LoadAttackCounts(card);
@@ -101,6 +103,8 @@ public class MultiplayerBoardManager : MonoBehaviour
             MultiplayerUI?.ShowStatus(MultiplayerUI.MSG_WAITING_OPPONENT);
 
             await WaitForOpponentSelectionAsync();
+
+            if (fightSystem == null || !fightSystem.CanInteractWithBattle) return;
 
             if (opponentSelectedCardData != null)
             {
@@ -112,6 +116,10 @@ public class MultiplayerBoardManager : MonoBehaviour
                 MultiplayerUI?.ShowStatus("Enemy was too scared of you!");
                 ResetLocalSelectionState(false);
             }
+        }
+        catch (System.OperationCanceledException)
+        {
+            Debug.LogWarning("[FightSystemMultiplayer] Card selection polling cancelled");
         }
         catch (System.Exception ex)
         {
@@ -142,6 +150,12 @@ public class MultiplayerBoardManager : MonoBehaviour
             opponentSelectionCancellation?.Dispose();
             opponentSelectionCancellation = null;
         }
+    }
+
+    public void CancelPendingSelection()
+    {
+        opponentSelectionCancellation?.Cancel();
+        isSubmittingSelection = false;
     }
 
     private async Task WaitForOpponentSelectionViaMatchStateAsync(CancellationToken token)

@@ -13,6 +13,9 @@ public class MultiplayerStartupRegressionTests
     private bool hadWaiting;
     private string previousWaiting;
     private const string IntentKey = "PendingStartupCancellationRoomCode";
+    private const string MissingRoomNoticeKey = "PendingMultiplayerMissingRoomNoticePlayerId";
+    private bool hadMissingRoomNotice;
+    private string previousMissingRoomNotice;
 
     [SetUp]
     public void SetUp()
@@ -23,7 +26,10 @@ public class MultiplayerStartupRegressionTests
         previousIntent = PlayerPrefs.GetString(IntentKey);
         hadWaiting = PlayerPrefs.HasKey("IsWaitingForOpponent");
         previousWaiting = PlayerPrefs.GetString("IsWaitingForOpponent");
+        hadMissingRoomNotice = PlayerPrefs.HasKey(MissingRoomNoticeKey);
+        previousMissingRoomNotice = PlayerPrefs.GetString(MissingRoomNoticeKey);
         PlayerPrefs.DeleteKey(IntentKey);
+        PlayerPrefs.DeleteKey(MissingRoomNoticeKey);
         root = new GameObject("StartupTest");
         root.SetActive(false);
     }
@@ -38,6 +44,9 @@ public class MultiplayerStartupRegressionTests
         if (hadIntent) PlayerPrefs.SetString(IntentKey, previousIntent);
         PlayerPrefs.DeleteKey("IsWaitingForOpponent");
         if (hadWaiting) PlayerPrefs.SetString("IsWaitingForOpponent", previousWaiting);
+        PlayerPrefs.DeleteKey(MissingRoomNoticeKey);
+        if (hadMissingRoomNotice)
+            PlayerPrefs.SetString(MissingRoomNoticeKey, previousMissingRoomNotice);
     }
 
     [Test]
@@ -237,6 +246,138 @@ public class MultiplayerStartupRegressionTests
     }
 
     [Test]
+    public void MissingOwnedRoomBlocksBattleClearsOwnershipAndQueuesLobbyAcknowledgement()
+    {
+        Component service = root.AddComponent(RuntimeType("MultiplayerService"));
+        Component fightSystem = root.AddComponent(RuntimeType("FightSystemMultiplayer"));
+        ((Behaviour)fightSystem).enabled = false;
+        Component board = root.AddComponent(RuntimeType("MultiplayerBoardManager"));
+        Component submitter = root.AddComponent(RuntimeType("BattleSubmitter"));
+
+        Set(service, "roomCode", "OLD");
+        Set(service, "myPlayerId", "p1");
+        Set(service, "localPrepared", true);
+        Set(service, "serverStarted", true);
+        Set(service, "fightSystem", fightSystem);
+        Set(fightSystem, "multiplayerBoardManager", board);
+        Set(fightSystem, "battleSubmitter", submitter);
+        Set(board, "isSubmittingSelection", true);
+        var selectionCancellation = new System.Threading.CancellationTokenSource();
+        Set(board, "opponentSelectionCancellation", selectionCancellation);
+        Set(submitter, "isWaitingForBattle", true);
+        PlayerPrefs.SetString("RoomCode", "OLD");
+        PlayerPrefs.SetString("IsWaitingForOpponent", "false");
+        root.SetActive(true);
+
+        Assert.IsTrue((bool)Invoke(service, "PrepareMissingOwnedRoomRecovery", "OLD"));
+
+        Assert.IsFalse((bool)service.GetType().GetProperty("CanContinueStartup").GetValue(service));
+        Assert.IsFalse((bool)service.GetType().GetProperty("CanInteractWithBattle").GetValue(service));
+        Assert.IsFalse(PlayerPrefs.HasKey("RoomCode"));
+        Assert.IsFalse(PlayerPrefs.HasKey("IsWaitingForOpponent"));
+        Assert.IsFalse((bool)Get(board, "isSubmittingSelection"));
+        Assert.IsTrue(selectionCancellation.IsCancellationRequested);
+        Assert.IsFalse((bool)Get(submitter, "isWaitingForBattle"));
+        Assert.AreEqual("p1", PlayerPrefs.GetString(MissingRoomNoticeKey));
+        selectionCancellation.Dispose();
+    }
+
+    [Test]
+    public void MissingRoomCallbackStopsOldLifecycleWithoutTouchingANewerRoom()
+    {
+        Component service = root.AddComponent(RuntimeType("MultiplayerService"));
+
+        Set(service, "roomCode", "OLD");
+        Set(service, "myPlayerId", "p1");
+        PlayerPrefs.SetString("RoomCode", "NEW");
+        root.SetActive(true);
+
+        Assert.IsFalse((bool)Invoke(service, "PrepareMissingOwnedRoomRecovery", "OLD"));
+
+        Assert.AreEqual("NEW", PlayerPrefs.GetString("RoomCode"));
+        Assert.IsFalse((bool)service.GetType().GetProperty("CanContinueStartup").GetValue(service));
+        Assert.IsFalse(PlayerPrefs.HasKey(MissingRoomNoticeKey));
+    }
+
+    [Test]
+    public void MissingOwnedRoomWithoutStoredRoomStillQueuesLobbyAcknowledgement()
+    {
+        Component service = root.AddComponent(RuntimeType("MultiplayerService"));
+
+        Set(service, "roomCode", "OLD");
+        Set(service, "myPlayerId", "p1");
+        Set(service, "localPrepared", true);
+        Set(service, "serverStarted", true);
+        PlayerPrefs.DeleteKey("RoomCode");
+        PlayerPrefs.SetString("IsWaitingForOpponent", "false");
+        root.SetActive(true);
+
+        Assert.IsTrue((bool)Invoke(service, "PrepareMissingOwnedRoomRecovery", "OLD"));
+
+        Assert.IsFalse((bool)service.GetType().GetProperty("CanInteractWithBattle").GetValue(service));
+        Assert.IsFalse(PlayerPrefs.HasKey("IsWaitingForOpponent"));
+        Assert.AreEqual("p1", PlayerPrefs.GetString(MissingRoomNoticeKey));
+    }
+
+    [Test]
+    public void MissingRoomNoticeIsSingleUseAndAccountScoped()
+    {
+        Type noticeState = RuntimeType("MultiplayerMissingRoomNoticeState");
+        MethodInfo queue = noticeState.GetMethod("Queue", BindingFlags.Static | BindingFlags.Public);
+        MethodInfo consume = noticeState.GetMethod("Consume", BindingFlags.Static | BindingFlags.Public);
+        Assert.IsNotNull(queue);
+        Assert.IsNotNull(consume);
+
+        queue.Invoke(null, new object[] { "p1" });
+        Assert.IsFalse((bool)consume.Invoke(null, new object[] { "p2" }));
+        Assert.IsFalse(PlayerPrefs.HasKey(MissingRoomNoticeKey));
+
+        queue.Invoke(null, new object[] { "p1" });
+        Assert.IsTrue((bool)consume.Invoke(null, new object[] { "p1" }));
+        Assert.IsFalse((bool)consume.Invoke(null, new object[] { "p1" }));
+    }
+
+    [Test]
+    public void LobbyConsumesQueuedNoticeAndShowsAcknowledgementOnce()
+    {
+        Type noticeState = RuntimeType("MultiplayerMissingRoomNoticeState");
+        noticeState.GetMethod("Queue", BindingFlags.Static | BindingFlags.Public)
+            .Invoke(null, new object[] { "p1" });
+
+        Component lobby = root.AddComponent(RuntimeType("MultiplayerLobbyUI"));
+        GameObject dialogObject = new GameObject("MatchUnavailableDialog");
+        dialogObject.transform.SetParent(root.transform);
+        Component dialog = dialogObject.AddComponent(RuntimeType("ConfirmDialogController"));
+        dialogObject.SetActive(false);
+        Set(lobby, "playerId", "p1");
+        Set(lobby, "matchUnavailableDialog", dialog);
+
+        Assert.IsTrue((bool)Invoke(lobby, "TryShowPendingMissingRoomNotice"));
+        Assert.IsTrue(dialogObject.activeSelf);
+        Assert.IsFalse(PlayerPrefs.HasKey(MissingRoomNoticeKey));
+        Assert.IsFalse((bool)Invoke(lobby, "TryShowPendingMissingRoomNotice"));
+    }
+
+    [Test]
+    public void LobbyExactMissingRoomClearsOwnershipAndShowsAcknowledgement()
+    {
+        Component lobby = root.AddComponent(RuntimeType("MultiplayerLobbyUI"));
+        GameObject dialogObject = new GameObject("MatchUnavailableDialog");
+        dialogObject.transform.SetParent(root.transform);
+        Component dialog = dialogObject.AddComponent(RuntimeType("ConfirmDialogController"));
+        dialogObject.SetActive(false);
+        Set(lobby, "playerId", "p1");
+        Set(lobby, "ownedRoomCode", "OLD");
+        Set(lobby, "matchUnavailableDialog", dialog);
+        PlayerPrefs.SetString("RoomCode", "OLD");
+
+        const string response = "{\"success\":false,\"error\":\"room_not_found\",\"roomCode\":\"OLD\"}";
+        Assert.IsTrue((bool)Invoke(lobby, "TryHandleMissingRoom", response, "OLD"));
+        Assert.IsFalse(PlayerPrefs.HasKey("RoomCode"));
+        Assert.IsTrue(dialogObject.activeSelf);
+    }
+
+    [Test]
     public void OldOrMissingStartupContractIsRejected()
     {
         MethodInfo validate = RuntimeType("MultiplayerService").GetMethod("ValidateStartupState", BindingFlags.Static | BindingFlags.NonPublic);
@@ -255,7 +396,10 @@ public class MultiplayerStartupRegressionTests
     private static object Get(Component component, string name) => component.GetType().GetField(name, BindingFlags.NonPublic | BindingFlags.Instance).GetValue(component);
     private static void Set(Component component, string name, object value)
     {
-        FieldInfo field = component.GetType().GetField(name, BindingFlags.NonPublic | BindingFlags.Instance);
+        FieldInfo field = component.GetType().GetField(
+            name,
+            BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance
+        );
         Assert.IsNotNull(field, name); field.SetValue(component, value);
     }
     private static object Invoke(Component component, string name, params object[] args)

@@ -704,6 +704,23 @@ public class BattleSharedDamagePlaybackTests
     }
 
     [Test]
+    public void MissingRoomMonitorRoutesTerminalRecoveryThroughLobbyNotice()
+    {
+        string service = ReadProjectFile("Assets", "Scripts", "Multiplayer", "MultiplayerService.cs");
+        int handlerStart = service.IndexOf("private void HandleMissingOwnedRoom", System.StringComparison.Ordinal);
+        int monitorStart = service.IndexOf("private IEnumerator MatchStateMonitorLoop", System.StringComparison.Ordinal);
+
+        Assert.GreaterOrEqual(handlerStart, 0);
+        Assert.GreaterOrEqual(monitorStart, 0);
+        string monitor = service.Substring(monitorStart, handlerStart - monitorStart);
+
+        StringAssert.Contains("HandleMissingOwnedRoom(expectedRoom);", monitor);
+        StringAssert.Contains("PrepareMissingOwnedRoomRecovery(expectedRoom)", service);
+        StringAssert.Contains("SceneManager.LoadScene(MultiplayerLobbyScene);", service);
+        Assert.IsFalse(service.Contains("missingRoomDestinationScene"));
+    }
+
+    [Test]
     public void ServerFunctionsManager_ExposesGetBattleStatus()
     {
         string source = ReadProjectFile("Assets", "Scripts", "Networking", "ServerFunctionsManager.cs");
@@ -758,6 +775,18 @@ public class BattleSharedDamagePlaybackTests
         string source = ReadProjectFile("Assets", "Scenes", "MultiplayerLobby.unity");
         Assert.IsFalse(source.Contains("guid: 5a48533f13544dc47b7d808bc555a419"));
         Assert.IsFalse(source.Contains("component: {fileID: 1347824464}"));
+    }
+
+    [Test]
+    public void MissingRoomAcknowledgementBelongsToLobbyScene()
+    {
+        string lobby = ReadProjectFile("Assets", "Scenes", "MultiplayerLobby.unity");
+        string battle = ReadProjectFile("Assets", "Scenes", "Multiplayer.unity");
+
+        StringAssert.Contains("m_Name: MatchUnavailableDialog", lobby);
+        StringAssert.Contains("matchUnavailableDialog:", lobby);
+        Assert.IsFalse(battle.Contains("m_Name: MatchUnavailableDialog"));
+        Assert.IsFalse(battle.Contains("matchUnavailableDialog:"));
     }
 
     [Test]
