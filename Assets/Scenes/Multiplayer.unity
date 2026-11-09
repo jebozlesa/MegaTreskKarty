@@ -1378,7 +1378,7 @@ MonoBehaviour:
   enemyNameText: {fileID: 428584301}
   statusText: {fileID: 1327332876}
   serverFunctionsManager: {fileID: 1092620045}
-  heartbeatInterval: 30
+  heartbeatInterval: 10
   handManager: {fileID: 1788473150}
   fightSystem: {fileID: 1771868604}
 --- !u!4 &261861853

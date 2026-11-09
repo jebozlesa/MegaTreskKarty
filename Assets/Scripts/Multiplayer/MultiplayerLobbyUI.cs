@@ -9,17 +9,17 @@ using UnityEngine.UI;
 public class MultiplayerLobbyUI : MonoBehaviour
 {
     private enum MatchmakingState { Idle, Connecting, Waiting, Reconciling, Cancelling, Error, Starting }
-    private const string DefaultMatchUnavailableMessage = "This match has ended and is no longer available.";
 
     public Button joinButton;
     public ServerFunctionsManager serverFunctionsManager;
 
     [Header("Missing Room Recovery")]
-    [SerializeField, TextArea(2, 4)]
-    private string matchUnavailableMessage = DefaultMatchUnavailableMessage;
-
     [SerializeField]
     private ConfirmDialogController matchUnavailableDialog;
+
+    [Header("Mode Entry Rejection")]
+    [SerializeField] private ConfirmDialogController mpDeckUnavailableDialog;
+    [SerializeField] private ConfirmDialogController entryCheckUnavailableDialog;
 
     private string playerId;
     private string ownedRoomCode;
@@ -102,7 +102,7 @@ public class MultiplayerLobbyUI : MonoBehaviour
             if (TryHandleMissingRoom(response, expectedRoom)) return;
             MatchStateDto state = ParseOwnedState(response, expectedRoom);
             if (state == null) { SetError("Room reconciliation failed"); return; }
-            if (state.status == "completed") ClearOwnedRoom(expectedRoom);
+            if (TryHandleCompletedRoom(state, expectedRoom)) return;
             else if (state.status == "active" && !HasPendingStartupCancellation(expectedRoom)) StartConfirmedBattle(version);
             else { retryReconciliation = false; BeginCancellation(); }
         });
@@ -120,6 +120,7 @@ public class MultiplayerLobbyUI : MonoBehaviour
         {
             if (!OwnsRequest(version)) return;
             JObject response = ParseResponse(result?.FunctionResult);
+            if (TryHandleAdmissionRejection(response)) return;
             MatchStateDto state = ParseOwnedState(response, null);
             if (response?["success"]?.Value<bool>() != true || state == null)
             {
@@ -130,11 +131,26 @@ public class MultiplayerLobbyUI : MonoBehaviour
             PlayerPrefs.SetString("RoomCode", ownedRoomCode);
             PlayerPrefs.SetString("IsWaitingForOpponent", state.status == "waiting" ? "true" : "false");
             Debug.LogWarning($"[Lobby] CONNECT confirmed: room={ownedRoomCode}, status={state.status}");
-            if (state.status == "completed") { ClearOwnedRoom(ownedRoomCode); return; }
+            if (TryHandleCompletedRoom(state, ownedRoomCode)) return;
             if (cancelRequested) { BeginCancellation(); return; }
             if (state.status == "active") { StartConfirmedBattle(version); return; }
             BeginWaiting(true);
         });
+    }
+
+    private bool TryHandleAdmissionRejection(JObject response)
+    {
+        if (response?["success"]?.Value<bool>() != false
+            || response?["playerId"]?.Value<string>() != playerId
+            || response?["contextId"]?.Value<string>() != "mp") return false;
+        string error = response["error"]?.Value<string>();
+        if (error != "deck_unavailable" && error != "mode_entry_check_failed") return false;
+        ResetMatchmakingUi();
+        ConfirmDialogController dialog = error == "deck_unavailable" ? mpDeckUnavailableDialog : entryCheckUnavailableDialog;
+        Debug.LogWarning($"[Lobby] Admission rejected: player={playerId}, context=mp, error={error}");
+        if (dialog != null) dialog.ShowAuthored(() => { });
+        else Debug.LogError("[Lobby] Mode-entry rejection popup is not assigned.");
+        return true;
     }
 
     private void RequestCancelMatchmaking()
@@ -173,7 +189,7 @@ public class MultiplayerLobbyUI : MonoBehaviour
         if (TryHandleMissingRoom(response, expectedRoom)) return;
         MatchStateDto state = ParseOwnedState(response, expectedRoom);
         if (state == null) { SetError("CANCEL failed; room retained for retry"); return; }
-        if (state.status == "completed") ClearOwnedRoom(expectedRoom);
+        if (TryHandleCompletedRoom(state, expectedRoom)) return;
         else if (state.status == "active" && !HasPendingStartupCancellation(expectedRoom)
             && !string.IsNullOrEmpty(state.startup?.startedAt))
         {
@@ -222,7 +238,7 @@ public class MultiplayerLobbyUI : MonoBehaviour
             if (state.status != "waiting")
             {
                 waitForOpponentCoroutine = null;
-                if (state.status == "completed") ClearOwnedRoom(expectedRoom);
+                if (TryHandleCompletedRoom(state, expectedRoom)) yield break;
                 else StartConfirmedBattle(version);
                 yield break;
             }
@@ -336,7 +352,7 @@ public class MultiplayerLobbyUI : MonoBehaviour
         MatchStateDto state = ParseOwnedState(response, expectedRoom);
         if (state == null) { SetError("Waiting resume verification failed; room retained for cancellation"); return; }
         retryReconciliation = false;
-        if (state.status == "completed") ClearOwnedRoom(expectedRoom);
+        if (TryHandleCompletedRoom(state, expectedRoom)) return;
         else if (state.status == "active") StartConfirmedBattle(version);
         else BeginWaiting(false);
     }
@@ -362,6 +378,19 @@ public class MultiplayerLobbyUI : MonoBehaviour
 
         ClearOwnedRoom(expectedRoom);
         ShowMissingRoomNotice();
+        return true;
+    }
+
+    private bool TryHandleCompletedRoom(MatchStateDto state, string expectedRoom)
+    {
+        if (state?.status != "completed" || state.phase != "completed"
+            || state.roomCode != expectedRoom || state.viewerPlayerId != playerId
+            || ownedRoomCode != expectedRoom || PlayerPrefs.GetString("RoomCode", "") != expectedRoom)
+            return false;
+
+        ClearOwnedRoom(expectedRoom);
+        if (state.matchResult?.reason == "timeout" && state.matchResult.winnerPlayerId != playerId)
+            ShowMissingRoomNotice();
         return true;
     }
 
@@ -393,10 +422,7 @@ public class MultiplayerLobbyUI : MonoBehaviour
             return false;
         }
 
-        string message = string.IsNullOrWhiteSpace(matchUnavailableMessage)
-            ? DefaultMatchUnavailableMessage
-            : matchUnavailableMessage;
-        matchUnavailableDialog.Show(message, () => { });
+        matchUnavailableDialog.ShowAuthored(() => { });
         return true;
     }
 

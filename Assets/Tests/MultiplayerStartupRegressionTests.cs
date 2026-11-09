@@ -337,6 +337,146 @@ public class MultiplayerStartupRegressionTests
         Assert.IsFalse((bool)consume.Invoke(null, new object[] { "p1" }));
     }
 
+    [TestCase("p2", "p1", true)]
+    [TestCase("p1", "p2", false)]
+    [TestCase(null, null, true)]
+    public void StartedTimeoutStopsPendingWorkAndRoutesOnlyNonWinnersToLobby(string winner, string loser, bool lobby)
+    {
+        Component service = root.AddComponent(RuntimeType("MultiplayerService"));
+        Component fight = root.AddComponent(RuntimeType("FightSystemMultiplayer"));
+        ((Behaviour)fight).enabled = false;
+        Component board = root.AddComponent(RuntimeType("MultiplayerBoardManager"));
+        Component submitter = root.AddComponent(RuntimeType("BattleSubmitter"));
+        Set(service, "roomCode", "ROOM"); Set(service, "myPlayerId", "p1");
+        Set(service, "localPrepared", true); Set(service, "serverStarted", true);
+        Set(service, "fightSystem", fight); Set(fight, "multiplayerBoardManager", board);
+        Set(fight, "battleSubmitter", submitter); Set(fight, "multiplayerService", service);
+        Set(submitter, "fightSystem", fight);
+        Set(submitter, "isWaitingForBattle", true); Set(board, "isSubmittingSelection", true);
+        var cancellation = new System.Threading.CancellationTokenSource();
+        Set(board, "opponentSelectionCancellation", cancellation);
+        PlayerPrefs.SetString("RoomCode", "ROOM");
+        root.SetActive(true);
+        try
+        {
+            object completed = CompletedState(winner, loser);
+            Assert.AreEqual(lobby, (bool)Invoke(service, "PrepareRemoteMatchCompletion", completed));
+            Assert.IsFalse((bool)service.GetType().GetProperty("CanInteractWithBattle").GetValue(service));
+            Assert.IsFalse((bool)Get(submitter, "isWaitingForBattle"));
+            Assert.IsFalse((bool)Get(board, "isSubmittingSelection"));
+            Assert.IsTrue(cancellation.IsCancellationRequested);
+            Assert.IsFalse(PlayerPrefs.HasKey("RoomCode"));
+            Assert.AreEqual(lobby, PlayerPrefs.HasKey(MissingRoomNoticeKey));
+            if (!lobby) Assert.AreEqual("WON", fight.GetType().GetField("state").GetValue(fight).ToString());
+            int version = (int)Get(service, "lifecycleVersion");
+            Invoke(submitter, "OnBattleResponse", new object[] { null });
+            Assert.IsFalse((bool)Invoke(service, "PrepareRemoteMatchCompletion", completed));
+            Assert.AreEqual(version, Get(service, "lifecycleVersion"));
+        }
+        finally { cancellation.Dispose(); }
+    }
+
+    [Test]
+    public void LateCompletionStopsOldLifecycleWithoutChangingNewRoomOrQueueingNotice()
+    {
+        Component service = root.AddComponent(RuntimeType("MultiplayerService"));
+        Set(service, "roomCode", "ROOM"); Set(service, "myPlayerId", "p1");
+        PlayerPrefs.SetString("RoomCode", "NEW");
+        root.SetActive(true);
+        Assert.IsFalse((bool)Invoke(service, "PrepareRemoteMatchCompletion", CompletedState("p2", "p1")));
+        Assert.IsFalse((bool)service.GetType().GetProperty("CanContinueStartup").GetValue(service));
+        Assert.AreEqual("NEW", PlayerPrefs.GetString("RoomCode"));
+        Assert.IsFalse(PlayerPrefs.HasKey(MissingRoomNoticeKey));
+    }
+
+    [Test]
+    public void NormalCompletionDoesNotCancelTheBattleResultPlaybackOwner()
+    {
+        Component service = root.AddComponent(RuntimeType("MultiplayerService"));
+        Component fight = root.AddComponent(RuntimeType("FightSystemMultiplayer"));
+        ((Behaviour)fight).enabled = false;
+        Component submitter = root.AddComponent(RuntimeType("BattleSubmitter"));
+        Set(service, "roomCode", "ROOM"); Set(service, "myPlayerId", "p1");
+        Set(service, "fightSystem", fight); Set(fight, "battleSubmitter", submitter);
+        Set(submitter, "isWaitingForBattle", true);
+        PlayerPrefs.SetString("RoomCode", "ROOM");
+        object completed = CompletedState("p1", "p2");
+        object result = completed.GetType().GetField("matchResult").GetValue(completed);
+        result.GetType().GetField("reason").SetValue(result, "no_cards_left");
+        root.SetActive(true);
+        Assert.IsFalse((bool)Invoke(service, "PrepareRemoteMatchCompletion", completed));
+        Assert.IsTrue((bool)Get(submitter, "isWaitingForBattle"));
+        Assert.IsFalse(PlayerPrefs.HasKey(MissingRoomNoticeKey));
+    }
+
+    [Test]
+    public void ActiveSnapshotCannotBeMisreadAsTerminalCompletion()
+    {
+        Component service = root.AddComponent(RuntimeType("MultiplayerService"));
+        Set(service, "roomCode", "ROOM"); Set(service, "myPlayerId", "p1");
+        PlayerPrefs.SetString("RoomCode", "ROOM");
+        root.SetActive(true);
+        Assert.IsFalse((bool)Invoke(service, "PrepareRemoteMatchCompletion", State(10000)));
+        Assert.IsTrue((bool)service.GetType().GetProperty("CanContinueStartup").GetValue(service));
+        Assert.AreEqual("ROOM", PlayerPrefs.GetString("RoomCode"));
+        Assert.IsFalse(PlayerPrefs.HasKey(MissingRoomNoticeKey));
+    }
+
+    [TestCase("OTHER", "p1")]
+    [TestCase("ROOM", "other-player")]
+    public void CompletionFromAnotherRoomOrPlayerCannotEndCurrentLifecycle(string room, string player)
+    {
+        Component service = root.AddComponent(RuntimeType("MultiplayerService"));
+        Set(service, "roomCode", "ROOM"); Set(service, "myPlayerId", "p1");
+        PlayerPrefs.SetString("RoomCode", "ROOM");
+        root.SetActive(true);
+        object completed = CompletedState("p2", "p1");
+        completed.GetType().GetField("roomCode").SetValue(completed, room);
+        completed.GetType().GetField("viewerPlayerId").SetValue(completed, player);
+        Assert.IsFalse((bool)Invoke(service, "PrepareRemoteMatchCompletion", completed));
+        Assert.IsTrue((bool)service.GetType().GetProperty("CanContinueStartup").GetValue(service));
+        Assert.AreEqual("ROOM", PlayerPrefs.GetString("RoomCode"));
+    }
+
+    [TestCase("p2", "p1", true)]
+    [TestCase("p1", "p2", false)]
+    [TestCase(null, null, true)]
+    public void LobbyRetainedTimeoutShowsExistingNoticeOnlyForNonWinners(string winner, string loser, bool notice)
+    {
+        Component lobby = root.AddComponent(RuntimeType("MultiplayerLobbyUI"));
+        var dialogObject = new GameObject("MatchUnavailableDialog");
+        dialogObject.transform.SetParent(root.transform);
+        Component dialog = dialogObject.AddComponent(RuntimeType("ConfirmDialogController"));
+        dialogObject.SetActive(false);
+        Component bubble = AttachAuthoredDialogText(dialog, "Authored match ending.");
+        Set(lobby, "playerId", "p1"); Set(lobby, "ownedRoomCode", "ROOM");
+        Set(lobby, "matchUnavailableDialog", dialog);
+        PlayerPrefs.SetString("RoomCode", "ROOM");
+        Assert.IsTrue((bool)Invoke(lobby, "TryHandleCompletedRoom", CompletedState(winner, loser), "ROOM"));
+        Assert.IsFalse(PlayerPrefs.HasKey("RoomCode"));
+        Assert.AreEqual(notice, dialogObject.activeSelf);
+        Assert.AreEqual("Authored match ending.", bubble.GetType().GetProperty("text").GetValue(bubble));
+    }
+
+    [Test]
+    public void StartedHeartbeatDefaultAndSavedSceneUseTenSeconds()
+    {
+        Component service = root.AddComponent(RuntimeType("MultiplayerService"));
+        Assert.AreEqual(10f, Get(service, "heartbeatInterval"));
+        string scene = System.IO.File.ReadAllText(System.IO.Path.Combine(Application.dataPath, "Scenes", "Multiplayer.unity"));
+        StringAssert.Contains("heartbeatInterval: 10", scene);
+    }
+
+    private static object CompletedState(string winner, string loser)
+    {
+        return JsonUtility.FromJson("{\"schemaVersion\":2,\"roomCode\":\"ROOM\",\"viewerPlayerId\":\"p1\","
+            + "\"status\":\"completed\",\"phase\":\"completed\",\"playersCount\":2,"
+            + "\"seats\":[{\"playerId\":\"p1\"},{\"playerId\":\"p2\"}],"
+            + "\"startup\":{\"startedAt\":\"2026-11-08T12:00:00Z\",\"bothReady\":true},"
+            + "\"matchResult\":{\"reason\":\"timeout\",\"winnerPlayerId\":" + (winner == null ? "null" : "\"" + winner + "\"")
+            + ",\"loserPlayerId\":" + (loser == null ? "null" : "\"" + loser + "\"") + "}}", RuntimeType("MatchStateDto"));
+    }
+
     [Test]
     public void LobbyConsumesQueuedNoticeAndShowsAcknowledgementOnce()
     {
@@ -349,6 +489,7 @@ public class MultiplayerStartupRegressionTests
         dialogObject.transform.SetParent(root.transform);
         Component dialog = dialogObject.AddComponent(RuntimeType("ConfirmDialogController"));
         dialogObject.SetActive(false);
+        Component bubble = AttachAuthoredDialogText(dialog, "Authored match ending.");
         Set(lobby, "playerId", "p1");
         Set(lobby, "matchUnavailableDialog", dialog);
 
@@ -356,6 +497,7 @@ public class MultiplayerStartupRegressionTests
         Assert.IsTrue(dialogObject.activeSelf);
         Assert.IsFalse(PlayerPrefs.HasKey(MissingRoomNoticeKey));
         Assert.IsFalse((bool)Invoke(lobby, "TryShowPendingMissingRoomNotice"));
+        Assert.AreEqual("Authored match ending.", bubble.GetType().GetProperty("text").GetValue(bubble));
     }
 
     [Test]
@@ -366,6 +508,7 @@ public class MultiplayerStartupRegressionTests
         dialogObject.transform.SetParent(root.transform);
         Component dialog = dialogObject.AddComponent(RuntimeType("ConfirmDialogController"));
         dialogObject.SetActive(false);
+        Component bubble = AttachAuthoredDialogText(dialog, "Authored match ending.");
         Set(lobby, "playerId", "p1");
         Set(lobby, "ownedRoomCode", "OLD");
         Set(lobby, "matchUnavailableDialog", dialog);
@@ -375,6 +518,30 @@ public class MultiplayerStartupRegressionTests
         Assert.IsTrue((bool)Invoke(lobby, "TryHandleMissingRoom", response, "OLD"));
         Assert.IsFalse(PlayerPrefs.HasKey("RoomCode"));
         Assert.IsTrue(dialogObject.activeSelf);
+        Assert.AreEqual("Authored match ending.", bubble.GetType().GetProperty("text").GetValue(bubble));
+        Invoke(dialog, "Confirm");
+        Assert.IsFalse(dialogObject.activeSelf);
+    }
+
+    [Test]
+    public void LobbyRecoveryRetiresRuntimeCopyAndItsSavedSceneOverride()
+    {
+        Type lobby = RuntimeType("MultiplayerLobbyUI");
+        const BindingFlags fields = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
+        Assert.IsNull(lobby.GetField("matchUnavailableMessage", fields));
+        Assert.IsNull(lobby.GetField("DefaultMatchUnavailableMessage", fields));
+        string scene = System.IO.File.ReadAllText(System.IO.Path.Combine(Application.dataPath, "Scenes", "MultiplayerLobby.unity"));
+        StringAssert.DoesNotContain("matchUnavailableMessage:", scene);
+    }
+
+    private Component AttachAuthoredDialogText(Component dialog, string copy)
+    {
+        var bubbleObject = new GameObject("AuthoredBubble", typeof(RectTransform));
+        bubbleObject.transform.SetParent(dialog.transform);
+        Component bubble = bubbleObject.AddComponent(Type.GetType("TMPro.TextMeshProUGUI, Unity.TextMeshPro", true));
+        bubble.GetType().GetProperty("text").SetValue(bubble, copy);
+        Set(dialog, "messageText", bubble);
+        return bubble;
     }
 
     [Test]

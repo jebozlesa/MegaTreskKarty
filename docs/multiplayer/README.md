@@ -1,6 +1,70 @@
 # Multiplayer smoke notes
 
-## Current Resume Point (2026-10-06)
+## BUG-019 Entry Guard Ready For Smoke (2026-11-10)
+
+Main MP/Bushido entry checks canonical server readiness under the standard
+loading overlay. Missing deck uses its own authored notice; failure to verify
+uses a distinct notice, not a false missing-deck claim. Server independently
+checks before new MP membership/seat claim and campaign session creation.
+Existing MP RoomCode goes through unchanged Lobby reconciliation.
+
+UI is already created/wired in Main/Lobby: three new authored prefabs under
+Assets/Prefabs/ModeEntry and Main's ModeEntryLoading. Text lives in those prefabs;
+no runtime copy overwrite, no use of the timeout/coward popup. No manual Inspector
+work required. New popup layout is relative; global Canvas settings are unchanged.
+
+Final Unity Pipeline 453/453 GREEN; server suites and 55 isolated Mongo cases
+GREEN. Device acceptance/deployment not claimed. Deploy server, register
+getModeEntryState and build client before the
+[manual smoke checklist](../../../mega-tresk-server/docs/multiplayer/2026-11-10-bug-019-mode-entry-deck-guard-delivery.md#user-deployment-and-smoke).
+[Unity CLI workflow](../UNITY_CLI_WORKFLOW.md) records the working tool setup.
+
+## Accepted Timeout Recovery Checkpoint (2026-11-09)
+
+BUG-004/BUG-011 core started-match expiry/recovery is user accepted and closed.
+Read the sibling
+server [approved contract and delivery](../../../mega-tresk-server/docs/multiplayer/2026-11-08-started-match-presence-expiry.md).
+Server rule is 60 seconds since last confirmed presence; MultiplayerService and
+the saved Multiplayer scene use ten-second heartbeat. Existing polling discovers
+expiry independently of the absent client's return. Timeout nonwinners return
+to Lobby with the existing single-use account-scoped MatchUnavailableDialog,
+including retained completed rooms. Connected winner keeps the canonical result;
+both expired have no winner. Normal battle-result playback remains unchanged.
+
+That earlier core correction needed no new production class, Inspector wiring
+or popup. The user's saved MultiplayerLobby visuals were preserved; its scene
+edit was the Multiplayer heartbeat value 30 -> 10. BUG-019's separately approved
+new UI/scene wiring is recorded above. EXNWH1 long-timeout/Lobby return and Y8M4YL
+short resume with continued gameplay are accepted. Recorded automation is full
+Unity 426/426, server test:all and isolated MongoDB GREEN, not new closure runs.
+
+Remaining both-absent/no-winner, fresh Connect after acknowledgement and original
+purged-room edge matrix move to TASK-019 final release smoke, not new device PASS.
+Use two accounts with playable MP decks. No manual RoomCode deletion/reset.
+BUG-019 entry deck checks, countdown/blocker and attack timer are not implemented
+by this correction. Detailed automated evidence is kept in the linked delivery.
+
+Resolved BUG-022: Lobby uses existing ConfirmDialogController's new
+ShowAuthored without writing text. Removed old Lobby copy field/constant and
+its serialized override; user's artwork, TMP copy and button wiring remain.
+One existing popup is approved for timeout and missing old match, not unrelated
+situations. Targeted 38/38 and full automatic Unity 433/433 GREEN; no new Inspector
+wiring or server deploy. User reports FGHC3J real-popup visual smoke PASS on
+2026-11-09; accepted/closed. Logs show server expiry before phone Lobby recovery.
+One post-recovery Heartbeat failed remains an unclassified null-result diagnostic
+for TASK-019 triage, not a proved server fault or reason to suppress the log.
+[Delivery](../../../mega-tresk-server/docs/multiplayer/2026-11-09-authored-recovery-popup.md).
+
+Former BUG-021 is retired as a standalone bug: only a TASK-019 final-QA check
+for continuation after a long replacement wait remains (tester stopped selecting;
+no failed selection was reproduced). The approved core/popup correction is closed.
+Native crash/freeze BUG-020 stays a
+known open risk; repair is deferred until after first release but required before
+unrestricted public availability. No graphics API
+change was made and one successful Vulkan resume is not a crash fix. Do not
+continue the old GLES3 diagnostic approval without resuming that separate topic.
+
+## Historical A9 Resume Point (2026-10-06)
 
 Active topic: TASK-012 / A9 Startup Readiness And No-Contest. Approved code and
 automation are complete (Unity PlayMode Tests 239/239); coordinated server/client

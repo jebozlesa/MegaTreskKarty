@@ -54,7 +54,7 @@ public class MultiplayerService : MonoBehaviour
 
     [Header("Heartbeat Settings")]
     [SerializeField]
-    private float heartbeatInterval = 30f; // 30 sekund
+    private float heartbeatInterval = 10f;
 
     public MultiplayerHandManager handManager;
     public FightSystemMultiplayer fightSystem;
@@ -368,7 +368,7 @@ public class MultiplayerService : MonoBehaviour
     private bool PrepareMissingOwnedRoomRecovery(string expectedRoom)
     {
         string storedRoom = PlayerPrefs.GetString("RoomCode", "");
-        if (missingRoomHandled || roomCode != expectedRoom)
+        if (missingRoomHandled || matchCompletionHandled || roomCode != expectedRoom)
         {
             Debug.LogWarning(
                 $"[MultiplayerService] Ignored missing-room result outside current ownership: expected={expectedRoom}, current={roomCode}, stored={storedRoom}"
@@ -392,49 +392,70 @@ public class MultiplayerService : MonoBehaviour
         return true;
     }
 
-    private void StopCurrentBattleLifecycle()
+    private void StopCurrentBattleLifecycle(bool discardPreparedCards = true)
     {
         lifecycleVersion++;
         fightSystem?.multiplayerBoardManager?.CancelPendingSelection();
         fightSystem?.battleSubmitter?.CancelPendingBattle();
-        handManager?.CancelPreparation();
+        if (discardPreparedCards) handManager?.CancelPreparation();
         StopHeartbeat();
         StopMatchStateMonitor();
     }
 
     private void HandleRemoteMatchCompletion(MatchStateDto matchState)
     {
-        if (matchCompletionHandled || matchState == null || matchState.roomCode != roomCode
-            || matchState.viewerPlayerId != myPlayerId)
+        if (PrepareRemoteMatchCompletion(matchState))
         {
-            Debug.Log("[MultiplayerService] HandleRemoteMatchCompletion skipped: already handled");
-            return;
+            SceneManager.LoadScene(MultiplayerLobbyScene);
         }
+    }
 
-        Debug.Log(
-            $"[MultiplayerService] HandleRemoteMatchCompletion start: phase={matchState.phase}, reason={matchState.matchResult?.reason}, winner={matchState.matchResult?.winnerPlayerId}, loser={matchState.matchResult?.loserPlayerId}"
-        );
-        matchCompletionHandled = true;
-        lifecycleVersion++;
-        if (string.IsNullOrEmpty(matchState.startup?.startedAt)) handManager?.CancelPreparation();
-        StopHeartbeat();
+    private bool PrepareRemoteMatchCompletion(MatchStateDto matchState)
+    {
+        if (matchCompletionHandled || missingRoomHandled || matchState == null
+            || matchState.roomCode != roomCode || matchState.viewerPlayerId != myPlayerId
+            || matchState.status != "completed" || matchState.phase != MatchPhaseCompleted
+            || matchState.matchResult == null) return false;
 
-        ClearOwnedRoomKeys();
-        Debug.Log(
-            "[MultiplayerService] Cleared local room PlayerPrefs after confirmed match completion"
-        );
-
-        string winnerPlayerId = matchState.matchResult?.winnerPlayerId;
-        string loserPlayerId = matchState.matchResult?.loserPlayerId;
-        string reason = matchState.matchResult?.reason ?? matchState.completionReason;
+        string winnerPlayerId = matchState.matchResult.winnerPlayerId;
+        string loserPlayerId = matchState.matchResult.loserPlayerId;
+        string reason = matchState.matchResult.reason;
         bool iWon = !string.IsNullOrEmpty(winnerPlayerId) && winnerPlayerId == myPlayerId;
         bool iLost = !string.IsNullOrEmpty(loserPlayerId) && loserPlayerId == myPlayerId;
+        matchCompletionHandled = true;
+        if (reason == "timeout")
+        {
+            StopCurrentBattleLifecycle(!iWon || !localPrepared || string.IsNullOrEmpty(matchState.startup?.startedAt));
+        }
+        else
+        {
+            // Normal battle completion retains its existing result-playback owner.
+            lifecycleVersion++;
+            if (string.IsNullOrEmpty(matchState.startup?.startedAt)) handManager?.CancelPreparation();
+            StopHeartbeat();
+        }
+
+        string storedRoom = PlayerPrefs.GetString("RoomCode", "");
+        if (!string.IsNullOrEmpty(storedRoom) && storedRoom != roomCode)
+        {
+            Debug.LogWarning($"[MultiplayerService] Ignored completion UI for superseded room: old={roomCode}, stored={storedRoom}");
+            return false;
+        }
+
+        ClearOwnedRoomKeys();
+        Debug.LogWarning($"[MultiplayerService] Match completed: room={roomCode}, reason={reason}, winner={winnerPlayerId}, loser={loserPlayerId}");
+
+        if (reason == "timeout" && !iWon)
+        {
+            MultiplayerMissingRoomNoticeState.Queue(myPlayerId);
+            Debug.LogWarning($"[MultiplayerService] Timeout recovery prepared: room={roomCode}, destination={MultiplayerLobbyScene}");
+            return true;
+        }
 
         if (reason == "cancelled" && !iWon && !iLost)
         {
             Debug.LogWarning($"[MultiplayerService] Startup cancelled without result: room={roomCode}");
-            SceneManager.LoadScene("MultiplayerLobby");
-            return;
+            return true;
         }
 
         if (fightSystem != null)
@@ -452,9 +473,7 @@ public class MultiplayerService : MonoBehaviour
         string message = BuildMatchCompletedMessage(reason, iWon, iLost);
         if (statusText != null) statusText.text = message;
         fightSystem?.multiplayerUI?.ShowStatus(message);
-        Debug.Log(
-            $"[MultiplayerService] Match completed. reason={reason}, winner={winnerPlayerId}, loser={loserPlayerId}"
-        );
+        return false;
     }
 
     private void ClearOwnedRoomKeys()
@@ -772,7 +791,11 @@ public class MultiplayerService : MonoBehaviour
 
     public async Task<MatchStateDto> GetMatchStateAsync(string roomCode, string playerId)
     {
+        int version = lifecycleVersion;
         MatchStateReadResult result = await GetMatchStateReadAsync(roomCode, playerId);
+        if (CanContinueStartup && version == lifecycleVersion && result.outcome == MatchStateReadOutcome.State
+            && result.state.status == "completed" && result.state.matchResult?.reason == "timeout")
+            HandleRemoteMatchCompletion(result.state);
         return result.outcome == MatchStateReadOutcome.State ? result.state : null;
     }
 

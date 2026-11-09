@@ -2,6 +2,18 @@ using System;
 using System.Collections.Generic;
 
 [Serializable]
+public class ModeEntryStateResponse
+{
+    public bool success;
+    public string playerId;
+    public string contextId;
+    public bool? canEnter;
+    public string reason;
+    public string error;
+    public string stage;
+}
+
+[Serializable]
 public class LibraryDeckStateResponse
 {
     public bool success;

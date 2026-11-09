@@ -17,6 +17,14 @@ public class LibraryDeckService : MonoBehaviour
         );
     }
 
+    public Task<ModeEntryStateResponse> GetModeEntryStateAsync(string playerId, string contextId)
+    {
+        return ExecuteAsync<ModeEntryStateResponse>(
+            callback => serverFunctionsManager.GetModeEntryState(playerId, contextId, callback),
+            "GetModeEntryStateAsync"
+        );
+    }
+
     public Task<LibraryDeckMutationResponse> CreateDeckAsync(string playerId, string contextId)
     {
         return ExecuteAsync<LibraryDeckMutationResponse>(

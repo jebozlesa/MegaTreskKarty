@@ -705,6 +705,12 @@ public class ServerFunctionsManager : MonoBehaviour
         CallFunctionWithRetry("getLibraryDeckState", parameters, callback);
     }
 
+    public void GetModeEntryState(string playerId, string contextId, Action<ExecuteFunctionResult> callback)
+    {
+        Debug.LogWarning($"[ServerFunctionsManager] GetModeEntryState: player={playerId}, context={contextId}");
+        CallFunctionWithRetry("getModeEntryState", new { playerId, contextId }, callback);
+    }
+
     public void CreateLibraryDeck(
         string playerId,
         string contextId,

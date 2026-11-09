@@ -18,14 +18,7 @@ public sealed class ConfirmDialogController : MonoBehaviour
 
     public void Show(string message, Action confirmAction, Action cancelAction = null)
     {
-        if (confirmAction == null)
-        {
-            Debug.LogError("[ConfirmDialogController] Cannot show confirm dialog without confirm action.");
-            return;
-        }
-
-        onConfirm = confirmAction;
-        onCancel = cancelAction;
+        if (!TrySetActions(confirmAction, cancelAction)) return;
 
         if (messageText != null)
         {
@@ -33,6 +26,25 @@ public sealed class ConfirmDialogController : MonoBehaviour
         }
 
         SetVisible(true);
+    }
+
+    public void ShowAuthored(Action confirmAction, Action cancelAction = null)
+    {
+        if (!TrySetActions(confirmAction, cancelAction)) return;
+        SetVisible(true);
+    }
+
+    private bool TrySetActions(Action confirmAction, Action cancelAction)
+    {
+        if (confirmAction == null)
+        {
+            Debug.LogError("[ConfirmDialogController] Cannot show confirm dialog without confirm action.");
+            return false;
+        }
+
+        onConfirm = confirmAction;
+        onCancel = cancelAction;
+        return true;
     }
 
     public void Confirm()
