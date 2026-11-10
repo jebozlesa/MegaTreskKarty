@@ -1,5 +1,100 @@
 # Multiplayer smoke notes
 
+## BUG-013 Closed / Ready For User Commit And Push (2026-11-10)
+
+User accepts the functional smoke and explicitly declines a separate bulk data
+migration: normal canonical writes remove old owned maxima. A36 readback is
+already clean (128 valid cards); no other-account audit/write pending. No new
+runtime changes or wiring in close-out. Existing battle MaxHealth transport is
+intentional; owned-card HP has only Health. Full Unity baseline 494/494 GREEN.
+Include BattleHealthOwnershipTests.cs and its .meta in the manual client commit;
+unrelated user imports/font atlas remain untouched. No agent commit/push.
+[Closure and final boundaries](../../../mega-tresk-server/docs/multiplayer/2026-11-10-bug-013-health-ownership-analysis.md#closure-and-push-preparation).
+
+### Prior Smoke And Readback
+
+User PASS; PC/phone MP 777OG9 ten paired card states match. Caps survive damage,
+healing, death and replacement; RR/Campaign preserve injured ratios, pack purchase
+succeeds. No invalid-max/Unity error in supplied exports. Existing native graphics
+diagnostics and Campaign missing background sound remain TASK-042/040.
+
+Read-only A36FA8EC0F782700 recheck: 128 cards, all permanent Health valid, zero
+MaxHealth/maxHealth fields. No agent remote write; a separate cleanup here is
+unnecessary. Remaining close-out decision is any specifically authorized other
+accounts, NOT a blind global migration. No new runtime/tool/scene change or test
+rerun at this documentation checkpoint; prior Unity 494/494 remains baseline.
+[Acceptance and data inspection](../../../mega-tresk-server/docs/multiplayer/2026-11-10-bug-013-health-ownership-analysis.md#accepted-smoke-and-read-only-cleanup-check).
+
+### Prior Single-Health Delivery
+
+Approved and implemented: one permanent owned Health. Shared server loader
+initializes both battle HP values once; strict snapshots/Start/bar ownership
+stay unchanged. Generator validates HP, canonical writes omit retired maxima,
+LibraryCardSorter uses permanent Health. Existing DTO retained; no new class.
+All nine server npm suites pass; Unity targeted 73/73 and full 494/494 GREEN.
+
+User: deploy updated server and rebuild phone client, start fresh MP, then short
+RR/Campaign recheck of common entry conversion. No Inspector/new registration.
+Do not manually backfill the 115 old zero maxima or patch old room snapshots.
+No agent remote data write; separately approved backup/dry-run cleanup remains.
+[Delivery, evidence and smoke](../../../mega-tresk-server/docs/multiplayer/2026-11-10-bug-013-health-ownership-analysis.md#single-health-contract-delivery-and-smoke).
+
+### Prior Whole-Lifecycle Analysis
+
+Same-account authorized read-only audit found 122 valid permanent Health stats,
+115 stored MaxHealth=0 and seven equal maxima. Old local generation omitted the
+added field; common server fresh-match conversion now copies explicit zero.
+The proposal AWAITING approval is owned Health only, explicit battle current/max
+initialized once by shared server loader, validated creation and separately
+reviewed data cleanup. Keep strict battle snapshots and Start/bar ownership.
+No runtime or remote data changed during this reassessment; no other account or
+live Mongo audit. Prior Unity 492/492 is baseline, not proof of this proposal.
+Do not repeat smoke until contract/implementation is approved and delivered.
+[Current findings and proposal](../../../mega-tresk-server/docs/multiplayer/2026-11-10-bug-013-health-ownership-analysis.md#whole-lifecycle-reassessment).
+
+### Prior MP Follow-Up Delivery
+
+User manually corrected Sitting Bull; scoped PlayFab read-only recheck confirms
+28/28. Approved existing-hand-manager guard validates explicit maxima before
+hand creation and again after initialization before preparation succeeds.
+Removed MP parsing's Health substitute; existing startup abort owns failure.
+No new subsystem, popup, eligibility rule, scene wiring or server runtime change.
+
+Agent-observed RED 34 pass/5 fail; targeted health/startup 71/71 GREEN and full
+batch Unity 492/492 GREEN (XML, no skipped cases). No PlayFab data write by agent.
+Rebuild client and test a fresh MP match with the repaired card; solo accepted.
+[Exact delivery and repeat smoke](../../../mega-tresk-server/docs/multiplayer/2026-11-10-bug-013-health-ownership-analysis.md#mp-follow-up-delivery-and-repeat-smoke).
+No Inspector wiring or new server deployment. BUG-023/024 remain deferred.
+
+### Prior MP Failure Checkpoint
+
+User SP smoke passes; phone logs confirm stable ratios in RR/Campaign through
+damage/heal/replacement. MP CTT7CQ fails before the first attack: PC Sitting Bull
+has maxHealth=0. Explicitly authorized read of only that PlayFab card confirms
+Health=28, MaxHealth=0. The removed Start overwrite previously hid corrupt data.
+No player write or other-card audit. Earlier 485/485 tests missed the complete
+persisted MP hand boundary; do not close the bug on that baseline.
+
+Awaiting approval: one-card data correction and TDD validation of MP hand maxima
+before startup readiness using existing owners/abort handling. No new fallback
+or silent general repair. BUG-023 fan feedback and BUG-024 MP background remain
+deferred; user build-profile/font-atlas changes must be preserved.
+
+### Prior Approved HP Implementation
+
+Approved client fix preserves maximum HP through Kard.Start, copies actual card
+maximum for MP selection and rejects missing/nonpositive solo parsing/mapping
+maxima through existing error handling. HealthBar no longer substitutes current
+HP for maximum; invalid fill is hidden with an explicit diagnostic and restores
+on valid binding. No new production type, scene wiring or animation timing change.
+
+Targeted RED 8 pass/24 fail -> 32/32 GREEN; full Pipeline Unity 485/485 GREEN.
+Server solo/RR/campaign/test:all GREEN; only server tests changed, so no new
+server deployment/registration. No manual device acceptance claimed.
+Run updated-client RR/Campaign/MP smoke from the
+[delivery](../../../mega-tresk-server/docs/multiplayer/2026-11-10-bug-013-health-ownership-analysis.md#user-smoke-next).
+Historical zero DTO maxima remain an evidence limit, not a guessed data repair.
+
 ## BUG-019 Entry Guard Accepted And Closed (2026-11-10)
 
 Main MP/Bushido entry checks canonical server readiness under the standard

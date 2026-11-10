@@ -11,8 +11,8 @@ public class GeneratedCard
     public string PersonName;
     public int Level;
     public int Experience;
-    public int Health;
-    public int MaxHealth; // ✅ V11: Required by server
+    public int Health; // Permanent HP in the collection; remaining HP in a battle copy.
+    public int MaxHealth; // Battle transport only; not stored in PlayerCards.
     public int Strength;
     public int Speed;
     public int Attack;

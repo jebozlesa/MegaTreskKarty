@@ -316,7 +316,7 @@ public static class CampaignOnlineSessionParser
             ["image"] = FirstValue(rawCard, "image", "CardPicture"),
             ["level"] = FirstValue(rawCard, "level", "Level") ?? 1,
             ["health"] = FirstValue(rawCard, "health", "Health") ?? 0,
-            ["maxHealth"] = FirstValue(rawCard, "maxHealth", "MaxHealth", "Health") ?? 0,
+            ["maxHealth"] = FirstValue(rawCard, "maxHealth", "MaxHealth"),
             ["styleId"] = FirstValue(rawCard, "styleId", "StyleID") ?? 0,
             ["strength"] = FirstValue(rawCard, "strength", "Strength") ?? 0,
             ["speed"] = FirstValue(rawCard, "speed", "Speed") ?? 0,

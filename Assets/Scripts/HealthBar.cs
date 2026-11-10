@@ -15,13 +15,22 @@ public class HealthBar : MonoBehaviour
 
     public void SetBar(Kard card)
     {
-        // Use maxHealth if available (multiplayer), otherwise use current health (singleplayer).
-        maxHp = card.maxHealth > 0 ? card.maxHealth : card.health;
+        maxHp = card.maxHealth;
         SetHP(card.health);
     }
 
     public void SetHP(float hp)
     {
+        if (maxHp <= 0)
+        {
+            this.hp = 0;
+            health.fillAmount = 0;
+            health.enabled = false;
+            Debug.LogError($"[HP_BAR] {gameObject.name}: invalid maxHealth={maxHp}; an explicit positive maximum is required.");
+            return;
+        }
+
+        health.enabled = true;
         float oldHp = this.hp;
         this.hp = Mathf.Clamp(hp, 0, maxHp); // Keep HP within a valid range.
 

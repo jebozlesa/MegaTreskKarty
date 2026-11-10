@@ -65,7 +65,6 @@ public class SelectedCardData
             return null;
         }
 
-        int resolvedMaxHealth = definition != null && definition.MaxHealth > 0 ? definition.MaxHealth : card.health;
         int resolvedStyleId = definition?.StyleID ?? card.styleId;
         int resolvedStrength = definition?.Strength ?? card.strength;
         int resolvedSpeed = definition?.Speed ?? card.speed;
@@ -84,7 +83,7 @@ public class SelectedCardData
             image = card.image,
             level = card.level,
             health = card.health,
-            maxHealth = resolvedMaxHealth,
+            maxHealth = card.maxHealth,
             styleId = resolvedStyleId,
             strength = resolvedStrength,
             speed = resolvedSpeed,
@@ -102,6 +101,7 @@ public class SelectedCardData
             ongoingActions = null
         };
 
+        data.RequireMaxHealth();
         return data;
     }
 
@@ -112,7 +112,7 @@ public class SelectedCardData
             return null;
         }
 
-        return new SelectedCardData
+        var data = new SelectedCardData
         {
             playerId = ownerPlayerId,
             cardId = payload.Value<string>("cardId"),
@@ -120,7 +120,7 @@ public class SelectedCardData
             image = payload.Value<string>("image"),
             level = payload.Value<int?>("level") ?? 1,
             health = payload.Value<int?>("health") ?? 0,
-            maxHealth = payload.Value<int?>("maxHealth") ?? payload.Value<int?>("health") ?? 0,
+            maxHealth = payload.Value<int?>("maxHealth") ?? 0,
             styleId = payload.Value<int?>("styleId") ?? 0,
             strength = payload.Value<int?>("strength") ?? 0,
             speed = payload.Value<int?>("speed") ?? 0,
@@ -137,6 +137,17 @@ public class SelectedCardData
             effects = ParseEffects(payload["effects"]),  // [OK] Parse effects z servera
             ongoingActions = ParseOngoingActions(payload["ongoingActions"])
         };
+        data.RequireMaxHealth();
+        return data;
+    }
+
+    public int RequireMaxHealth()
+    {
+        if (maxHealth <= 0)
+        {
+            throw new System.FormatException($"Card '{cardId}' has invalid maxHealth={maxHealth}; an explicit positive maximum is required.");
+        }
+        return maxHealth;
     }
     
     /// <summary>
@@ -226,7 +237,7 @@ public class SelectedCardData
             Level = level,
             Experience = experience,
             Health = health,
-            MaxHealth = maxHealth,
+            MaxHealth = RequireMaxHealth(),
             Strength = strength,
             Speed = speed,
             Attack = attack,

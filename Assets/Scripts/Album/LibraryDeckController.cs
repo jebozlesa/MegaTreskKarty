@@ -747,7 +747,7 @@ public static class LibraryCardSorter
             case LibrarySortCriterion.Experience:
                 return card.Experience;
             case LibrarySortCriterion.Health:
-                return card.MaxHealth > 0 ? card.MaxHealth : card.Health;
+                return card.Health;
             case LibrarySortCriterion.Strength:
                 return card.Strength;
             case LibrarySortCriterion.Speed:

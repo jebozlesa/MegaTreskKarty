@@ -68,6 +68,13 @@ public class MultiplayerHandManager : MonoBehaviour
         if (!complete) completion.TrySetException(new System.InvalidOperationException("Five startup card visuals were not initialized"));
         else
         {
+            Kard invalidCard = preparedCards.FirstOrDefault(card => card.maxHealth <= 0);
+            if (invalidCard != null)
+            {
+                completion.TrySetException(new System.FormatException(
+                    $"Startup card '{invalidCard.cardId}' has invalid maxHealth={invalidCard.maxHealth}; an explicit positive maximum is required."));
+                yield break;
+            }
             Debug.LogWarning("[MultiplayerHandManager] Startup hand prepared: cards=5");
             completion.TrySetResult(true);
         }
@@ -104,6 +111,15 @@ public class MultiplayerHandManager : MonoBehaviour
             throw new System.InvalidOperationException("Startup player/hand parent is missing");
         }
 
+        // Validate the whole room payload before instantiating a partial hand.
+        foreach (JObject cardData in cardsArray)
+        {
+            int? maximum = cardData.Value<int?>("MaxHealth");
+            if (!maximum.HasValue || maximum.Value <= 0)
+                throw new System.FormatException(
+                    $"Startup card '{cardData.Value<string>("CardID")}' has invalid maxHealth={maximum?.ToString() ?? "missing"}; an explicit positive maximum is required.");
+        }
+
         foreach (JObject cardData in cardsArray)
         {
             Debug.Log($"[CreateMultiplayerHandFromRoom] Creating card: {cardData["PersonName"]}");
@@ -112,8 +128,8 @@ public class MultiplayerHandManager : MonoBehaviour
                 CardID = cardData["CardID"]?.ToString(),
                 StyleID = cardData["StyleID"]?.ToObject<int>() ?? 0,
                 PersonName = cardData["PersonName"]?.ToString(),
-                    Health = cardData["Health"]?.ToObject<int>() ?? 0,
-                    MaxHealth = cardData["MaxHealth"]?.ToObject<int>() ?? cardData["Health"]?.ToObject<int>() ?? 0,
+                Health = cardData["Health"]?.ToObject<int>() ?? 0,
+                MaxHealth = cardData.Value<int>("MaxHealth"),
                 Strength = cardData["Strength"]?.ToObject<int>() ?? 0,
                 Speed = cardData["Speed"]?.ToObject<int>() ?? 0,
                 Attack = cardData["Attack"]?.ToObject<int>() ?? 0,

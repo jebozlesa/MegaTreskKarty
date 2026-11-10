@@ -207,6 +207,8 @@ public class MultiplayerStartupRegressionTests
                 var obj = new GameObject("Card" + i, typeof(RectTransform), typeof(UnityEngine.UI.Image));
                 obj.transform.SetParent(root.transform);
                 Component card = obj.AddComponent(RuntimeType("Kard"));
+                card.GetType().GetProperty("health").SetValue(card, 28);
+                card.GetType().GetProperty("maxHealth").SetValue(card, 28);
                 var image = obj.GetComponent<UnityEngine.UI.Image>();
                 image.sprite = sprite;
                 card.GetType().GetField("cardImage").SetValue(card, image);

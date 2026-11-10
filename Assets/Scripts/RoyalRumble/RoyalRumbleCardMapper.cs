@@ -17,7 +17,7 @@ public static class RoyalRumbleCardMapper
             Level = card.level,
             Experience = card.experience,
             Health = card.health,
-            MaxHealth = card.maxHealth > 0 ? card.maxHealth : card.health,
+            MaxHealth = card.RequireMaxHealth(),
             Strength = card.strength,
             Speed = card.speed,
             Attack = card.attack,
