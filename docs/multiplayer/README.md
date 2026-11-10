@@ -1,6 +1,6 @@
 # Multiplayer smoke notes
 
-## BUG-019 Entry Guard Ready For Smoke (2026-11-10)
+## BUG-019 Entry Guard Accepted And Closed (2026-11-10)
 
 Main MP/Bushido entry checks canonical server readiness under the standard
 loading overlay. Missing deck uses its own authored notice; failure to verify
@@ -14,9 +14,13 @@ no runtime copy overwrite, no use of the timeout/coward popup. No manual Inspect
 work required. New popup layout is relative; global Canvas settings are unchanged.
 
 Final Unity Pipeline 453/453 GREEN; server suites and 55 isolated Mongo cases
-GREEN. Device acceptance/deployment not claimed. Deploy server, register
-getModeEntryState and build client before the
-[manual smoke checklist](../../../mega-tresk-server/docs/multiplayer/2026-11-10-bug-019-mode-entry-deck-guard-delivery.md#user-deployment-and-smoke).
+GREEN. User reports smoke PASS; supplied client/server logs confirm MP/Bushido
+admission for an eligible account and repeated authored denial for an ineligible
+account. getModeEntryState registration/deployment now works. No fresh full MP
+match or offline-device run is inferred from this entry smoke. User explicitly
+keeps immediate loading; no delay/cache change. Closure reran server test:decks
+successfully; Unity 453/453 is the prior implementation baseline, not a new run.
+[Acceptance and final regression checklist](../../../mega-tresk-server/docs/multiplayer/2026-11-10-bug-019-mode-entry-deck-guard-delivery.md#acceptance-and-closure).
 [Unity CLI workflow](../UNITY_CLI_WORKFLOW.md) records the working tool setup.
 
 ## Accepted Timeout Recovery Checkpoint (2026-11-09)
