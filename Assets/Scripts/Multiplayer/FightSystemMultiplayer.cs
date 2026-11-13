@@ -27,6 +27,8 @@ public enum FightStateMultiplayer
 public class FightSystemMultiplayer : MonoBehaviour
 {
     public bool CanInteractWithBattle => multiplayerService != null && multiplayerService.CanInteractWithBattle;
+    public bool CanSubmitAttackInput => CanInteractWithBattle
+        && multiplayerService.CurrentInputToken("attack") != null;
 
     [System.Serializable]
     public class PendingOngoingActionTurn
@@ -256,7 +258,10 @@ public class FightSystemMultiplayer : MonoBehaviour
 
     public void OnCardDropped(Kard card, MultiplayerCardDrag dragHandler)
     {
-        if (!CanInteractWithBattle) { dragHandler?.ResetToOriginalPosition(); return; }
+        if (!CanInteractWithBattle || multiplayerService == null
+            || (multiplayerService.CurrentInputToken("fighter") == null
+                && multiplayerService.CurrentInputToken("replacement") == null))
+        { dragHandler?.ResetToOriginalPosition(); return; }
         if (card == null)
         {
             Debug.LogWarning("[FightSystemMultiplayer] OnCardDropped called with null card");
@@ -363,13 +368,13 @@ public class FightSystemMultiplayer : MonoBehaviour
         }
 
         // Deleguj na BattleSubmitter - posli IDs + slot pre attack count decrement
-        battleSubmitter.SubmitAttack(
+        if (!battleSubmitter.SubmitAttack(
             roomCode,
             myPlayerId,
             myCard.cardId,
             attackData.attackId,
             attackData.attackType
-        );
+        )) return;
 
         // Zobraz status
         multiplayerUI?.ShowStatus(MultiplayerUI.MSG_WAITING_OPPONENT);

@@ -51,15 +51,19 @@ public class CustomButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        if (button == null || !button.IsActive() || !button.IsInteractable()) return;
+        if (button == null || !button.IsActive() || !button.IsInteractable())
+        {
+            RestoreOriginalColor();
+            return;
+        }
         StartCoroutine(ExecuteActionAfterDelay());
     }
 
     private IEnumerator ExecuteActionAfterDelay()
     {
         yield return new WaitForSeconds(delay);
-        if (button == null || !button.IsActive() || !button.IsInteractable()) yield break;
         RestoreOriginalColor();
+        if (button == null || !button.IsActive() || !button.IsInteractable()) yield break;
         onDelayedClick.Invoke();
     }
 

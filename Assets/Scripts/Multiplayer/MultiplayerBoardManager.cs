@@ -88,9 +88,11 @@ public class MultiplayerBoardManager : MonoBehaviour
                 return;
             }
 
-            if (MultiplayerService != null)
+            if (MultiplayerService == null ||
+                !await MultiplayerService.SubmitSelectedCardAsync(RoomCode, MyPlayerId, localSelectedCardData))
             {
-                await MultiplayerService.SubmitSelectedCardAsync(RoomCode, MyPlayerId, localSelectedCardData);
+                ResetLocalSelectionState(false);
+                return;
             }
 
             if (fightSystem == null || !fightSystem.CanInteractWithBattle) return;

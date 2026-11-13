@@ -55,6 +55,8 @@ public class BattleRoundCoordinator
         serverFunctions.MarkReadyForNextTurn(fightSystem.roomCode, fightSystem.myPlayerId, result => {
             if (result?.FunctionResult != null)
             {
+                multiplayerService?.ApplyInputWindowSnapshot(
+                    BattleContractMapper.ParseMatchStateResult(result.FunctionResult));
                 var resultData = PlayFab.PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer)
                     .DeserializeObject<Dictionary<string, object>>(result.FunctionResult.ToString());
 
@@ -142,6 +144,8 @@ public class BattleRoundCoordinator
                 serverFunctions.MarkReadyForNextTurn(fightSystem.roomCode, fightSystem.myPlayerId, result => {
                     if (result?.FunctionResult != null)
                     {
+                        multiplayerService?.ApplyInputWindowSnapshot(
+                            BattleContractMapper.ParseMatchStateResult(result.FunctionResult));
                         Debug.Log($"[BattleRoundCoordinator] Retry result: {result.FunctionResult}");
                     }
                     retryCompleted = true;
@@ -223,6 +227,7 @@ public class BattleRoundCoordinator
         }
 
         yield return HandleCardDeath(myCard, isMyCard: true);
+        yield return ConfirmReplacementReady();
 
         Player player = fightSystem?.player;
         if (player == null)
@@ -336,6 +341,7 @@ public class BattleRoundCoordinator
 
         yield return HandleCardDeath(myCard, isMyCard: true);
         yield return HandleCardDeath(enemyCard, isMyCard: false);
+        yield return ConfirmReplacementReady();
 
         Player player = fightSystem?.player;
         if (player == null)
@@ -380,6 +386,15 @@ public class BattleRoundCoordinator
             fightSystem.state = FightStateMultiplayer.WON;
             Debug.Log("[BattleRoundCoordinator] Draw - both players out of cards");
         }
+    }
+
+    private IEnumerator ConfirmReplacementReady()
+    {
+        if (multiplayerService == null) yield break;
+        var readyTask = multiplayerService.MarkReplacementReadyAsync();
+        yield return new WaitUntil(() => readyTask.IsCompleted);
+        if (readyTask.Status != System.Threading.Tasks.TaskStatus.RanToCompletion || !readyTask.Result)
+            Debug.LogWarning("[BattleRoundCoordinator] Replacement readiness was not confirmed");
     }
 
     private static bool TryGetSuccessFlag(object functionResult, out bool success)

@@ -1,7 +1,11 @@
+using System.Collections;
 using System.IO;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.EventSystems;
+using UnityEngine.TestTools;
 using UnityEngine.UI;
 
 public class AlbumDiagnosticsTests
@@ -414,6 +418,181 @@ public class AlbumDiagnosticsTests
         {
             Object.DestroyImmediate(buttonObject);
         }
+    }
+
+    [UnityTest]
+    public IEnumerator CustomButton_NativeConfirmationCanDisableInteractionWithoutRetainingPressedColor()
+    {
+        Component custom = CreatePressedButton(Color.white, 0f, out var button, out var image, out var delayed);
+        float previousScale = Time.timeScale;
+        Time.timeScale = 1f;
+        int nativeCalls = 0, delayedCalls = 0;
+        button.onClick.AddListener(() => { nativeCalls++; button.interactable = false; });
+        delayed.AddListener(() => delayedCalls++);
+        try
+        {
+            for (int click = 1; click <= 2; click++)
+            {
+                button.interactable = true;
+                image.color = Color.yellow;
+                ReleaseButton(button);
+                Assert.AreEqual(click, nativeCalls);
+                Assert.IsFalse(button.interactable);
+                yield return new WaitForSecondsRealtime(0.05f);
+                Assert.AreEqual(Color.white, image.color);
+                Assert.AreEqual(0, delayedCalls, "A disabled confirmation must not invoke the custom action.");
+                Assert.IsFalse(button.interactable, "Visual cleanup must not re-enable gameplay input.");
+            }
+        }
+        finally { Time.timeScale = previousScale; Object.DestroyImmediate(custom.gameObject); }
+    }
+
+    [Test]
+    public void CustomButton_DisabledBeforeReleaseRestoresTheCapturedColorWithoutAnAction()
+    {
+        Component custom = CreatePressedButton(Color.cyan, 0f, out var button, out var image, out var delayed);
+        int calls = 0;
+        delayed.AddListener(() => calls++);
+        button.onClick.AddListener(() => calls++);
+        try
+        {
+            button.interactable = false;
+            ReleaseButton(button);
+            Assert.AreEqual(Color.cyan, image.color, "Restore the authored color, not hardcoded white.");
+            Assert.AreEqual(0, calls);
+            Assert.IsFalse(button.interactable);
+        }
+        finally { Object.DestroyImmediate(custom.gameObject); }
+    }
+
+    [TestCase(0f)]
+    [TestCase(0.15f)]
+    public void CustomButton_DisabledDuringDelayStillRestoresColorWithoutInvokingAction(float delay)
+    {
+        Component custom = CreatePressedButton(Color.cyan, delay, out var button, out var image, out var delayed);
+        int calls = 0;
+        delayed.AddListener(() => calls++);
+        try
+        {
+            var routine = (IEnumerator)custom.GetType().GetMethod("ExecuteActionAfterDelay", BindingFlags.NonPublic | BindingFlags.Instance)
+                .Invoke(custom, null);
+            Assert.IsTrue(routine.MoveNext());
+            Assert.IsInstanceOf<WaitForSeconds>(routine.Current);
+            Assert.AreEqual(Color.yellow, image.color);
+            button.interactable = false;
+            Assert.IsFalse(routine.MoveNext());
+            Assert.AreEqual(Color.cyan, image.color);
+            Assert.AreEqual(0, calls);
+            Assert.IsFalse(button.interactable);
+        }
+        finally { Object.DestroyImmediate(custom.gameObject); }
+    }
+
+    [UnityTest]
+    public IEnumerator CustomButton_ValidActionKeepsDelayAndObservesRestoredOriginalColor()
+    {
+        const float delay = 0.15f;
+        Component custom = CreatePressedButton(Color.cyan, delay, out var button, out var image, out var delayed);
+        float previousScale = Time.timeScale;
+        Time.timeScale = 1f;
+        int calls = 0;
+        Color callbackColor = Color.clear;
+        delayed.AddListener(() => { calls++; callbackColor = image.color; });
+        try
+        {
+            float deadline = Time.time + delay;
+            ReleaseButton(button);
+            Assert.AreEqual(0, calls);
+            Assert.AreEqual(Color.yellow, image.color, "Normal click feedback must keep its configured delay.");
+            while (Time.time < deadline)
+            {
+                Assert.AreEqual(0, calls, "The delayed action must not run early.");
+                yield return null;
+            }
+            yield return new WaitForSecondsRealtime(0.05f);
+            Assert.AreEqual(1, calls);
+            Assert.AreEqual(Color.cyan, callbackColor);
+            Assert.AreEqual(Color.cyan, image.color);
+            Assert.IsTrue(button.interactable);
+        }
+        finally { Time.timeScale = previousScale; Object.DestroyImmediate(custom.gameObject); }
+    }
+
+    [UnityTest]
+    public IEnumerator CustomButton_CallbackMayHideAndReopenPopupWithoutRetainingPressedColor()
+    {
+        Component custom = CreatePressedButton(Color.white, 0f, out var button, out var image, out var delayed);
+        float previousScale = Time.timeScale;
+        Time.timeScale = 1f;
+        int calls = 0;
+        delayed.AddListener(() =>
+        {
+            calls++;
+            Assert.AreEqual(Color.white, image.color, "Restore before invoking a popup's hide action.");
+            custom.gameObject.SetActive(false);
+        });
+        try
+        {
+            custom.gameObject.SetActive(false);
+            for (int click = 1; click <= 2; click++)
+            {
+                custom.gameObject.SetActive(true);
+                Assert.AreEqual(Color.white, image.color);
+                image.color = Color.yellow;
+                ReleaseButton(button);
+                yield return new WaitForSecondsRealtime(0.05f);
+                Assert.AreEqual(click, calls);
+                Assert.IsFalse(custom.gameObject.activeSelf);
+                Assert.AreEqual(Color.white, image.color);
+            }
+        }
+        finally { Time.timeScale = previousScale; Object.DestroyImmediate(custom.gameObject); }
+    }
+
+    [Test]
+    public void CustomButton_MpDialogKeepsItsExistingImageAndNativeConfirmationWiring()
+    {
+        string scene = File.ReadAllText(Path.Combine(Application.dataPath, "Scenes", "Multiplayer.unity")).Replace("\r\n", "\n");
+        string custom = ExtractYamlObject(scene, "--- !u!114 &1327332877");
+        StringAssert.Contains("guid: 6709565a3468a284ba9ce31c3a081877", custom);
+        StringAssert.Contains("innerImage: {fileID: 1327332874}", custom);
+        StringAssert.Contains("delay: 0", custom);
+        StringAssert.Contains("m_Calls: []", custom);
+        string confirm = ExtractYamlObject(scene, "--- !u!114 &909972134 stripped");
+        StringAssert.Contains("m_CorrespondingSourceObject: {fileID: 4298181560895731028", confirm);
+        StringAssert.Contains("confirmButton: {fileID: 909972134}", scene);
+    }
+
+    private static Component CreatePressedButton(Color original, float delay, out Button button, out Image image, out UnityEvent delayed)
+    {
+        var root = new GameObject("PressedColorUnderTest", typeof(RectTransform), typeof(Image), typeof(Button));
+        root.SetActive(false);
+        try
+        {
+            var inner = new GameObject("Inner", typeof(RectTransform), typeof(Image));
+            inner.transform.SetParent(root.transform, false);
+            image = inner.GetComponent<Image>();
+            image.color = original;
+            var type = System.Type.GetType("CustomButton, Assembly-CSharp", true);
+            Component custom = root.AddComponent(type);
+            type.GetField("innerImage").SetValue(custom, image);
+            type.GetField("delay").SetValue(custom, delay);
+            delayed = new UnityEvent();
+            type.GetField("onDelayedClick").SetValue(custom, delayed);
+            root.SetActive(true);
+            button = root.GetComponent<Button>();
+            // Reproduce the pressed visual without invoking the unrelated audio singleton.
+            image.color = Color.yellow;
+            return custom;
+        }
+        catch { Object.DestroyImmediate(root); throw; }
+    }
+
+    private static void ReleaseButton(Button button)
+    {
+        var pointer = new PointerEventData(null) { button = PointerEventData.InputButton.Left };
+        ExecuteEvents.Execute(button.gameObject, pointer, ExecuteEvents.pointerUpHandler);
+        ExecuteEvents.Execute(button.gameObject, pointer, ExecuteEvents.pointerClickHandler);
     }
 
     [Test]

@@ -44,6 +44,75 @@ public class MultiplayerService : MonoBehaviour
     private bool applicationPaused;
     private bool applicationFocused = true;
     private double startupDeadline;
+    private MatchInputWindowDto inputWindow;
+    private double inputDeadline;
+    private int inputStateVersion = -1;
+    private const int DisplayedInputWindowMilliseconds = 30000;
+    public int InputRemainingMilliseconds => inputWindow == null || string.IsNullOrEmpty(inputWindow.openedAt)
+        ? 0 : Mathf.Max(0, (int)((inputDeadline - Time.realtimeSinceStartupAsDouble) * 1000));
+    public int InputDisplayRemainingMilliseconds => ClampInputDisplayMilliseconds(InputRemainingMilliseconds);
+    public bool HasInputCountdown => CanContinueStartup && IsWindowPendingForPlayer(inputWindow, myPlayerId)
+        && !string.IsNullOrEmpty(inputWindow.openedAt);
+    public string CurrentInputToken(string kind) => CanContinueStartup
+        && IsWindowActionable(inputWindow, myPlayerId, kind, InputRemainingMilliseconds)
+            ? inputWindow.token : null;
+    private static bool IsWindowActionable(MatchInputWindowDto window, string playerId,
+        string kind, int remainingMs)
+    {
+        return window?.kind == kind && !string.IsNullOrEmpty(window.token)
+            && !string.IsNullOrEmpty(window.openedAt) && remainingMs > 0
+            && IsWindowPendingForPlayer(window, playerId);
+    }
+
+    private static int ClampInputDisplayMilliseconds(int remainingMs)
+    {
+        return Mathf.Clamp(remainingMs, 0, DisplayedInputWindowMilliseconds);
+    }
+
+    private static bool IsWindowPendingForPlayer(MatchInputWindowDto window, string playerId)
+    {
+        return window?.requiredPlayerIds != null && window.requiredPlayerIds.Contains(playerId)
+            && (window.acceptedByPlayerId == null
+                || !window.acceptedByPlayerId.TryGetValue(playerId, out bool accepted) || !accepted);
+    }
+
+    public void ApplyInputWindowSnapshot(MatchStateDto state)
+    {
+        if (state == null || state.roomCode != roomCode || state.viewerPlayerId != myPlayerId
+            || state.version < inputStateVersion) return;
+        inputStateVersion = state.version;
+        if (state.status == "completed" || state.inputWindow == null)
+        {
+            inputWindow = null;
+            inputDeadline = 0;
+            return;
+        }
+
+        MatchInputWindowDto snapshot = state.inputWindow;
+        if (string.IsNullOrEmpty(snapshot.openedAt))
+        {
+            inputWindow = snapshot;
+            inputDeadline = 0;
+            return;
+        }
+
+        if (!snapshot.remainingMs.HasValue)
+        {
+            Debug.LogError(
+                $"[MultiplayerService] Open input window is missing remainingMs: room={roomCode}, token={snapshot.token}, kind={snapshot.kind}"
+            );
+            inputWindow = null;
+            inputDeadline = 0;
+            return;
+        }
+
+        double candidate = Time.realtimeSinceStartupAsDouble + snapshot.remainingMs.Value / 1000.0;
+        bool sameOpenedWindow = inputWindow?.token == snapshot.token
+            && !string.IsNullOrEmpty(inputWindow.openedAt);
+        inputDeadline = sameOpenedWindow
+            ? System.Math.Min(inputDeadline, candidate) : candidate;
+        inputWindow = snapshot;
+    }
     public bool CanInteractWithBattle => CanContinueStartup && localPrepared && serverStarted;
     public bool CanAcknowledgeStartup => CanContinueStartup && localPrepared && !applicationPaused && applicationFocused
         && StartupRemainingMilliseconds > 0;
@@ -84,6 +153,7 @@ public class MultiplayerService : MonoBehaviour
         EnsureStartupCurrent(version);
         ValidateStartupState(state, roomCode, myPlayerId);
         ApplyStartupSnapshot(state, requestedAt);
+        ApplyInputWindowSnapshot(state);
         ProcessPlayersInfo(state);
         requestedAt = Time.realtimeSinceStartupAsDouble;
         var result = await AwaitStartupAsync(serverFunctionsManager.LoadPlayerDecksIntoRoomAsync(myPlayerId, roomCode));
@@ -95,6 +165,7 @@ public class MultiplayerService : MonoBehaviour
         state = BattleContractMapper.ParseMatchStateResult(response);
         ValidateStartupState(state, roomCode, myPlayerId);
         ApplyStartupSnapshot(state, requestedAt);
+        ApplyInputWindowSnapshot(state);
         Debug.LogWarning($"[MultiplayerService] Deck load confirmed: room={roomCode}, alreadyLoaded={response["alreadyLoaded"]}");
     }
 
@@ -158,6 +229,7 @@ public class MultiplayerService : MonoBehaviour
             throw new System.OperationCanceledException("Startup ended on server");
         }
         ApplyStartupSnapshot(state, requestedAt);
+        ApplyInputWindowSnapshot(state);
         return state;
     }
 
@@ -180,6 +252,7 @@ public class MultiplayerService : MonoBehaviour
         JObject envelope = response is string text ? JObject.Parse(text) : response == null ? null : JObject.FromObject(response);
         if (envelope?["success"]?.Value<bool>() != true) throw new System.InvalidOperationException("Readiness was not confirmed");
         ApplyStartupSnapshot(state, requestedAt);
+        ApplyInputWindowSnapshot(state);
         while (!serverStarted)
         {
             await AwaitStartupAsync(Task.Delay(250));
@@ -333,6 +406,7 @@ public class MultiplayerService : MonoBehaviour
             }
 
             MatchStateDto matchState = readResult.state;
+            ApplyInputWindowSnapshot(matchState);
             Debug.Log(
                 $"[MultiplayerService] MatchState monitor poll result: roomCode={matchState.roomCode}, status={matchState.status}, phase={matchState.phase}, playersCount={matchState.playersCount}, reason={matchState.matchResult?.reason}, winner={matchState.matchResult?.winnerPlayerId}, loser={matchState.matchResult?.loserPlayerId}"
             );
@@ -423,6 +497,7 @@ public class MultiplayerService : MonoBehaviour
         bool iWon = !string.IsNullOrEmpty(winnerPlayerId) && winnerPlayerId == myPlayerId;
         bool iLost = !string.IsNullOrEmpty(loserPlayerId) && loserPlayerId == myPlayerId;
         matchCompletionHandled = true;
+        inputWindow = null;
         if (reason == "timeout")
         {
             StopCurrentBattleLifecycle(!iWon || !localPrepared || string.IsNullOrEmpty(matchState.startup?.startedAt));
@@ -464,7 +539,7 @@ public class MultiplayerService : MonoBehaviour
             {
                 fightSystem.state = FightStateMultiplayer.WON;
             }
-            else if (iLost)
+            else if (iLost || reason == "input_timeout")
             {
                 fightSystem.state = FightStateMultiplayer.LOST;
             }
@@ -497,6 +572,11 @@ public class MultiplayerService : MonoBehaviour
         if (reason == "timeout")
         {
             return iWon ? "Opponent timed out. You win!" : "Connection timed out. You lose.";
+        }
+
+        if (reason == "input_timeout")
+        {
+            return iWon ? "Opponent ran out of time. You win!" : "Time's up. You lose.";
         }
 
         if (reason == "surrender")
@@ -678,7 +758,7 @@ public class MultiplayerService : MonoBehaviour
         });
     }
 
-    public async Task SubmitSelectedCardAsync(
+    public async Task<bool> SubmitSelectedCardAsync(
         string roomCode,
         string playerId,
         SelectedCardData cardData
@@ -687,8 +767,11 @@ public class MultiplayerService : MonoBehaviour
         if (serverFunctionsManager == null)
         {
             Debug.LogError("SubmitSelectedCardAsync: serverFunctionsManager is null");
-            return;
+            return false;
         }
+
+        string token = CurrentInputToken(inputWindow?.kind == "replacement" ? "replacement" : "fighter");
+        if (string.IsNullOrEmpty(token)) return false;
 
         var tcs = new TaskCompletionSource<bool>();
         bool isCompleted = false;
@@ -697,26 +780,31 @@ public class MultiplayerService : MonoBehaviour
             roomCode,
             playerId,
             cardData,
+            token,
             result =>
             {
                 if (isCompleted)
                     return; // Ignore late responses
                 isCompleted = true;
 
-                if (result == null)
+                JObject response = null;
+                try
                 {
-                    Debug.LogError(
-                        "SubmitSelectedCardAsync: Failed to set selected card on server"
-                    );
+                    response = result?.FunctionResult is string text ? JObject.Parse(text)
+                        : result?.FunctionResult == null ? null : JObject.FromObject(result.FunctionResult);
+                }
+                catch (System.Exception ex) { Debug.LogWarning("[MultiplayerService] Selection response invalid: " + ex.Message); }
+                bool success = response?["success"]?.Value<bool>() == true;
+                if (!success)
+                {
+                    Debug.LogWarning("[MultiplayerService] Selection rejected: " + response?["error"]);
                 }
                 else
                 {
-                    Debug.Log(
-                        $"SubmitSelectedCardAsync: Card {cardData?.cardId} stored for player {playerId}"
-                    );
+                    ApplyInputWindowSnapshot(BattleContractMapper.ParseMatchStateResult(response));
+                    Debug.LogWarning($"[MultiplayerService] Card selected: {cardData?.cardId}");
                 }
-
-                tcs.TrySetResult(true);
+                tcs.TrySetResult(success);
             }
         );
 
@@ -734,7 +822,25 @@ public class MultiplayerService : MonoBehaviour
                 }
             });
 
-        await tcs.Task;
+        return await tcs.Task;
+    }
+
+    public async Task<bool> MarkReplacementReadyAsync()
+    {
+        if (!CanContinueStartup) return false;
+        if (inputWindow?.kind != "replacement")
+            await GetMatchStateAsync(roomCode, myPlayerId);
+        if (!CanContinueStartup || inputWindow?.kind != "replacement") return false;
+        string token = inputWindow.token;
+        var tcs = new TaskCompletionSource<object>();
+        serverFunctionsManager.MarkReplacementReady(roomCode, myPlayerId, token,
+            result => tcs.TrySetResult(result?.FunctionResult));
+        object raw = await tcs.Task;
+        JObject response = raw is string text ? JObject.Parse(text)
+            : raw == null ? null : JObject.FromObject(raw);
+        MatchStateDto state = BattleContractMapper.ParseMatchStateResult(response);
+        ApplyInputWindowSnapshot(state);
+        return response?["success"]?.Value<bool>() == true;
     }
 
     public async Task<Dictionary<string, SelectedCardData>> GetSelectedCardsFromMatchStateAsync(
@@ -793,9 +899,11 @@ public class MultiplayerService : MonoBehaviour
     {
         int version = lifecycleVersion;
         MatchStateReadResult result = await GetMatchStateReadAsync(roomCode, playerId);
-        if (CanContinueStartup && version == lifecycleVersion && result.outcome == MatchStateReadOutcome.State
-            && result.state.status == "completed" && result.state.matchResult?.reason == "timeout")
-            HandleRemoteMatchCompletion(result.state);
+        if (CanContinueStartup && version == lifecycleVersion && result.outcome == MatchStateReadOutcome.State)
+        {
+            ApplyInputWindowSnapshot(result.state);
+            if (result.state.status == "completed") HandleRemoteMatchCompletion(result.state);
+        }
         return result.outcome == MatchStateReadOutcome.State ? result.state : null;
     }
 

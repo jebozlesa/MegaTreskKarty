@@ -53,6 +53,18 @@ public class AttackSelectionManager : MonoBehaviour
         );
     }
 
+    private void Update()
+    {
+        if (fightSystem != null && !fightSystem.CanSubmitAttackInput
+            && ((button1 != null && button1.interactable) || (button2 != null && button2.interactable)
+                || (button3 != null && button3.interactable) || (button4 != null && button4.interactable)
+                || (confirmButton != null && confirmButton.interactable)))
+        {
+            SetAllAttackButtonsInteractable(false);
+            SetConfirmButtonState(false);
+        }
+    }
+
     /// <summary>
     /// Pripravi UI pre vyber utoku
     /// </summary>
@@ -72,7 +84,7 @@ public class AttackSelectionManager : MonoBehaviour
     /// </summary>
     private void OnAttackButtonClicked(int attackType)
     {
-        if (fightSystem == null || !fightSystem.CanInteractWithBattle) return;
+        if (fightSystem == null || !fightSystem.CanSubmitAttackInput) return;
         selectionFlow?.OnAttackButtonClicked(attackType);
     }
 
@@ -81,7 +93,7 @@ public class AttackSelectionManager : MonoBehaviour
     /// </summary>
     private void OnConfirmAttackClicked()
     {
-        if (fightSystem == null || !fightSystem.CanInteractWithBattle) return;
+        if (fightSystem == null || !fightSystem.CanSubmitAttackInput) return;
         selectionFlow?.OnConfirmAttackClicked();
     }
 
@@ -192,7 +204,8 @@ public class AttackSelectionManager : MonoBehaviour
 
     private PendingOngoingActionTurnData GetPendingOngoingAction()
     {
-        if (fightSystem == null || !fightSystem.TryGetPendingOngoingActionTurn(out var pendingTurn) || pendingTurn == null)
+        if (fightSystem == null || !fightSystem.CanSubmitAttackInput
+            || !fightSystem.TryGetPendingOngoingActionTurn(out var pendingTurn) || pendingTurn == null)
         {
             return null;
         }

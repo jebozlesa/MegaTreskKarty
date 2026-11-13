@@ -136,6 +136,7 @@ public class MatchStateDto
     public List<MatchSeatDto> seats;
     public MatchDeckStateDto decks;
     public MatchStartupStateDto startup;
+    public MatchInputWindowDto inputWindow;
     public Dictionary<string, SelectedCardData> selectedCards;
     public MatchBattleStateDto battle;
     public MatchNextTurnReadyDto nextTurnReady;
@@ -145,6 +146,18 @@ public class MatchStateDto
     public string completedAt;
     public string completedBy;
     public List<string> warnings;
+}
+
+[Serializable]
+public class MatchInputWindowDto
+{
+    public string token;
+    public string kind;
+    public string openedAt;
+    public int? remainingMs;
+    public List<string> requiredPlayerIds;
+    public Dictionary<string, bool> acceptedByPlayerId;
+    public Dictionary<string, bool> readyByPlayerId;
 }
 
 [Serializable]

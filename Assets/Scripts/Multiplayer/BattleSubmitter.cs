@@ -22,19 +22,21 @@ public class BattleSubmitter : MonoBehaviour
     /// <summary>
     /// Odosle utok na server a spusti polling pre vysledok
     /// </summary>
-    public void SubmitAttack(string roomCode, string playerId, string cardId, int attackId, int attackSlot)
+    public bool SubmitAttack(string roomCode, string playerId, string cardId, int attackId, int attackSlot)
     {
         if (fightSystem == null || !fightSystem.CanInteractWithBattle)
         {
             Debug.LogWarning("[BattleSubmitter] Attack ignored outside an active battle lifecycle");
-            return;
+            return false;
         }
 
         if (isWaitingForBattle)
         {
             Debug.LogWarning("[BattleSubmitter] Already waiting for battle result");
-            return;
+            return false;
         }
+        string inputWindowToken = fightSystem.multiplayerService?.CurrentInputToken("attack");
+        if (string.IsNullOrEmpty(inputWindowToken)) return false;
         
         isWaitingForBattle = true;
         pollAttempts = 0;
@@ -53,10 +55,11 @@ public class BattleSubmitter : MonoBehaviour
         };
         
         // Odosli na server
-        serverFunctionsManager.ExecuteBattle(roomCode, playerId, submission, result =>
+        serverFunctionsManager.ExecuteBattle(roomCode, playerId, submission, inputWindowToken, result =>
         {
             OnBattleResponse(result);
         });
+        return true;
     }
     
     /// <summary>
@@ -82,6 +85,15 @@ public class BattleSubmitter : MonoBehaviour
         
         bool success = resultData.ContainsKey("success") && (bool)resultData["success"];
         bool bothReady = resultData.ContainsKey("bothPlayersReady") && (bool)resultData["bothPlayersReady"];
+        if (!success)
+        {
+            isWaitingForBattle = false;
+            Debug.LogWarning("[BattleSubmitter] Attack rejected: " +
+                (resultData.ContainsKey("error") ? resultData["error"] : "unknown"));
+            return;
+        }
+        fightSystem.multiplayerService?.ApplyInputWindowSnapshot(
+            BattleContractMapper.ParseMatchStateResult(result.FunctionResult));
         
         if (success && bothReady)
         {

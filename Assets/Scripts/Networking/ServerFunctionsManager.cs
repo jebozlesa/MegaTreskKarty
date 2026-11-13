@@ -306,6 +306,7 @@ public class ServerFunctionsManager : MonoBehaviour
         string roomCode,
         string playerId,
         SelectedCardData cardData,
+        string inputWindowToken,
         Action<ExecuteFunctionResult> callback
     )
     {
@@ -330,6 +331,7 @@ public class ServerFunctionsManager : MonoBehaviour
         {
             roomCode,
             playerId,
+            inputWindowToken,
             card = new
             {
                 cardId = cardData.cardId,
@@ -401,6 +403,7 @@ public class ServerFunctionsManager : MonoBehaviour
         string roomCode,
         string playerId,
         AttackSubmission attackData,
+        string inputWindowToken,
         Action<ExecuteFunctionResult> callback
     )
     {
@@ -413,6 +416,7 @@ public class ServerFunctionsManager : MonoBehaviour
             roomCode = roomCode,
             playerId = playerId,
             attackData = attackData,
+            inputWindowToken,
         };
 
         // Retry because executeBattle is the most critical battle request.
@@ -454,6 +458,12 @@ public class ServerFunctionsManager : MonoBehaviour
 
         // Retry because turn synchronization is critical.
         CallFunctionWithRetry("markReadyForNextTurn", parameters, callback);
+    }
+
+    public void MarkReplacementReady(string roomCode, string playerId, string inputWindowToken,
+        Action<ExecuteFunctionResult> callback)
+    {
+        CallFunctionWithRetry("markReplacementReady", new { roomCode, playerId, inputWindowToken }, callback);
     }
 
     // Legacy note: next-turn readiness polling now uses getMatchState.

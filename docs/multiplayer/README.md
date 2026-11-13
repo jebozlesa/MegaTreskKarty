@@ -1,5 +1,47 @@
 # Multiplayer smoke notes
 
+## TASK-036 Closed / Device Accepted (2026-11-13)
+
+Approved MP input timer implementation is present in server and client working
+trees. Existing multiplayer owners now consume a server input-window token;
+the scene-local numeric counter is wired without RR `RecordHandler` behavior.
+Device smoke accepted normal play and both timeout outcome shapes, then exposed
+a pending replacement payload with valid `remainingMs: null` being deserialized
+as a non-nullable client integer. The corrected client preserves that pending
+window without starting the countdown and initializes the same token when opened.
+Focused RED 8/10, focused GREEN 10/10 and full PlayMode 511/511 were agent-observed.
+Full server
+`test:all` and the isolated real MongoDB timeout suite are also GREEN.
+
+Corrected replacement continuation subsequently passed device smoke without the
+prior exception or retry loop. The approved presentation refinement keeps the
+counter hidden above 15 seconds, plays one reveal cue, and alternates its frame
+red/blue each half-second from 3.0 through 0.5 with urgent cues at 3/2/1.
+Presentation RED had 9/26 passing; focused GREEN is 26/26 and full PlayMode is
+527/527. Final scene audio is `sleepend.wav` for the reveal and
+`police_siren.wav` for urgent cues; exact references are regression-tested and
+have no runtime fallback. The reveal now performs a deterministic constant-amplitude
+central alarm-clock rotation for one second without translating the counter.
+Urgent phases color only the inner face while preserving the black frame; the
+rejected glow path and scene object were removed completely. The final refinement
+was RED at 26/29, focused GREEN 29/29 and full PlayMode 530/530. Rebuild both
+clients and smoke pacing, motion, colors and sound before final closure. User
+subsequently accepted the rebuilt-client presentation smoke; TASK-036 is closed.
+
+## BUG-002 Closed / Both Smoke Scenarios Accepted (2026-11-10)
+
+Approved existing CustomButton fix restores original color before a rejected
+PointerUp return and before delayed callback eligibility check. Delay, sound,
+guards and native MP confirmation wiring unchanged; no new type or Inspector work.
+Agent-observed RED 4 pass / 4 expected failures, targeted GREEN 8/8; user reports
+manual full Runner GREEN (no exact count claimed). No server runtime/deployment.
+
+User confirms MP repeated confirmations and Library blocked-recycle notice
+acknowledgement/reopen PASS, explicitly approving closure. No outstanding smoke,
+wiring or implementation; close-out changes documentation only. No new device
+logs or agent-observed full count claimed. BUG-007 text/actor colors stay open.
+[Acceptance and closure](../../../mega-tresk-server/docs/multiplayer/2026-11-10-bug-002-pressed-color-analysis.md#acceptance-and-closure).
+
 ## BUG-013 Closed / Ready For User Commit And Push (2026-11-10)
 
 User accepts the functional smoke and explicitly declines a separate bulk data
