@@ -139,6 +139,7 @@ public class MatchStateDto
     public MatchInputWindowDto inputWindow;
     public Dictionary<string, SelectedCardData> selectedCards;
     public MatchBattleStateDto battle;
+    public MatchScoreDto score;
     public MatchNextTurnReadyDto nextTurnReady;
     public List<string> replacementRequiredPlayerIds;
     public MatchResultDto matchResult;
@@ -146,6 +147,14 @@ public class MatchStateDto
     public string completedAt;
     public string completedBy;
     public List<string> warnings;
+}
+
+[Serializable]
+public class MatchScoreDto
+{
+    public int version;
+    public int target;
+    public Dictionary<string, int> byPlayerId;
 }
 
 [Serializable]

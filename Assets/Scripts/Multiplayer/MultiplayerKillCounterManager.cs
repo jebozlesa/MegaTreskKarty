@@ -1,13 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Manager pre sledovanie kill countov v multiplayer battle
-/// Tracks kolko kariet zabil player vs enemy
-/// Win condition: Prvy kto zabije 3 karty supera VYHRAVA
+/// Renders the server-owned multiplayer score.
 /// </summary>
 public class MultiplayerKillCounterManager : MonoBehaviour
 {
@@ -19,53 +13,15 @@ public class MultiplayerKillCounterManager : MonoBehaviour
     [Tooltip("Stvorceky pre enemy kills (kolko player kariet enemy zabil)")]
     public KillCounterUI[] enemyKillIndicators = new KillCounterUI[3];
 
-    [Header("Game Systems")]
-    public FightSystemMultiplayer fightSystem;
-
-    // Kill counts
-    private int playerKillCount = 0; // Kolko enemy kariet player zabil
-    private int enemyKillCount = 0; // Kolko player kariet enemy zabil
+    private int playerKillCount;
+    private int enemyKillCount;
 
     private const int KILLS_TO_WIN = 3;
 
-    void Awake()
-    {
-        Debug.LogWarning(
-            "[KillCounterManager] [INIT][INIT][INIT] AWAKE CALLED - SCRIPT IS ALIVE! [INIT][INIT][INIT]"
-        );
-
-        if (fightSystem == null)
-        {
-            Debug.LogWarning("[KillCounterManager] Fight system not set, searching...");
-            fightSystem = FindFirstObjectByType<FightSystemMultiplayer>();
-            if (fightSystem == null)
-            {
-                Debug.LogError(
-                    "[KillCounterManager] [ERR] FightSystemMultiplayer not found in scene!"
-                );
-            }
-            else
-            {
-                Debug.LogWarning(
-                    $"[KillCounterManager] [OK] Found FightSystemMultiplayer: {fightSystem.name}"
-                );
-            }
-        }
-    }
-
     void Start()
     {
-        Debug.LogWarning("[KillCounterManager] [START] START() CALLED - Initializing...");
-
-        // Validacia
         ValidateIndicators();
-
-        // Reset na zaciatku
         ResetKillCounts();
-
-        Debug.LogWarning(
-            "[KillCounterManager] [OK] Initialized. Win condition: First to 3 kills wins!"
-        );
     }
 
     private void ValidateIndicators()
@@ -83,7 +39,6 @@ public class MultiplayerKillCounterManager : MonoBehaviour
             );
         }
 
-        // Skontroluj null references
         for (int i = 0; i < playerKillIndicators.Length; i++)
         {
             if (playerKillIndicators[i] == null)
@@ -101,196 +56,70 @@ public class MultiplayerKillCounterManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Reset kill counts na zaciatku hry
+    /// Reset presentation while the initial server snapshot is loading.
     /// </summary>
     public void ResetKillCounts()
     {
         playerKillCount = 0;
         enemyKillCount = 0;
 
-        // Nastav vsetky stvorceky na zelenu
-        foreach (var indicator in playerKillIndicators)
-        {
-            if (indicator != null)
-                indicator.SetAlive();
-        }
-        foreach (var indicator in enemyKillIndicators)
-        {
-            if (indicator != null)
-                indicator.SetAlive();
-        }
-
-        Debug.Log("[KillCounterManager] Kill counts reset to 0-0");
+        RenderIndicators(playerKillIndicators, 0);
+        RenderIndicators(enemyKillIndicators, 0);
     }
 
-    /// <summary>
-    /// Volane ked player zabije enemy kartu
-    /// </summary>
-    public void OnPlayerKilledEnemyCard()
+    public void RenderServerScore(MatchScoreDto score, string playerId)
     {
-        if (playerKillCount >= KILLS_TO_WIN)
+        if (score == null || score.version != 1 || score.target != KILLS_TO_WIN
+            || score.byPlayerId == null || string.IsNullOrEmpty(playerId)
+            || !score.byPlayerId.TryGetValue(playerId, out int playerScore))
         {
-            Debug.LogWarning("[KillCounterManager] Player already won, ignoring kill");
+            Debug.LogError("[KillCounterManager] Cannot render an invalid server score snapshot");
             return;
         }
 
-        playerKillCount++;
+        bool opponentFound = false;
+        int opponentScore = 0;
+        foreach (var entry in score.byPlayerId)
+        {
+            if (entry.Key == playerId) continue;
+            if (opponentFound)
+            {
+                Debug.LogError("[KillCounterManager] Server score contains more than one opponent");
+                return;
+            }
+            opponentFound = true;
+            opponentScore = entry.Value;
+        }
+
+        if (!opponentFound || playerScore < 0 || playerScore > KILLS_TO_WIN
+            || opponentScore < 0 || opponentScore > KILLS_TO_WIN)
+        {
+            Debug.LogError("[KillCounterManager] Server score values are outside the supported 0-3 range");
+            return;
+        }
+
+        playerKillCount = playerScore;
+        enemyKillCount = opponentScore;
+        RenderIndicators(playerKillIndicators, playerKillCount);
+        RenderIndicators(enemyKillIndicators, enemyKillCount);
         Debug.LogWarning(
-            $"[KillCounterManager] [DEAD] Player killed enemy card! Count: {playerKillCount}/{KILLS_TO_WIN}"
+            $"[KillCounterManager] Server score rendered: player={playerKillCount}, enemy={enemyKillCount}"
         );
-
-        // Nastav prislusny stvorcek na cervenu
-        int indicatorIndex = playerKillCount - 1; // 0-based index
-        if (
-            indicatorIndex < playerKillIndicators.Length
-            && playerKillIndicators[indicatorIndex] != null
-        )
-        {
-            playerKillIndicators[indicatorIndex].SetDead();
-        }
-
-        // Skontroluj win condition
-        CheckWinCondition();
     }
 
-    /// <summary>
-    /// Volane ked enemy zabije player kartu
-    /// </summary>
-    public void OnEnemyKilledPlayerCard()
+    private static void RenderIndicators(KillCounterUI[] indicators, int deadCount)
     {
-        if (enemyKillCount >= KILLS_TO_WIN)
+        if (indicators == null) return;
+        for (int index = 0; index < indicators.Length; index++)
         {
-            Debug.LogWarning("[KillCounterManager] Enemy already won, ignoring kill");
-            return;
-        }
-
-        enemyKillCount++;
-        Debug.LogWarning(
-            $"[KillCounterManager] [DEAD] Enemy killed player card! Count: {enemyKillCount}/{KILLS_TO_WIN}"
-        );
-
-        // Nastav prislusny stvorcek na cervenu
-        int indicatorIndex = enemyKillCount - 1; // 0-based index
-        if (
-            indicatorIndex < enemyKillIndicators.Length
-            && enemyKillIndicators[indicatorIndex] != null
-        )
-        {
-            enemyKillIndicators[indicatorIndex].SetDead();
-        }
-
-        // Skontroluj win condition
-        CheckWinCondition();
-    }
-
-    /// <summary>
-    /// Skontroluj win condition (prvy na 3 kills vyhrava)
-    /// </summary>
-    private void CheckWinCondition()
-    {
-        if (playerKillCount >= KILLS_TO_WIN)
-        {
-            // [OK] PLAYER WINS!
-            Debug.LogWarning(
-                $"[KillCounterManager] [WIN] PLAYER WINS! Killed {playerKillCount} enemy cards!"
-            );
-
-            if (fightSystem != null)
-            {
-                fightSystem.state = FightStateMultiplayer.WON;
-                Debug.LogWarning(
-                    $"[FightSystemMultiplayer] Fight state changed to WON (player killed {playerKillCount} cards)"
-                );
-
-                // Zobraz victory message
-                if (fightSystem.dialogText != null)
-                {
-                    fightSystem.dialogText.text = "You won";
-                }
-
-                // Deaktivuj attack buttony - hra skoncila
-                DisableAttackButtons();
-
-                // Po 2 sekundach prejdi na menu
-                StartCoroutine(ReturnToMenuAfterDelay(2f));
-            }
-            else
-            {
-                Debug.LogError(
-                    "[KillCounterManager] [WARN] fightSystem reference is NULL! Cannot set WON state!"
-                );
-            }
-        }
-        else if (enemyKillCount >= KILLS_TO_WIN)
-        {
-            // [ERR] ENEMY WINS!
-            Debug.LogWarning(
-                $"[KillCounterManager] [DEAD] ENEMY WINS! Killed {enemyKillCount} player cards!"
-            );
-
-            if (fightSystem != null)
-            {
-                fightSystem.state = FightStateMultiplayer.LOST;
-                Debug.LogWarning(
-                    $"[FightSystemMultiplayer] Fight state changed to LOST (enemy killed {enemyKillCount} cards)"
-                );
-
-                // Zobraz defeat message
-                if (fightSystem.dialogText != null)
-                {
-                    fightSystem.dialogText.text = "You lost";
-                }
-
-                // Deaktivuj attack buttony - hra skoncila
-                DisableAttackButtons();
-
-                // Po 2 sekundach prejdi na menu
-                StartCoroutine(ReturnToMenuAfterDelay(2f));
-            }
-            else
-            {
-                Debug.LogError(
-                    "[KillCounterManager] [WARN] fightSystem reference is NULL! Cannot set LOST state!"
-                );
-            }
+            if (indicators[index] == null) continue;
+            if (index < deadCount) indicators[index].SetDead();
+            else indicators[index].SetAlive();
         }
     }
 
     /// <summary>
-    /// Po zadanom case sa vrat do hlavneho menu
-    /// </summary>
-    private IEnumerator ReturnToMenuAfterDelay(float delay)
-    {
-        Debug.LogWarning($"[KillCounterManager]  Returning to menu in {delay} seconds...");
-        yield return new WaitForSeconds(delay);
-
-        Debug.LogWarning("[KillCounterManager] [HOME] Loading Main Menu scene...");
-        UnityEngine.SceneManagement.SceneManager.LoadScene("Main");
-    }
-
-    /// <summary>
-    /// Deaktivuje attack buttony po skonceni hry
-    /// </summary>
-    private void DisableAttackButtons()
-    {
-        if (fightSystem == null)
-            return;
-
-        // Deaktivuj vsetky attack buttony
-        if (fightSystem.button1 != null)
-            fightSystem.button1.interactable = false;
-        if (fightSystem.button2 != null)
-            fightSystem.button2.interactable = false;
-        if (fightSystem.button3 != null)
-            fightSystem.button3.interactable = false;
-        if (fightSystem.button4 != null)
-            fightSystem.button4.interactable = false;
-
-        Debug.LogWarning("[KillCounterManager] [OK] Attack buttons disabled - game over!");
-    }
-
-    /// <summary>
-    /// Public getters pre debugging
+    /// Public getters for diagnostics and tests.
     /// </summary>
     public int PlayerKillCount => playerKillCount;
     public int EnemyKillCount => enemyKillCount;

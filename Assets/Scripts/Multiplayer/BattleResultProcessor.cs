@@ -96,7 +96,6 @@ public partial class BattleResultProcessor : MonoBehaviour
         roundCoordinator = new BattleRoundCoordinator(
             fightSystem,
             multiplayerService,
-            killCounterManager,
             dialogText
         );
     }
@@ -311,6 +310,22 @@ public partial class BattleResultProcessor : MonoBehaviour
         yield return StartCoroutine(
             PlayTimeline(myCard, enemyCard, myCardId, enemyCardId, steps)
         );
+
+        if (multiplayerService?.LatestMatchScore != null && killCounterManager != null)
+        {
+            killCounterManager.RenderServerScore(
+                multiplayerService.LatestMatchScore,
+                multiplayerService.MyPlayerId
+            );
+        }
+
+        if (multiplayerService != null
+            && multiplayerService.CompleteStagedScoreLimitAfterPlayback())
+        {
+            yield break;
+        }
+
+        CheckBattleOutcome(myCard, enemyCard);
         yield return StartCoroutine(RefreshCardsFromServer());
     }
 
@@ -345,7 +360,6 @@ public partial class BattleResultProcessor : MonoBehaviour
         };
 
         yield return BattleTimelinePlayback.Play(context, steps);
-        CheckBattleOutcome(myCard, enemyCard);
     }
 
 }

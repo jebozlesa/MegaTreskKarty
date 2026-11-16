@@ -67,7 +67,8 @@ public class BattleSubmitter : MonoBehaviour
     /// </summary>
     private void OnBattleResponse(PlayFab.CloudScriptModels.ExecuteFunctionResult result)
     {
-        if (!isWaitingForBattle || fightSystem == null || !fightSystem.CanInteractWithBattle)
+        if (!isWaitingForBattle || fightSystem?.multiplayerService == null
+            || !fightSystem.multiplayerService.CanReceiveBattleResult)
         {
             isWaitingForBattle = false;
             return;
@@ -92,8 +93,8 @@ public class BattleSubmitter : MonoBehaviour
                 (resultData.ContainsKey("error") ? resultData["error"] : "unknown"));
             return;
         }
-        fightSystem.multiplayerService?.ApplyInputWindowSnapshot(
-            BattleContractMapper.ParseMatchStateResult(result.FunctionResult));
+        MatchStateDto matchState = BattleContractMapper.ParseMatchStateResult(result.FunctionResult);
+        fightSystem.multiplayerService.ObserveBattleSnapshot(matchState);
         
         if (success && bothReady)
         {
@@ -148,7 +149,8 @@ public class BattleSubmitter : MonoBehaviour
     {
         yield return new WaitForSeconds(1f);
 
-        if (!isWaitingForBattle || fightSystem == null || !fightSystem.CanInteractWithBattle)
+        if (!isWaitingForBattle || fightSystem?.multiplayerService == null
+            || !fightSystem.multiplayerService.CanReceiveBattleResult)
         {
             isWaitingForBattle = false;
             yield break;
@@ -204,7 +206,8 @@ public class BattleSubmitter : MonoBehaviour
 
     private void HandlePolledBattleStatusResult(PlayFab.CloudScriptModels.ExecuteFunctionResult result)
     {
-        if (!isWaitingForBattle || fightSystem == null || !fightSystem.CanInteractWithBattle)
+        if (!isWaitingForBattle || fightSystem?.multiplayerService == null
+            || !fightSystem.multiplayerService.CanReceiveBattleResult)
         {
             isWaitingForBattle = false;
             return;

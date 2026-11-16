@@ -721,6 +721,17 @@ public class ServerFunctionsManager : MonoBehaviour
         CallFunctionWithRetry("getModeEntryState", new { playerId, contextId }, callback);
     }
 
+    public void GetLeaderboardState(
+        string playerId,
+        string mode,
+        Action<ExecuteFunctionResult> callback
+    )
+    {
+        callback ??= NoOpCallback;
+        Debug.LogWarning($"[ServerFunctionsManager] GetLeaderboardState: player={playerId}, mode={mode}");
+        CallFunctionWithRetry("getLeaderboardState", new { playerId, mode }, callback);
+    }
+
     public void CreateLibraryDeck(
         string playerId,
         string contextId,

@@ -11,7 +11,15 @@ public class MultiplayerService : MonoBehaviour
 {
     private const string MatchPhaseCompleted = "completed";
     private const string MultiplayerLobbyScene = "MultiplayerLobby";
+    private const string LeaderboardScene = "Leaderboard";
     private const float MatchStateMonitorIntervalSeconds = 2f;
+
+    private enum MatchCompletionDestination
+    {
+        None,
+        Lobby,
+        Leaderboard,
+    }
 
     // Vytvorenie kariet v ruke hraca v multiplayeri podla udajov z miestnosti
 
@@ -45,6 +53,8 @@ public class MultiplayerService : MonoBehaviour
     private bool applicationFocused = true;
     private double startupDeadline;
     private MatchInputWindowDto inputWindow;
+    private MatchScoreDto latestMatchScore;
+    private MatchStateDto stagedScoreLimitCompletion;
     private double inputDeadline;
     private int inputStateVersion = -1;
     private const int DisplayedInputWindowMilliseconds = 30000;
@@ -113,13 +123,85 @@ public class MultiplayerService : MonoBehaviour
             ? System.Math.Min(inputDeadline, candidate) : candidate;
         inputWindow = snapshot;
     }
-    public bool CanInteractWithBattle => CanContinueStartup && localPrepared && serverStarted;
+    public MatchScoreDto LatestMatchScore => latestMatchScore;
+    public bool HasStagedScoreLimitCompletion => stagedScoreLimitCompletion != null;
+    public bool CanReceiveBattleResult => CanContinueStartup && localPrepared && serverStarted;
+    public bool CanInteractWithBattle => CanReceiveBattleResult && !HasStagedScoreLimitCompletion;
     public bool CanAcknowledgeStartup => CanContinueStartup && localPrepared && !applicationPaused && applicationFocused
         && StartupRemainingMilliseconds > 0;
     public int StartupRemainingMilliseconds => Mathf.Max(0,
         (int)((startupDeadline - Time.realtimeSinceStartupAsDouble) * 1000));
     public bool CanContinueStartup => this != null && isActiveAndEnabled && !leaveRequested
         && !leaveConfirmed && !matchCompletionHandled && !missingRoomHandled && !startupAborted;
+
+    public void ObserveBattleSnapshot(MatchStateDto state)
+    {
+        ApplyInputWindowSnapshot(state);
+        if (state == null || state.roomCode != roomCode || state.viewerPlayerId != myPlayerId)
+        {
+            return;
+        }
+
+        if (state.score != null)
+        {
+            latestMatchScore = state.score;
+        }
+
+        if (state.status != "completed" || state.phase != MatchPhaseCompleted)
+        {
+            return;
+        }
+
+        if (IsScoreLimitCompletionWithFinalResult(state))
+        {
+            stagedScoreLimitCompletion = state;
+            inputWindow = null;
+            inputDeadline = 0;
+            StopHeartbeat();
+            StopMatchStateMonitor();
+            Debug.LogWarning(
+                $"[MultiplayerService] Score-limit completion staged until final playback: room={roomCode}"
+            );
+            return;
+        }
+
+        HandleRemoteMatchCompletion(state);
+    }
+
+    public bool CompleteStagedScoreLimitAfterPlayback()
+    {
+        MatchStateDto completion = stagedScoreLimitCompletion;
+        if (completion == null)
+        {
+            return false;
+        }
+
+        stagedScoreLimitCompletion = null;
+        MatchCompletionDestination destination = PrepareRemoteMatchCompletion(completion);
+        if (destination != MatchCompletionDestination.Leaderboard)
+        {
+            Debug.LogError(
+                $"[MultiplayerService] Score-limit completion chose unexpected destination: {destination}"
+            );
+            RouteCompletedMatch(destination);
+            return true;
+        }
+
+        RouteCompletedMatch(destination);
+        return true;
+    }
+
+    private static bool IsScoreLimitCompletionWithFinalResult(MatchStateDto state)
+    {
+        return state?.matchResult?.reason == "score_limit"
+            && state.battle?.hasLastResult == true;
+    }
+
+    private IEnumerator ReturnToLeaderboardAfterResultDelay()
+    {
+        yield return new WaitForSeconds(2f);
+        SceneManager.LoadScene(LeaderboardScene);
+    }
 
     [Header("Heartbeat Settings")]
     [SerializeField]
@@ -406,7 +488,6 @@ public class MultiplayerService : MonoBehaviour
             }
 
             MatchStateDto matchState = readResult.state;
-            ApplyInputWindowSnapshot(matchState);
             Debug.Log(
                 $"[MultiplayerService] MatchState monitor poll result: roomCode={matchState.roomCode}, status={matchState.status}, phase={matchState.phase}, playersCount={matchState.playersCount}, reason={matchState.matchResult?.reason}, winner={matchState.matchResult?.winnerPlayerId}, loser={matchState.matchResult?.loserPlayerId}"
             );
@@ -420,9 +501,11 @@ public class MultiplayerService : MonoBehaviour
             )
             {
                 matchStateMonitorCoroutine = null;
-                HandleRemoteMatchCompletion(matchState);
+                ObserveBattleSnapshot(matchState);
                 yield break;
             }
+
+            ObserveBattleSnapshot(matchState);
         }
     }
 
@@ -478,18 +561,15 @@ public class MultiplayerService : MonoBehaviour
 
     private void HandleRemoteMatchCompletion(MatchStateDto matchState)
     {
-        if (PrepareRemoteMatchCompletion(matchState))
-        {
-            SceneManager.LoadScene(MultiplayerLobbyScene);
-        }
+        RouteCompletedMatch(PrepareRemoteMatchCompletion(matchState));
     }
 
-    private bool PrepareRemoteMatchCompletion(MatchStateDto matchState)
+    private MatchCompletionDestination PrepareRemoteMatchCompletion(MatchStateDto matchState)
     {
         if (matchCompletionHandled || missingRoomHandled || matchState == null
             || matchState.roomCode != roomCode || matchState.viewerPlayerId != myPlayerId
             || matchState.status != "completed" || matchState.phase != MatchPhaseCompleted
-            || matchState.matchResult == null) return false;
+            || matchState.matchResult == null) return MatchCompletionDestination.None;
 
         string winnerPlayerId = matchState.matchResult.winnerPlayerId;
         string loserPlayerId = matchState.matchResult.loserPlayerId;
@@ -514,7 +594,7 @@ public class MultiplayerService : MonoBehaviour
         if (!string.IsNullOrEmpty(storedRoom) && storedRoom != roomCode)
         {
             Debug.LogWarning($"[MultiplayerService] Ignored completion UI for superseded room: old={roomCode}, stored={storedRoom}");
-            return false;
+            return MatchCompletionDestination.None;
         }
 
         ClearOwnedRoomKeys();
@@ -524,13 +604,13 @@ public class MultiplayerService : MonoBehaviour
         {
             MultiplayerMissingRoomNoticeState.Queue(myPlayerId);
             Debug.LogWarning($"[MultiplayerService] Timeout recovery prepared: room={roomCode}, destination={MultiplayerLobbyScene}");
-            return true;
+            return MatchCompletionDestination.Lobby;
         }
 
         if (reason == "cancelled" && !iWon && !iLost)
         {
             Debug.LogWarning($"[MultiplayerService] Startup cancelled without result: room={roomCode}");
-            return true;
+            return MatchCompletionDestination.Lobby;
         }
 
         if (fightSystem != null)
@@ -548,7 +628,37 @@ public class MultiplayerService : MonoBehaviour
         string message = BuildMatchCompletedMessage(reason, iWon, iLost);
         if (statusText != null) statusText.text = message;
         fightSystem?.multiplayerUI?.ShowStatus(message);
-        return false;
+        return ResolveMatchCompletionDestination(reason, iWon, iLost);
+    }
+
+    private static MatchCompletionDestination ResolveMatchCompletionDestination(
+        string reason,
+        bool iWon,
+        bool iLost)
+    {
+        if ((reason == "score_limit" && (iWon || iLost)) || reason == "input_timeout")
+        {
+            return MatchCompletionDestination.Leaderboard;
+        }
+
+        if (iWon && (reason == "opponent_left" || reason == "surrender" || reason == "timeout"))
+        {
+            return MatchCompletionDestination.Leaderboard;
+        }
+
+        return MatchCompletionDestination.None;
+    }
+
+    private void RouteCompletedMatch(MatchCompletionDestination destination)
+    {
+        if (destination == MatchCompletionDestination.Lobby)
+        {
+            SceneManager.LoadScene(MultiplayerLobbyScene);
+        }
+        else if (destination == MatchCompletionDestination.Leaderboard)
+        {
+            StartCoroutine(ReturnToLeaderboardAfterResultDelay());
+        }
     }
 
     private void ClearOwnedRoomKeys()
@@ -901,8 +1011,7 @@ public class MultiplayerService : MonoBehaviour
         MatchStateReadResult result = await GetMatchStateReadAsync(roomCode, playerId);
         if (CanContinueStartup && version == lifecycleVersion && result.outcome == MatchStateReadOutcome.State)
         {
-            ApplyInputWindowSnapshot(result.state);
-            if (result.state.status == "completed") HandleRemoteMatchCompletion(result.state);
+            ObserveBattleSnapshot(result.state);
         }
         return result.outcome == MatchStateReadOutcome.State ? result.state : null;
     }

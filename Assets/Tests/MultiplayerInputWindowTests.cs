@@ -247,7 +247,7 @@ public class MultiplayerInputWindowTests
     }
 
     [Test]
-    public void NoWinnerInputTimeoutIsLocalLossAndStaysInBattleScene()
+    public void NoWinnerInputTimeoutIsLocalLossAndRoutesToLeaderboard()
     {
         var root = new GameObject("InputTimeoutTest");
         try
@@ -260,9 +260,9 @@ public class MultiplayerInputWindowTests
             Set(service, "fightSystem", fight);
             PlayerPrefs.SetString("RoomCode", "ROOM");
             object state = State(7, "WINDOW-1", 0, true);
-            bool routeToLobby = (bool)service.GetType().GetMethod("PrepareRemoteMatchCompletion",
+            object destination = service.GetType().GetMethod("PrepareRemoteMatchCompletion",
                 BindingFlags.Instance | BindingFlags.NonPublic).Invoke(service, new[] { state });
-            Assert.IsFalse(routeToLobby);
+            Assert.AreEqual("Leaderboard", destination.ToString());
             Assert.AreEqual("LOST", fight.GetType().GetField("state").GetValue(fight).ToString());
             Assert.IsFalse(PlayerPrefs.HasKey("RoomCode"));
         }

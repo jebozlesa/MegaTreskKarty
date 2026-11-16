@@ -4,10 +4,11 @@ using UnityEngine.EventSystems;
 
 public class SwipeDetector : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    public UnityEvent OnSwipeLeft;
-    public UnityEvent OnSwipeRight;
-    public UnityEvent OnSwipeUp;
-    public UnityEvent OnSwipeDown;
+    public float minimumSwipeDistance = 80f;
+    public UnityEvent OnSwipeLeft = new UnityEvent();
+    public UnityEvent OnSwipeRight = new UnityEvent();
+    public UnityEvent OnSwipeUp = new UnityEvent();
+    public UnityEvent OnSwipeDown = new UnityEvent();
 
     private Vector2 startTouchPosition;
 
@@ -23,10 +24,16 @@ public class SwipeDetector : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     public void OnEndDrag(PointerEventData eventData)
     {
         Vector2 direction = eventData.position - startTouchPosition;
+        float horizontalDistance = Mathf.Abs(direction.x);
+        float verticalDistance = Mathf.Abs(direction.y);
 
-        if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
+        if (Mathf.Max(horizontalDistance, verticalDistance) < minimumSwipeDistance)
         {
-            // Horizontal swipe
+            return;
+        }
+
+        if (horizontalDistance > verticalDistance)
+        {
             if (direction.x > 0)
             {
                 OnSwipeRight.Invoke();
@@ -38,7 +45,6 @@ public class SwipeDetector : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         }
         else
         {
-            // Vertical swipe
             if (direction.y > 0)
             {
                 OnSwipeUp.Invoke();

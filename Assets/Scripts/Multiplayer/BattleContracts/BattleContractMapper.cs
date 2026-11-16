@@ -198,6 +198,10 @@ public static class BattleContractMapper
         dto.decks ??= new MatchDeckStateDto();
         dto.selectedCards ??= new Dictionary<string, SelectedCardData>();
         dto.battle ??= new MatchBattleStateDto();
+        if (dto.score != null)
+        {
+            dto.score.byPlayerId ??= new Dictionary<string, int>();
+        }
         dto.nextTurnReady ??= new MatchNextTurnReadyDto();
         dto.replacementRequiredPlayerIds ??= new List<string>();
         dto.warnings ??= new List<string>();

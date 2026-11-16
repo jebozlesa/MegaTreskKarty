@@ -339,10 +339,14 @@ public class MultiplayerStartupRegressionTests
         Assert.IsFalse((bool)consume.Invoke(null, new object[] { "p1" }));
     }
 
-    [TestCase("p2", "p1", true)]
-    [TestCase("p1", "p2", false)]
-    [TestCase(null, null, true)]
-    public void StartedTimeoutStopsPendingWorkAndRoutesOnlyNonWinnersToLobby(string winner, string loser, bool lobby)
+    [TestCase("p2", "p1", "Lobby", true)]
+    [TestCase("p1", "p2", "Leaderboard", false)]
+    [TestCase(null, null, "Lobby", true)]
+    public void StartedTimeoutStopsPendingWorkAndChoosesExpectedDestination(
+        string winner,
+        string loser,
+        string destination,
+        bool notice)
     {
         Component service = root.AddComponent(RuntimeType("MultiplayerService"));
         Component fight = root.AddComponent(RuntimeType("FightSystemMultiplayer"));
@@ -362,17 +366,18 @@ public class MultiplayerStartupRegressionTests
         try
         {
             object completed = CompletedState(winner, loser);
-            Assert.AreEqual(lobby, (bool)Invoke(service, "PrepareRemoteMatchCompletion", completed));
+            Assert.AreEqual(destination, Invoke(service, "PrepareRemoteMatchCompletion", completed).ToString());
             Assert.IsFalse((bool)service.GetType().GetProperty("CanInteractWithBattle").GetValue(service));
             Assert.IsFalse((bool)Get(submitter, "isWaitingForBattle"));
             Assert.IsFalse((bool)Get(board, "isSubmittingSelection"));
             Assert.IsTrue(cancellation.IsCancellationRequested);
             Assert.IsFalse(PlayerPrefs.HasKey("RoomCode"));
-            Assert.AreEqual(lobby, PlayerPrefs.HasKey(MissingRoomNoticeKey));
-            if (!lobby) Assert.AreEqual("WON", fight.GetType().GetField("state").GetValue(fight).ToString());
+            Assert.AreEqual(notice, PlayerPrefs.HasKey(MissingRoomNoticeKey));
+            if (destination == "Leaderboard")
+                Assert.AreEqual("WON", fight.GetType().GetField("state").GetValue(fight).ToString());
             int version = (int)Get(service, "lifecycleVersion");
             Invoke(submitter, "OnBattleResponse", new object[] { null });
-            Assert.IsFalse((bool)Invoke(service, "PrepareRemoteMatchCompletion", completed));
+            Assert.AreEqual("None", Invoke(service, "PrepareRemoteMatchCompletion", completed).ToString());
             Assert.AreEqual(version, Get(service, "lifecycleVersion"));
         }
         finally { cancellation.Dispose(); }
@@ -385,7 +390,10 @@ public class MultiplayerStartupRegressionTests
         Set(service, "roomCode", "ROOM"); Set(service, "myPlayerId", "p1");
         PlayerPrefs.SetString("RoomCode", "NEW");
         root.SetActive(true);
-        Assert.IsFalse((bool)Invoke(service, "PrepareRemoteMatchCompletion", CompletedState("p2", "p1")));
+        Assert.AreEqual(
+            "None",
+            Invoke(service, "PrepareRemoteMatchCompletion", CompletedState("p2", "p1")).ToString()
+        );
         Assert.IsFalse((bool)service.GetType().GetProperty("CanContinueStartup").GetValue(service));
         Assert.AreEqual("NEW", PlayerPrefs.GetString("RoomCode"));
         Assert.IsFalse(PlayerPrefs.HasKey(MissingRoomNoticeKey));
@@ -406,7 +414,7 @@ public class MultiplayerStartupRegressionTests
         object result = completed.GetType().GetField("matchResult").GetValue(completed);
         result.GetType().GetField("reason").SetValue(result, "no_cards_left");
         root.SetActive(true);
-        Assert.IsFalse((bool)Invoke(service, "PrepareRemoteMatchCompletion", completed));
+        Assert.AreEqual("None", Invoke(service, "PrepareRemoteMatchCompletion", completed).ToString());
         Assert.IsTrue((bool)Get(submitter, "isWaitingForBattle"));
         Assert.IsFalse(PlayerPrefs.HasKey(MissingRoomNoticeKey));
     }
@@ -418,7 +426,7 @@ public class MultiplayerStartupRegressionTests
         Set(service, "roomCode", "ROOM"); Set(service, "myPlayerId", "p1");
         PlayerPrefs.SetString("RoomCode", "ROOM");
         root.SetActive(true);
-        Assert.IsFalse((bool)Invoke(service, "PrepareRemoteMatchCompletion", State(10000)));
+        Assert.AreEqual("None", Invoke(service, "PrepareRemoteMatchCompletion", State(10000)).ToString());
         Assert.IsTrue((bool)service.GetType().GetProperty("CanContinueStartup").GetValue(service));
         Assert.AreEqual("ROOM", PlayerPrefs.GetString("RoomCode"));
         Assert.IsFalse(PlayerPrefs.HasKey(MissingRoomNoticeKey));
@@ -435,7 +443,7 @@ public class MultiplayerStartupRegressionTests
         object completed = CompletedState("p2", "p1");
         completed.GetType().GetField("roomCode").SetValue(completed, room);
         completed.GetType().GetField("viewerPlayerId").SetValue(completed, player);
-        Assert.IsFalse((bool)Invoke(service, "PrepareRemoteMatchCompletion", completed));
+        Assert.AreEqual("None", Invoke(service, "PrepareRemoteMatchCompletion", completed).ToString());
         Assert.IsTrue((bool)service.GetType().GetProperty("CanContinueStartup").GetValue(service));
         Assert.AreEqual("ROOM", PlayerPrefs.GetString("RoomCode"));
     }

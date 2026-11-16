@@ -13,18 +13,15 @@ public class BattleRoundCoordinator
     private const string MatchPhaseWaitingForResultAck = "waiting_for_result_ack";
     private readonly FightSystemMultiplayer fightSystem;
     private readonly MultiplayerService multiplayerService;
-    private readonly MultiplayerKillCounterManager killCounterManager;
     private readonly TMP_Text dialogText;
 
     public BattleRoundCoordinator(
         FightSystemMultiplayer fightSystem,
         MultiplayerService multiplayerService,
-        MultiplayerKillCounterManager killCounterManager,
         TMP_Text dialogText)
     {
         this.fightSystem = fightSystem;
         this.multiplayerService = multiplayerService;
-        this.killCounterManager = killCounterManager;
         this.dialogText = dialogText;
     }
 
@@ -216,16 +213,6 @@ public class BattleRoundCoordinator
 
     public IEnumerator HandlePlayerCardDeath(Kard myCard)
     {
-        if (killCounterManager != null)
-        {
-            Debug.Log("[BattleRoundCoordinator] Player card died - incrementing enemy kill count");
-            killCounterManager.OnEnemyKilledPlayerCard();
-        }
-        else
-        {
-            Debug.LogWarning("[BattleRoundCoordinator] KillCounterManager not assigned!");
-        }
-
         yield return HandleCardDeath(myCard, isMyCard: true);
         yield return ConfirmReplacementReady();
 
@@ -273,16 +260,6 @@ public class BattleRoundCoordinator
 
     public IEnumerator HandleEnemyCardDeath(Kard enemyCard)
     {
-        if (killCounterManager != null)
-        {
-            Debug.Log("[BattleRoundCoordinator] Enemy card died - incrementing player kill count");
-            killCounterManager.OnPlayerKilledEnemyCard();
-        }
-        else
-        {
-            Debug.LogWarning("[BattleRoundCoordinator] KillCounterManager not assigned!");
-        }
-
         yield return HandleCardDeath(enemyCard, isMyCard: false);
 
         if (dialogText != null)
@@ -328,17 +305,6 @@ public class BattleRoundCoordinator
 
     public IEnumerator HandleBothCardsDeath(Kard myCard, Kard enemyCard)
     {
-        if (killCounterManager != null)
-        {
-            Debug.Log("[BattleRoundCoordinator] Both cards died - incrementing both kill counts");
-            killCounterManager.OnEnemyKilledPlayerCard();
-            killCounterManager.OnPlayerKilledEnemyCard();
-        }
-        else
-        {
-            Debug.LogWarning("[BattleRoundCoordinator] KillCounterManager not assigned!");
-        }
-
         yield return HandleCardDeath(myCard, isMyCard: true);
         yield return HandleCardDeath(enemyCard, isMyCard: false);
         yield return ConfirmReplacementReady();

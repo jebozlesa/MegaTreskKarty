@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
@@ -14,6 +15,8 @@ using UnityEngine.UI;
 /// </summary>
 public class RoyalRumbleShellController : MonoBehaviour
 {
+    private const string LeaderboardScene = "Leaderboard";
+    private const float RunEndLeaderboardDelaySeconds = 2f;
     private static bool VerboseShellLogs => true;
     private static RoyalRumbleShellController activeInstance;
 
@@ -1004,8 +1007,31 @@ public class RoyalRumbleShellController : MonoBehaviour
             }
         }
 
+        if (envelope.runEnded)
+        {
+            yield return StartCoroutine(ReturnToLeaderboardAfterRunEnd());
+            yield break;
+        }
+
         isBusy = false;
         UpdateAttackButtons();
+    }
+
+    private IEnumerator ReturnToLeaderboardAfterRunEnd()
+    {
+        yield return new WaitForSeconds(RunEndLeaderboardDelaySeconds);
+        if (this == null || isShuttingDown)
+        {
+            yield break;
+        }
+
+        if (!LeaderboardController.QueueInitialMode("rr"))
+        {
+            Debug.LogError("[RoyalRumbleShellController] Failed to queue the RR leaderboard mode.");
+            yield break;
+        }
+
+        SceneManager.LoadScene(LeaderboardScene);
     }
 
     private IEnumerator PlayCardProgressionFeedback(
