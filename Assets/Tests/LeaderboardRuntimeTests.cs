@@ -233,6 +233,10 @@ public class LeaderboardRuntimeTests
         string service = File.ReadAllText(Path.Combine(scripts, "Leaderboard", "LeaderboardService.cs"));
         StringAssert.DoesNotContain("PlayFabClientAPI", service);
         StringAssert.Contains("GetLeaderboardState", service);
+
+        string gameScene = File.ReadAllText(Path.Combine(Application.dataPath, "Scenes", "Game.unity"));
+        StringAssert.DoesNotContain("value: NacitajRekordy", gameScene);
+        StringAssert.DoesNotContain("value: GetLeaderboard", gameScene);
     }
 
     [Test]
