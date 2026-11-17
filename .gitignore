@@ -64,6 +64,7 @@ sysinfo.txt
 *.aab
 *.unitypackage
 *.app
+/AndroidKeystore.keystore
 /*_mapping.txt
 /MegaBang_BurstDebugInformation_DoNotShip/
 /TestResults*.xml
