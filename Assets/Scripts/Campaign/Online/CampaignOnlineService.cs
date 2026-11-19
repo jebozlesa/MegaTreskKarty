@@ -10,15 +10,19 @@ public class CampaignOnlineService : MonoBehaviour
     [Header("Server Manager")]
     public ServerFunctionsManager serverFunctionsManager;
 
-    private void Awake()
-    {
-        EnsureServerFunctionsManager();
-    }
-
-    public async Task<CampaignOnlineSessionEnvelopeDto> CreateSessionAsync(string playerId, string campaignId, int missionId)
+    public async Task<CampaignOnlineSessionEnvelopeDto> CreateSessionAsync(
+        string playerId,
+        string campaignId,
+        int campaignLevel
+    )
     {
         return await ExecuteAsync(
-            callback => serverFunctionsManager.CreateCampaignSession(playerId, campaignId, missionId, callback),
+            callback => serverFunctionsManager.CreateCampaignSession(
+                playerId,
+                campaignId,
+                campaignLevel,
+                callback
+            ),
             CampaignOnlineSessionParser.ParseSessionEnvelope,
             "CreateSessionAsync"
         );
@@ -74,7 +78,6 @@ public class CampaignOnlineService : MonoBehaviour
     {
         var tcs = new TaskCompletionSource<TDto>();
 
-        EnsureServerFunctionsManager();
         if (serverFunctionsManager == null)
         {
             Debug.LogError($"[CampaignOnlineService] {operationName}: serverFunctionsManager is null");
@@ -166,7 +169,8 @@ public class CampaignOnlineService : MonoBehaviour
             case CampaignOnlineSessionEnvelopeDto sessionEnvelope when sessionEnvelope.session != null:
                 Debug.LogWarning(
                     $"[CampaignOnlineService] {operationName} OK: session={sessionEnvelope.session.sessionId}, status={sessionEnvelope.session.status}, " +
-                    $"campaign={sessionEnvelope.session.modeConfig?.campaignId}, mission={sessionEnvelope.session.modeConfig?.missionId ?? 0}, " +
+                    $"campaign={sessionEnvelope.session.modeConfig?.campaignId}, level={sessionEnvelope.session.modeConfig?.campaignLevel ?? 0}, " +
+                    $"mission={sessionEnvelope.session.modeConfig?.missionId ?? 0}, " +
                     $"playerActive={sessionEnvelope.session.active?.playerCardId}, enemyActive={sessionEnvelope.session.active?.enemyCardId}, " +
                     $"turn={sessionEnvelope.session.progress?.turnNumber ?? 0}, battle={sessionEnvelope.session.progress?.battleCount ?? 0}, " +
                     $"playerDeck={sessionEnvelope.session.playerDeck?.cards?.Count ?? 0}, enemyDeck={sessionEnvelope.session.enemyDeck?.cards?.Count ?? 0}"
@@ -185,32 +189,12 @@ public class CampaignOnlineService : MonoBehaviour
             case CampaignOnlineProgressEnvelopeDto progressEnvelope when progressEnvelope.progress != null:
                 Debug.LogWarning(
                     $"[CampaignOnlineService] {operationName} OK: campaign={progressEnvelope.progress.campaignId}, " +
-                    $"highestUnlockedMission={progressEnvelope.progress.highestUnlockedMissionId}, missionCount={progressEnvelope.progress.missionCount}"
+                    $"highestUnlockedLevel={progressEnvelope.progress.highestUnlockedCampaignLevel}, " +
+                    $"visibleCycle={progressEnvelope.progress.visibleCycleStart}-{progressEnvelope.progress.visibleCycleEnd}, " +
+                    $"missionCount={progressEnvelope.progress.missionCount}"
                 );
                 break;
         }
     }
 
-    private void EnsureServerFunctionsManager()
-    {
-        if (serverFunctionsManager != null)
-        {
-            return;
-        }
-
-        serverFunctionsManager = GetComponent<ServerFunctionsManager>();
-        if (serverFunctionsManager != null)
-        {
-            return;
-        }
-
-        serverFunctionsManager = FindFirstObjectByType<ServerFunctionsManager>();
-        if (serverFunctionsManager != null)
-        {
-            return;
-        }
-
-        serverFunctionsManager = gameObject.AddComponent<ServerFunctionsManager>();
-        Debug.LogWarning("[CampaignOnlineService] Added missing ServerFunctionsManager to the current GameObject.");
-    }
 }

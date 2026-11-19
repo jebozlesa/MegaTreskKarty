@@ -580,20 +580,20 @@ public class ServerFunctionsManager : MonoBehaviour
     public void CreateCampaignSession(
         string playerId,
         string campaignId,
-        int missionId,
+        int campaignLevel,
         Action<ExecuteFunctionResult> callback
     )
     {
         callback ??= NoOpCallback;
 
         LogVerboseWarning(
-            $"CreateCampaignSession called for player: {playerId}, campaign: {campaignId}, mission: {missionId}"
+            $"CreateCampaignSession called for player: {playerId}, campaign: {campaignId}, level: {campaignLevel}"
         );
         var parameters = new
         {
             playerId = playerId,
             campaignId = campaignId,
-            missionId = missionId,
+            campaignLevel = campaignLevel,
         };
 
         CallFunctionWithRetry("createCampaignSession", parameters, callback);

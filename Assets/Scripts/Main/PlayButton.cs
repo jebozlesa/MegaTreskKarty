@@ -122,7 +122,21 @@ public class PlayButton : MonoBehaviour
     public void LoadSceneGame(int missionID = 0)
     {
         GameParameters.MissionID = missionID;
+        GameParameters.CampaignLevel = ResolveCampaignLevel(
+            missionID,
+            GameParameters.CampaignCycleStart
+        );
         SceneManager.LoadScene("Game");
+    }
+
+    private static int ResolveCampaignLevel(int missionID, int cycleStart)
+    {
+        if (missionID <= 0)
+        {
+            return 0;
+        }
+
+        return Mathf.Max(1, cycleStart) + missionID - 1;
     }
 
     public void LoadSceneCampaign(int campaignID)

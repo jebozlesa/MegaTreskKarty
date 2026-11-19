@@ -43,8 +43,11 @@ public class CampaignOnlineUnlockProgressDto
 {
     public string playerId;
     public string campaignId;
-    public int highestUnlockedMissionId;
+    public int highestCompletedCampaignLevel;
+    public int highestUnlockedCampaignLevel;
     public int missionCount;
+    public int visibleCycleStart;
+    public int visibleCycleEnd;
     public string updatedAt;
 }
 
@@ -112,7 +115,6 @@ public class CampaignOnlineProgressDto
     public int defeatedEnemyCount;
     public int playerDeaths;
     public string campaignId;
-    public int? levelId;
 }
 
 [Serializable]
@@ -121,6 +123,7 @@ public class CampaignOnlineModeConfigDto
     public int playerDeckSize;
     public int enemyDeckSize;
     public string campaignId;
+    public int campaignLevel;
     public int missionId;
     public string botStrategy;
     public bool rewardFlowEnabled;

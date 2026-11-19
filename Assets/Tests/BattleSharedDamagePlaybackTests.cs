@@ -1311,7 +1311,10 @@ public class BattleSharedDamagePlaybackTests
         string source = ReadProjectFile("Assets", "Scripts", "Campaign", "Online", "CampaignOnlineShellController.cs");
 
         StringAssert.Contains("public bool HasRequiredSceneReferences(out string error)", source);
-        StringAssert.Contains("public void ConfigureForMission(string configuredCampaignId, int configuredMissionId)", source);
+        StringAssert.IsMatch(
+            @"public void ConfigureForMission\s*\(\s*string configuredCampaignId,\s*int configuredMissionId,\s*int configuredCampaignLevel\s*\)",
+            source
+        );
         Assert.IsFalse(source.Contains("ReplaceSceneButtonListenersForOnlineCampaign"));
         Assert.IsFalse(source.Contains("FindButtonByName("));
         Assert.IsFalse(source.Contains("FindPlayers("));
@@ -1408,7 +1411,10 @@ public class BattleSharedDamagePlaybackTests
         StringAssert.Contains("private async void Start()", source);
         Assert.IsFalse(source.Contains("private async void OnEnable()"));
         StringAssert.Contains("campaignService.GetProgressAsync(playerId, campaignId)", source);
-        StringAssert.Contains("ApplyLevelAccess(envelope.progress.highestUnlockedMissionId);", source);
+        StringAssert.IsMatch(
+            @"ApplyLevelAccess\s*\(\s*envelope\.progress\.highestUnlockedCampaignLevel,\s*envelope\.progress\.visibleCycleStart\s*\);",
+            source
+        );
         StringAssert.Contains("campaignContentRoot", source);
         StringAssert.Contains("SetCampaignContentVisible(false);", source);
         StringAssert.Contains("SceneLoadingOverlay.SetMessage(\"LOADING...\");", source);
@@ -1416,6 +1422,63 @@ public class BattleSharedDamagePlaybackTests
         StringAssert.Contains("SceneLoadingOverlay.Hide();", source);
         StringAssert.Contains("SetCampaignContentVisible(true);", source);
         Assert.IsFalse(source.Contains("CampaignManager.Instance.LoadCampaignData"));
+    }
+
+    [Test]
+    public void CampaignScene_WiresProgressServiceExplicitlyWithoutRuntimeDiscovery()
+    {
+        string manager = ReadProjectFile("Assets", "Scripts", "Campaign", "MissionManager.cs");
+        string service = ReadProjectFile(
+            "Assets",
+            "Scripts",
+            "Campaign",
+            "Online",
+            "CampaignOnlineService.cs"
+        );
+        string scene = ReadProjectFile("Assets", "Scenes", "Campaign.unity");
+
+        Assert.IsFalse(manager.Contains("EnsureCampaignService"));
+        Assert.IsFalse(manager.Contains("AddComponent<CampaignOnlineService>"));
+        Assert.IsFalse(service.Contains("EnsureServerFunctionsManager"));
+        Assert.IsFalse(service.Contains("FindFirstObjectByType<ServerFunctionsManager>"));
+        Assert.IsFalse(service.Contains("AddComponent<ServerFunctionsManager>"));
+
+        StringAssert.IsMatch(
+            @"m_Script: \{fileID: 11500000, guid: a09271cdb153e6640bb9e6e21ed1444e, type: 3\}(?:(?!--- !u!)[\s\S])*?campaignService: \{fileID: (?!0\})\d+\}",
+            scene
+        );
+        StringAssert.IsMatch(
+            @"m_Script: \{fileID: 11500000, guid: f979a126dd21487b80f0f5ebfb6cccfd, type: 3\}(?:(?!--- !u!)[\s\S])*?serverFunctionsManager: \{fileID: (?!0\})\d+\}",
+            scene
+        );
+        StringAssert.Contains(
+            "m_Script: {fileID: 11500000, guid: ed25fe0a5a462db408eda59fa87ac5b2, type: 3}",
+            scene
+        );
+    }
+
+    [Test]
+    public void OnlineSoloShells_DoNotCarryRetiredLegacyCardRuntime()
+    {
+        string campaignShell = ReadProjectFile(
+            "Assets",
+            "Scripts",
+            "Campaign",
+            "Online",
+            "CampaignOnlineShellController.cs"
+        );
+        string royalRumbleShell = ReadProjectFile(
+            "Assets",
+            "Scripts",
+            "RoyalRumble",
+            "RoyalRumbleShellController.cs"
+        );
+
+        Assert.IsFalse(campaignShell.Contains("DisableLegacyCardRuntime"));
+        Assert.IsFalse(royalRumbleShell.Contains("DisableLegacyCardRuntime"));
+        Assert.IsFalse(File.Exists(Path.Combine(Application.dataPath, "Scripts", "Drag.cs")));
+        Assert.IsFalse(File.Exists(Path.Combine(Application.dataPath, "Scripts", "PlayerCard.cs")));
+        Assert.IsFalse(File.Exists(Path.Combine(Application.dataPath, "Scripts", "EnemyCard.cs")));
     }
 
     [Test]

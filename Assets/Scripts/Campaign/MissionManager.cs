@@ -16,7 +16,7 @@ public class MissionManager : MonoBehaviour
         SetCampaignContentVisible(false);
         SceneLoadingOverlay.SetMessage("LOADING...");
         SceneLoadingOverlay.Show();
-        ApplyLevelAccess(0);
+        ApplyLevelAccess(0, 1);
 
         try
         {
@@ -29,7 +29,12 @@ public class MissionManager : MonoBehaviour
                 return;
             }
 
-            EnsureCampaignService();
+            if (campaignService == null)
+            {
+                Debug.LogError("[MissionManager] campaignService is not assigned.");
+                return;
+            }
+
             CampaignOnlineProgressEnvelopeDto envelope = await campaignService.GetProgressAsync(playerId, campaignId);
             if (envelope == null || !envelope.success || envelope.progress == null)
             {
@@ -39,7 +44,10 @@ public class MissionManager : MonoBehaviour
                 return;
             }
 
-            ApplyLevelAccess(envelope.progress.highestUnlockedMissionId);
+            ApplyLevelAccess(
+                envelope.progress.highestUnlockedCampaignLevel,
+                envelope.progress.visibleCycleStart
+            );
         }
         finally
         {
@@ -48,11 +56,15 @@ public class MissionManager : MonoBehaviour
         }
     }
 
-    private void ApplyLevelAccess(int highestUnlockedMissionId)
+    private void ApplyLevelAccess(int highestUnlockedCampaignLevel, int visibleCycleStart)
     {
+        int cycleStart = Mathf.Max(1, visibleCycleStart);
+        GameParameters.CampaignCycleStart = cycleStart;
+
         for (int i = 0; i < levelButtons.Length; i++)
         {
-            levelButtons[i].interactable = i < highestUnlockedMissionId;
+            int campaignLevel = cycleStart + i;
+            levelButtons[i].interactable = campaignLevel <= highestUnlockedCampaignLevel;
 
             if (i < levelButtonImages.Length)
             {
@@ -64,20 +76,6 @@ public class MissionManager : MonoBehaviour
                         : new Color(buttonImage.color.r, buttonImage.color.g, buttonImage.color.b, 150f / 255f);
                 }
             }
-        }
-    }
-
-    private void EnsureCampaignService()
-    {
-        if (campaignService != null)
-        {
-            return;
-        }
-
-        campaignService = GetComponent<CampaignOnlineService>();
-        if (campaignService == null)
-        {
-            campaignService = gameObject.AddComponent<CampaignOnlineService>();
         }
     }
 

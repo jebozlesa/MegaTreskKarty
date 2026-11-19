@@ -39,6 +39,7 @@ public class CampaignOnlineShellController : MonoBehaviour
     public TMP_Text attackButton4CountText;
     public string campaignId = "bushido";
     public int missionId = 1;
+    public int campaignLevel = 1;
     public bool autoStart;
 
     private CampaignOnlineSessionDto currentSession;
@@ -66,10 +67,15 @@ public class CampaignOnlineShellController : MonoBehaviour
     private string ActivePlayerCardId => currentSession?.active?.playerCardId ?? string.Empty;
     private string ActiveEnemyCardId => currentSession?.active?.enemyCardId ?? string.Empty;
 
-    public void ConfigureForMission(string configuredCampaignId, int configuredMissionId)
+    public void ConfigureForMission(
+        string configuredCampaignId,
+        int configuredMissionId,
+        int configuredCampaignLevel
+    )
     {
         campaignId = configuredCampaignId;
         missionId = configuredMissionId;
+        campaignLevel = configuredCampaignLevel;
         autoStart = true;
     }
 
@@ -200,11 +206,11 @@ public class CampaignOnlineShellController : MonoBehaviour
 
             SetStatus("Preparing Campaign...");
             LogVerboseWarning(
-                $"[CampaignOnlineShellController] Campaign opening started for player={playerId}, campaign={campaignId}, mission={missionId}."
+                $"[CampaignOnlineShellController] Campaign opening started for player={playerId}, campaign={campaignId}, level={campaignLevel}, mission={missionId}."
             );
 
             CampaignOnlineSessionEnvelopeDto sessionEnvelope =
-                await campaignService.CreateSessionAsync(playerId, campaignId, missionId);
+                await campaignService.CreateSessionAsync(playerId, campaignId, campaignLevel);
             if (this == null || isShuttingDown)
             {
                 return;
@@ -721,8 +727,6 @@ public class CampaignOnlineShellController : MonoBehaviour
             return null;
         }
 
-        DisableLegacyCardRuntime(cardObject);
-
         kardComponent.cardId = cardData.CardID;
         kardComponent.styleId = cardData.StyleID;
         kardComponent.cardName = cardData.PersonName;
@@ -759,32 +763,6 @@ public class CampaignOnlineShellController : MonoBehaviour
         }
 
         return kardComponent;
-    }
-
-    private static void DisableLegacyCardRuntime(GameObject cardObject)
-    {
-        if (cardObject == null)
-        {
-            return;
-        }
-
-        Drag legacyDrag = cardObject.GetComponent<Drag>();
-        if (legacyDrag != null)
-        {
-            legacyDrag.enabled = false;
-        }
-
-        PlayerCard legacyPlayerCard = cardObject.GetComponent<PlayerCard>();
-        if (legacyPlayerCard != null)
-        {
-            legacyPlayerCard.enabled = false;
-        }
-
-        EnemyCard legacyEnemyCard = cardObject.GetComponent<EnemyCard>();
-        if (legacyEnemyCard != null)
-        {
-            legacyEnemyCard.enabled = false;
-        }
     }
 
     private void PrepareAttackSelectionFlow()

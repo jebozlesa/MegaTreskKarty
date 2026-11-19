@@ -1358,6 +1358,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1061050946}
   - component: {fileID: 1061050947}
+  - component: {fileID: 1061050948}
+  - component: {fileID: 1061050949}
   m_Layer: 0
   m_Name: MissionManager
   m_TagString: Untagged
@@ -1416,7 +1418,35 @@ MonoBehaviour:
   - {fileID: 471512180}
   campaignContentRoot: {fileID: 897887862}
   campaignId: bushido
-  campaignService: {fileID: 0}
+  campaignService: {fileID: 1061050948}
+--- !u!114 &1061050948
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1061050944}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f979a126dd21487b80f0f5ebfb6cccfd, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  serverFunctionsManager: {fileID: 1061050949}
+--- !u!114 &1061050949
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1061050944}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed25fe0a5a462db408eda59fa87ac5b2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  networkErrorIndicator: {fileID: 0}
+  maxRetries: 3
+  retryDelay: 1
 --- !u!1001 &1116510653
 PrefabInstance:
   m_ObjectHideFlags: 0

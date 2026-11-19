@@ -82,8 +82,11 @@ public static class CampaignOnlineSessionParser
         {
             playerId = token.Value<string>("playerId") ?? string.Empty,
             campaignId = token.Value<string>("campaignId") ?? string.Empty,
-            highestUnlockedMissionId = token.Value<int?>("highestUnlockedMissionId") ?? 1,
+            highestCompletedCampaignLevel = token.Value<int?>("highestCompletedCampaignLevel") ?? 0,
+            highestUnlockedCampaignLevel = token.Value<int?>("highestUnlockedCampaignLevel") ?? 1,
             missionCount = token.Value<int?>("missionCount") ?? 0,
+            visibleCycleStart = token.Value<int?>("visibleCycleStart") ?? 1,
+            visibleCycleEnd = token.Value<int?>("visibleCycleEnd") ?? 0,
             updatedAt = token.Value<string>("updatedAt") ?? string.Empty
         };
     }
@@ -167,8 +170,7 @@ public static class CampaignOnlineSessionParser
             battleCount = token?.Value<int?>("battleCount") ?? 0,
             defeatedEnemyCount = token?.Value<int?>("defeatedEnemyCount") ?? 0,
             playerDeaths = token?.Value<int?>("playerDeaths") ?? 0,
-            campaignId = token?.Value<string>("campaignId") ?? string.Empty,
-            levelId = token?.Value<int?>("levelId")
+            campaignId = token?.Value<string>("campaignId") ?? string.Empty
         };
     }
 
@@ -179,6 +181,7 @@ public static class CampaignOnlineSessionParser
             playerDeckSize = token?.Value<int?>("playerDeckSize") ?? 0,
             enemyDeckSize = token?.Value<int?>("enemyDeckSize") ?? 0,
             campaignId = token?.Value<string>("campaignId") ?? string.Empty,
+            campaignLevel = token?.Value<int?>("campaignLevel") ?? 0,
             missionId = token?.Value<int?>("missionId") ?? 0,
             rewardFlowEnabled = token?.Value<bool?>("rewardFlowEnabled") ?? false,
             persistenceScope = token?.Value<string>("persistenceScope") ?? string.Empty

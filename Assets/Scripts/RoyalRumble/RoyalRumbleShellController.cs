@@ -714,8 +714,6 @@ public class RoyalRumbleShellController : MonoBehaviour
             return null;
         }
 
-        DisableLegacyCardRuntime(cardObject);
-
         kardComponent.cardId = cardData.CardID;
         kardComponent.styleId = cardData.StyleID;
         kardComponent.cardName = cardData.PersonName;
@@ -752,32 +750,6 @@ public class RoyalRumbleShellController : MonoBehaviour
         }
 
         return kardComponent;
-    }
-
-    private static void DisableLegacyCardRuntime(GameObject cardObject)
-    {
-        if (cardObject == null)
-        {
-            return;
-        }
-
-        Drag legacyDrag = cardObject.GetComponent<Drag>();
-        if (legacyDrag != null)
-        {
-            legacyDrag.enabled = false;
-        }
-
-        PlayerCard legacyPlayerCard = cardObject.GetComponent<PlayerCard>();
-        if (legacyPlayerCard != null)
-        {
-            legacyPlayerCard.enabled = false;
-        }
-
-        EnemyCard legacyEnemyCard = cardObject.GetComponent<EnemyCard>();
-        if (legacyEnemyCard != null)
-        {
-            legacyEnemyCard.enabled = false;
-        }
     }
 
     private void PrepareAttackSelectionFlow()

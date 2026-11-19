@@ -50,7 +50,11 @@ public class SingleplayerBattleSceneRouter : MonoBehaviour
 
         campaignRoot.SetActive(false);
         string campaignId = ResolveCampaignId();
-        campaignShell.ConfigureForMission(campaignId, GameParameters.MissionID);
+        campaignShell.ConfigureForMission(
+            campaignId,
+            GameParameters.MissionID,
+            GameParameters.CampaignLevel
+        );
         if (!campaignShell.HasRequiredSceneReferences(out string error))
         {
             Debug.LogError($"[SingleplayerBattleSceneRouter] Campaign scene configuration is invalid: {error}");
@@ -59,7 +63,7 @@ public class SingleplayerBattleSceneRouter : MonoBehaviour
 
         campaignRoot.SetActive(true);
         Debug.LogWarning(
-            $"[SingleplayerBattleSceneRouter] Routed Game scene to Campaign: campaign={campaignId}, mission={GameParameters.MissionID}."
+            $"[SingleplayerBattleSceneRouter] Routed Game scene to Campaign: campaign={campaignId}, level={GameParameters.CampaignLevel}, mission={GameParameters.MissionID}."
         );
     }
 

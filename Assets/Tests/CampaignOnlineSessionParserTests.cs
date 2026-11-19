@@ -22,7 +22,7 @@ public class CampaignOnlineSessionParserTests
                 ["active"] = new Dictionary<string, object>
                 {
                     ["playerCardId"] = "player_card",
-                    ["enemyCardId"] = "campaign:bushido:mission_1:slot_1:style_10001"
+                    ["enemyCardId"] = "campaign:bushido:level_11:mission_1:slot_1:style_10001"
                 },
                 ["progress"] = new Dictionary<string, object>
                 {
@@ -30,14 +30,14 @@ public class CampaignOnlineSessionParserTests
                     ["battleCount"] = 1,
                     ["defeatedEnemyCount"] = 0,
                     ["playerDeaths"] = 0,
-                    ["campaignId"] = "bushido",
-                    ["levelId"] = 1
+                    ["campaignId"] = "bushido"
                 },
                 ["modeConfig"] = new Dictionary<string, object>
                 {
                     ["playerDeckSize"] = 5,
                     ["enemyDeckSize"] = 5,
                     ["campaignId"] = "bushido",
+                    ["campaignLevel"] = 11,
                     ["missionId"] = 1,
                     ["botStrategy"] = new Dictionary<string, object>
                     {
@@ -87,19 +87,19 @@ public class CampaignOnlineSessionParserTests
                 },
                 ["enemyDeck"] = new Dictionary<string, object>
                 {
-                    ["deckId"] = "campaign:bushido:mission_1",
+                    ["deckId"] = "campaign:bushido:level_11:mission_1",
                     ["deckName"] = "Heian Genesis",
                     ["deckSize"] = 1,
                     ["cards"] = new object[]
                     {
                         new Dictionary<string, object>
                         {
-                            ["CardID"] = "campaign:bushido:mission_1:slot_1:style_10001",
+                            ["CardID"] = "campaign:bushido:level_11:mission_1:slot_1:style_10001",
                             ["PersonName"] = "Monk",
                             ["CardPicture"] = "japmnich",
-                            ["Level"] = 1,
-                            ["Health"] = 30,
-                            ["MaxHealth"] = 30,
+                            ["Level"] = 11,
+                            ["Health"] = 40,
+                            ["MaxHealth"] = 40,
                             ["StyleID"] = 10001,
                             ["Strength"] = 5,
                             ["Speed"] = 6,
@@ -122,7 +122,7 @@ public class CampaignOnlineSessionParserTests
                                     ["type"] = "buffaloHorns",
                                     ["sourceAttackId"] = 77,
                                     ["sourceCardId"] = "player_card",
-                                    ["targetCardId"] = "campaign:bushido:mission_1:slot_1:style_10001",
+                                    ["targetCardId"] = "campaign:bushido:level_11:mission_1:slot_1:style_10001",
                                     ["phase"] = "charging",
                                     ["turnsRemaining"] = 1
                                 }
@@ -157,8 +157,13 @@ public class CampaignOnlineSessionParserTests
                 },
                 ["progress"] = new Dictionary<string, object>
                 {
+                    ["campaignId"] = "bushido"
+                },
+                ["modeConfig"] = new Dictionary<string, object>
+                {
                     ["campaignId"] = "bushido",
-                    ["levelId"] = 1
+                    ["campaignLevel"] = 11,
+                    ["missionId"] = 1
                 }
             }
         };
@@ -182,10 +187,11 @@ public class CampaignOnlineSessionParserTests
         Assert.AreEqual("campaign", ReadField<string>(session, "mode"));
         Assert.AreEqual("awaiting_attack", ReadField<string>(session, "status"));
         Assert.AreEqual("player_card", ReadField<string>(active, "playerCardId"));
-        Assert.AreEqual("campaign:bushido:mission_1:slot_1:style_10001", ReadField<string>(active, "enemyCardId"));
+        Assert.AreEqual("campaign:bushido:level_11:mission_1:slot_1:style_10001", ReadField<string>(active, "enemyCardId"));
         Assert.AreEqual("bushido", ReadField<string>(progress, "campaignId"));
-        Assert.AreEqual(1, ReadField<int?>(progress, "levelId"));
+        Assert.IsNull(progress.GetType().GetField("levelId"));
         Assert.AreEqual("bushido", ReadField<string>(modeConfig, "campaignId"));
+        Assert.AreEqual(11, ReadField<int>(modeConfig, "campaignLevel"));
         Assert.AreEqual(1, ReadField<int>(modeConfig, "missionId"));
         Assert.AreEqual("random_valid", ReadField<string>(modeConfig, "botStrategy"));
         Assert.AreEqual("Shaka Zulu", ReadField<string>(playerCard, "name"));
@@ -196,6 +202,36 @@ public class CampaignOnlineSessionParserTests
         Assert.IsNotNull(ReadField<object>(playerCard, "effects"));
         Assert.IsNotNull(ReadField<object>(enemyCard, "ongoingActions"));
         Assert.AreEqual("campaign", ReadField<string>(summary, "mode"));
+        Assert.AreEqual(11, ReadField<int>(ReadField<object>(summary, "modeConfig"), "campaignLevel"));
+    }
+
+    [Test]
+    public void ParseProgressEnvelope_MapsInfiniteCampaignWindow()
+    {
+        var raw = new Dictionary<string, object>
+        {
+            ["success"] = true,
+            ["progress"] = new Dictionary<string, object>
+            {
+                ["playerId"] = "player_1",
+                ["campaignId"] = "bushido",
+                ["highestCompletedCampaignLevel"] = 10,
+                ["highestUnlockedCampaignLevel"] = 11,
+                ["missionCount"] = 10,
+                ["visibleCycleStart"] = 11,
+                ["visibleCycleEnd"] = 20,
+                ["updatedAt"] = "2026-11-18T18:00:00.000Z"
+            }
+        };
+
+        object envelope = InvokeParserMethod("ParseProgressEnvelope", raw);
+        object progress = ReadField<object>(envelope, "progress");
+
+        Assert.AreEqual(10, ReadField<int>(progress, "highestCompletedCampaignLevel"));
+        Assert.AreEqual(11, ReadField<int>(progress, "highestUnlockedCampaignLevel"));
+        Assert.AreEqual(11, ReadField<int>(progress, "visibleCycleStart"));
+        Assert.AreEqual(20, ReadField<int>(progress, "visibleCycleEnd"));
+        Assert.IsNull(progress.GetType().GetField("highestUnlockedMissionId"));
     }
 
     [Test]
